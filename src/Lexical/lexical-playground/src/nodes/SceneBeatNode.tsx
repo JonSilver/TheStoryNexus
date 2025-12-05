@@ -7,6 +7,7 @@ import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
 import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching";
 import { buildTagMap } from "@/features/lorebook/utils/lorebookFilters";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
@@ -55,6 +56,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
     const { data: prompts = [], isLoading, error: promptsQueryError } = usePromptsQuery({ includeSystem: true });
     const promptsError = promptsQueryError?.message ?? null;
+    const { lastUsed, saveSelection } = useLastUsedPrompt("scene_beat", prompts);
     const { entries } = useLorebookContext();
     const { chapterMatchedEntries } = useChapterMatching();
 
@@ -169,6 +171,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const handlePromptSelect = (prompt: Prompt, model: AllowedModel) => {
         setSelectedPrompt(prompt);
         setSelectedModel(model);
+        saveSelection(prompt, model);
     };
 
     const handlePovSave = async (newPovType: POVType | undefined, newPovCharacter: string | undefined) => {
@@ -350,6 +353,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                         onGenerate={handleGenerateWithPrompt}
                         onAccept={handleAccept}
                         onReject={handleReject}
+                        lastUsed={lastUsed}
                     />
                 </div>
             )}

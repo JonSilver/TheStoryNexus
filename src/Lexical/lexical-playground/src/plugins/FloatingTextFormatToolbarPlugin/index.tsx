@@ -34,6 +34,7 @@ import { Bold, Italic, Underline, Wand2, Loader2 } from "lucide-react";
 import { getDOMRangeRect } from "../../utils/getDOMRangeRect";
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPosition } from "../../utils/setFloatingElemPosition";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { aiService } from "@/services/ai/AIService";
 import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
@@ -66,6 +67,7 @@ function TextFormatFloatingToolbar({
     const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
     const { currentStoryId, currentChapterId } = useStoryContext();
     const { data: prompts = [], isLoading, error } = usePromptsQuery();
+    const { lastUsed, saveSelection } = useLastUsedPrompt("selection_specific", prompts);
     const { generateWithPrompt } = useGenerateWithPrompt();
     const { parsePrompt } = usePromptParser();
     const { data: currentStory } = useStoryQuery(currentStoryId || "");
@@ -186,6 +188,7 @@ function TextFormatFloatingToolbar({
     const handlePromptSelect = (prompt: Prompt, model: AllowedModel) => {
         setSelectedPrompt(prompt);
         setSelectedModel(model);
+        saveSelection(prompt, model);
     };
 
     const createPromptConfig = (prompt: Prompt): PromptParserConfig => {
@@ -432,6 +435,7 @@ function TextFormatFloatingToolbar({
                                     selectedPrompt={selectedPrompt}
                                     selectedModel={selectedModel}
                                     onSelect={handlePromptSelect}
+                                    lastUsed={lastUsed}
                                 />
 
                                 {/* Add Preview Prompt button */}
