@@ -72,9 +72,17 @@ function TextFormatFloatingToolbar({
     const { parsePrompt } = usePromptParser();
     const { data: currentStory } = useStoryQuery(currentStoryId || "");
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
-    const [selectedPrompt, setSelectedPrompt] = useState<Prompt>();
-    const [selectedModel, setSelectedModel] = useState<AllowedModel>();
+    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
+    const [selectedModel, setSelectedModel] = useState<AllowedModel | undefined>(lastUsed?.model);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Pre-populate from lastUsed when it becomes available
+    useEffect(() => {
+        if (lastUsed && !selectedPrompt) {
+            setSelectedPrompt(lastUsed.prompt);
+            setSelectedModel(lastUsed.model);
+        }
+    }, [lastUsed, selectedPrompt]);
 
     // Add these states for prompt preview
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);

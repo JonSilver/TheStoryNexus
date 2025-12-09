@@ -66,9 +66,17 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const [collapsed, setCollapsed] = useState(false);
     const [showMatchedEntries, setShowMatchedEntries] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-    const [selectedPrompt, setSelectedPrompt] = useState<Prompt>();
-    const [selectedModel, setSelectedModel] = useState<AllowedModel>();
+    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
+    const [selectedModel, setSelectedModel] = useState<AllowedModel | undefined>(lastUsed?.model);
     const [selectedItems, setSelectedItems] = useState<LorebookEntry[]>([]);
+
+    // Pre-populate from lastUsed when it becomes available
+    useEffect(() => {
+        if (lastUsed && !selectedPrompt) {
+            setSelectedPrompt(lastUsed.prompt);
+            setSelectedModel(lastUsed.model);
+        }
+    }, [lastUsed, selectedPrompt]);
 
     // Load scene beat data and initialize
     const {
