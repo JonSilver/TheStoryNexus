@@ -41,7 +41,8 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
                     selection.deleteCharacter(false);
 
                     // Insert the scene beat node
-                    const beatNode = $createSceneBeatNode();
+                    const newId = crypto.randomUUID();
+                    const beatNode = $createSceneBeatNode(newId);
                     const paragraphNode = $createParagraphNode();
                     selection.insertNodes([beatNode, paragraphNode]);
                 }

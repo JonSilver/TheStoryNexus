@@ -130,7 +130,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const localMatchedEntries = useLorebookMatching(command, tagMap);
 
     // Database sync hooks
-    const { saveCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
+    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
 
     // AI generation hook
     const {
@@ -151,7 +151,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     // Save command changes (debounced via useSceneBeatSync)
     useEffect(() => {
-        if (sceneBeatId && isLoaded) saveCommand(command);
+        if (sceneBeatId && isLoaded) {
+            saveCommand(command);
+        }
     }, [command, sceneBeatId, saveCommand, isLoaded]);
 
     // Save toggle changes (debounced via useSceneBeatSync)
@@ -161,6 +163,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     // Event handlers
     const handleDelete = async () => {
+        flushCommand();
+
         if (sceneBeatId) {
             const { attemptPromise } = await import("@jfdi/attempt");
             const [error] = await attemptPromise(async () => sceneBeatService.deleteSceneBeat(sceneBeatId));
@@ -243,6 +247,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     };
 
     const handleAccept = async () => {
+        flushCommand();
         insertTextAfterNode(editor, nodeKey, streamedText);
         await saveAccepted(true);
         resetGeneration();
@@ -403,6 +408,7 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     constructor(sceneBeatId: string = "", key?: NodeKey) {
         super(key);
         this.__sceneBeatId = sceneBeatId;
+        logger.info("🏗️ SceneBeatNode constructor:", { sceneBeatId, key });
     }
 
     static getType(): string {
@@ -414,6 +420,7 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     }
 
     static importJSON(serializedNode: SerializedSceneBeatNode): SceneBeatNode {
+        logger.info("📥 SceneBeat importJSON:", serializedNode.sceneBeatId);
         return $createSceneBeatNode(serializedNode.sceneBeatId || "");
     }
 
@@ -430,8 +437,8 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     }
 
     setSceneBeatId(id: string): void {
-        const writable = this.getWritable();
-        writable.__sceneBeatId = id;
+        const self = this.getWritable();
+        self.__sceneBeatId = id;
     }
 
     createDOM(): HTMLElement {
@@ -462,5 +469,5 @@ export function $createSceneBeatNode(sceneBeatId: string = ""): SceneBeatNode {
 }
 
 export function $isSceneBeatNode(node: LexicalNode | null | undefined): node is SceneBeatNode {
-    return node instanceof SceneBeatNode;
+    return node?.getType() === "scene-beat";
 }
