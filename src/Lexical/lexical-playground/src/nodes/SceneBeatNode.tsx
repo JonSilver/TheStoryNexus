@@ -17,7 +17,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $applyNodeReplacement, DecoratorNode } from "lexical";
 import { ChevronRight, Eye, Trash2 } from "lucide-react";
 import type { JSX } from "react";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { SceneBeatMatchedEntries } from "./SceneBeatMatchedEntries";
 
@@ -97,32 +97,25 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         defaultPovCharacter: currentChapter?.povCharacter
     });
 
-    // Context toggles state - synced from query on load
-    const [useMatchedChapter, setUseMatchedChapter] = useState(initialUseMatchedChapter);
-    const [useMatchedSceneBeat, setUseMatchedSceneBeat] = useState(initialUseMatchedSceneBeat);
-    const [useCustomContext, setUseCustomContext] = useState(initialUseCustomContext);
+    // Track local edits - once user edits, we use local state; before that, use query data
+    const hasEditedTogglesRef = useRef(false);
+    const hasEditedPovRef = useRef(false);
 
-    // POV state - synced from query on load
-    const [povType, setPovType] = useState<POVType | undefined>(initialPovType);
-    const [povCharacter, setPovCharacter] = useState<string | undefined>(initialPovCharacter);
+    // Context toggles - local state for edits, but initialise from query
+    const [localMatchedChapter, setLocalMatchedChapter] = useState<boolean | null>(null);
+    const [localMatchedSceneBeat, setLocalMatchedSceneBeat] = useState<boolean | null>(null);
+    const [localCustomContext, setLocalCustomContext] = useState<boolean | null>(null);
 
-    // Sync state when data loads from server
-    useEffect(() => {
-        if (isLoaded) {
-            setUseMatchedChapter(initialUseMatchedChapter);
-            setUseMatchedSceneBeat(initialUseMatchedSceneBeat);
-            setUseCustomContext(initialUseCustomContext);
-            setPovType(initialPovType);
-            setPovCharacter(initialPovCharacter);
-        }
-    }, [
-        isLoaded,
-        initialUseMatchedChapter,
-        initialUseMatchedSceneBeat,
-        initialUseCustomContext,
-        initialPovType,
-        initialPovCharacter
-    ]);
+    // POV state - local state for edits, but initialise from query
+    const [localPovType, setLocalPovType] = useState<POVType | undefined>(undefined);
+    const [localPovCharacter, setLocalPovCharacter] = useState<string | undefined>(undefined);
+
+    // Derive actual values: use local if edited, otherwise query data
+    const useMatchedChapter = hasEditedTogglesRef.current ? (localMatchedChapter ?? true) : initialUseMatchedChapter;
+    const useMatchedSceneBeat = hasEditedTogglesRef.current ? (localMatchedSceneBeat ?? false) : initialUseMatchedSceneBeat;
+    const useCustomContext = hasEditedTogglesRef.current ? (localCustomContext ?? false) : initialUseCustomContext;
+    const povType = hasEditedPovRef.current ? localPovType : initialPovType;
+    const povCharacter = hasEditedPovRef.current ? localPovCharacter : initialPovCharacter;
 
     // Command history hook
     const { command, handleCommandChange: baseHandleCommandChange, handleKeyDown } = useCommandHistory(initialCommand);
@@ -162,10 +155,11 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         [baseHandleCommandChange, sceneBeatId, isLoaded, saveCommand]
     );
 
-    // Wrap toggle handlers to save on change
+    // Wrap toggle handlers to set local state and save
     const handleMatchedChapterChange = useCallback(
         (value: boolean) => {
-            setUseMatchedChapter(value);
+            hasEditedTogglesRef.current = true;
+            setLocalMatchedChapter(value);
             if (sceneBeatId && isLoaded) saveToggles(value, useMatchedSceneBeat, useCustomContext);
         },
         [sceneBeatId, isLoaded, saveToggles, useMatchedSceneBeat, useCustomContext]
@@ -173,7 +167,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     const handleMatchedSceneBeatChange = useCallback(
         (value: boolean) => {
-            setUseMatchedSceneBeat(value);
+            hasEditedTogglesRef.current = true;
+            setLocalMatchedSceneBeat(value);
             if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, value, useCustomContext);
         },
         [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useCustomContext]
@@ -181,7 +176,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     const handleCustomContextChange = useCallback(
         (value: boolean) => {
-            setUseCustomContext(value);
+            hasEditedTogglesRef.current = true;
+            setLocalCustomContext(value);
             if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, useMatchedSceneBeat, value);
         },
         [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useMatchedSceneBeat]
@@ -216,8 +212,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     };
 
     const handlePovSave = async (newPovType: POVType | undefined, newPovCharacter: string | undefined) => {
-        setPovType(newPovType);
-        setPovCharacter(newPovCharacter);
+        hasEditedPovRef.current = true;
+        setLocalPovType(newPovType);
+        setLocalPovCharacter(newPovCharacter);
         await savePOVSettings(newPovType, newPovCharacter);
         toast.success("POV settings saved");
     };

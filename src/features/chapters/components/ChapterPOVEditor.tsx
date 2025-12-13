@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
 import type { Chapter } from "@/types/story";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 interface ChapterPOVEditorProps {
@@ -33,10 +33,13 @@ export function ChapterPOVEditor({ chapter, onClose }: ChapterPOVEditorProps) {
 
     const povType = form.watch("povType");
 
-    // Reset POV character when switching to omniscient
-    useEffect(() => {
-        if (povType === "Third Person Omniscient") form.setValue("povCharacter", undefined);
-    }, [povType, form]);
+    const handlePovTypeChange = (value: string, onChange: (value: string) => void) => {
+        onChange(value);
+        // Clear POV character when switching to omniscient
+        if (value === "Third Person Omniscient") {
+            form.setValue("povCharacter", undefined);
+        }
+    };
 
     const handleSubmit = async (data: POVForm) => {
         // Only include povCharacter if not omniscient
@@ -68,7 +71,10 @@ export function ChapterPOVEditor({ chapter, onClose }: ChapterPOVEditorProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Point of View</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={value => handlePovTypeChange(value, field.onChange)}
+                                    defaultValue={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select POV type" />
