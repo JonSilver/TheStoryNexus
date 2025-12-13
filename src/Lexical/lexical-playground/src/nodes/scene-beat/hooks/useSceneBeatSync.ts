@@ -1,11 +1,15 @@
-import { useMemo } from "react";
-import { debounce } from "lodash";
+import { useMemo, useRef, useEffect } from "react";
+import { debounce, type DebouncedFunc } from "lodash";
 import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
 import type { SceneBeat } from "@/types/story";
 import { attemptPromise } from "@jfdi/attempt";
 import { logger } from "@/utils/logger";
 
 const DEBOUNCE_DELAY_MS = 500;
+
+type SaveCommandFunc = DebouncedFunc<(command: string) => Promise<void>> & {
+    flush: () => void;
+};
 
 /**
  * Custom hook to provide debounced database sync functions for scene beat.
@@ -16,21 +20,33 @@ const DEBOUNCE_DELAY_MS = 500;
  * @returns Debounced save functions for various scene beat properties
  */
 export const useSceneBeatSync = (sceneBeatId: string) => {
-    // Create debounced save functions using useMemo to maintain stable references
-    const saveCommand = useMemo(
-        () =>
-            debounce(async (command: string) => {
-                if (!sceneBeatId) return;
+    const sceneBeatIdRef = useRef(sceneBeatId);
 
-                const [error] = await attemptPromise(async () =>
-                    sceneBeatService.updateSceneBeat(sceneBeatId, { command })
-                );
-                if (error) {
-                    logger.error("Error saving SceneBeat command:", error);
-                }
-            }, DEBOUNCE_DELAY_MS),
-        [sceneBeatId]
-    );
+    useEffect(() => {
+        sceneBeatIdRef.current = sceneBeatId;
+    }, [sceneBeatId]);
+
+    // Create debounced save function once, uses ref for ID
+    const saveCommand = useMemo(() => {
+        const debouncedFn = debounce(async (command: string) => {
+            if (!sceneBeatIdRef.current) {
+                logger.warn("⚠️ No sceneBeatId, skipping save");
+                return;
+            }
+
+            logger.info("💾 Saving command to DB:", { id: sceneBeatIdRef.current, length: command.length });
+            const [error] = await attemptPromise(async () =>
+                sceneBeatService.updateSceneBeat(sceneBeatIdRef.current, { command })
+            );
+            if (error) {
+                logger.error("❌ Error saving SceneBeat command:", error);
+            } else {
+                logger.info("✅ Command saved successfully");
+            }
+        }, DEBOUNCE_DELAY_MS);
+
+        return debouncedFn as SaveCommandFunc;
+    }, []);
 
     const saveToggles = useMemo(
         () =>
@@ -96,6 +112,7 @@ export const useSceneBeatSync = (sceneBeatId: string) => {
 
     return {
         saveCommand,
+        flushCommand: () => saveCommand.flush(),
         saveToggles,
         savePOVSettings,
         saveGeneratedContent,

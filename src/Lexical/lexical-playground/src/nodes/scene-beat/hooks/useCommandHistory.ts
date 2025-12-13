@@ -22,13 +22,16 @@ export const useCommandHistory = (initialCommand: string): UseCommandHistoryResu
     const [historyIndex, setHistoryIndex] = useState(-1);
     const isUndoRedoAction = useRef(false);
 
-    // Initialize history when command is first loaded
+    // Initialize command and history only once when data loads
+    const hasInitialized = useRef(false);
     useEffect(() => {
-        if (initialCommand && commandHistory.length === 0) {
+        if (initialCommand && !hasInitialized.current) {
+            setCommand(initialCommand);
             setCommandHistory([initialCommand]);
             setHistoryIndex(0);
+            hasInitialized.current = true;
         }
-    }, [initialCommand, commandHistory.length]);
+    }, [initialCommand]);
 
     const handleUndo = () => {
         if (historyIndex > 0) {

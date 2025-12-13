@@ -34,6 +34,7 @@ import { Bold, Italic, Underline, Wand2, Loader2 } from "lucide-react";
 import { getDOMRangeRect } from "../../utils/getDOMRangeRect";
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPosition } from "../../utils/setFloatingElemPosition";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { aiService } from "@/services/ai/AIService";
 import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
@@ -66,13 +67,22 @@ function TextFormatFloatingToolbar({
     const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
     const { currentStoryId, currentChapterId } = useStoryContext();
     const { data: prompts = [], isLoading, error } = usePromptsQuery();
+    const { lastUsed, saveSelection } = useLastUsedPrompt("selection_specific", prompts);
     const { generateWithPrompt } = useGenerateWithPrompt();
     const { parsePrompt } = usePromptParser();
     const { data: currentStory } = useStoryQuery(currentStoryId || "");
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
-    const [selectedPrompt, setSelectedPrompt] = useState<Prompt>();
-    const [selectedModel, setSelectedModel] = useState<AllowedModel>();
+    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
+    const [selectedModel, setSelectedModel] = useState<AllowedModel | undefined>(lastUsed?.model);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Pre-populate from lastUsed when it becomes available
+    useEffect(() => {
+        if (lastUsed && !selectedPrompt) {
+            setSelectedPrompt(lastUsed.prompt);
+            setSelectedModel(lastUsed.model);
+        }
+    }, [lastUsed, selectedPrompt]);
 
     // Add these states for prompt preview
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -186,6 +196,7 @@ function TextFormatFloatingToolbar({
     const handlePromptSelect = (prompt: Prompt, model: AllowedModel) => {
         setSelectedPrompt(prompt);
         setSelectedModel(model);
+        saveSelection(prompt, model);
     };
 
     const createPromptConfig = (prompt: Prompt): PromptParserConfig => {
@@ -432,6 +443,7 @@ function TextFormatFloatingToolbar({
                                     selectedPrompt={selectedPrompt}
                                     selectedModel={selectedModel}
                                     onSelect={handlePromptSelect}
+                                    lastUsed={lastUsed}
                                 />
 
                                 {/* Add Preview Prompt button */}

@@ -1,5 +1,5 @@
 import { AllowedModel, Prompt } from "@/types/story";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, History } from "lucide-react";
 import { useState } from "react";
 import {
     Menubar,
@@ -14,6 +14,11 @@ import {
 } from "./menubar";
 import { PromptConfigDialog } from "./prompt-config-dialog";
 
+interface LastUsedSelection {
+    prompt: Prompt;
+    model: AllowedModel;
+}
+
 interface PromptSelectMenuProps {
     isLoading: boolean;
     error: string | null;
@@ -22,6 +27,7 @@ interface PromptSelectMenuProps {
     selectedPrompt?: Prompt;
     selectedModel?: AllowedModel;
     onSelect: (prompt: Prompt, model: AllowedModel) => void;
+    lastUsed?: LastUsedSelection | null;
 }
 
 export function PromptSelectMenu({
@@ -31,7 +37,8 @@ export function PromptSelectMenu({
     promptType,
     selectedPrompt,
     selectedModel,
-    onSelect
+    onSelect,
+    lastUsed
 }: PromptSelectMenuProps) {
     const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
     const filteredPrompts = prompts.filter(p => p.promptType === promptType);
@@ -64,6 +71,23 @@ export function PromptSelectMenu({
                         <MenubarItem disabled>No {promptType} prompts available</MenubarItem>
                     ) : (
                         <>
+                            {lastUsed && (
+                                <>
+                                    <MenubarItem
+                                        onClick={() => onSelect(lastUsed.prompt, lastUsed.model)}
+                                        className="bg-accent/50"
+                                    >
+                                        <History className="h-4 w-4 mr-2 text-muted-foreground" />
+                                        <div className="flex flex-col">
+                                            <span>{lastUsed.prompt.name}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {lastUsed.model.name}
+                                            </span>
+                                        </div>
+                                    </MenubarItem>
+                                    <MenubarSeparator />
+                                </>
+                            )}
                             {filteredPrompts.map(prompt => (
                                 <MenubarSub key={prompt.id}>
                                     <MenubarSubTrigger>

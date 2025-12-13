@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { PromptSelectMenu } from "@/components/ui/prompt-select-menu";
 
+interface LastUsedSelection {
+    prompt: Prompt;
+    model: AllowedModel;
+}
+
 interface GenerationControlsProps {
     isLoading: boolean;
     error: string | null;
@@ -16,6 +21,7 @@ interface GenerationControlsProps {
     onGenerate: () => void;
     onAccept: () => void;
     onReject: () => void;
+    lastUsed?: LastUsedSelection | null;
 }
 
 /**
@@ -33,7 +39,8 @@ export const GenerationControls = ({
     onPreview,
     onGenerate,
     onAccept,
-    onReject
+    onReject,
+    lastUsed
 }: GenerationControlsProps): JSX.Element => (
     <div className="flex justify-between items-center border-t border-border p-2">
         <div className="flex gap-2 items-center">
@@ -45,6 +52,7 @@ export const GenerationControls = ({
                 selectedPrompt={selectedPrompt}
                 selectedModel={selectedModel}
                 onSelect={onPromptSelect}
+                lastUsed={lastUsed}
             />
             {selectedPrompt && (
                 <Button variant="outline" size="sm" onClick={onPreview}>

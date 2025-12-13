@@ -4,6 +4,7 @@ import { ROUTES } from "@/constants/urls";
 import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
 import { useDeleteChapterMutation, useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { parseLocalStorage } from "@/schemas/entities";
@@ -82,6 +83,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     const { generateWithPrompt } = useGenerateWithPrompt();
     const { entries } = useLorebookContext();
     const { data: prompts = [], isLoading, error: queryError } = usePromptsQuery({ includeSystem: true });
+    const { lastUsed, saveSelection } = useLastUsedPrompt("gen_summary", prompts);
     const [isGenerating, setIsGenerating] = useState(false);
     const characterEntries = entries.filter(entry => entry.category === "character");
     const error = queryError?.message ?? null;
@@ -160,6 +162,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     };
 
     const handleGenerateSummary = async (prompt: Prompt, model: AllowedModel) => {
+        saveSelection(prompt, model);
         setIsGenerating(true);
 
         const [error] = await attemptPromise(async () => {
@@ -291,6 +294,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                                         promptType="gen_summary"
                                         buttonText="Generate Summary"
                                         onGenerate={handleGenerateSummary}
+                                        lastUsed={lastUsed}
                                     />
                                 </div>
                                 <div className="flex justify-end gap-2 pt-3 border-t">

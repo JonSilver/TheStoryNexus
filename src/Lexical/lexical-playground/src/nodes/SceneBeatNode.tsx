@@ -7,6 +7,7 @@ import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
 import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching";
 import { buildTagMap } from "@/features/lorebook/utils/lorebookFilters";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
@@ -55,6 +56,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
     const { data: prompts = [], isLoading, error: promptsQueryError } = usePromptsQuery({ includeSystem: true });
     const promptsError = promptsQueryError?.message ?? null;
+    const { lastUsed, saveSelection } = useLastUsedPrompt("scene_beat", prompts);
     const { entries } = useLorebookContext();
     const { chapterMatchedEntries } = useChapterMatching();
 
@@ -64,9 +66,17 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const [collapsed, setCollapsed] = useState(false);
     const [showMatchedEntries, setShowMatchedEntries] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-    const [selectedPrompt, setSelectedPrompt] = useState<Prompt>();
-    const [selectedModel, setSelectedModel] = useState<AllowedModel>();
+    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
+    const [selectedModel, setSelectedModel] = useState<AllowedModel | undefined>(lastUsed?.model);
     const [selectedItems, setSelectedItems] = useState<LorebookEntry[]>([]);
+
+    // Pre-populate from lastUsed when it becomes available
+    useEffect(() => {
+        if (lastUsed && !selectedPrompt) {
+            setSelectedPrompt(lastUsed.prompt);
+            setSelectedModel(lastUsed.model);
+        }
+    }, [lastUsed, selectedPrompt]);
 
     // Load scene beat data and initialize
     const {
@@ -120,7 +130,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const localMatchedEntries = useLorebookMatching(command, tagMap);
 
     // Database sync hooks
-    const { saveCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
+    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
 
     // AI generation hook
     const {
@@ -141,7 +151,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     // Save command changes (debounced via useSceneBeatSync)
     useEffect(() => {
-        if (sceneBeatId && isLoaded) saveCommand(command);
+        if (sceneBeatId && isLoaded) {
+            saveCommand(command);
+        }
     }, [command, sceneBeatId, saveCommand, isLoaded]);
 
     // Save toggle changes (debounced via useSceneBeatSync)
@@ -151,6 +163,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     // Event handlers
     const handleDelete = async () => {
+        flushCommand();
+
         if (sceneBeatId) {
             const { attemptPromise } = await import("@jfdi/attempt");
             const [error] = await attemptPromise(async () => sceneBeatService.deleteSceneBeat(sceneBeatId));
@@ -169,6 +183,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const handlePromptSelect = (prompt: Prompt, model: AllowedModel) => {
         setSelectedPrompt(prompt);
         setSelectedModel(model);
+        saveSelection(prompt, model);
     };
 
     const handlePovSave = async (newPovType: POVType | undefined, newPovCharacter: string | undefined) => {
@@ -232,6 +247,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     };
 
     const handleAccept = async () => {
+        flushCommand();
         insertTextAfterNode(editor, nodeKey, streamedText);
         await saveAccepted(true);
         resetGeneration();
@@ -350,6 +366,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                         onGenerate={handleGenerateWithPrompt}
                         onAccept={handleAccept}
                         onReject={handleReject}
+                        lastUsed={lastUsed}
                     />
                 </div>
             )}
@@ -391,6 +408,7 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     constructor(sceneBeatId: string = "", key?: NodeKey) {
         super(key);
         this.__sceneBeatId = sceneBeatId;
+        logger.info("🏗️ SceneBeatNode constructor:", { sceneBeatId, key });
     }
 
     static getType(): string {
@@ -402,6 +420,7 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     }
 
     static importJSON(serializedNode: SerializedSceneBeatNode): SceneBeatNode {
+        logger.info("📥 SceneBeat importJSON:", serializedNode.sceneBeatId);
         return $createSceneBeatNode(serializedNode.sceneBeatId || "");
     }
 
@@ -418,8 +437,8 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     }
 
     setSceneBeatId(id: string): void {
-        const writable = this.getWritable();
-        writable.__sceneBeatId = id;
+        const self = this.getWritable();
+        self.__sceneBeatId = id;
     }
 
     createDOM(): HTMLElement {
@@ -450,5 +469,5 @@ export function $createSceneBeatNode(sceneBeatId: string = ""): SceneBeatNode {
 }
 
 export function $isSceneBeatNode(node: LexicalNode | null | undefined): node is SceneBeatNode {
-    return node instanceof SceneBeatNode;
+    return node?.getType() === "scene-beat";
 }
