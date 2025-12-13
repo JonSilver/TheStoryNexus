@@ -1,24 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey } from "lexical";
 import is from "@sindresorhus/is";
-import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
+import { useSceneBeatQuery, useCreateSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import type { POVType } from "../components/POVSettingsPopover";
-import { attemptPromise } from "@jfdi/attempt";
 import { logger } from "@/utils/logger";
 
-// Type guard for SceneBeatNode (uses type check to work with HMR)
 interface SceneBeatNodeType {
     getSceneBeatId(): string;
     setSceneBeatId(id: string): void;
     getType(): string;
 }
-
-const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType =>
-    is.plainObject(node) &&
-    "getType" in node &&
-    is.function((node as SceneBeatNodeType).getType) &&
-    (node as SceneBeatNodeType).getType() === "scene-beat";
 
 interface UseSceneBeatDataProps {
     editor: LexicalEditor;
@@ -40,14 +32,6 @@ interface UseSceneBeatDataResult {
     useCustomContext: boolean;
 }
 
-/**
- * Custom hook to handle scene beat data loading and initialization.
- * Consolidates all data loading into a single initialization point.
- * Replaces multiple scattered useEffect hooks with single async initialization.
- *
- * @param props - Configuration including editor, node key, and context IDs
- * @returns Scene beat data and loading state
- */
 export const useSceneBeatData = ({
     editor,
     nodeKey,
@@ -57,115 +41,134 @@ export const useSceneBeatData = ({
     defaultPovCharacter
 }: UseSceneBeatDataProps): UseSceneBeatDataResult => {
     const [sceneBeatId, setSceneBeatId] = useState<string>("");
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [initialCommand, setInitialCommand] = useState("");
-    const [initialPovType, setInitialPovType] = useState<POVType | undefined>(defaultPovType);
-    const [initialPovCharacter, setInitialPovCharacter] = useState<string | undefined>(defaultPovCharacter);
-    const [useMatchedChapter, setUseMatchedChapter] = useState(true);
-    const [useMatchedSceneBeat, setUseMatchedSceneBeat] = useState(false);
-    const [useCustomContext, setUseCustomContext] = useState(false);
+    const [needsCreate, setNeedsCreate] = useState(false);
 
+    const createMutation = useCreateSceneBeatMutation();
+
+    // Query only runs once we have a sceneBeatId
+    const {
+        data: sceneBeatData,
+        isSuccess,
+        isFetched,
+        isError
+    } = useSceneBeatQuery(sceneBeatId, {
+        enabled: !!sceneBeatId && !needsCreate
+    });
+
+    // Extract sceneBeatId from Lexical node on mount
+    const extractNodeId = useCallback(() => {
+        let nodeSceneBeatId = "";
+        editor.getEditorState().read(() => {
+            const node = $getNodeByKey(nodeKey);
+            const nodeType = node?.getType();
+            if (node && nodeType === "scene-beat") {
+                nodeSceneBeatId = (node as unknown as SceneBeatNodeType).getSceneBeatId();
+            }
+        });
+        return nodeSceneBeatId;
+    }, [editor, nodeKey]);
+
+    // Initial extraction and setup
     useEffect(() => {
-        const loadSceneBeat = async () => {
-            if (isLoaded) return;
+        if (sceneBeatId) return;
 
-            // Get sceneBeatId from the node
-            let nodeSceneBeatId = "";
-            editor.getEditorState().read(() => {
-                const node = $getNodeByKey(nodeKey);
-                const nodeType = node?.getType();
-                logger.info("🔑 $getNodeByKey result:", { nodeKey, nodeType, node });
+        const nodeSceneBeatId = extractNodeId();
 
-                // Direct type check (HMR-safe)
-                if (node && nodeType === "scene-beat") {
-                    nodeSceneBeatId = (node as SceneBeatNodeType).getSceneBeatId();
-                    logger.info("✅ Node has ID:", nodeSceneBeatId);
-                } else {
-                    logger.warn("❌ Node not found or wrong type", { nodeType });
-                }
-            });
+        if (nodeSceneBeatId) {
+            logger.info("🔑 Found existing sceneBeatId:", nodeSceneBeatId);
+            setSceneBeatId(nodeSceneBeatId);
+        } else {
+            logger.info("🆕 No sceneBeatId - will create new");
+            const newId = crypto.randomUUID();
 
-            // No ID = newly created node (via plugin).
-            // Create DB record now with the ID from the node
-            if (!nodeSceneBeatId) {
-                logger.warn("Scene beat node has no ID - creating one");
-                const newId = crypto.randomUUID();
-
-                // Set ID on node
-                editor.update(() => {
+            // Set ID on Lexical node
+            editor.update(
+                () => {
                     const node = $getNodeByKey(nodeKey);
                     if (node?.getType() === "scene-beat") {
-                        (node as SceneBeatNodeType).setSceneBeatId(newId);
+                        (node as unknown as SceneBeatNodeType).setSceneBeatId(newId);
                     }
-                }, { discrete: true });
-
-                // Create in DB
-                if (currentStoryId && currentChapterId) {
-                    await attemptPromise(async () =>
-                        sceneBeatService.createSceneBeat({
-                            id: newId,
-                            storyId: currentStoryId,
-                            chapterId: currentChapterId,
-                            command: "",
-                            povType: defaultPovType,
-                            povCharacter: defaultPovCharacter
-                        })
-                    );
-                }
-
-                setSceneBeatId(newId);
-                setIsLoaded(true);
-                return;
-            }
-
-            // ID exists - load from DB
-            logger.info("🔍 Loading SceneBeat:", nodeSceneBeatId);
-            const [loadError, data] = await attemptPromise(async () =>
-                sceneBeatService.getSceneBeat(nodeSceneBeatId)
+                },
+                { discrete: true }
             );
 
-            if (loadError || !data) {
-                // DB record doesn't exist - create it
-                if (currentStoryId && currentChapterId) {
-                    logger.info("🆕 Creating DB record for:", nodeSceneBeatId);
-                    const [createError] = await attemptPromise(async () =>
-                        sceneBeatService.createSceneBeat({
-                            id: nodeSceneBeatId,
-                            storyId: currentStoryId,
-                            chapterId: currentChapterId,
-                            command: "",
-                            povType: defaultPovType,
-                            povCharacter: defaultPovCharacter
-                        })
-                    );
-                    // Ignore duplicate key errors (React strict mode double-mount)
-                    if (createError && !createError.message?.includes("UNIQUE constraint")) {
-                        logger.error("❌ Failed to create DB record:", createError);
+            setSceneBeatId(newId);
+            setNeedsCreate(true);
+        }
+    }, [editor, nodeKey, sceneBeatId, extractNodeId]);
+
+    // Create DB record if needed
+    useEffect(() => {
+        if (!needsCreate || !sceneBeatId || !currentStoryId || !currentChapterId) return;
+
+        createMutation.mutate(
+            {
+                id: sceneBeatId,
+                storyId: currentStoryId,
+                chapterId: currentChapterId,
+                command: "",
+                povType: defaultPovType,
+                povCharacter: defaultPovCharacter
+            },
+            {
+                onSuccess: () => {
+                    setNeedsCreate(false);
+                    logger.info("✅ Created new scene beat:", sceneBeatId);
+                },
+                onError: err => {
+                    // Ignore UNIQUE constraint errors (React strict mode double-mount)
+                    if (!err.message?.includes("UNIQUE constraint")) {
+                        logger.error("❌ Failed to create scene beat:", err);
                     }
+                    setNeedsCreate(false);
                 }
-                setSceneBeatId(nodeSceneBeatId);
-                setIsLoaded(true);
-                return;
             }
+        );
+    }, [
+        needsCreate,
+        sceneBeatId,
+        currentStoryId,
+        currentChapterId,
+        defaultPovType,
+        defaultPovCharacter,
+        createMutation
+    ]);
 
-            // Data loaded successfully
-            logger.info("✅ Loaded command:", data.command);
-            setInitialCommand(data.command || "");
-            setInitialPovType(data.povType || defaultPovType);
-            setInitialPovCharacter(data.povCharacter || defaultPovCharacter);
+    // Handle case where query fails (record doesn't exist) - create it
+    useEffect(() => {
+        if (!isError || needsCreate || !sceneBeatId || !currentStoryId || !currentChapterId) return;
 
-            if (data.metadata) {
-                if (is.boolean(data.metadata.useMatchedChapter)) setUseMatchedChapter(data.metadata.useMatchedChapter);
-                if (is.boolean(data.metadata.useMatchedSceneBeat)) setUseMatchedSceneBeat(data.metadata.useMatchedSceneBeat);
-                if (is.boolean(data.metadata.useCustomContext)) setUseCustomContext(data.metadata.useCustomContext);
-            }
+        logger.info("🔄 DB record missing, creating:", sceneBeatId);
+        createMutation.mutate({
+            id: sceneBeatId,
+            storyId: currentStoryId,
+            chapterId: currentChapterId,
+            command: "",
+            povType: defaultPovType,
+            povCharacter: defaultPovCharacter
+        });
+    }, [
+        isError,
+        needsCreate,
+        sceneBeatId,
+        currentStoryId,
+        currentChapterId,
+        defaultPovType,
+        defaultPovCharacter,
+        createMutation
+    ]);
 
-            setSceneBeatId(nodeSceneBeatId);
-            setIsLoaded(true);
-        };
+    // Derive state from query data
+    const isLoaded = (isSuccess && !!sceneBeatData) || (isFetched && needsCreate === false);
 
-        loadSceneBeat();
-    }, [editor, nodeKey, currentStoryId, currentChapterId, defaultPovType, defaultPovCharacter, isLoaded]);
+    const initialCommand = sceneBeatData?.command || "";
+    const initialPovType = sceneBeatData?.povType || defaultPovType;
+    const initialPovCharacter = sceneBeatData?.povCharacter || defaultPovCharacter;
+
+    const metadata = sceneBeatData?.metadata;
+    const useMatchedChapter = is.boolean(metadata?.useMatchedChapter) ? metadata.useMatchedChapter : true;
+    const useMatchedSceneBeat = is.boolean(metadata?.useMatchedSceneBeat) ? metadata.useMatchedSceneBeat : false;
+    const useCustomContext = is.boolean(metadata?.useCustomContext) ? metadata.useCustomContext : false;
 
     return {
         sceneBeatId,

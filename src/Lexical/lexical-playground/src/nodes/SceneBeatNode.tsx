@@ -9,7 +9,7 @@ import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching
 import { buildTagMap } from "@/features/lorebook/utils/lorebookFilters";
 import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
-import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
+import { useDeleteSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { cn } from "@/lib/utils";
 import type { AllowedModel, LorebookEntry, Prompt } from "@/types/story";
@@ -17,7 +17,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $applyNodeReplacement, DecoratorNode } from "lexical";
 import { ChevronRight, Eye, Trash2 } from "lucide-react";
 import type { JSX } from "react";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { SceneBeatMatchedEntries } from "./SceneBeatMatchedEntries";
 
@@ -97,40 +97,42 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         defaultPovCharacter: currentChapter?.povCharacter
     });
 
-    // Context toggles state
+    // Context toggles state - synced from query on load
     const [useMatchedChapter, setUseMatchedChapter] = useState(initialUseMatchedChapter);
     const [useMatchedSceneBeat, setUseMatchedSceneBeat] = useState(initialUseMatchedSceneBeat);
     const [useCustomContext, setUseCustomContext] = useState(initialUseCustomContext);
 
-    // Update context toggles when data loads
+    // POV state - synced from query on load
+    const [povType, setPovType] = useState<POVType | undefined>(initialPovType);
+    const [povCharacter, setPovCharacter] = useState<string | undefined>(initialPovCharacter);
+
+    // Sync state when data loads from server
     useEffect(() => {
         if (isLoaded) {
             setUseMatchedChapter(initialUseMatchedChapter);
             setUseMatchedSceneBeat(initialUseMatchedSceneBeat);
             setUseCustomContext(initialUseCustomContext);
-        }
-    }, [isLoaded, initialUseMatchedChapter, initialUseMatchedSceneBeat, initialUseCustomContext]);
-
-    // POV state
-    const [povType, setPovType] = useState<POVType | undefined>(initialPovType);
-    const [povCharacter, setPovCharacter] = useState<string | undefined>(initialPovCharacter);
-
-    // Update POV when data loads
-    useEffect(() => {
-        if (isLoaded) {
             setPovType(initialPovType);
             setPovCharacter(initialPovCharacter);
         }
-    }, [isLoaded, initialPovType, initialPovCharacter]);
+    }, [
+        isLoaded,
+        initialUseMatchedChapter,
+        initialUseMatchedSceneBeat,
+        initialUseCustomContext,
+        initialPovType,
+        initialPovCharacter
+    ]);
 
     // Command history hook
-    const { command, handleCommandChange, handleKeyDown } = useCommandHistory(initialCommand);
+    const { command, handleCommandChange: baseHandleCommandChange, handleKeyDown } = useCommandHistory(initialCommand);
 
     // Lorebook matching (derived state using useMemo)
     const localMatchedEntries = useLorebookMatching(command, tagMap);
 
     // Database sync hooks
     const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
+    const deleteMutation = useDeleteSceneBeatMutation();
 
     // AI generation hook
     const {
@@ -149,29 +151,56 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     // Character entries (memoized for performance)
     const characterEntries = useMemo(() => entries.filter(entry => entry.category === "character"), [entries]);
 
-    // Save command changes (debounced via useSceneBeatSync)
-    useEffect(() => {
-        if (sceneBeatId && isLoaded) {
-            saveCommand(command);
-        }
-    }, [command, sceneBeatId, saveCommand, isLoaded]);
+    // Wrap command change handler to also save
+    const handleCommandChange = useCallback(
+        (newCommand: string) => {
+            baseHandleCommandChange(newCommand);
+            if (sceneBeatId && isLoaded) {
+                saveCommand(newCommand);
+            }
+        },
+        [baseHandleCommandChange, sceneBeatId, isLoaded, saveCommand]
+    );
 
-    // Save toggle changes (debounced via useSceneBeatSync)
-    useEffect(() => {
-        if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, useMatchedSceneBeat, useCustomContext);
-    }, [useMatchedChapter, useMatchedSceneBeat, useCustomContext, sceneBeatId, isLoaded, saveToggles]);
+    // Wrap toggle handlers to save on change
+    const handleMatchedChapterChange = useCallback(
+        (value: boolean) => {
+            setUseMatchedChapter(value);
+            if (sceneBeatId && isLoaded) saveToggles(value, useMatchedSceneBeat, useCustomContext);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedSceneBeat, useCustomContext]
+    );
+
+    const handleMatchedSceneBeatChange = useCallback(
+        (value: boolean) => {
+            setUseMatchedSceneBeat(value);
+            if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, value, useCustomContext);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useCustomContext]
+    );
+
+    const handleCustomContextChange = useCallback(
+        (value: boolean) => {
+            setUseCustomContext(value);
+            if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, useMatchedSceneBeat, value);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useMatchedSceneBeat]
+    );
 
     // Event handlers
-    const handleDelete = async () => {
+    const handleDelete = () => {
         flushCommand();
 
-        if (sceneBeatId) {
-            const { attemptPromise } = await import("@jfdi/attempt");
-            const [error] = await attemptPromise(async () => sceneBeatService.deleteSceneBeat(sceneBeatId));
-            if (error) {
-                logger.error("Error deleting SceneBeat from database:", error);
-                toast.error("Failed to delete scene beat from database");
-            }
+        if (sceneBeatId && currentChapterId) {
+            deleteMutation.mutate(
+                { id: sceneBeatId, chapterId: currentChapterId },
+                {
+                    onError: err => {
+                        logger.error("Error deleting SceneBeat from database:", err);
+                        toast.error("Failed to delete scene beat from database");
+                    }
+                }
+            );
         }
 
         editor.update(() => {
@@ -335,9 +364,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                         useMatchedChapter={useMatchedChapter}
                         useMatchedSceneBeat={useMatchedSceneBeat}
                         useCustomContext={useCustomContext}
-                        onMatchedChapterChange={setUseMatchedChapter}
-                        onMatchedSceneBeatChange={setUseMatchedSceneBeat}
-                        onCustomContextChange={setUseCustomContext}
+                        onMatchedChapterChange={handleMatchedChapterChange}
+                        onMatchedSceneBeatChange={handleMatchedSceneBeatChange}
+                        onCustomContextChange={handleCustomContextChange}
                     >
                         {useCustomContext && (
                             <LorebookMultiSelect
