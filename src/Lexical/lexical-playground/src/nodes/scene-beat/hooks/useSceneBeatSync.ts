@@ -111,12 +111,30 @@ export const useSceneBeatSync = (sceneBeatId: string) => {
         [sceneBeatId, updateMutation]
     );
 
+    const saveCollapsed = useCallback(
+        (collapsed: boolean) => {
+            if (!sceneBeatId) return;
+
+            const updatedSceneBeat: Partial<SceneBeat> = {
+                metadata: { collapsed }
+            };
+            updateMutation.mutate(
+                { id: sceneBeatId, data: updatedSceneBeat },
+                {
+                    onError: err => logger.error("Error saving collapsed state:", err)
+                }
+            );
+        },
+        [sceneBeatId, updateMutation]
+    );
+
     return {
         saveCommand,
         flushCommand: () => saveCommand.flush(),
         saveToggles,
         savePOVSettings,
         saveGeneratedContent,
-        saveAccepted
+        saveAccepted,
+        saveCollapsed
     };
 };

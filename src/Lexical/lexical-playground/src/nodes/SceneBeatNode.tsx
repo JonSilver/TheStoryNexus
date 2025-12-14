@@ -62,8 +62,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     const tagMap = useMemo(() => buildTagMap(entries), [entries]);
 
-    // UI state
-    const [collapsed, setCollapsed] = useState(false);
+    // UI state - collapsed uses local state only after user interaction
+    const [localCollapsed, setLocalCollapsed] = useState<boolean | null>(null);
+    const hasEditedCollapsedRef = useRef(false);
     const [showMatchedEntries, setShowMatchedEntries] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
@@ -87,7 +88,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         initialPovCharacter,
         useMatchedChapter: initialUseMatchedChapter,
         useMatchedSceneBeat: initialUseMatchedSceneBeat,
-        useCustomContext: initialUseCustomContext
+        useCustomContext: initialUseCustomContext,
+        collapsed: initialCollapsed
     } = useSceneBeatData({
         editor,
         nodeKey,
@@ -96,6 +98,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         defaultPovType: currentChapter?.povType || "Third Person Omniscient",
         defaultPovCharacter: currentChapter?.povCharacter
     });
+
+    // Derive collapsed: use local state after user interaction, otherwise use DB value
+    const collapsed = hasEditedCollapsedRef.current ? (localCollapsed ?? false) : initialCollapsed;
 
     // Track local edits - once user edits, we use local state; before that, use query data
     const hasEditedTogglesRef = useRef(false);
@@ -126,7 +131,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const localMatchedEntries = useLorebookMatching(command, tagMap);
 
     // Database sync hooks
-    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
+    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted, saveCollapsed } =
+        useSceneBeatSync(sceneBeatId);
     const deleteMutation = useDeleteSceneBeatMutation();
 
     // AI generation hook
@@ -300,7 +306,12 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
             <div className="flex items-center justify-between p-2">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setCollapsed(!collapsed)}
+                        onClick={() => {
+                            const newCollapsed = !collapsed;
+                            hasEditedCollapsedRef.current = true;
+                            setLocalCollapsed(newCollapsed);
+                            if (sceneBeatId && isLoaded) saveCollapsed(newCollapsed);
+                        }}
                         className="flex items-center justify-center hover:bg-accent/50 rounded-md w-6 h-6"
                         aria-label={collapsed ? "Expand scene beat" : "Collapse scene beat"}
                     >
@@ -343,8 +354,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                 </div>
             </div>
 
-            {/* Collapsible Content */}
-            {!collapsed && (
+            {/* Collapsible Content - wait for load to prevent flash */}
+            {isLoaded && !collapsed && (
                 <div className="space-y-4">
                     {/* Command textarea */}
                     <div className="p-4">

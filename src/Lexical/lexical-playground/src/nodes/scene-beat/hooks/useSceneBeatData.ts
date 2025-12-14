@@ -30,6 +30,7 @@ interface UseSceneBeatDataResult {
     useMatchedChapter: boolean;
     useMatchedSceneBeat: boolean;
     useCustomContext: boolean;
+    collapsed: boolean;
 }
 
 export const useSceneBeatData = ({
@@ -184,6 +185,7 @@ export const useSceneBeatData = ({
     const useMatchedChapter = is.boolean(metadata?.useMatchedChapter) ? metadata.useMatchedChapter : true;
     const useMatchedSceneBeat = is.boolean(metadata?.useMatchedSceneBeat) ? metadata.useMatchedSceneBeat : false;
     const useCustomContext = is.boolean(metadata?.useCustomContext) ? metadata.useCustomContext : false;
+    const collapsed = is.boolean(metadata?.collapsed) ? metadata.collapsed : false;
 
     return {
         sceneBeatId,
@@ -193,6 +195,7 @@ export const useSceneBeatData = ({
         initialPovCharacter,
         useMatchedChapter,
         useMatchedSceneBeat,
-        useCustomContext
+        useCustomContext,
+        collapsed
     };
 };
