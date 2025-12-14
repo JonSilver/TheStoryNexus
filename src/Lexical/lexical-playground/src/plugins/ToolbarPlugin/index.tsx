@@ -815,8 +815,7 @@ export default function ToolbarPlugin({
                                         editor.update(() => {
                                             const selection = $getSelection();
                                             if (selection) {
-                                                const newId = crypto.randomUUID();
-                                                const beatNode = $createSceneBeatNode(newId);
+                                                const beatNode = $createSceneBeatNode();
                                                 const paragraphNode = $createParagraphNode();
                                                 selection.insertNodes([beatNode, paragraphNode]);
                                             }
