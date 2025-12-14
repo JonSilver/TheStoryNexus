@@ -59,6 +59,7 @@ export function StoryProvider({ children }: { children: ReactNode }) {
 
     const setCurrentStoryId = (storyId: string | null) => {
         setCurrentStoryIdState(storyId);
+        setCurrentChapterId(null);
         // When story selected, switch to editor tool
         if (storyId && currentTool === "stories") {
             setCurrentToolState("editor");
