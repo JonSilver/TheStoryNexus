@@ -7,14 +7,12 @@ import { ChapterMatchingProvider } from "@/features/lorebook/hooks/useChapterMat
 import { LorebookProvider } from "@/features/lorebook/context/LorebookContext";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useNavigate } from "react-router";
 
 export const EditorTool = () => {
-    const { currentStoryId, currentChapterId, setCurrentChapterId } = useStoryContext();
+    const { currentStoryId, currentChapterId, setCurrentChapterId, setCurrentTool } = useStoryContext();
     const { data: story, isLoading: storyLoading } = useStoryQuery(currentStoryId || "");
     const { data: chapters = [], isLoading: chaptersLoading } = useChaptersByStoryQuery(currentStoryId || "");
     const { data: chapter, isLoading: chapterLoading } = useChapterQuery(currentChapterId || "");
-    const navigate = useNavigate();
 
     // Initialize currentChapterId to first chapter if not set
     useEffect(() => {
@@ -51,7 +49,7 @@ export const EditorTool = () => {
                 <div className="text-center space-y-4">
                     <p className="text-lg font-semibold">No Chapters Yet</p>
                     <p className="text-muted-foreground">Create your first chapter to start writing</p>
-                    <Button onClick={() => navigate(`/dashboard/${currentStoryId}/chapters`)}>
+                    <Button onClick={() => setCurrentTool("chapters")}>
                         <Plus className="h-4 w-4 mr-2" />
                         Create First Chapter
                     </Button>

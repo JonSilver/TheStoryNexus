@@ -24,9 +24,8 @@ export default function SceneBeatShortcutPlugin({ editor }: { editor: LexicalEdi
                 editor.update(() => {
                     const selection = $getSelection();
                     if (selection) {
-                        // Generate UUID for the new scene beat immediately
-                        const newId = crypto.randomUUID();
-                        const beatNode = $createSceneBeatNode(newId);
+                        // Create node without ID - hook will generate UUID and create DB record
+                        const beatNode = $createSceneBeatNode();
                         const paragraphNode = $createParagraphNode();
                         selection.insertNodes([beatNode, paragraphNode]);
                     }

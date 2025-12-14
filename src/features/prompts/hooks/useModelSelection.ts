@@ -1,8 +1,7 @@
-import { aiService } from "@/services/ai/AIService";
+import { useAvailableModels } from "@/features/ai/hooks/useAvailableModels";
+import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
 import type { AIModel, AllowedModel } from "@/types/story";
-import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 interface ModelsByProvider {
@@ -24,26 +23,10 @@ interface UseModelSelectionProps {
 }
 
 export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps) => {
-    const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
+    const { data: availableModels = [] } = useAvailableModels();
+    const { data: settings } = useAISettingsQuery();
     const [selectedModels, setSelectedModels] = useState<AllowedModel[]>(initialModels);
     const [modelSearch, setModelSearch] = useState("");
-
-    useEffect(() => {
-        const loadAvailableModels = async () => {
-            const [error, models] = await attemptPromise(async () => {
-                await aiService.initialize();
-                return await aiService.getAvailableModels();
-            });
-            if (error) {
-                logger.error("Error loading AI models:", error);
-                toast.error("Failed to load AI models");
-                return;
-            }
-            setAvailableModels(models);
-        };
-
-        loadAvailableModels();
-    }, []);
 
     const modelGroups = useMemo(() => {
         const groups: ModelsByProvider = {
@@ -109,61 +92,55 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
         setSelectedModels(selectedModels.filter(m => m.id !== modelId));
     };
 
-    const handleUseDefaultModels = async () => {
-        const [error] = await attemptPromise(async () => {
-            await aiService.initialize();
-            const defaultLocal = aiService.getDefaultLocalModel();
-            const defaultOpenAI = aiService.getDefaultOpenAIModel();
-            const defaultOpenRouter = aiService.getDefaultOpenRouterModel();
-
-            const defaultModels: AllowedModel[] = [];
-
-            if (defaultLocal) {
-                const localModel = availableModels.find(m => m.id === defaultLocal);
-                if (localModel) {
-                    defaultModels.push({
-                        id: localModel.id,
-                        name: localModel.name,
-                        provider: localModel.provider
-                    });
-                }
-            }
-
-            if (defaultOpenAI) {
-                const openaiModel = availableModels.find(m => m.id === defaultOpenAI);
-                if (openaiModel) {
-                    defaultModels.push({
-                        id: openaiModel.id,
-                        name: openaiModel.name,
-                        provider: openaiModel.provider
-                    });
-                }
-            }
-
-            if (defaultOpenRouter) {
-                const openrouterModel = availableModels.find(m => m.id === defaultOpenRouter);
-                if (openrouterModel) {
-                    defaultModels.push({
-                        id: openrouterModel.id,
-                        name: openrouterModel.name,
-                        provider: openrouterModel.provider
-                    });
-                }
-            }
-
-            if (defaultModels.length === 0) {
-                toast.error("No default models configured. Please set default models in AI Settings.");
-                return;
-            }
-
-            setSelectedModels(defaultModels);
-            toast.success(`Added ${defaultModels.length} default model(s)`);
-        });
-
-        if (error) {
-            logger.error("Error loading default models:", error);
-            toast.error("Failed to load default models");
+    const handleUseDefaultModels = () => {
+        if (!settings) {
+            toast.error("AI settings not loaded");
+            return;
         }
+
+        const defaultModels: AllowedModel[] = [];
+        const { defaultLocalModel, defaultOpenAIModel, defaultOpenRouterModel } = settings;
+
+        if (defaultLocalModel) {
+            const localModel = availableModels.find(m => m.id === defaultLocalModel);
+            if (localModel) {
+                defaultModels.push({
+                    id: localModel.id,
+                    name: localModel.name,
+                    provider: localModel.provider
+                });
+            }
+        }
+
+        if (defaultOpenAIModel) {
+            const openaiModel = availableModels.find(m => m.id === defaultOpenAIModel);
+            if (openaiModel) {
+                defaultModels.push({
+                    id: openaiModel.id,
+                    name: openaiModel.name,
+                    provider: openaiModel.provider
+                });
+            }
+        }
+
+        if (defaultOpenRouterModel) {
+            const openrouterModel = availableModels.find(m => m.id === defaultOpenRouterModel);
+            if (openrouterModel) {
+                defaultModels.push({
+                    id: openrouterModel.id,
+                    name: openrouterModel.name,
+                    provider: openrouterModel.provider
+                });
+            }
+        }
+
+        if (defaultModels.length === 0) {
+            toast.error("No default models configured. Please set default models in AI Settings.");
+            return;
+        }
+
+        setSelectedModels(defaultModels);
+        toast.success(`Added ${defaultModels.length} default model(s)`);
     };
 
     return {

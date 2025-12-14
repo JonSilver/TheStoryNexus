@@ -80,9 +80,7 @@ export function PromptSelectMenu({
                                         <History className="h-4 w-4 mr-2 text-muted-foreground" />
                                         <div className="flex flex-col">
                                             <span>{lastUsed.prompt.name}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {lastUsed.model.name}
-                                            </span>
+                                            <span className="text-xs text-muted-foreground">{lastUsed.model.name}</span>
                                         </div>
                                     </MenubarItem>
                                     <MenubarSeparator />

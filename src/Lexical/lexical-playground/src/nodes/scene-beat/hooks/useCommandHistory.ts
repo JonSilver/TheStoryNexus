@@ -75,18 +75,24 @@ export const useCommandHistory = (initialCommand: string): UseCommandHistoryResu
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Stop propagation for standard text editing shortcuts to prevent Lexical from handling them
+        if (e.ctrlKey && ["a", "c", "v", "x"].includes(e.key.toLowerCase())) {
+            e.stopPropagation();
+            return;
+        }
+
         // Check for Ctrl+Z (Undo)
         if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
-            e.preventDefault(); // Prevent default browser undo
-            e.stopPropagation(); // Stop event from reaching Lexical editor
+            e.preventDefault();
+            e.stopPropagation();
             handleUndo();
             return;
         }
 
         // Check for Ctrl+Shift+Z or Ctrl+Y (Redo)
         if ((e.ctrlKey && e.shiftKey && e.key === "z") || (e.ctrlKey && e.key === "y")) {
-            e.preventDefault(); // Prevent default browser redo
-            e.stopPropagation(); // Stop event from reaching Lexical editor
+            e.preventDefault();
+            e.stopPropagation();
             handleRedo();
             return;
         }

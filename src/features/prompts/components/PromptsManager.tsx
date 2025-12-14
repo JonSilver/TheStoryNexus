@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { promptsApi } from "@/services/api/client";
 import type { Prompt } from "@/types/story";
 import { downloadJSONDataURI, generateExportFilename } from "@/utils/jsonExportUtils";
-import { logger } from "@/utils/logger";
 import { toastCRUD } from "@/utils/toastUtils";
-import { attemptPromise } from "@jfdi/attempt";
 import { Plus, Upload } from "lucide-react";
 import { useState } from "react";
+import { usePromptsQuery } from "../hooks/usePromptsQuery";
 import { PromptForm } from "./PromptForm";
 import { PromptsList } from "./PromptList";
 
@@ -15,6 +13,8 @@ export function PromptsManager() {
     const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(undefined);
     const [isCreating, setIsCreating] = useState(false);
     const [showMobileForm, setShowMobileForm] = useState(false);
+
+    const { data: allPrompts = [] } = usePromptsQuery({ includeSystem: true });
 
     const handleNewPrompt = () => {
         setSelectedPrompt(undefined);
@@ -39,15 +39,7 @@ export function PromptsManager() {
         }
     };
 
-    const handleExportPrompts = async () => {
-        const [error, allPrompts] = await attemptPromise(() => promptsApi.getAll({ includeSystem: true }));
-
-        if (error) {
-            logger.error("Export failed", error);
-            toastCRUD.exportError("prompts", error);
-            return;
-        }
-
+    const handleExportPrompts = () => {
         // Only export non-system prompts
         const prompts = allPrompts.filter(p => !p.isSystem);
 
@@ -77,18 +69,7 @@ export function PromptsManager() {
                             <Plus className="h-4 w-4" />
                             New Prompt
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={async () => {
-                                const [error] = await attemptPromise(async () => handleExportPrompts());
-                                if (error) {
-                                    logger.error("Export failed", error);
-                                    toastCRUD.exportError("prompts", error);
-                                }
-                            }}
-                            title="Export prompts"
-                        >
+                        <Button variant="outline" size="icon" onClick={handleExportPrompts} title="Export prompts">
                             <Upload className="h-4 w-4" />
                         </Button>
                     </div>

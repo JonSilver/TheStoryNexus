@@ -9,7 +9,7 @@ import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching
 import { buildTagMap } from "@/features/lorebook/utils/lorebookFilters";
 import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
-import { sceneBeatService } from "@/features/scenebeats/services/sceneBeatService";
+import { useDeleteSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { cn } from "@/lib/utils";
 import type { AllowedModel, LorebookEntry, Prompt } from "@/types/story";
@@ -17,7 +17,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $applyNodeReplacement, DecoratorNode } from "lexical";
 import { ChevronRight, Eye, Trash2 } from "lucide-react";
 import type { JSX } from "react";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { SceneBeatMatchedEntries } from "./SceneBeatMatchedEntries";
 
@@ -62,8 +62,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     const tagMap = useMemo(() => buildTagMap(entries), [entries]);
 
-    // UI state
-    const [collapsed, setCollapsed] = useState(false);
+    // UI state - collapsed uses local state only after user interaction
+    const [localCollapsed, setLocalCollapsed] = useState<boolean | null>(null);
+    const hasEditedCollapsedRef = useRef(false);
     const [showMatchedEntries, setShowMatchedEntries] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>(lastUsed?.prompt);
@@ -87,7 +88,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         initialPovCharacter,
         useMatchedChapter: initialUseMatchedChapter,
         useMatchedSceneBeat: initialUseMatchedSceneBeat,
-        useCustomContext: initialUseCustomContext
+        useCustomContext: initialUseCustomContext,
+        collapsed: initialCollapsed
     } = useSceneBeatData({
         editor,
         nodeKey,
@@ -97,40 +99,41 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
         defaultPovCharacter: currentChapter?.povCharacter
     });
 
-    // Context toggles state
-    const [useMatchedChapter, setUseMatchedChapter] = useState(initialUseMatchedChapter);
-    const [useMatchedSceneBeat, setUseMatchedSceneBeat] = useState(initialUseMatchedSceneBeat);
-    const [useCustomContext, setUseCustomContext] = useState(initialUseCustomContext);
+    // Derive collapsed: use local state after user interaction, otherwise use DB value
+    const collapsed = hasEditedCollapsedRef.current ? (localCollapsed ?? false) : initialCollapsed;
 
-    // Update context toggles when data loads
-    useEffect(() => {
-        if (isLoaded) {
-            setUseMatchedChapter(initialUseMatchedChapter);
-            setUseMatchedSceneBeat(initialUseMatchedSceneBeat);
-            setUseCustomContext(initialUseCustomContext);
-        }
-    }, [isLoaded, initialUseMatchedChapter, initialUseMatchedSceneBeat, initialUseCustomContext]);
+    // Track local edits - once user edits, we use local state; before that, use query data
+    const hasEditedTogglesRef = useRef(false);
+    const hasEditedPovRef = useRef(false);
 
-    // POV state
-    const [povType, setPovType] = useState<POVType | undefined>(initialPovType);
-    const [povCharacter, setPovCharacter] = useState<string | undefined>(initialPovCharacter);
+    // Context toggles - local state for edits, but initialise from query
+    const [localMatchedChapter, setLocalMatchedChapter] = useState<boolean | null>(null);
+    const [localMatchedSceneBeat, setLocalMatchedSceneBeat] = useState<boolean | null>(null);
+    const [localCustomContext, setLocalCustomContext] = useState<boolean | null>(null);
 
-    // Update POV when data loads
-    useEffect(() => {
-        if (isLoaded) {
-            setPovType(initialPovType);
-            setPovCharacter(initialPovCharacter);
-        }
-    }, [isLoaded, initialPovType, initialPovCharacter]);
+    // POV state - local state for edits, but initialise from query
+    const [localPovType, setLocalPovType] = useState<POVType | undefined>(undefined);
+    const [localPovCharacter, setLocalPovCharacter] = useState<string | undefined>(undefined);
+
+    // Derive actual values: use local if edited, otherwise query data
+    const useMatchedChapter = hasEditedTogglesRef.current ? (localMatchedChapter ?? true) : initialUseMatchedChapter;
+    const useMatchedSceneBeat = hasEditedTogglesRef.current
+        ? (localMatchedSceneBeat ?? false)
+        : initialUseMatchedSceneBeat;
+    const useCustomContext = hasEditedTogglesRef.current ? (localCustomContext ?? false) : initialUseCustomContext;
+    const povType = hasEditedPovRef.current ? localPovType : initialPovType;
+    const povCharacter = hasEditedPovRef.current ? localPovCharacter : initialPovCharacter;
 
     // Command history hook
-    const { command, handleCommandChange, handleKeyDown } = useCommandHistory(initialCommand);
+    const { command, handleCommandChange: baseHandleCommandChange, handleKeyDown } = useCommandHistory(initialCommand);
 
     // Lorebook matching (derived state using useMemo)
     const localMatchedEntries = useLorebookMatching(command, tagMap);
 
     // Database sync hooks
-    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted } = useSceneBeatSync(sceneBeatId);
+    const { saveCommand, flushCommand, saveToggles, savePOVSettings, saveAccepted, saveCollapsed } =
+        useSceneBeatSync(sceneBeatId);
+    const deleteMutation = useDeleteSceneBeatMutation();
 
     // AI generation hook
     const {
@@ -149,29 +152,59 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     // Character entries (memoized for performance)
     const characterEntries = useMemo(() => entries.filter(entry => entry.category === "character"), [entries]);
 
-    // Save command changes (debounced via useSceneBeatSync)
-    useEffect(() => {
-        if (sceneBeatId && isLoaded) {
-            saveCommand(command);
-        }
-    }, [command, sceneBeatId, saveCommand, isLoaded]);
+    // Wrap command change handler to also save
+    const handleCommandChange = useCallback(
+        (newCommand: string) => {
+            baseHandleCommandChange(newCommand);
+            if (sceneBeatId && isLoaded) {
+                saveCommand(newCommand);
+            }
+        },
+        [baseHandleCommandChange, sceneBeatId, isLoaded, saveCommand]
+    );
 
-    // Save toggle changes (debounced via useSceneBeatSync)
-    useEffect(() => {
-        if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, useMatchedSceneBeat, useCustomContext);
-    }, [useMatchedChapter, useMatchedSceneBeat, useCustomContext, sceneBeatId, isLoaded, saveToggles]);
+    // Wrap toggle handlers to set local state and save
+    const handleMatchedChapterChange = useCallback(
+        (value: boolean) => {
+            hasEditedTogglesRef.current = true;
+            setLocalMatchedChapter(value);
+            if (sceneBeatId && isLoaded) saveToggles(value, useMatchedSceneBeat, useCustomContext);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedSceneBeat, useCustomContext]
+    );
+
+    const handleMatchedSceneBeatChange = useCallback(
+        (value: boolean) => {
+            hasEditedTogglesRef.current = true;
+            setLocalMatchedSceneBeat(value);
+            if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, value, useCustomContext);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useCustomContext]
+    );
+
+    const handleCustomContextChange = useCallback(
+        (value: boolean) => {
+            hasEditedTogglesRef.current = true;
+            setLocalCustomContext(value);
+            if (sceneBeatId && isLoaded) saveToggles(useMatchedChapter, useMatchedSceneBeat, value);
+        },
+        [sceneBeatId, isLoaded, saveToggles, useMatchedChapter, useMatchedSceneBeat]
+    );
 
     // Event handlers
-    const handleDelete = async () => {
+    const handleDelete = () => {
         flushCommand();
 
-        if (sceneBeatId) {
-            const { attemptPromise } = await import("@jfdi/attempt");
-            const [error] = await attemptPromise(async () => sceneBeatService.deleteSceneBeat(sceneBeatId));
-            if (error) {
-                logger.error("Error deleting SceneBeat from database:", error);
-                toast.error("Failed to delete scene beat from database");
-            }
+        if (sceneBeatId && currentChapterId) {
+            deleteMutation.mutate(
+                { id: sceneBeatId, chapterId: currentChapterId },
+                {
+                    onError: err => {
+                        logger.error("Error deleting SceneBeat from database:", err);
+                        toast.error("Failed to delete scene beat from database");
+                    }
+                }
+            );
         }
 
         editor.update(() => {
@@ -187,8 +220,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     };
 
     const handlePovSave = async (newPovType: POVType | undefined, newPovCharacter: string | undefined) => {
-        setPovType(newPovType);
-        setPovCharacter(newPovCharacter);
+        hasEditedPovRef.current = true;
+        setLocalPovType(newPovType);
+        setLocalPovCharacter(newPovCharacter);
         await savePOVSettings(newPovType, newPovCharacter);
         toast.success("POV settings saved");
     };
@@ -272,7 +306,12 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
             <div className="flex items-center justify-between p-2">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setCollapsed(!collapsed)}
+                        onClick={() => {
+                            const newCollapsed = !collapsed;
+                            hasEditedCollapsedRef.current = true;
+                            setLocalCollapsed(newCollapsed);
+                            if (sceneBeatId && isLoaded) saveCollapsed(newCollapsed);
+                        }}
                         className="flex items-center justify-center hover:bg-accent/50 rounded-md w-6 h-6"
                         aria-label={collapsed ? "Expand scene beat" : "Collapse scene beat"}
                     >
@@ -315,8 +354,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                 </div>
             </div>
 
-            {/* Collapsible Content */}
-            {!collapsed && (
+            {/* Collapsible Content - wait for load to prevent flash */}
+            {isLoaded && !collapsed && (
                 <div className="space-y-4">
                     {/* Command textarea */}
                     <div className="p-4">
@@ -335,9 +374,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                         useMatchedChapter={useMatchedChapter}
                         useMatchedSceneBeat={useMatchedSceneBeat}
                         useCustomContext={useCustomContext}
-                        onMatchedChapterChange={setUseMatchedChapter}
-                        onMatchedSceneBeatChange={setUseMatchedSceneBeat}
-                        onCustomContextChange={setUseCustomContext}
+                        onMatchedChapterChange={handleMatchedChapterChange}
+                        onMatchedSceneBeatChange={handleMatchedSceneBeatChange}
+                        onCustomContextChange={handleCustomContextChange}
                     >
                         {useCustomContext && (
                             <LorebookMultiSelect

@@ -5,44 +5,122 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_URLS } from "@/constants/urls";
-import { useAIProviderState } from "@/features/ai/hooks/useAIProviderState";
+import {
+    useAISettingsQuery,
+    useDeleteDemoDataMutation,
+    useRefreshModelsMutation,
+    useUpdateAPIKeyMutation,
+    useUpdateDefaultModelMutation,
+    useUpdateLocalApiUrlMutation
+} from "@/features/ai/hooks/useAISettingsQuery";
 import { cn } from "@/lib/utils";
-import { adminApi } from "@/services/api/client";
-import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
-import { useQueryClient } from "@tanstack/react-query";
+import type { AIModel, AIProvider } from "@/types/story";
 import { AlertTriangle, ArrowLeft, ChevronRight, Loader2, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+
+type ProviderCardProps = {
+    provider: AIProvider;
+    title: string;
+    keyLabel: string;
+    keyPlaceholder: string;
+    storedKey: string | undefined;
+    models: AIModel[];
+    defaultModel: string | undefined;
+    isKeyMutating: boolean;
+    isRefreshing: boolean;
+    onSaveKey: (key: string) => void;
+    onRefresh: () => void;
+    onDefaultModelChange: (modelId: string | undefined) => void;
+};
+
+const ProviderCard = ({
+    title,
+    keyLabel,
+    keyPlaceholder,
+    storedKey,
+    models,
+    defaultModel,
+    isKeyMutating,
+    isRefreshing,
+    onSaveKey,
+    onRefresh,
+    onDefaultModelChange
+}: ProviderCardProps) => {
+    const [inputKey, setInputKey] = useState(storedKey || "");
+    const isPending = isKeyMutating || isRefreshing;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                    {title}
+                    <Button variant="outline" size="sm" onClick={onRefresh} disabled={isPending || !storedKey?.trim()}>
+                        {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
+                    </Button>
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                    <Label>{keyLabel}</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            type="password"
+                            placeholder={keyPlaceholder}
+                            value={inputKey}
+                            onChange={e => setInputKey(e.target.value)}
+                        />
+                        <Button onClick={() => onSaveKey(inputKey)} disabled={isPending || !inputKey.trim()}>
+                            {isKeyMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                        </Button>
+                    </div>
+                </div>
+
+                {models.length > 0 && (
+                    <div className="space-y-2">
+                        <Label>Default Model</Label>
+                        <Select
+                            value={defaultModel || "none"}
+                            onValueChange={value => onDefaultModelChange(value === "none" ? undefined : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select default model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {models.map(model => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        {model.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Select a default model for {title} generation</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function SettingsPage() {
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
-    const {
-        providers,
-        isLoading,
-        initialize,
-        updateApiKey,
-        updateLocalApiUrl,
-        saveApiKey,
-        refreshModels,
-        saveLocalApiUrl,
-        updateDefaultModel
-    } = useAIProviderState();
-
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-    const [isDeletingDemo, setIsDeletingDemo] = useState(false);
+    const [localApiUrlInput, setLocalApiUrlInput] = useState("");
 
-    useEffect(() => {
-        initialize();
-    }, [initialize]);
+    const { data: settings, isLoading: isLoadingSettings } = useAISettingsQuery();
+
+    const updateKeyMutation = useUpdateAPIKeyMutation();
+    const updateLocalUrlMutation = useUpdateLocalApiUrlMutation();
+    const updateDefaultModelMutation = useUpdateDefaultModelMutation();
+    const refreshModelsMutation = useRefreshModelsMutation();
+    const deleteDemoMutation = useDeleteDemoDataMutation();
 
     const toggleSection = (section: string) => {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    const handleDeleteDemoData = async () => {
+    const handleDeleteDemoData = () => {
         if (
             !confirm(
                 "Are you sure you want to delete all demo data? This will remove the demo story, chapters, and lorebook entries. This action cannot be undone."
@@ -50,24 +128,23 @@ export default function SettingsPage() {
         ) {
             return;
         }
-
-        setIsDeletingDemo(true);
-        const [error, result] = await attemptPromise(async () => await adminApi.deleteDemoData());
-
-        if (error) {
-            logger.error("Error deleting demo data:", error);
-            toast.error("Failed to delete demo data");
-        } else {
-            const { deleted } = result;
-            toast.success(
-                `Demo data deleted: ${deleted.stories} ${deleted.stories === 1 ? "story" : "stories"}, ${deleted.lorebookEntries} lorebook ${deleted.lorebookEntries === 1 ? "entry" : "entries"}`
-            );
-            // Invalidate all queries to refresh the UI
-            queryClient.invalidateQueries();
-        }
-
-        setIsDeletingDemo(false);
+        deleteDemoMutation.mutate();
     };
+
+    if (isLoadingSettings) {
+        return (
+            <div className="p-8 flex justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
+
+    const allModels = settings?.availableModels || [];
+    const openaiModels = allModels.filter(m => m.provider === "openai");
+    const openrouterModels = allModels.filter(m => m.provider === "openrouter");
+    const localModels = allModels.filter(m => m.provider === "local");
+
+    const currentLocalUrl = localApiUrlInput || settings?.localApiUrl || "";
 
     return (
         <div className="p-8">
@@ -81,137 +158,39 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-6">
-                    {/* OpenAI Section */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                OpenAI Configuration
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => refreshModels("openai")}
-                                    disabled={isLoading || !providers.openai.apiKey.trim()}
-                                >
-                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
-                                </Button>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="openai-key">OpenAI API Key</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="openai-key"
-                                        type="password"
-                                        placeholder="Enter your OpenAI API key"
-                                        value={providers.openai.apiKey}
-                                        onChange={e => updateApiKey("openai", e.target.value)}
-                                    />
-                                    <Button
-                                        onClick={() => saveApiKey("openai", providers.openai.apiKey)}
-                                        disabled={isLoading || !providers.openai.apiKey.trim()}
-                                    >
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                                    </Button>
-                                </div>
-                            </div>
+                    <ProviderCard
+                        provider="openai"
+                        title="OpenAI Configuration"
+                        keyLabel="OpenAI API Key"
+                        keyPlaceholder="Enter your OpenAI API key"
+                        storedKey={settings?.openaiKey}
+                        models={openaiModels}
+                        defaultModel={settings?.defaultOpenAIModel}
+                        isKeyMutating={updateKeyMutation.isPending}
+                        isRefreshing={refreshModelsMutation.isPending}
+                        onSaveKey={key => updateKeyMutation.mutate({ provider: "openai", key })}
+                        onRefresh={() => refreshModelsMutation.mutate("openai")}
+                        onDefaultModelChange={modelId =>
+                            updateDefaultModelMutation.mutate({ provider: "openai", modelId })
+                        }
+                    />
 
-                            {providers.openai.models.length > 0 && (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="openai-default">Default Model</Label>
-                                        <Select
-                                            value={providers.openai.defaultModel || "none"}
-                                            onValueChange={value =>
-                                                updateDefaultModel("openai", value === "none" ? undefined : value)
-                                            }
-                                        >
-                                            <SelectTrigger id="openai-default">
-                                                <SelectValue placeholder="Select default model" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">None</SelectItem>
-                                                {providers.openai.models.map(model => (
-                                                    <SelectItem key={model.id} value={model.id}>
-                                                        {model.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">
-                                            Select a default model for OpenAI generation
-                                        </p>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* OpenRouter Section */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                OpenRouter Configuration
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => refreshModels("openrouter")}
-                                    disabled={isLoading || !providers.openrouter.apiKey.trim()}
-                                >
-                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
-                                </Button>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="openrouter-key">OpenRouter API Key</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="openrouter-key"
-                                        type="password"
-                                        placeholder="Enter your OpenRouter API key"
-                                        value={providers.openrouter.apiKey}
-                                        onChange={e => updateApiKey("openrouter", e.target.value)}
-                                    />
-                                    <Button
-                                        onClick={() => saveApiKey("openrouter", providers.openrouter.apiKey)}
-                                        disabled={isLoading || !providers.openrouter.apiKey.trim()}
-                                    >
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {providers.openrouter.models.length > 0 && (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="openrouter-default">Default Model</Label>
-                                        <Select
-                                            value={providers.openrouter.defaultModel || "none"}
-                                            onValueChange={value =>
-                                                updateDefaultModel("openrouter", value === "none" ? undefined : value)
-                                            }
-                                        >
-                                            <SelectTrigger id="openrouter-default">
-                                                <SelectValue placeholder="Select default model" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">None</SelectItem>
-                                                {providers.openrouter.models.map(model => (
-                                                    <SelectItem key={model.id} value={model.id}>
-                                                        {model.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">
-                                            Select a default model for OpenRouter generation
-                                        </p>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ProviderCard
+                        provider="openrouter"
+                        title="OpenRouter Configuration"
+                        keyLabel="OpenRouter API Key"
+                        keyPlaceholder="Enter your OpenRouter API key"
+                        storedKey={settings?.openrouterKey}
+                        models={openrouterModels}
+                        defaultModel={settings?.defaultOpenRouterModel}
+                        isKeyMutating={updateKeyMutation.isPending}
+                        isRefreshing={refreshModelsMutation.isPending}
+                        onSaveKey={key => updateKeyMutation.mutate({ provider: "openrouter", key })}
+                        onRefresh={() => refreshModelsMutation.mutate("openrouter")}
+                        onDefaultModelChange={modelId =>
+                            updateDefaultModelMutation.mutate({ provider: "openrouter", modelId })
+                        }
+                    />
 
                     {/* Local Models Section */}
                     <Card>
@@ -221,24 +200,20 @@ export default function SettingsPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => refreshModels("local")}
-                                    disabled={isLoading}
+                                    onClick={() => refreshModelsMutation.mutate("local")}
+                                    disabled={refreshModelsMutation.isPending}
                                 >
-                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
+                                    {refreshModelsMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Refresh Models"
+                                    )}
                                 </Button>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Models from LM Studio</span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => saveApiKey("local", "")}
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
-                                </Button>
                             </div>
 
                             <Collapsible
@@ -262,14 +237,18 @@ export default function SettingsPage() {
                                                 id="local-api-url"
                                                 type="text"
                                                 placeholder={API_URLS.LOCAL_AI_DEFAULT}
-                                                value={providers.local.apiUrl}
-                                                onChange={e => updateLocalApiUrl(e.target.value)}
+                                                value={currentLocalUrl}
+                                                onChange={e => setLocalApiUrlInput(e.target.value)}
                                             />
                                             <Button
-                                                onClick={() => saveLocalApiUrl(providers.local.apiUrl)}
-                                                disabled={isLoading || !providers.local.apiUrl.trim()}
+                                                onClick={() => updateLocalUrlMutation.mutate(currentLocalUrl)}
+                                                disabled={updateLocalUrlMutation.isPending || !currentLocalUrl.trim()}
                                             >
-                                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                                                {updateLocalUrlMutation.isPending ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    "Save"
+                                                )}
                                             </Button>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
@@ -279,13 +258,16 @@ export default function SettingsPage() {
                                 </CollapsibleContent>
                             </Collapsible>
 
-                            {providers.local.models.length > 0 && (
+                            {localModels.length > 0 && (
                                 <div className="space-y-2">
                                     <Label htmlFor="local-default">Default Model</Label>
                                     <Select
-                                        value={providers.local.defaultModel || "none"}
+                                        value={settings?.defaultLocalModel || "none"}
                                         onValueChange={value =>
-                                            updateDefaultModel("local", value === "none" ? undefined : value)
+                                            updateDefaultModelMutation.mutate({
+                                                provider: "local",
+                                                modelId: value === "none" ? undefined : value
+                                            })
                                         }
                                     >
                                         <SelectTrigger id="local-default">
@@ -293,7 +275,7 @@ export default function SettingsPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">None</SelectItem>
-                                            {providers.local.models.map(model => (
+                                            {localModels.map(model => (
                                                 <SelectItem key={model.id} value={model.id}>
                                                     {model.name}
                                                 </SelectItem>
@@ -329,11 +311,11 @@ export default function SettingsPage() {
                                 <Label>Delete Demo Content</Label>
                                 <Button
                                     onClick={handleDeleteDemoData}
-                                    disabled={isDeletingDemo}
+                                    disabled={deleteDemoMutation.isPending}
                                     className="w-full"
                                     variant="destructive"
                                 >
-                                    {isDeletingDemo ? (
+                                    {deleteDemoMutation.isPending ? (
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
                                         <Trash2 className="h-4 w-4 mr-2" />

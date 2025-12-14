@@ -4,13 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { AlertCircle, RefreshCcw } from "lucide-react";
-import { ReactNode } from "react";
-import PlaygroundApp from "./App"; // using the lexical playground App component
-import "./index.css"; // Ensure the CSS is imported
-
-interface EmbeddedPlaygroundProps {
-    maximizeButton?: ReactNode;
-}
+import PlaygroundApp from "./App";
+import "./index.css";
 
 const EditorErrorFallback = (error: Error, resetError: () => void) => (
     <div className="flex items-center justify-center h-full p-4">
@@ -33,7 +28,7 @@ const EditorErrorFallback = (error: Error, resetError: () => void) => (
     </div>
 );
 
-export default function EmbeddedPlayground({ maximizeButton }: EmbeddedPlaygroundProps) {
+export default function EmbeddedPlayground() {
     const { currentChapterId } = useStoryContext();
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
 
@@ -47,15 +42,9 @@ export default function EmbeddedPlayground({ maximizeButton }: EmbeddedPlaygroun
 
     return (
         <div className="h-full flex flex-col">
-            <div className="p-2 border-b flex justify-between items-center">
-                <h2 className="text-lg font-semibold">{currentChapter.title}</h2>
-                {maximizeButton}
-            </div>
-            <div className="flex-1 overflow-auto">
-                <ErrorBoundary fallback={EditorErrorFallback} resetKeys={[currentChapterId]}>
-                    <PlaygroundApp />
-                </ErrorBoundary>
-            </div>
+            <ErrorBoundary fallback={EditorErrorFallback} resetKeys={[currentChapterId]}>
+                <PlaygroundApp />
+            </ErrorBoundary>
         </div>
     );
 }

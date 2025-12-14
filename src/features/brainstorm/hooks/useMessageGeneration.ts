@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { attemptPromise } from "@jfdi/attempt";
 import { logger } from "@/utils/logger";
 import { randomUUID } from "@/utils/crypto";
-import { aiService } from "@/services/ai/AIService";
 import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
+import { useStreamingGeneration } from "@/features/ai/hooks/useStreamingGeneration";
 import { useCreateBrainstormMutation, useUpdateBrainstormMutation } from "./useBrainstormQuery";
 import type { AIChat, AllowedModel, ChatMessage, Prompt, PromptParserConfig } from "@/types/story";
 
@@ -34,31 +34,32 @@ export const useMessageGeneration = ({
     onChatUpdate,
     createPromptConfig
 }: UseMessageGenerationParams): UseMessageGenerationReturn => {
-    const [isGenerating, setIsGenerating] = useState(false);
     const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
-    const [streamingContent, setStreamingContent] = useState("");
     const [pendingUserMessage, setPendingUserMessage] = useState<ChatMessage | null>(null);
 
     const { generateWithPrompt } = useGenerateWithPrompt();
+    const { isStreaming, streamedText, processStream, abort: abortStream, reset } = useStreamingGeneration();
     const createMutation = useCreateBrainstormMutation();
     const updateMutation = useUpdateBrainstormMutation();
 
+    const generationContextRef = useRef<{
+        userMessage: ChatMessage;
+        assistantMessageId: string;
+        chatId: string;
+    } | null>(null);
+
     const abort = useCallback(() => {
-        aiService.abortStream();
-        setIsGenerating(false);
+        abortStream();
         setStreamingMessageId(null);
         setPendingUserMessage(null);
-    }, []);
+        generationContextRef.current = null;
+    }, [abortStream]);
 
     const generate = useCallback(
         async (input: string) => {
-            if (!input.trim() || !selectedPrompt || !selectedModel || isGenerating) return;
+            if (!input.trim() || !selectedPrompt || !selectedModel || isStreaming) return;
 
             const [error] = await attemptPromise(async () => {
-                if (!selectedPrompt || !selectedModel) {
-                    throw new Error("Prompt or model not selected");
-                }
-
                 const userMessage: ChatMessage = {
                     id: randomUUID(),
                     role: "user",
@@ -93,93 +94,70 @@ export const useMessageGeneration = ({
                 const config = createPromptConfig(selectedPrompt);
                 const response = await generateWithPrompt(config, selectedModel);
 
-                if (!response.ok && response.status !== 204) {
-                    throw new Error("Failed to generate response");
-                }
-
                 if (response.status === 204) {
                     logger.info("Generation was aborted.");
-                    setIsGenerating(false);
+                    reset();
                     return;
                 }
 
-                const assistantMessage: ChatMessage = {
-                    id: randomUUID(),
-                    role: "assistant",
-                    content: "",
-                    timestamp: new Date()
+                const assistantMessageId = randomUUID();
+                setStreamingMessageId(assistantMessageId);
+
+                generationContextRef.current = {
+                    userMessage,
+                    assistantMessageId,
+                    chatId: chatIdToUse
                 };
 
-                setIsGenerating(true);
-                setStreamingMessageId(assistantMessage.id);
-                setStreamingContent("");
+                const fullResponse = await processStream(response);
 
-                const accumulateResponse = (() => {
-                    const chunks: string[] = [];
-                    return {
-                        add: (token: string) => chunks.push(token),
-                        getContent: () => chunks.join("")
+                const ctx = generationContextRef.current;
+                if (ctx && fullResponse) {
+                    const assistantMessage: ChatMessage = {
+                        id: ctx.assistantMessageId,
+                        role: "assistant",
+                        content: fullResponse,
+                        timestamp: new Date()
                     };
-                })();
 
-                await aiService.processStreamedResponse(
-                    response,
-                    token => {
-                        accumulateResponse.add(token);
-                        setStreamingContent(accumulateResponse.getContent());
-                    },
-                    () => {
-                        const fullResponse = accumulateResponse.getContent();
+                    const updatedMessages = [...selectedChat.messages, ctx.userMessage, assistantMessage];
 
-                        setIsGenerating(false);
-                        setStreamingMessageId(null);
-                        setStreamingContent("");
-                        setPendingUserMessage(null);
-
-                        const updatedMessages = [
-                            ...selectedChat.messages,
-                            userMessage,
-                            { ...assistantMessage, content: fullResponse }
-                        ];
-
-                        updateMutation.mutate(
-                            {
-                                id: chatIdToUse,
-                                data: { messages: updatedMessages }
-                            },
-                            {
-                                onSuccess: updatedChat => {
-                                    onChatUpdate(updatedChat);
-                                }
+                    updateMutation.mutate(
+                        {
+                            id: ctx.chatId,
+                            data: { messages: updatedMessages }
+                        },
+                        {
+                            onSuccess: updatedChat => {
+                                onChatUpdate(updatedChat);
                             }
-                        );
-                    },
-                    streamError => {
-                        logger.error("Streaming error:", streamError);
-                        toast.error("Failed to stream response");
-                        setIsGenerating(false);
-                        setStreamingMessageId(null);
-                        setPendingUserMessage(null);
-                    }
-                );
+                        }
+                    );
+                }
+
+                setStreamingMessageId(null);
+                setPendingUserMessage(null);
+                generationContextRef.current = null;
             });
 
             if (error) {
                 logger.error("Error during generation:", error);
                 toast.error("An error occurred during generation");
-                setIsGenerating(false);
                 setStreamingMessageId(null);
                 setPendingUserMessage(null);
+                generationContextRef.current = null;
             }
         },
         [
             selectedChat,
             selectedPrompt,
             selectedModel,
-            isGenerating,
+            isStreaming,
             storyId,
             createPromptConfig,
             generateWithPrompt,
+            processStream,
+            reset,
             createMutation,
             updateMutation,
             onChatUpdate
@@ -188,10 +166,10 @@ export const useMessageGeneration = ({
 
     return {
         generate,
-        isGenerating,
+        isGenerating: isStreaming,
         abort,
         streamingMessageId,
-        streamingContent,
+        streamingContent: streamedText,
         pendingUserMessage
     };
 };

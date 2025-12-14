@@ -36,14 +36,15 @@ header h1 {
 }
 
 .editor-shell {
-  @apply bg-background text-foreground border border-border relative;
+  @apply bg-background text-foreground border border-border relative flex flex-col h-full;
   line-height: 1.7;
   font-weight: 400;
 }
 
 .editor-shell .editor-container {
-  @apply bg-background relative cursor-text;
-  display: block;
+  @apply bg-background relative cursor-text flex-1 overflow-hidden;
+  display: flex;
+  flex-direction: column;
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
 }
@@ -58,23 +59,21 @@ header h1 {
 }
 
 .editor-scroller {
-  min-height: 150px;
+  flex: 1;
   max-width: 100%;
   border: 0;
   display: flex;
   position: relative;
   outline: 0;
   z-index: 0;
-  resize: vertical;
+  overflow-y: auto;
 }
 
 .editor {
   flex: auto;
   max-width: 100%;
   position: relative;
-  resize: vertical;
   z-index: -1;
-  min-height: 800px;
 }
 
 .test-recorder-output {
@@ -1443,7 +1442,7 @@ button.action-button:disabled {
 }
 
 .toolbar {
-  @apply bg-muted border-b border-border p-2 sticky top-0 z-[2] flex overflow-x-auto overflow-y-hidden;
+  @apply bg-muted border-b border-border p-2 z-[2] flex overflow-x-auto overflow-y-hidden;
 }
 
 button.toolbar-item {
@@ -1751,23 +1750,11 @@ button.item.dropdown-item-active i {
 
 /* Add any other dark mode overrides needed for Lexical components */
 
-/* Theme-aware styles for the editor */
-.editor-shell {
-  @apply bg-background text-foreground border border-border relative;
-  line-height: 1.7;
-  font-weight: 400;
-}
-
-.editor-shell .editor-container {
-  @apply bg-background relative cursor-text;
-  display: block;
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-}
+/* Theme-aware styles for the editor - main definitions at top of file */
 
 /* Toolbar styling */
 .toolbar {
-  @apply bg-muted border-b border-border p-2 sticky top-0 z-[2] flex overflow-x-auto overflow-y-hidden;
+  @apply bg-muted border-b border-border p-2 z-[2] flex overflow-x-auto overflow-y-hidden;
 }
 
 /* Button styling */
@@ -2076,23 +2063,11 @@ button.item.dropdown-item-active i {
 
 /* Add any other dark mode overrides needed for Lexical components */
 
-/* Theme-aware styles for the editor */
-.editor-shell {
-  @apply bg-background text-foreground border border-border relative;
-  line-height: 1.7;
-  font-weight: 400;
-}
-
-.editor-shell .editor-container {
-  @apply bg-background relative cursor-text;
-  display: block;
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-}
+/* Theme-aware styles for the editor - main definitions at top of file */
 
 /* Toolbar styling */
 .toolbar {
-  @apply bg-muted border-b border-border p-2 sticky top-0 z-[2] flex overflow-x-auto overflow-y-hidden;
+  @apply bg-muted border-b border-border p-2 z-[2] flex overflow-x-auto overflow-y-hidden;
 }
 
 /* Button styling */

@@ -58,7 +58,19 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, MoreHorizontal, Bold, Italic, Underline, Minus, Strikethrough, Bot } from "lucide-react";
+import {
+    ChevronDown,
+    MoreHorizontal,
+    Bold,
+    Italic,
+    Underline,
+    Minus,
+    Strikethrough,
+    Bot,
+    Maximize,
+    Minimize
+} from "lucide-react";
+import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
@@ -432,6 +444,7 @@ export default function ToolbarPlugin({
 }): JSX.Element {
     const [isEditable, setIsEditable] = useState(() => editor.isEditable());
     const { toolbarState, updateToolbarState } = useToolbarState();
+    const { isMaximised, toggleMaximise } = useWorkspace();
 
     const $updateToolbar = useCallback(() => {
         const selection = $getSelection();
@@ -815,8 +828,7 @@ export default function ToolbarPlugin({
                                         editor.update(() => {
                                             const selection = $getSelection();
                                             if (selection) {
-                                                const newId = crypto.randomUUID();
-                                                const beatNode = $createSceneBeatNode(newId);
+                                                const beatNode = $createSceneBeatNode();
                                                 const paragraphNode = $createParagraphNode();
                                                 selection.insertNodes([beatNode, paragraphNode]);
                                             }
@@ -843,8 +855,17 @@ export default function ToolbarPlugin({
                 editor={activeEditor}
                 isRTL={toolbarState.isRTL}
             />
-            <div className="ml-auto flex items-center">
+            <div className="ml-auto flex items-center gap-1">
                 <span className="text-xs text-muted-foreground px-2">Words: {toolbarState.wordCount}</span>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-accent/50 transition-colors"
+                    onClick={toggleMaximise}
+                    title={isMaximised ? "Restore layout" : "Focus mode"}
+                >
+                    {isMaximised ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                </Button>
             </div>
         </div>
     );

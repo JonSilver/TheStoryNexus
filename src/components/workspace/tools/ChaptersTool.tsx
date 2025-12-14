@@ -40,7 +40,7 @@ import {
 } from "@dnd-kit/sortable";
 import { attemptPromise } from "@jfdi/attempt";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
@@ -81,10 +81,13 @@ export const ChaptersTool = () => {
         })
     );
 
-    // Reset POV character when switching to omniscient
-    useEffect(() => {
-        if (povType === "Third Person Omniscient") form.setValue("povCharacter", undefined);
-    }, [povType, form]);
+    const handlePovTypeChange = (value: string) => {
+        form.setValue("povType", value as POVType);
+        // Clear POV character when switching to omniscient
+        if (value === "Third Person Omniscient") {
+            form.setValue("povCharacter", undefined);
+        }
+    };
 
     const handleCreateChapter = (data: CreateChapterForm) => {
         if (!currentStoryId) return;
@@ -214,7 +217,7 @@ export const ChaptersTool = () => {
                                         <Label htmlFor="povType">POV Type</Label>
                                         <Select
                                             defaultValue="Third Person Omniscient"
-                                            onValueChange={value => form.setValue("povType", value as POVType)}
+                                            onValueChange={handlePovTypeChange}
                                         >
                                             <SelectTrigger id="povType">
                                                 <SelectValue placeholder="Select POV type" />

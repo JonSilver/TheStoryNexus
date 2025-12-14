@@ -9,7 +9,8 @@
       "Bash(node:*)",
       "Bash(npm run lint)",
       "Bash(npm run knip:*)",
-      "Bash(npm run lint:fix:*)"
+      "Bash(npm run lint:fix:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

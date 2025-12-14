@@ -1,5 +1,5 @@
 import type { AllowedModel, Prompt } from "@/types/story";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useUpdateBrainstormMutation } from "./useBrainstormQuery";
 
 interface UsePromptSelectionReturn {
@@ -9,35 +9,54 @@ interface UsePromptSelectionReturn {
     isLoading: boolean;
 }
 
+const findInitialSelection = (
+    lastUsedPromptId: string | undefined,
+    lastUsedModelId: string | undefined,
+    prompts: Prompt[]
+): { prompt: Prompt | null; model: AllowedModel | null } => {
+    if (!lastUsedPromptId || prompts.length === 0) {
+        return { prompt: null, model: null };
+    }
+
+    const lastPrompt = prompts.find(p => p.id === lastUsedPromptId);
+    if (!lastPrompt || lastPrompt.allowedModels.length === 0) {
+        return { prompt: null, model: null };
+    }
+
+    const lastModel = lastUsedModelId ? lastPrompt.allowedModels.find(m => m.id === lastUsedModelId) : undefined;
+
+    return {
+        prompt: lastPrompt,
+        model: lastModel || lastPrompt.allowedModels[0]
+    };
+};
+
 export const usePromptSelection = (
     chatId: string,
     lastUsedPromptId: string | undefined,
     lastUsedModelId: string | undefined,
     prompts: Prompt[]
 ): UsePromptSelectionReturn => {
-    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
-    const [selectedModel, setSelectedModel] = useState<AllowedModel | null>(null);
-    const [loadedChatId, setLoadedChatId] = useState<string | null>(null);
+    const initialisedForChatRef = useRef<string | null>(null);
+
+    // Compute initial values if this is first render for this chat
+    const shouldInitialise = initialisedForChatRef.current !== chatId && prompts.length > 0;
+    const initialValues = shouldInitialise ? findInitialSelection(lastUsedPromptId, lastUsedModelId, prompts) : null;
+
+    if (shouldInitialise) {
+        initialisedForChatRef.current = chatId;
+    }
+
+    const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(() => initialValues?.prompt ?? null);
+    const [selectedModel, setSelectedModel] = useState<AllowedModel | null>(() => initialValues?.model ?? null);
+
+    // Re-initialise when chat changes
+    if (initialValues && selectedPrompt?.id !== initialValues.prompt?.id) {
+        setSelectedPrompt(initialValues.prompt);
+        setSelectedModel(initialValues.model);
+    }
 
     const updateMutation = useUpdateBrainstormMutation();
-
-    useEffect(() => {
-        if (loadedChatId !== chatId && lastUsedPromptId && prompts.length > 0) {
-            const lastPrompt = prompts.find(p => p.id === lastUsedPromptId);
-
-            if (lastPrompt && lastPrompt.allowedModels.length > 0) {
-                const lastModel = lastUsedModelId
-                    ? lastPrompt.allowedModels.find(m => m.id === lastUsedModelId)
-                    : undefined;
-
-                const modelToUse = lastModel || lastPrompt.allowedModels[0];
-
-                setSelectedPrompt(lastPrompt);
-                setSelectedModel(modelToUse);
-            }
-            setLoadedChatId(chatId);
-        }
-    }, [chatId, lastUsedPromptId, lastUsedModelId, prompts, loadedChatId]);
 
     const selectPrompt = useCallback(
         (prompt: Prompt, model: AllowedModel) => {
@@ -55,12 +74,9 @@ export const usePromptSelection = (
         [chatId, updateMutation]
     );
 
-    const stablePrompt = useMemo(() => selectedPrompt, [selectedPrompt]);
-    const stableModel = useMemo(() => selectedModel, [selectedModel]);
-
     return {
-        selectedPrompt: stablePrompt,
-        selectedModel: stableModel,
+        selectedPrompt,
+        selectedModel,
         selectPrompt,
         isLoading: updateMutation.isPending
     };
