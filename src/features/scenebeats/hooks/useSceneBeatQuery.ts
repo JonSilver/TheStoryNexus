@@ -49,8 +49,9 @@ export const useUpdateSceneBeatMutation = () => {
 
     return useMutation({
         mutationFn: async ({ id, data }: UpdateSceneBeatParams) => scenebeatsApi.update(id, data),
-        onSuccess: (sceneBeat, { id }) => {
-            queryClient.setQueryData(sceneBeatKeys.byId(id), sceneBeat);
+        onSuccess: sceneBeat => {
+            // Only invalidate chapter list, don't update individual query cache
+            // to avoid overwriting local state during typing
             queryClient.invalidateQueries({ queryKey: sceneBeatKeys.byChapter(sceneBeat.chapterId) });
         }
     });

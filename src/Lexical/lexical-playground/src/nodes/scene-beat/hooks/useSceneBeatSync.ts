@@ -13,12 +13,17 @@ type SaveCommandFunc = DebouncedFunc<(command: string) => void> & {
 export const useSceneBeatSync = (sceneBeatId: string) => {
     const sceneBeatIdRef = useRef(sceneBeatId);
     const updateMutation = useUpdateSceneBeatMutation();
+    const mutateRef = useRef(updateMutation.mutate);
 
     useEffect(() => {
         sceneBeatIdRef.current = sceneBeatId;
     }, [sceneBeatId]);
 
-    // Create debounced save function once, uses ref for ID
+    useEffect(() => {
+        mutateRef.current = updateMutation.mutate;
+    }, [updateMutation.mutate]);
+
+    // Create debounced save function once, uses refs for stability
     const saveCommand = useMemo(() => {
         const debouncedFn = debounce((command: string) => {
             if (!sceneBeatIdRef.current) {
@@ -27,7 +32,7 @@ export const useSceneBeatSync = (sceneBeatId: string) => {
             }
 
             logger.info("💾 Saving command to DB:", { id: sceneBeatIdRef.current, length: command.length });
-            updateMutation.mutate(
+            mutateRef.current(
                 { id: sceneBeatIdRef.current, data: { command } },
                 {
                     onSuccess: () => logger.info("✅ Command saved successfully"),
@@ -37,7 +42,7 @@ export const useSceneBeatSync = (sceneBeatId: string) => {
         }, DEBOUNCE_DELAY_MS);
 
         return debouncedFn as SaveCommandFunc;
-    }, [updateMutation]);
+    }, []);
 
     const saveToggles = useMemo(
         () =>
