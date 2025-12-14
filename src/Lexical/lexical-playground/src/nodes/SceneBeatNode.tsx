@@ -112,7 +112,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
     // Derive actual values: use local if edited, otherwise query data
     const useMatchedChapter = hasEditedTogglesRef.current ? (localMatchedChapter ?? true) : initialUseMatchedChapter;
-    const useMatchedSceneBeat = hasEditedTogglesRef.current ? (localMatchedSceneBeat ?? false) : initialUseMatchedSceneBeat;
+    const useMatchedSceneBeat = hasEditedTogglesRef.current
+        ? (localMatchedSceneBeat ?? false)
+        : initialUseMatchedSceneBeat;
     const useCustomContext = hasEditedTogglesRef.current ? (localCustomContext ?? false) : initialUseCustomContext;
     const povType = hasEditedPovRef.current ? localPovType : initialPovType;
     const povCharacter = hasEditedPovRef.current ? localPovCharacter : initialPovCharacter;

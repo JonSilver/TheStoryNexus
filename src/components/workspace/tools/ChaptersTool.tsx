@@ -215,7 +215,10 @@ export const ChaptersTool = () => {
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="povType">POV Type</Label>
-                                        <Select defaultValue="Third Person Omniscient" onValueChange={handlePovTypeChange}>
+                                        <Select
+                                            defaultValue="Third Person Omniscient"
+                                            onValueChange={handlePovTypeChange}
+                                        >
                                             <SelectTrigger id="povType">
                                                 <SelectValue placeholder="Select POV type" />
                                             </SelectTrigger>

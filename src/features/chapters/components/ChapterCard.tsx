@@ -67,7 +67,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     const [showEditDialog, setShowEditDialog] = useState(false);
     const expandedStateKey = `chapter-${chapter.id}-expanded`;
     const [isExpanded, setIsExpanded] = useState(() => parseLocalStorage(z.boolean(), expandedStateKey, false));
-// Local summary state: null = use chapter.summary prop, non-null = user has edited
+    // Local summary state: null = use chapter.summary prop, non-null = user has edited
     const [localSummary, setLocalSummary] = useState<string | null>(null);
     const summary = localSummary ?? chapter.summary ?? "";
     const setSummary = (value: string) => setLocalSummary(value);

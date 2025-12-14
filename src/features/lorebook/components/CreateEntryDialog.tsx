@@ -368,7 +368,11 @@ export function CreateEntryDialog({
                         />
 
                         {/* Advanced Section */}
-                        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen} className="border rounded-md p-2">
+                        <Collapsible
+                            open={advancedOpen}
+                            onOpenChange={setAdvancedOpen}
+                            className="border rounded-md p-2"
+                        >
                             <CollapsibleTrigger asChild>
                                 <Button variant="ghost" className="flex w-full justify-between p-2" type="button">
                                     <span className="font-semibold">Advanced Settings</span>
