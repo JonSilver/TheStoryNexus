@@ -67,17 +67,25 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     const [showEditDialog, setShowEditDialog] = useState(false);
     const expandedStateKey = `chapter-${chapter.id}-expanded`;
     const [isExpanded, setIsExpanded] = useState(() => parseLocalStorage(z.boolean(), expandedStateKey, false));
-    const [summary, setSummary] = useState(chapter.summary || "");
+// Local summary state: null = use chapter.summary prop, non-null = user has edited
+    const [localSummary, setLocalSummary] = useState<string | null>(null);
+    const summary = localSummary ?? chapter.summary ?? "";
+    const setSummary = (value: string) => setLocalSummary(value);
+
     const deleteChapterMutation = useDeleteChapterMutation();
     const updateChapterMutation = useUpdateChapterMutation();
-    const form = useForm<EditChapterForm>({
-        defaultValues: {
+    const form = useForm<EditChapterForm>();
+    const povType = form.watch("povType");
+
+    // Reset form when dialog opens - ensures fresh values from chapter prop
+    const openEditDialog = () => {
+        form.reset({
             title: chapter.title,
             povCharacter: chapter.povCharacter,
             povType: chapter.povType || "Third Person Omniscient"
-        }
-    });
-    const povType = form.watch("povType");
+        });
+        setShowEditDialog(true);
+    };
     const { setCurrentChapterId } = useStoryContext();
     const navigate = useNavigate();
     const { generateWithPrompt } = useGenerateWithPrompt();
@@ -154,6 +162,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                 },
                 {
                     onSuccess: () => {
+                        setLocalSummary(null); // Reset to use prop value
                         toast.success("Summary saved successfully");
                     }
                 }
@@ -193,10 +202,10 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                 );
             });
 
-            updateChapterMutation.mutate({
-                id: chapter.id,
-                data: { summary: text }
-            });
+            updateChapterMutation.mutate(
+                { id: chapter.id, data: { summary: text } },
+                { onSuccess: () => setLocalSummary(null) }
+            );
             toast.success("Summary generated successfully");
         });
 
@@ -251,7 +260,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                             )}
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setShowEditDialog(true)}>
+                            <Button variant="ghost" size="sm" onClick={openEditDialog}>
                                 <Pencil className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={handleWriteClick}>

@@ -1,3 +1,4 @@
+import { adminApi } from "@/services/api/client";
 import { aiService } from "@/services/ai/AIService";
 import type { AIModel, AIProvider, AISettings } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -116,10 +117,7 @@ export const useDeleteDemoDataMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async () => {
-            const { adminApi } = await import("@/services/api/client");
-            return adminApi.deleteDemoData();
-        },
+        mutationFn: async () => adminApi.deleteDemoData(),
         onSuccess: ({ deleted }) => {
             queryClient.invalidateQueries();
             toast.success(
