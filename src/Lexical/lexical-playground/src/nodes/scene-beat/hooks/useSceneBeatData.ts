@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey } from "lexical";
 import is from "@sindresorhus/is";
@@ -42,6 +42,7 @@ export const useSceneBeatData = ({
 }: UseSceneBeatDataProps): UseSceneBeatDataResult => {
     const [sceneBeatId, setSceneBeatId] = useState<string>("");
     const [needsCreate, setNeedsCreate] = useState(false);
+    const createAttemptedRef = useRef(false);
 
     const createMutation = useCreateSceneBeatMutation();
 
@@ -100,7 +101,9 @@ export const useSceneBeatData = ({
     // Create DB record if needed
     useEffect(() => {
         if (!needsCreate || !sceneBeatId || !currentStoryId || !currentChapterId) return;
+        if (createAttemptedRef.current) return;
 
+        createAttemptedRef.current = true;
         createMutation.mutate(
             {
                 id: sceneBeatId,
@@ -137,16 +140,28 @@ export const useSceneBeatData = ({
     // Handle case where query fails (record doesn't exist) - create it
     useEffect(() => {
         if (!isError || needsCreate || !sceneBeatId || !currentStoryId || !currentChapterId) return;
+        if (createAttemptedRef.current) return;
 
+        createAttemptedRef.current = true;
         logger.info("🔄 DB record missing, creating:", sceneBeatId);
-        createMutation.mutate({
-            id: sceneBeatId,
-            storyId: currentStoryId,
-            chapterId: currentChapterId,
-            command: "",
-            povType: defaultPovType,
-            povCharacter: defaultPovCharacter
-        });
+        createMutation.mutate(
+            {
+                id: sceneBeatId,
+                storyId: currentStoryId,
+                chapterId: currentChapterId,
+                command: "",
+                povType: defaultPovType,
+                povCharacter: defaultPovCharacter
+            },
+            {
+                onError: err => {
+                    // Ignore UNIQUE constraint errors
+                    if (!err.message?.includes("UNIQUE constraint")) {
+                        logger.error("❌ Failed to create scene beat:", err);
+                    }
+                }
+            }
+        );
     }, [
         isError,
         needsCreate,

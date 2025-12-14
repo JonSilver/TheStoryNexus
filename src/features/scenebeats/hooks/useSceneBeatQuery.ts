@@ -14,7 +14,8 @@ export const useSceneBeatQuery = (id: string, options?: { enabled?: boolean }) =
         queryKey: sceneBeatKeys.byId(id),
         queryFn: () => scenebeatsApi.getById(id),
         enabled: options?.enabled ?? !!id,
-        staleTime: 60 * 1000
+        staleTime: 60 * 1000,
+        retry: false
     });
 
 export const useSceneBeatsByChapterQuery = (chapterId: string) =>
