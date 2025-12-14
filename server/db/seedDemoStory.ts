@@ -109,8 +109,22 @@ export const seedDemoStory = async () => {
             await db.insert(schema.sceneBeats).values(sceneBeatsToInsert);
         }
 
+        if (demoData.notes && demoData.notes.length > 0) {
+            const notesToInsert = demoData.notes.map(note => ({
+                id: note.id,
+                storyId: note.storyId,
+                title: note.title,
+                content: note.content,
+                type: note.type,
+                createdAt: new Date(note.createdAt),
+                updatedAt: new Date(note.updatedAt),
+                isDemo: true
+            }));
+            await db.insert(schema.notes).values(notesToInsert);
+        }
+
         console.log(
-            `Successfully seeded demo story with ${demoData.chapters?.length || 0} chapters, ${demoData.lorebookEntries?.length || 0} lorebook entries, and ${demoData.aiChats?.length || 0} AI chats`
+            `Successfully seeded demo story with ${demoData.chapters?.length || 0} chapters, ${demoData.lorebookEntries?.length || 0} lorebook entries, ${demoData.aiChats?.length || 0} AI chats, and ${demoData.notes?.length || 0} notes`
         );
     });
 

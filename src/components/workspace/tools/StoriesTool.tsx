@@ -13,6 +13,7 @@ import type { Story } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { attemptPromise } from "@jfdi/attempt";
 import { BookOpen, Download, Upload, Edit, FolderUp, Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "react-toastify";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,6 +157,7 @@ function WorkspaceStoryCard({
 }
 
 export const StoriesTool = () => {
+    const queryClient = useQueryClient();
     const { data: stories = [], refetch: fetchStories } = useStoriesQuery();
     const { data: seriesList = [] } = useSeriesQuery();
     const [editingStory, setEditingStory] = useState<Story | null>(null);
@@ -196,7 +198,7 @@ export const StoriesTool = () => {
         setIsImportingDemo(true);
         const [error] = await attemptPromise(async () => {
             await adminApi.importDemoData();
-            await fetchStories();
+            await queryClient.invalidateQueries();
         });
 
         if (error) {

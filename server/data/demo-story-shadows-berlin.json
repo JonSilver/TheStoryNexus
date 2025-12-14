@@ -469,6 +469,68 @@
     }
   ],
   "sceneBeats": [],
+  "notes": [
+    {
+      "id": "demo-note-research-1",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "MI6 Tradecraft Research",
+      "content": "Dead drops: typically use innocuous containers (hollowed books, magnetic key boxes, fake rocks). Berlin's Tiergarten historically used during Cold War.\n\nSurveillance detection routes (SDRs): operatives use public transport, reflective surfaces, varied pace to identify tails.\n\nMoscow Rules: informal set of guidelines for operating in hostile territory. Key principles: assume you're under surveillance, vary routines, trust no one.\n\nSources: official MI6 recruitment pages mention language skills, analytical ability. Former officer memoirs (redacted) available from British Library.",
+      "type": "research",
+      "createdAt": "2024-12-27T09:00:00.000Z",
+      "updatedAt": "2024-12-28T15:30:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "demo-note-research-2",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "Chinese Intelligence (MSS) Background",
+      "content": "Ministry of State Security (MSS) - China's primary intelligence agency. Known for long-term cultivation of sources rather than quick recruitment.\n\nHistorical precedent: multiple cases of Western officials compromised over decades (research Katrina Leung case, Peter Lee).\n\nMSS tends to recruit based on ideology or business ties rather than blackmail. Hastings's motivation (believing in Chinese century) fits this pattern.\n\nRussian-Chinese intelligence cooperation: historically competitive but increasing collaboration post-2014.",
+      "type": "research",
+      "createdAt": "2024-12-27T11:00:00.000Z",
+      "updatedAt": "2024-12-28T10:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "demo-note-idea-1",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "Sequel Possibilities",
+      "content": "If this works, potential sequel angles:\n\n1. Elena now persona non grata with MI6, works as freelance intelligence consultant. Gets pulled back in when Hastings escapes custody.\n\n2. The other four NATO moles from Natasha's list - each could be a separate story. Different countries, different agencies, different extraction challenges.\n\n3. Elena's mother's backstory - what really happened during her defection? Was she also MSS? Would add tragic dimension.\n\n4. Marcus Webb's perspective - could be interesting to tell parallel story of how a good man gets compromised.",
+      "type": "idea",
+      "createdAt": "2025-01-05T16:00:00.000Z",
+      "updatedAt": "2025-01-05T16:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "demo-note-idea-2",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "Thematic Elements to Strengthen",
+      "content": "Core theme: Trust vs. survival. Elena has to trust people to complete mission, but trust has literally got people killed.\n\nMirror relationships:\n- Hastings recruited Elena → he saw her potential, but for what?\n- Dmitri trained Elena → defector's daughter learning from defector's enemy\n- Elena's mother defected TO the West → Elena may need to defect FROM it\n\nConsider: What if Hastings genuinely cares about Elena? Makes his betrayal more complex. He's not moustache-twirling villain but true believer who thinks he's on the right side of history.",
+      "type": "idea",
+      "createdAt": "2024-12-30T08:00:00.000Z",
+      "updatedAt": "2025-01-02T14:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "demo-note-todo-1",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "Revision Checklist",
+      "content": "Before final draft:\n\n[ ] Add more sensory details to Moscow chapter - cold, grey skies, industrial atmosphere\n[ ] Check Elena's emotional arc - does each chapter show escalating stakes AND cost?\n[ ] Verify timeline consistency - 8 days from Berlin to Helsinki needs to work geographically\n[ ] Research Finnish border crossing procedures\n[ ] Add one more personal moment for Elena - maybe a memory of her mother?\n[ ] Review dialogue - Dmitri should feel more Russian in speech patterns\n[ ] Consider: does the PM ending feel too convenient? Alternative delivery methods?",
+      "type": "todo",
+      "createdAt": "2025-01-06T10:00:00.000Z",
+      "updatedAt": "2025-01-06T10:00:00.000Z",
+      "isDemo": true
+    },
+    {
+      "id": "demo-note-other-1",
+      "storyId": "demo-story-shadows-berlin",
+      "title": "Cover Art Concepts",
+      "content": "Visual motifs to suggest to cover designer:\n\n- Berlin's Brandenburg Gate with shadowy figure\n- Cracked mirror/reflection (trust/betrayal theme)\n- Chess pieces - queen isolated from others\n- Red and gold colour palette (Chinese flag colours, but subtle)\n- Nightingale silhouette incorporated somewhere\n\nTitle typography: clean, modern - not retro Cold War styling. This is contemporary thriller.",
+      "type": "other",
+      "createdAt": "2025-01-07T12:00:00.000Z",
+      "updatedAt": "2025-01-07T12:00:00.000Z",
+      "isDemo": true
+    }
+  ],
   "aiChats": [
     {
       "id": "demo-chat-1",
