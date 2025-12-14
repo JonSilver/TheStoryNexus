@@ -13,7 +13,7 @@ import {
 import { useStoryContext, WorkspaceTool } from "@/features/stories/context/StoryContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useWorkspace } from "./context/WorkspaceContext";
 
 const tools = [
     { id: "stories" as WorkspaceTool, label: "Stories", icon: Library, requiresStory: false },
@@ -28,13 +28,11 @@ const tools = [
 
 export const Sidebar = () => {
     const { currentTool, setCurrentTool, currentStoryId } = useStoryContext();
-    const [collapsed, setCollapsed] = useState(false);
+    const { leftSidebar, toggleLeftSidebar } = useWorkspace();
+    const collapsed = leftSidebar.collapsed;
 
     const handleToolClick = (toolId: WorkspaceTool, requiresStory: boolean) => {
-        if (requiresStory && !currentStoryId) {
-            // Could show toast: "Select a story first"
-            return;
-        }
+        if (requiresStory && !currentStoryId) return;
         setCurrentTool(toolId);
     };
 
@@ -43,11 +41,10 @@ export const Sidebar = () => {
             {/* Desktop Sidebar */}
             <aside
                 className={cn(
-                    "hidden md:flex flex-col border-r bg-muted/30 transition-all duration-300",
-                    collapsed ? "w-16" : "w-56"
+                    "hidden md:flex flex-col border-r bg-muted/30 transition-all duration-200",
+                    collapsed ? "w-12" : "w-32"
                 )}
             >
-                {/* Tools */}
                 <nav className="flex-1 p-2 space-y-1">
                     {tools.map(tool => {
                         const Icon = tool.icon;
@@ -59,23 +56,30 @@ export const Sidebar = () => {
                                 key={tool.id}
                                 variant={isActive ? "secondary" : "ghost"}
                                 className={cn(
-                                    "w-full justify-start gap-3",
+                                    "w-full gap-2",
+                                    collapsed ? "justify-center px-0" : "justify-start",
                                     isDisabled && "opacity-50 cursor-not-allowed"
                                 )}
                                 onClick={() => handleToolClick(tool.id, tool.requiresStory)}
                                 disabled={isDisabled}
+                                title={collapsed ? tool.label : undefined}
                             >
-                                <Icon className="h-5 w-5 shrink-0" />
-                                {!collapsed && <span>{tool.label}</span>}
+                                <Icon className="h-4 w-4 shrink-0" />
+                                {!collapsed && <span className="text-sm">{tool.label}</span>}
                             </Button>
                         );
                     })}
                 </nav>
 
-                {/* Collapse Toggle */}
                 <div className="p-2 border-t">
-                    <Button variant="ghost" size="icon" className="w-full" onClick={() => setCollapsed(!collapsed)}>
-                        {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-full"
+                        onClick={toggleLeftSidebar}
+                        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    >
+                        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </Button>
                 </div>
             </aside>
