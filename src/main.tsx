@@ -1,15 +1,15 @@
-import React, { Suspense, lazy } from "react";
+import { StoryProvider } from "@/features/stories/context/StoryContext";
+import { QueryProvider } from "@/providers/QueryProvider";
+import { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
-import { ThemeProvider } from "./lib/theme-provider";
 import { ToastContainer } from "react-toastify";
-import { StoryProvider } from "@/features/stories/context/StoryContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { QueryProvider } from "@/providers/QueryProvider";
 import { Workspace } from "./components/workspace/Workspace";
+import { ThemeProvider } from "./lib/theme-provider";
 // Styles
-import "./index.css";
 import "react-toastify/dist/ReactToastify.css";
+import "./index.css";
 
 import { MainLayout } from "./components/MainLayout";
 
@@ -28,28 +28,26 @@ const PageLoadingFallback = () => (
 // biome-ignore lint/style/noNonNullAssertion: <explanation>
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-        <ErrorBoundary>
-            <QueryProvider>
-                <ThemeProvider defaultTheme="dark" storageKey="app-theme">
-                    <BrowserRouter>
-                        <StoryProvider>
-                            <Suspense fallback={<PageLoadingFallback />}>
-                                <Routes>
-                                    <Route path="/" element={<Workspace />} />
-                                    <Route element={<MainLayout />}>
-                                        <Route path="/stories/:storyId/read" element={<StoryReader />} />
-                                        <Route path="/series" element={<SeriesListPage />} />
-                                        <Route path="/settings" element={<SettingsPage />} />
-                                        <Route path="/guide" element={<GuidePage />} />
-                                    </Route>
-                                </Routes>
-                            </Suspense>
-                        </StoryProvider>
-                        <ToastContainer />
-                    </BrowserRouter>
-                </ThemeProvider>
-            </QueryProvider>
-        </ErrorBoundary>
-    </React.StrictMode>
+    <ErrorBoundary>
+        <QueryProvider>
+            <ThemeProvider defaultTheme="dark" storageKey="app-theme">
+                <BrowserRouter>
+                    <StoryProvider>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                            <Routes>
+                                <Route path="/" element={<Workspace />} />
+                                <Route element={<MainLayout />}>
+                                    <Route path="/stories/:storyId/read" element={<StoryReader />} />
+                                    <Route path="/series" element={<SeriesListPage />} />
+                                    <Route path="/settings" element={<SettingsPage />} />
+                                    <Route path="/guide" element={<GuidePage />} />
+                                </Route>
+                            </Routes>
+                        </Suspense>
+                    </StoryProvider>
+                    <ToastContainer />
+                </BrowserRouter>
+            </ThemeProvider>
+        </QueryProvider>
+    </ErrorBoundary>
 );
