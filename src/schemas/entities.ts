@@ -1,25 +1,23 @@
 import { z } from "zod";
 
-// Helper for safe JSON parsing with Zod validation
-export const parseJSON = <T extends z.ZodTypeAny>(
-    schema: T,
-    jsonString: string
-): z.SafeParseReturnType<z.input<T>, z.output<T>> => {
+// Wrapper schema for JSON string parsing
+const jsonStringSchema = z.string().transform((str, ctx) => {
     try {
-        const parsed = JSON.parse(jsonString);
-        return schema.safeParse(parsed);
-    } catch (error) {
-        return {
-            success: false,
-            error: new z.ZodError([
-                {
-                    code: "custom",
-                    path: [],
-                    message: error instanceof Error ? error.message : "Invalid JSON"
-                }
-            ])
-        };
+        return JSON.parse(str) as unknown;
+    } catch (e) {
+        ctx.addIssue({
+            code: "custom",
+            message: e instanceof Error ? e.message : "Invalid JSON"
+        });
+        return z.NEVER;
     }
+});
+
+// Helper for safe JSON parsing with Zod validation
+export const parseJSON = <T extends z.ZodTypeAny>(schema: T, jsonString: string) => {
+    const jsonResult = jsonStringSchema.safeParse(jsonString);
+    if (!jsonResult.success) return jsonResult;
+    return schema.safeParse(jsonResult.data);
 };
 
 // Helper for localStorage with Zod validation
@@ -157,7 +155,7 @@ const lorebookEntrySchema = baseEntitySchema
                 importance: z.enum(["major", "minor", "background"]).optional(),
                 status: z.enum(["active", "inactive", "historical"]).optional(),
                 relationships: z.array(relationshipSchema).optional(),
-                customFields: z.record(z.unknown()).optional()
+                customFields: z.record(z.string(), z.unknown()).optional()
             })
             .optional(),
         isDisabled: z.boolean().optional()
