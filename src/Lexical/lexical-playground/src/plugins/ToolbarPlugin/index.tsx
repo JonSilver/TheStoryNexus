@@ -542,7 +542,9 @@ export default function ToolbarPlugin({
                 SELECTION_CHANGE_COMMAND,
                 (_payload, newEditor) => {
                     setActiveEditor(newEditor);
-                    $updateToolbar();
+                    newEditor.read(() => {
+                        $updateToolbar();
+                    });
                     return false;
                 },
                 COMMAND_PRIORITY_CRITICAL
@@ -551,7 +553,7 @@ export default function ToolbarPlugin({
     );
 
     useEffect(() => {
-        activeEditor.getEditorState().read(() => {
+        activeEditor.read(() => {
             $updateToolbar();
         });
     }, [activeEditor, $updateToolbar]);
@@ -562,8 +564,8 @@ export default function ToolbarPlugin({
                 editor.registerEditableListener(editable => {
                     setIsEditable(editable);
                 }),
-                activeEditor.registerUpdateListener(({ editorState }) => {
-                    editorState.read(() => {
+                activeEditor.registerUpdateListener(() => {
+                    activeEditor.read(() => {
                         $updateToolbar();
                     });
                 }),

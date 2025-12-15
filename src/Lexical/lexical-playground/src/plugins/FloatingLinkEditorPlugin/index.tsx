@@ -150,7 +150,9 @@ function FloatingLinkEditor({
                 editor.registerCommand(
                     SELECTION_CHANGE_COMMAND,
                     () => {
-                        $updateLinkEditor();
+                        editor.getEditorState().read(() => {
+                            $updateLinkEditor();
+                        });
                         return true;
                     },
                     COMMAND_PRIORITY_LOW
@@ -346,7 +348,9 @@ function useFloatingLinkEditorToolbar(
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
                 (_payload, newEditor) => {
-                    $updateToolbar();
+                    newEditor.getEditorState().read(() => {
+                        $updateToolbar();
+                    });
                     setActiveEditor(newEditor);
                     return false;
                 },
@@ -355,16 +359,19 @@ function useFloatingLinkEditorToolbar(
             editor.registerCommand(
                 CLICK_COMMAND,
                 payload => {
-                    const selection = $getSelection();
-                    if ($isRangeSelection(selection)) {
-                        const node = getSelectedNode(selection);
-                        const linkNode = $findMatchingParent(node, $isLinkNode);
-                        if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
-                            window.open(linkNode.getURL(), "_blank");
-                            return true;
+                    let result = false;
+                    editor.getEditorState().read(() => {
+                        const selection = $getSelection();
+                        if ($isRangeSelection(selection)) {
+                            const node = getSelectedNode(selection);
+                            const linkNode = $findMatchingParent(node, $isLinkNode);
+                            if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
+                                window.open(linkNode.getURL(), "_blank");
+                                result = true;
+                            }
                         }
-                    }
-                    return false;
+                    });
+                    return result;
                 },
                 COMMAND_PRIORITY_LOW
             )

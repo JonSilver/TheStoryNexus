@@ -185,7 +185,9 @@ function TextFormatFloatingToolbar({
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
                 () => {
-                    $updateTextFormatFloatingToolbar();
+                    editor.getEditorState().read(() => {
+                        $updateTextFormatFloatingToolbar();
+                    });
                     return false;
                 },
                 COMMAND_PRIORITY_LOW
