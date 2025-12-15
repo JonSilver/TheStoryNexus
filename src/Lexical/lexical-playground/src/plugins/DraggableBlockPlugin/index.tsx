@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { JSX } from "react";
+import type { JSX, RefObject } from "react";
 
 import "./index.css";
 
@@ -29,8 +29,8 @@ export default function DraggableBlockPlugin({
     return (
         <DraggableBlockPlugin_EXPERIMENTAL
             anchorElem={anchorElem}
-            menuRef={menuRef}
-            targetLineRef={targetLineRef}
+            menuRef={menuRef as RefObject<HTMLElement>}
+            targetLineRef={targetLineRef as RefObject<HTMLElement>}
             menuComponent={
                 <div ref={menuRef} className="icon draggable-block-menu">
                     <div className="icon" />

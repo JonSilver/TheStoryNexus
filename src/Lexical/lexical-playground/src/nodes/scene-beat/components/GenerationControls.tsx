@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { AllowedModel, Prompt } from "@/types/story";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";

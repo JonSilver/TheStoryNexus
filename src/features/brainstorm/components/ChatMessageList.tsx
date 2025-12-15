@@ -15,7 +15,7 @@ interface ChatMessageListProps {
     onSaveEdit: (messageId: string) => void;
     onCancelEdit: () => void;
     onEditContentChange: (content: string) => void;
-    editingTextareaRef: React.RefObject<HTMLTextAreaElement>;
+    editingTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function ChatMessageList({

@@ -229,6 +229,7 @@ export interface StoryExport {
     lorebookEntries: LorebookEntry[];
     sceneBeats: SceneBeat[];
     aiChats: AIChat[];
+    notes?: Note[];
 }
 
 export interface SeriesExport {

@@ -2,6 +2,7 @@
  * SlashCommandPlugin - Adds support for slash commands like in Notion
  */
 
+import type { JSX } from "react";
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
     COMMAND_PRIORITY_NORMAL,

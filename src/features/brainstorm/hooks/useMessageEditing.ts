@@ -15,7 +15,7 @@ interface UseMessageEditingParams {
 interface UseMessageEditingReturn {
     editingMessageId: string | null;
     editingContent: string;
-    editingTextareaRef: RefObject<HTMLTextAreaElement>;
+    editingTextareaRef: RefObject<HTMLTextAreaElement | null>;
     startEdit: (message: ChatMessage) => void;
     saveEdit: (messageId: string) => Promise<void>;
     cancelEdit: () => void;
