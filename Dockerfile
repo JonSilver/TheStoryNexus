@@ -1,52 +1,55 @@
-FROM node:22-alpine AS builder
+# ---------- deps ----------
+FROM node:22-alpine AS deps
+WORKDIR /app
 
+# Install build dependencies for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
+RUN npm ci
+
+# ---------- build ----------
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Install build dependencies for native modules
 RUN apk add --no-cache python3 make g++
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build application (frontend + backend)
 RUN npm run build
 
-# Debug: Check what was built
-RUN ls -la dist/ && ls -la dist/server/ || echo "No server dir"
+# Sanity check
+RUN test -f /app/dist/server/server/index.js || (echo "Build output missing" && exit 1)
 
-# Production stage
-FROM node:22-alpine
-
+# ---------- runtime ----------
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production
 WORKDIR /app
 
-# Copy package files
+# Install build dependencies for native modules (needed for npm install)
+RUN apk add --no-cache python3 make g++
+
+# Production deps only
 COPY package*.json ./
+RUN npm install --omit=dev --no-audit --no-fund
 
-# Install production dependencies only
-RUN npm ci --production
+# App artefacts
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/server/db/migrations ./dist/server/server/db/migrations
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server/db/migrations ./dist/server/server/db/migrations
-
-# Debug: Check what was copied
-RUN ls -la dist/ && ls -la dist/server/ || echo "No server dir in production"
-
-# Create data directory for SQLite
+# Data volume
 RUN mkdir -p /app/data
+VOLUME ["/app/data"]
 
-# Expose port
+# Volume validation entrypoint
+COPY entrypoint.sh /usr/local/bin/entrypoint
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint && chmod +x /usr/local/bin/entrypoint
+
+USER node
 EXPOSE 3000
 
-# Set environment
-ENV NODE_ENV=production
 ENV DATABASE_PATH=/app/data/storynexus.db
 
-# Start server
+ENTRYPOINT ["entrypoint"]
 CMD ["node", "dist/server/server/index.js"]

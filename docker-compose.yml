@@ -1,15 +1,16 @@
 services:
   storynexus:
-    image: jonsilver/storynexus:latest
+    image: ${DOCKER_IMAGE:-jonsilver/storynexus}:${IMAGE_TAG:-latest}
     container_name: storynexus-app
+    pull_policy: always
     ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
+      - "${APP_PORT:-3000}:${APP_PORT:-3000}"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=${APP_PORT:-3000}
       - DATABASE_PATH=/app/data/storynexus.db
+    volumes:
+      - ${DATA_PATH:-./data}:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
