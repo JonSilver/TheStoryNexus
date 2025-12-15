@@ -24,7 +24,7 @@ export const POVSettingsPopover = ({
     povCharacter,
     characterEntries,
     onSave
-}: POVSettingsPopoverProps): JSX.Element => {
+}: POVSettingsPopoverProps): React.JSX.Element => {
     const [open, setOpen] = useState(false);
     const [tempPovType, setTempPovType] = useState<POVType | undefined>(povType);
     const [tempPovCharacter, setTempPovCharacter] = useState<string | undefined>(povCharacter);

@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { LorebookEntry } from "@/types/story";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";

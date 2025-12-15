@@ -26,7 +26,7 @@ export const ContextToggles = ({
     onMatchedSceneBeatChange,
     onCustomContextChange,
     children
-}: ContextTogglesProps): JSX.Element => {
+}: ContextTogglesProps): React.JSX.Element => {
     const [showContext, setShowContext] = useState(false);
 
     return (
