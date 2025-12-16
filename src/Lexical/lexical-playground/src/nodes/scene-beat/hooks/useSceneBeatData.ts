@@ -5,6 +5,7 @@ import is from "@sindresorhus/is";
 import { useSceneBeatQuery, useCreateSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import type { POVType } from "../components/POVSettingsPopover";
 import { logger } from "@/utils/logger";
+import { randomUUID } from "@/utils/crypto";
 
 interface SceneBeatNodeType {
     getSceneBeatId(): string;
@@ -81,7 +82,7 @@ export const useSceneBeatData = ({
             setSceneBeatId(nodeSceneBeatId);
         } else {
             logger.info("🆕 No sceneBeatId - will create new");
-            const newId = crypto.randomUUID();
+            const newId = randomUUID();
 
             // Set ID on Lexical node
             editor.update(
