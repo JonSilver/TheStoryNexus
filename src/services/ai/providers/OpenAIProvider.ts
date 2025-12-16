@@ -58,12 +58,18 @@ export class OpenAIProvider implements IAIProvider {
             throw new Error("OpenAI client not initialized");
         }
 
-        const stream = await this.client.chat.completions.create(
+        const client = this.client;
+
+        // Try without max_tokens first for gpt-5+ models, they don't support it
+        // For older models, include max_tokens
+        const isNewModel = model.startsWith("gpt-5") || model.startsWith("o1") || model.startsWith("o3");
+
+        const stream = await client.chat.completions.create(
             {
                 model,
                 messages: messages.map(m => ({ role: m.role, content: m.content })),
                 temperature,
-                max_completion_tokens: maxTokens,
+                ...(isNewModel ? {} : { max_tokens: maxTokens }),
                 stream: true
             },
             { signal }
