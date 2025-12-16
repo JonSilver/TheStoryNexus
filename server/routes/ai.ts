@@ -36,10 +36,13 @@ router.get(
 router.put(
     "/settings/:id",
     asyncHandler(async (req, res) => {
-        const { id: _id, createdAt: _createdAt, ...updates } = req.body;
+        const { id: _id, createdAt: _createdAt, lastModelsFetch, ...updates } = req.body;
         const result = await db
             .update(schema.aiSettings)
-            .set(updates)
+            .set({
+                ...updates,
+                ...(lastModelsFetch && { lastModelsFetch: new Date(lastModelsFetch) })
+            })
             .where(eq(schema.aiSettings.id, req.params.id))
             .returning();
         const updated = Array.isArray(result) ? result[0] : result;
