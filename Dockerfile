@@ -37,6 +37,7 @@ RUN npm ci --omit=dev
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server/db/migrations ./dist/server/server/db/migrations
+COPY --from=builder /app/server/data ./dist/server/server/data
 
 # Create data directory for SQLite with correct ownership
 RUN mkdir -p /app/data && chown node:node /app/data
