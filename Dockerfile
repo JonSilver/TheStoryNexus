@@ -1,44 +1,44 @@
-# ---------- deps ----------
-FROM node:22-alpine AS deps
-WORKDIR /app
+FROM node:22-alpine AS builder
 
-# Install build dependencies for native modules (better-sqlite3)
-RUN apk add --no-cache python3 make g++
-
-COPY package*.json ./
-RUN npm ci
-
-# ---------- build ----------
-FROM node:22-alpine AS build
 WORKDIR /app
 
 # Install build dependencies for native modules
 RUN apk add --no-cache python3 make g++
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
 COPY . .
+
+# Build application (frontend + backend)
 RUN npm run build
 
 # Sanity check
 RUN test -f /app/dist/server/server/index.js || (echo "Build output missing" && exit 1)
 
-# ---------- runtime ----------
-FROM node:22-alpine AS runtime
-ENV NODE_ENV=production
+# Production stage
+FROM node:22-alpine
+
 WORKDIR /app
 
-# Install build dependencies for native modules (needed for npm install)
+# Install build dependencies for native modules (needed for better-sqlite3)
 RUN apk add --no-cache python3 make g++
 
-# Production deps only
+# Copy package files
 COPY package*.json ./
-RUN npm install --omit=dev --no-audit --no-fund
 
-# App artefacts
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server/db/migrations ./dist/server/server/db/migrations
+# Install production dependencies only
+RUN npm ci --omit=dev
 
-# Data volume
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server/db/migrations ./dist/server/server/db/migrations
+
+# Create data directory for SQLite
 RUN mkdir -p /app/data
 VOLUME ["/app/data"]
 
@@ -46,10 +46,13 @@ VOLUME ["/app/data"]
 COPY entrypoint.sh /usr/local/bin/entrypoint
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint && chmod +x /usr/local/bin/entrypoint
 
-USER node
+# Expose port
 EXPOSE 3000
 
+# Set environment
+ENV NODE_ENV=production
 ENV DATABASE_PATH=/app/data/storynexus.db
 
+USER node
 ENTRYPOINT ["entrypoint"]
 CMD ["node", "dist/server/server/index.js"]
