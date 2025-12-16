@@ -49,6 +49,26 @@ $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptRoot
 Set-Location $ProjectRoot
 
+function Invoke-WithRetry {
+    param(
+        [scriptblock]$Command,
+        [string]$Description,
+        [int]$MaxRetries = 3,
+        [int]$DelaySeconds = 5
+    )
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        $result = & $Command 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return $result
+        }
+        if ($i -lt $MaxRetries) {
+            Write-Host "  $Description failed (attempt $i/$MaxRetries), retrying in ${DelaySeconds}s..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+    throw "$Description failed after $MaxRetries attempts: $result"
+}
+
 try {
     # Check for uncommitted changes
     Write-Host "Checking git status..." -ForegroundColor Cyan
@@ -153,31 +173,17 @@ try {
         throw "git tag failed with exit code $LASTEXITCODE"
     }
 
-    # Push all commits and tag
-    Write-Host "Pushing all commits and tag to origin..." -ForegroundColor Cyan
-    $PushResult = git push 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Git push failed:"
-        Write-Host $PushResult -ForegroundColor Red
-        throw "git push failed with exit code $LASTEXITCODE"
-    }
+    # Push all commits and tag (with retry for transient network issues)
+    Write-Host "Pushing all commits to origin..." -ForegroundColor Cyan
+    Invoke-WithRetry -Command { git push } -Description "git push"
 
-    $PushTagResult = git push origin $TagName 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Git push tag failed:"
-        Write-Host $PushTagResult -ForegroundColor Red
-        throw "git push tag failed with exit code $LASTEXITCODE"
-    }
+    Write-Host "Pushing tag to origin..." -ForegroundColor Cyan
+    Invoke-WithRetry -Command { git push origin $TagName } -Description "git push tag"
 
     # Create release
     if ($Auto) {
         Write-Host "`nCreating GitHub release automatically..." -ForegroundColor Cyan
-        $ReleaseResult = gh release create $TagName --title "v$NewVersion" --generate-notes 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "gh release create failed:"
-            Write-Host $ReleaseResult -ForegroundColor Red
-            throw "gh release create failed with exit code $LASTEXITCODE"
-        }
+        Invoke-WithRetry -Command { gh release create $TagName --title "v$NewVersion" --generate-notes } -Description "gh release create"
 
         Write-Host "`nRelease created successfully!" -ForegroundColor Green
         Write-Host "Version: $NewVersion" -ForegroundColor Green
