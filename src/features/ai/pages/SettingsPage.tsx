@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ModelCombobox } from "@/components/ui/model-combobox";
 import { API_URLS } from "@/constants/urls";
 import {
     useAISettingsQuery,
@@ -79,22 +79,12 @@ const ProviderCard = ({
                 {models.length > 0 && (
                     <div className="space-y-2">
                         <Label>Default Model</Label>
-                        <Select
-                            value={defaultModel || "none"}
-                            onValueChange={value => onDefaultModelChange(value === "none" ? undefined : value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select default model" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                {models.map(model => (
-                                    <SelectItem key={model.id} value={model.id}>
-                                        {model.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <ModelCombobox
+                            models={models}
+                            value={defaultModel}
+                            onValueChange={onDefaultModelChange}
+                            placeholder="Select default model"
+                        />
                         <p className="text-xs text-muted-foreground">Select a default model for {title} generation</p>
                     </div>
                 )}
@@ -261,27 +251,18 @@ export default function SettingsPage() {
                             {localModels.length > 0 && (
                                 <div className="space-y-2">
                                     <Label htmlFor="local-default">Default Model</Label>
-                                    <Select
-                                        value={settings?.defaultLocalModel || "none"}
-                                        onValueChange={value =>
+                                    <ModelCombobox
+                                        id="local-default"
+                                        models={localModels}
+                                        value={settings?.defaultLocalModel}
+                                        onValueChange={modelId =>
                                             updateDefaultModelMutation.mutate({
                                                 provider: "local",
-                                                modelId: value === "none" ? undefined : value
+                                                modelId
                                             })
                                         }
-                                    >
-                                        <SelectTrigger id="local-default">
-                                            <SelectValue placeholder="Select default model" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            {localModels.map(model => (
-                                                <SelectItem key={model.id} value={model.id}>
-                                                    {model.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        placeholder="Select default model"
+                                    />
                                     <p className="text-xs text-muted-foreground">
                                         Select a default model for local generation
                                     </p>
