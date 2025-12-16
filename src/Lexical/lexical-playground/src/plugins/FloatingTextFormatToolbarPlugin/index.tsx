@@ -66,7 +66,7 @@ function TextFormatFloatingToolbar({
 }): JSX.Element {
     const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
     const { currentStoryId, currentChapterId } = useStoryContext();
-    const { data: prompts = [], isLoading, error } = usePromptsQuery();
+    const { data: prompts = [], isLoading, error } = usePromptsQuery({ includeSystem: true });
     const { lastUsed, saveSelection } = useLastUsedPrompt("selection_specific", prompts);
     const { generateWithPrompt } = useGenerateWithPrompt();
     const { parsePrompt } = usePromptParser();
@@ -332,6 +332,12 @@ function TextFormatFloatingToolbar({
                 },
                 () => {
                     // When streaming is complete, replace the selected text
+                    console.log(
+                        "[handleGenerateWithPrompt] onComplete called, fullText length:",
+                        fullText.length,
+                        "fullText:",
+                        fullText.substring(0, 100)
+                    );
                     editor.update(() => {
                         const currentSelection = $getSelection();
                         if ($isRangeSelection(currentSelection)) {
