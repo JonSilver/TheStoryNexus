@@ -14,6 +14,7 @@ import { useStoryContext, WorkspaceTool } from "@/features/stories/context/Story
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "./context/WorkspaceContext";
+import { version } from "../../../package.json";
 
 const tools = [
     { id: "stories" as WorkspaceTool, label: "Stories", icon: Library, requiresStory: false },
@@ -71,7 +72,10 @@ export const Sidebar = () => {
                     })}
                 </nav>
 
-                <div className="p-2 border-t">
+                <div className="p-2 border-t space-y-2">
+                    <div className="text-xs text-muted-foreground text-center">
+                        {collapsed ? `v${version}` : `Version ${version}`}
+                    </div>
                     <Button
                         variant="ghost"
                         size="icon"

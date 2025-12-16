@@ -16,7 +16,8 @@
       "Bash(git commit:*)",
       "Bash(npm install:*)",
       "Bash(gh issue view:*)",
-      "Bash(gh repo view:*)"
+      "Bash(gh repo view:*)",
+      "Bash(git remote:*)"
     ],
     "deny": [],
     "ask": []
