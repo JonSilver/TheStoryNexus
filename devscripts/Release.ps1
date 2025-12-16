@@ -20,9 +20,16 @@
     Creates release automatically using gh CLI with generated notes.
     Otherwise, opens the GitHub release page in browser.
 
+.PARAMETER Lint
+    Run lint check before releasing (slow)
+
+.PARAMETER Build
+    Run build check before releasing (slow)
+
 .EXAMPLE
     .\Release.ps1 -Action patch
     .\Release.ps1 -Action patch -Auto
+    .\Release.ps1 -Action patch -Auto -Lint -Build
     .\Release.ps1 -Action set -Version "2.1.0" -DryRun
 #>
 
@@ -42,7 +49,13 @@ param(
     [switch]$DryRun,
 
     [Parameter(Mandatory = $false)]
-    [switch]$Auto
+    [switch]$Auto,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$Lint,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$Build
 )
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -70,6 +83,30 @@ function Invoke-WithRetry {
 }
 
 try {
+    # Optional lint check
+    if ($Lint) {
+        Write-Host "Running lint check..." -ForegroundColor Cyan
+        $LintResult = npm run lint 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Lint failed. Fix errors before releasing:"
+            Write-Host $LintResult -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "Lint passed" -ForegroundColor Green
+    }
+
+    # Optional build check
+    if ($Build) {
+        Write-Host "Running build check..." -ForegroundColor Cyan
+        $BuildResult = npm run build 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Build failed. Fix errors before releasing:"
+            Write-Host $BuildResult -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "Build passed" -ForegroundColor Green
+    }
+
     # Check for uncommitted changes
     Write-Host "Checking git status..." -ForegroundColor Cyan
     $GitStatus = git status --porcelain
