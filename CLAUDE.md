@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
+Repo: https://github.com/jonsilver/TheStoryNexus
+
 The Story Nexus is a local-first web application for AI-assisted creative writing, built with Express.js, React, TypeScript, and SQLite. The app provides a comprehensive environment for writers to create stories with AI-powered tools while maintaining full local data control. Run it on your local machine or deploy it via Docker to access from any device on your network.
 
 ## Development Commands
