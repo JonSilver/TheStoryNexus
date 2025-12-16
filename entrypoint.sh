@@ -49,5 +49,13 @@ else
   }
 fi
 
+# 4) Check write access
+if ! touch "$DATA_DIR/.write-test" 2>/dev/null; then
+  echo "Fatal: No write access to $DATA_DIR." >&2
+  echo "Fix: On the host, run: sudo chown -R 1000:1000 <your-data-path>" >&2
+  exit 1
+fi
+rm -f "$DATA_DIR/.write-test"
+
 mkdir -p "$DB_DIR"
 exec "$@"

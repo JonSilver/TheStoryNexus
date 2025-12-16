@@ -14,7 +14,9 @@
       "Bash(npm update:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh repo view:*)"
     ],
     "deny": [],
     "ask": []

@@ -38,8 +38,8 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server/db/migrations ./dist/server/server/db/migrations
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+# Create data directory for SQLite with correct ownership
+RUN mkdir -p /app/data && chown node:node /app/data
 VOLUME ["/app/data"]
 
 # Volume validation entrypoint
@@ -53,6 +53,6 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV DATABASE_PATH=/app/data/storynexus.db
 
-USER node
+# User set via docker-compose (PUID/PGID env vars, defaults to 1000:1000)
 ENTRYPOINT ["entrypoint"]
 CMD ["node", "dist/server/server/index.js"]
