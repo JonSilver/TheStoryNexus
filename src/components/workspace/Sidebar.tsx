@@ -89,8 +89,8 @@ export const Sidebar = () => {
             </aside>
 
             {/* Mobile Bottom Toolbar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 z-50">
-                <div className="flex justify-around p-2">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 z-50 safe-area-inset-bottom">
+                <div className="flex justify-around p-1 sm:p-2">
                     {tools.map(tool => {
                         const Icon = tool.icon;
                         const isActive = currentTool === tool.id;
@@ -102,14 +102,14 @@ export const Sidebar = () => {
                                 variant={isActive ? "secondary" : "ghost"}
                                 size="sm"
                                 className={cn(
-                                    "flex-col h-auto py-2 px-3 gap-1",
+                                    "flex-col h-auto py-1.5 px-1 sm:px-2 gap-0.5 min-w-0",
                                     isDisabled && "opacity-50 cursor-not-allowed"
                                 )}
                                 onClick={() => handleToolClick(tool.id, tool.requiresStory)}
                                 disabled={isDisabled}
                             >
-                                <Icon className="h-5 w-5" />
-                                <span className="text-xs">{tool.label}</span>
+                                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-[10px] sm:text-xs truncate max-w-[40px] sm:max-w-none">{tool.label}</span>
                             </Button>
                         );
                     })}

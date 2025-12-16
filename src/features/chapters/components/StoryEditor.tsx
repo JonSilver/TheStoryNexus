@@ -18,7 +18,13 @@ import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import EmbeddedPlayground from "@/Lexical/lexical-playground/src/EmbeddedPlayground";
 import { cn } from "@/lib/utils";
-import { BookOpen, ChevronLeft, ChevronRight, LucideIcon, StickyNote, Tags, User } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { ChapterOutline } from "./ChapterOutline";
 
@@ -41,11 +47,30 @@ export function StoryEditor() {
     const toggleDrawer = (drawer: DrawerType) => setOpenDrawer(drawer === openDrawer ? null : drawer);
 
     return (
-        <div className="h-full flex">
+        <div className="h-full flex relative">
             <div className={cn("flex-1 flex justify-center", !isMaximised && "px-4")}>
                 <div className={cn("h-full flex flex-col", isMaximised ? "w-full" : "max-w-[1024px] w-full")}>
                     <EmbeddedPlayground />
                 </div>
+            </div>
+
+            {/* Mobile floating menu for editor tools */}
+            <div className="md:hidden fixed bottom-20 right-4 z-40">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="icon" className="h-12 w-12 rounded-full shadow-lg">
+                            <Menu className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" side="top" className="mb-2">
+                        {sidebarButtons.map(({ id, icon: Icon, title }) => (
+                            <DropdownMenuItem key={id} onClick={() => toggleDrawer(id)}>
+                                <Icon className="h-4 w-4 mr-2" />
+                                {title}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             <aside
@@ -155,7 +180,7 @@ export function StoryEditor() {
 
             {/* Replace the Chapter Notes Drawer with this Sheet */}
             <Sheet open={openDrawer === "chapterNotes"} onOpenChange={open => !open && setOpenDrawer(null)}>
-                <SheetContent side="right" className="h-[100vh] min-w-[800px]">
+                <SheetContent side="right" className="h-[100vh] w-full sm:w-[540px] md:w-[700px] lg:w-[800px] sm:max-w-full">
                     <SheetHeader>
                         <SheetTitle>Scribble</SheetTitle>
                     </SheetHeader>

@@ -105,27 +105,48 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Header - stacks on mobile */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
+                    <p className="text-muted-foreground mt-1 text-sm sm:text-base">
                         {seriesId
-                            ? "View and manage entries for this series (shared across all stories in series)"
-                            : "View and manage entries for this story (includes global and series entries)"}
+                            ? "Entries shared across all stories in series"
+                            : "Story entries (includes global and series)"}
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    {/* Import/Export icons only on mobile */}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleExport}
+                        className="sm:hidden border-2 border-gray-300 dark:border-gray-700"
+                        title="Export"
+                    >
+                        <Download className="w-4 h-4" />
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={handleExport}
-                        className="border-2 border-gray-300 dark:border-gray-700"
+                        className="hidden sm:flex border-2 border-gray-300 dark:border-gray-700"
                     >
                         <Download className="w-4 h-4 mr-2" />
                         Export
                     </Button>
                     <label htmlFor="import-lorebook">
-                        <Button variant="outline" asChild className="border-2 border-gray-300 dark:border-gray-700">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            asChild
+                            className="sm:hidden border-2 border-gray-300 dark:border-gray-700"
+                        >
+                            <div title="Import">
+                                <Upload className="w-4 h-4" />
+                            </div>
+                        </Button>
+                        <Button variant="outline" asChild className="hidden sm:flex border-2 border-gray-300 dark:border-gray-700">
                             <div>
                                 <Upload className="w-4 h-4 mr-2" />
                                 Import
@@ -133,7 +154,10 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
                         </Button>
                     </label>
                     <input id="import-lorebook" type="file" accept=".json" className="hidden" onChange={handleImport} />
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    <Button size="icon" className="sm:hidden" onClick={() => setIsCreateDialogOpen(true)} title="New Entry">
+                        <Plus className="w-4 h-4" />
+                    </Button>
+                    <Button className="hidden sm:flex" onClick={() => setIsCreateDialogOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         New Entry
                     </Button>
@@ -142,18 +166,18 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
 
             <Separator className="bg-gray-300 dark:bg-gray-700" />
 
-            {/* Category tabs and entry list */}
+            {/* Category tabs - horizontal scroll on mobile */}
             <Tabs
                 value={selectedCategory}
                 onValueChange={v => setSelectedCategory(v as LorebookCategory)}
                 className="w-full"
             >
-                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700 flex-wrap">
+                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700 overflow-x-auto flex-nowrap">
                     {CATEGORIES.map(cat => (
                         <TabsTrigger
                             key={cat}
                             value={cat}
-                            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                            className="whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
                         >
                             {cat.charAt(0).toUpperCase() + cat.slice(1)} ({categoryCounts[cat] || 0})
                         </TabsTrigger>

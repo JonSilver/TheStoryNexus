@@ -630,19 +630,22 @@ export default function ToolbarPlugin({
                 </>
             )}
             <>
-                <FontDropDown
-                    disabled={!isEditable}
-                    style={"font-family"}
-                    value={toolbarState.fontFamily}
-                    editor={activeEditor}
-                />
-                <Divider />
-                <FontSize
-                    selectionFontSize={toolbarState.fontSize.slice(0, -2)}
-                    editor={activeEditor}
-                    disabled={!isEditable}
-                />
-                <Divider />
+                {/* Font controls - hidden on mobile */}
+                <div className="hidden md:flex items-center">
+                    <FontDropDown
+                        disabled={!isEditable}
+                        style={"font-family"}
+                        value={toolbarState.fontFamily}
+                        editor={activeEditor}
+                    />
+                    <Divider />
+                    <FontSize
+                        selectionFontSize={toolbarState.fontSize.slice(0, -2)}
+                        editor={activeEditor}
+                        disabled={!isEditable}
+                    />
+                    <Divider />
+                </div>
                 <Button
                     disabled={!isEditable}
                     onClick={() => {
@@ -850,15 +853,20 @@ export default function ToolbarPlugin({
                     </>
                 )}
             </>
-            <Divider />
-            <ElementFormatDropdown
-                disabled={!isEditable}
-                value={toolbarState.elementFormat}
-                editor={activeEditor}
-                isRTL={toolbarState.isRTL}
-            />
+            {/* Alignment - hidden on mobile */}
+            <div className="hidden md:flex items-center">
+                <Divider />
+                <ElementFormatDropdown
+                    disabled={!isEditable}
+                    value={toolbarState.elementFormat}
+                    editor={activeEditor}
+                    isRTL={toolbarState.isRTL}
+                />
+            </div>
             <div className="ml-auto flex items-center gap-1">
-                <span className="text-xs text-muted-foreground px-2">Words: {toolbarState.wordCount}</span>
+                <span className="hidden sm:inline text-xs text-muted-foreground px-2">
+                    Words: {toolbarState.wordCount}
+                </span>
                 <Button
                     variant="ghost"
                     size="icon"

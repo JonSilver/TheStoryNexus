@@ -6,8 +6,8 @@ import { Button } from "./ui/button";
 export function MainLayout() {
     return (
         <div className="min-h-screen flex bg-background">
-            {/* Fixed Icon Navigation */}
-            <div className="w-12 border-r bg-muted/50 flex flex-col items-center py-4 fixed h-screen">
+            {/* Fixed Icon Navigation - hidden on mobile */}
+            <div className="hidden md:flex w-12 border-r bg-muted/50 flex-col items-center py-4 fixed h-screen">
                 {/* Top Navigation Icons */}
                 <div className="flex-1 flex flex-col space-y-4">
                     <Link to="/">
@@ -27,8 +27,8 @@ export function MainLayout() {
                 </div>
             </div>
 
-            {/* Main Content Area - with offset for fixed sidebar */}
-            <div className="flex-1 ml-12">
+            {/* Main Content Area - offset removed on mobile */}
+            <div className="flex-1 ml-0 md:ml-12">
                 <Outlet />
             </div>
         </div>
