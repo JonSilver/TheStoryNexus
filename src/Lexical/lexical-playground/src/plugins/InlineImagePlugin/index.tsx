@@ -99,7 +99,7 @@ export function InsertInlineImageDialog({
         return () => {
             document.removeEventListener("keydown", handler);
         };
-    }, [activeEditor]);
+    }, [/* effect dep */ activeEditor]);
 
     const handleOnClick = () => {
         const payload = { altText, position, showCaption, src };

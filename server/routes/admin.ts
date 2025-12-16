@@ -100,8 +100,9 @@ router.post("/import", upload.single("file"), async (req, res) => {
 
     console.log("[Import] Starting database import...");
 
+    const fileBuffer = req.file.buffer;
     const [parseError, jsonData] = await attemptPromise(() =>
-        Promise.resolve(JSON.parse(req.file!.buffer.toString("utf-8")))
+        Promise.resolve(JSON.parse(fileBuffer.toString("utf-8")))
     );
 
     if (parseError) {

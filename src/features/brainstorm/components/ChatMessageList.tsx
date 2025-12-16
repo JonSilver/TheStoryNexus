@@ -33,7 +33,7 @@ export function ChatMessageList({
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [/* effect dep */ messages]);
 
     useEffect(() => {
         const ta = editingTextareaRef.current;
@@ -42,7 +42,7 @@ export function ChatMessageList({
             ta.style.height = "auto";
             ta.style.height = `${contentHeight}px`;
         }
-    }, [editingContent, editingMessageId, editingTextareaRef]);
+    }, [/* effect dep */ editingContent, editingMessageId, editingTextareaRef]);
 
     return (
         <ScrollArea className="flex-1 px-4">

@@ -146,7 +146,7 @@ export function InsertImageDialog({
         return () => {
             document.removeEventListener("keydown", handler);
         };
-    }, [activeEditor]);
+    }, [/* effect dep */ activeEditor]);
 
     const onClick = (payload: InsertImagePayload) => {
         activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
@@ -215,7 +215,7 @@ export default function ImagesPlugin({ captionsEnabled }: { captionsEnabled?: bo
             editor.registerCommand<DragEvent>(DRAGOVER_COMMAND, event => $onDragover(event), COMMAND_PRIORITY_LOW),
             editor.registerCommand<DragEvent>(DROP_COMMAND, event => $onDrop(event, editor), COMMAND_PRIORITY_HIGH)
         );
-    }, [captionsEnabled, editor]);
+    }, [/* effect dep */ captionsEnabled, editor]);
 
     return null;
 }

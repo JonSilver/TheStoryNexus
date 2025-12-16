@@ -34,16 +34,16 @@ export const useLorebookByStoryQuery = (storyId: string) =>
 // Query: Series-level lorebook entries
 export const useSeriesLorebookQuery = (seriesId: string | undefined) =>
     useQuery({
-        queryKey: lorebookKeys.series(seriesId!),
-        queryFn: () => lorebookApi.getBySeries(seriesId!),
+        queryKey: lorebookKeys.series(seriesId ?? ""),
+        queryFn: () => lorebookApi.getBySeries(seriesId ?? ""),
         enabled: !!seriesId
     });
 
 // Query: Story-level lorebook entries only
 export const useStoryLorebookQuery = (storyId: string | undefined) =>
     useQuery({
-        queryKey: lorebookKeys.story(storyId!),
-        queryFn: () => lorebookApi.getByStory(storyId!),
+        queryKey: lorebookKeys.story(storyId ?? ""),
+        queryFn: () => lorebookApi.getByStory(storyId ?? ""),
         enabled: !!storyId
     });
 
@@ -51,8 +51,8 @@ export const useStoryLorebookQuery = (storyId: string | undefined) =>
 // CRITICAL: This is what prompt context should use
 export const useHierarchicalLorebookQuery = (storyId: string | undefined) =>
     useQuery({
-        queryKey: lorebookKeys.hierarchical(storyId!),
-        queryFn: () => lorebookApi.getHierarchical(storyId!),
+        queryKey: lorebookKeys.hierarchical(storyId ?? ""),
+        queryFn: () => lorebookApi.getHierarchical(storyId ?? ""),
         enabled: !!storyId
     });
 

@@ -310,7 +310,7 @@ export default function InlineImageComponent({
             isMounted = false;
             unregister();
         };
-    }, [clearSelection, editor, isSelected, nodeKey, $onDelete, $onEnter, $onEscape, setSelected]);
+    }, [clearSelection, editor, isSelected, /* effect dep */ nodeKey, $onDelete, $onEnter, $onEscape, setSelected]);
 
     const draggable = isSelected && $isNodeSelection(selection);
     const isFocused = isSelected && isEditable;

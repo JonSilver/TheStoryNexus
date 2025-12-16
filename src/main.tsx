@@ -25,9 +25,10 @@ const PageLoadingFallback = () => (
         <div className="animate-pulse text-muted-foreground">Loading...</div>
     </div>
 );
-// biome-ignore lint/style/noNonNullAssertion: <explanation>
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(rootElement).render(
     <ErrorBoundary>
         <QueryProvider>
             <ThemeProvider defaultTheme="dark" storageKey="app-theme">

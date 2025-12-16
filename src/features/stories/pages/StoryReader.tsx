@@ -10,8 +10,8 @@ export function StoryReader() {
     const { storyId } = useParams<{ storyId: string }>();
     const navigate = useNavigate();
 
-    const { data: story, isLoading: storyLoading } = useStoryQuery(storyId!);
-    const { data: chapters = [], isLoading: chaptersLoading } = useChaptersByStoryQuery(storyId!);
+    const { data: story, isLoading: storyLoading } = useStoryQuery(storyId ?? "");
+    const { data: chapters = [], isLoading: chaptersLoading } = useChaptersByStoryQuery(storyId ?? "");
 
     const isLoading = storyLoading || chaptersLoading;
 

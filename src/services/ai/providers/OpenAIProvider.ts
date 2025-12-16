@@ -25,7 +25,8 @@ export class OpenAIProvider implements IAIProvider {
 
         logger.info("[OpenAIProvider] Fetching models");
 
-        const [error, response] = await attemptPromise(() => this.client!.models.list());
+        const client = this.client;
+        const [error, response] = await attemptPromise(() => client.models.list());
 
         if (error) {
             logger.error("[OpenAIProvider] Error fetching models:", error);

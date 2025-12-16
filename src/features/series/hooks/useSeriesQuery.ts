@@ -24,8 +24,8 @@ export const useSeriesQuery = () =>
 // Query: Single series by ID
 export const useSingleSeriesQuery = (id: string | undefined) =>
     useQuery({
-        queryKey: seriesKeys.detail(id!),
-        queryFn: () => seriesApi.getById(id!),
+        queryKey: seriesKeys.detail(id ?? ""),
+        queryFn: () => seriesApi.getById(id ?? ""),
         enabled: !!id
     });
 

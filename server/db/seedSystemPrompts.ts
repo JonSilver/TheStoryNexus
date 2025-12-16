@@ -17,11 +17,11 @@ export const seedSystemPrompts = async () => {
 
         // Insert all system prompts
         const promptsToInsert = systemPrompts.map((prompt: Partial<Prompt>) => ({
-            id: prompt.id || crypto.randomUUID(),
-            name: prompt.name!,
-            description: prompt.description || null,
-            promptType: prompt.promptType!,
-            messages: prompt.messages!,
+            id: prompt.id ?? crypto.randomUUID(),
+            name: prompt.name ?? "",
+            description: prompt.description ?? null,
+            promptType: prompt.promptType ?? "other",
+            messages: prompt.messages ?? [],
             allowedModels: prompt.allowedModels || [],
             storyId: null,
             isSystem: true,

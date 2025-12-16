@@ -54,7 +54,8 @@ export class PreviousWordsResolver implements IVariableResolver {
         const currentPovType = context.povType || context.currentChapter.povType;
         const currentPovCharacter = context.povCharacter || context.currentChapter.povCharacter;
 
-        const [error, previousChapter] = await attemptPromise(() => getPreviousChapter(context.currentChapter!.id));
+        const chapterId = context.currentChapter.id;
+        const [error, previousChapter] = await attemptPromise(() => getPreviousChapter(chapterId));
 
         if (error) {
             logger.error("Error fetching previous chapter:", error);

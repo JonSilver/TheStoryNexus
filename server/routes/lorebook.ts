@@ -221,8 +221,9 @@ export default createCrudRouter({
                     return;
                 }
 
+                const fileBuffer = req.file.buffer;
                 const [parseError, importData] = await attemptPromise(() =>
-                    Promise.resolve(JSON.parse(req.file!.buffer.toString("utf-8")))
+                    Promise.resolve(JSON.parse(fileBuffer.toString("utf-8")))
                 );
 
                 if (parseError) {

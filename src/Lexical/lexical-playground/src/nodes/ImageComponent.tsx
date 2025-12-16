@@ -305,17 +305,17 @@ export default function ImageComponent({
             rootElement?.removeEventListener("contextmenu", onRightClick);
         };
     }, [
-        clearSelection,
+        /* effect dep */ clearSelection,
         editor,
-        isResizing,
-        isSelected,
-        nodeKey,
+        /* effect dep */ isResizing,
+        /* effect dep */ isSelected,
+        /* effect dep */ nodeKey,
         $onDelete,
         $onEnter,
         $onEscape,
         onClick,
         onRightClick,
-        setSelected
+        /* effect dep */ setSelected
     ]);
 
     const setShowCaption = () => {

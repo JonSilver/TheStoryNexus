@@ -65,7 +65,9 @@ export class AIService {
         }
 
         // Update via API
-        const [error] = await attemptPromise(() => aiApi.updateSettings(this.settings!.id, update));
+        if (!this.settings) throw new Error("Settings not initialized");
+        const settingsId = this.settings.id;
+        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId, update));
         if (error) {
             logger.error("[AIService] Failed to update settings via API", error);
             throw error;
@@ -110,7 +112,9 @@ export class AIService {
         }
 
         // Update via API
-        const [apiError] = await attemptPromise(() => aiApi.updateSettings(this.settings!.id, updateData));
+        if (!this.settings) throw new Error("Settings not initialized");
+        const settingsId = this.settings.id;
+        const [apiError] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
         if (apiError) {
             logger.error("[AIService] Failed to update models via API", apiError);
             throw apiError;
@@ -250,9 +254,10 @@ export class AIService {
         maxTokens: number
     ): Promise<Response> {
         this.abortController = new AbortController();
+        const signal = this.abortController.signal;
 
         const [error, response] = await attemptPromise(() =>
-            provider.generate(messages, modelId, temperature, maxTokens, this.abortController!.signal)
+            provider.generate(messages, modelId, temperature, maxTokens, signal)
         );
 
         if (error) {
@@ -371,7 +376,8 @@ export class AIService {
         }
 
         // Update via API
-        const [error] = await attemptPromise(() => aiApi.updateSettings(this.settings!.id, updateData));
+        const settingsId = this.settings.id;
+        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
         if (error) {
             logger.error("[AIService] Failed to update default model via API", error);
             throw error;
@@ -393,7 +399,8 @@ export class AIService {
         }
 
         // Update via API
-        const [error] = await attemptPromise(() => aiApi.updateSettings(this.settings!.id, updateData));
+        const settingsId2 = this.settings.id;
+        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId2, updateData));
         if (error) {
             logger.error("[AIService] Failed to update local API URL via API", error);
             throw error;

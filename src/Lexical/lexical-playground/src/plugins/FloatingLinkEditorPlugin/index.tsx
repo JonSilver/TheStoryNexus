@@ -182,7 +182,7 @@ function FloatingLinkEditor({
         if (isLinkEditMode && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isLinkEditMode, isLink]);
+    }, [isLinkEditMode, /* effect dep */ isLink]);
 
     const monitorInputInteraction = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Enter") {
