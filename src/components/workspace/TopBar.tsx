@@ -1,9 +1,7 @@
 import { HelpCircle, Search, Settings } from "lucide-react";
 import { useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,6 +9,8 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
+import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { ChapterSwitcher } from "./ChapterSwitcher";
 
 interface TopBarProps {

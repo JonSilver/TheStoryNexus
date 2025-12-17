@@ -6,10 +6,9 @@
  *
  */
 
+import type { ElementFormatType } from "lexical";
 import type { JSX } from "react";
-
-import { ElementFormatType } from "lexical";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export const MIN_ALLOWED_FONT_SIZE = 8;
 export const MAX_ALLOWED_FONT_SIZE = 72;

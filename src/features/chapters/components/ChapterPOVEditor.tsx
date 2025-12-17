@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -5,8 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
 import type { Chapter } from "@/types/story";
-import { useMemo } from "react";
-import { useForm } from "react-hook-form";
 
 interface ChapterPOVEditorProps {
     chapter: Chapter;

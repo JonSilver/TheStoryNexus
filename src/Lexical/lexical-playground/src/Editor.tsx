@@ -6,8 +6,6 @@
  *
  */
 
-import type { JSX } from "react";
-
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -20,6 +18,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { SelectionAlwaysOnDisplay } from "@lexical/react/LexicalSelectionAlwaysOnDisplay";
 import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
 import { useLexicalEditable } from "@lexical/react/useLexicalEditable";
+import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { CAN_USE_DOM } from "shared/canUseDOM";
 import { useSettings } from "./context/SettingsContext";

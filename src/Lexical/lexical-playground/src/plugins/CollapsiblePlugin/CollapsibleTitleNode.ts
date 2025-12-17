@@ -9,14 +9,14 @@
 import {
     $createParagraphNode,
     $isElementNode,
-    DOMConversionMap,
-    DOMConversionOutput,
-    EditorConfig,
+    type DOMConversionMap,
+    type DOMConversionOutput,
+    type EditorConfig,
     ElementNode,
-    LexicalEditor,
-    LexicalNode,
-    RangeSelection,
-    SerializedElementNode
+    type LexicalEditor,
+    type LexicalNode,
+    type RangeSelection,
+    type SerializedElementNode
 } from "lexical";
 import { IS_CHROME } from "shared/environment";
 import invariant from "shared/invariant";

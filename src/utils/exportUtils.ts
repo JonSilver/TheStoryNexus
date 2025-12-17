@@ -1,6 +1,6 @@
-import { storiesApi, chaptersApi } from "@/services/api/client";
+import { chaptersApi, storiesApi } from "@/services/api/client";
+import type { Chapter, Story } from "@/types/story";
 import { extractPlainTextFromLexical } from "./lexicalUtils";
-import type { Story, Chapter } from "@/types/story";
 
 interface SerializedLexicalNode {
     type: string;
@@ -106,9 +106,9 @@ function convertLexicalToMarkdown(jsonContent: string): string {
             return "  \n";
         } else if (node.type === "paragraph") {
             const childrenText = node.children ? node.children.map(processNode).join("") : "";
-            return childrenText + "\n\n";
+            return `${childrenText}\n\n`;
         } else if (node.type === "heading" && node.tag) {
-            const level = parseInt(node.tag);
+            const level = parseInt(node.tag, 10);
             const prefix = "#".repeat(level);
             const childrenText = node.children ? node.children.map(processNode).join("") : "";
             return `${prefix} ${childrenText}\n\n`;
@@ -145,7 +145,7 @@ async function exportStoryAsEpub(story: Story): Promise<void> {
 async function exportStoryAsPdf(story: Story, chapters: Chapter[]): Promise<void> {
     const { jsPDF } = await import("jspdf");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: jsPDF types are incomplete
     const doc = new jsPDF() as any;
 
     const pageWidth = doc.internal.pageSize.getWidth();

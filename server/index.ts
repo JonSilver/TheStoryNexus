@@ -1,7 +1,7 @@
-import express from "express";
-import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import cors from "cors";
+import express from "express";
 import { runMigrations } from "./db/migrate.js";
 import { seedSystemPrompts } from "./db/seedSystemPrompts.js";
 
@@ -9,17 +9,17 @@ import { seedSystemPrompts } from "./db/seedSystemPrompts.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import routes
-import storiesRouter from "./routes/stories.js";
-import chaptersRouter from "./routes/chapters.js";
-import lorebookRouter from "./routes/lorebook.js";
-import promptsRouter from "./routes/prompts.js";
+import adminRouter from "./routes/admin.js";
 import aiRouter from "./routes/ai.js";
 import brainstormRouter from "./routes/brainstorm.js";
-import scenebeatsRouter from "./routes/scenebeats.js";
+import chaptersRouter from "./routes/chapters.js";
+import lorebookRouter from "./routes/lorebook.js";
 import notesRouter from "./routes/notes.js";
-import adminRouter from "./routes/admin.js";
+import promptsRouter from "./routes/prompts.js";
+import scenebeatsRouter from "./routes/scenebeats.js";
 import seriesRouter from "./routes/series.js";
+// Import routes
+import storiesRouter from "./routes/stories.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;

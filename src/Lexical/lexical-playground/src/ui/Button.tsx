@@ -10,7 +10,7 @@ import type { JSX } from "react";
 
 import "./Button.css";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import joinClasses from "../utils/joinClasses";
 

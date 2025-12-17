@@ -1,5 +1,5 @@
-import type { AllowedModel, Prompt } from "@/types/story";
 import { useCallback, useMemo } from "react";
+import type { AllowedModel, Prompt } from "@/types/story";
 
 interface LastUsedData {
     promptId: string;

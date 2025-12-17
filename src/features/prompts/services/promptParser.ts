@@ -1,38 +1,38 @@
-import { PromptMessage, PromptParserConfig, ParsedPrompt, PromptContext, LorebookEntry } from "@/types/story";
-import is from "@sindresorhus/is";
-import { ContextBuilder } from "./ContextBuilder";
 import { attemptPromise } from "@jfdi/attempt";
+import is from "@sindresorhus/is";
 import { promptsApi } from "@/services/api/client";
+import type { LorebookEntry, ParsedPrompt, PromptContext, PromptMessage, PromptParserConfig } from "@/types/story";
+import { logger } from "@/utils/logger";
+import { ContextBuilder } from "./ContextBuilder";
 import {
-    VariableResolverRegistry,
-    LorebookFormatter,
-    ChapterSummariesResolver,
-    PreviousWordsResolver,
-    ChapterContentResolver,
-    ChapterOutlineResolver,
-    ChapterDataResolver,
-    MatchedEntriesChapterResolver,
-    SceneBeatMatchedEntriesResolver,
-    AllEntriesResolver,
-    CharacterResolver,
     AllCharactersResolver,
-    AllLocationsResolver,
-    AllItemsResolver,
+    AllEntriesResolver,
     AllEventsResolver,
+    AllItemsResolver,
+    AllLocationsResolver,
     AllNotesResolver,
-    AllSynopsisResolver,
     AllStartingScenariosResolver,
+    AllSynopsisResolver,
     AllTimelinesResolver,
-    SceneBeatContextResolver,
+    BrainstormContextResolver,
+    ChapterContentResolver,
+    ChapterDataResolver,
+    ChapterOutlineResolver,
+    ChapterSummariesResolver,
+    CharacterResolver,
+    ChatHistoryResolver,
+    LorebookFormatter,
+    MatchedEntriesChapterResolver,
     PoVResolver,
+    PreviousWordsResolver,
+    SceneBeatContextResolver,
+    SceneBeatMatchedEntriesResolver,
+    SceneBeatResolver,
     SelectedTextResolver,
     StoryLanguageResolver,
-    SceneBeatResolver,
-    ChatHistoryResolver,
     UserInputResolver,
-    BrainstormContextResolver
+    VariableResolverRegistry
 } from "./resolvers";
-import { logger } from "@/utils/logger";
 
 interface PromptParserDependencies {
     entries: LorebookEntry[];

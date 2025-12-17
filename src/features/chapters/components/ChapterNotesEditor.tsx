@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
-import type { Chapter, ChapterNotes } from "@/types/story";
 import debounce from "lodash/debounce";
 import { useEffect, useMemo, useState } from "react";
 import Editor from "react-simple-wysiwyg";
+import { cn } from "@/lib/utils";
+import type { Chapter, ChapterNotes } from "@/types/story";
 import { useUpdateChapterMutation } from "../hooks/useChaptersQuery";
 
 interface ChapterNotesEditorProps {

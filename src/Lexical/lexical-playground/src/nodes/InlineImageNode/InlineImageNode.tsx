@@ -19,9 +19,8 @@ import type {
     SerializedLexicalNode,
     Spread
 } from "lexical";
-import type { JSX } from "react";
-
 import { $applyNodeReplacement, createEditor, DecoratorNode, isHTMLElement } from "lexical";
+import type { JSX } from "react";
 import * as React from "react";
 import { Suspense } from "react";
 

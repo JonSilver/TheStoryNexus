@@ -1,11 +1,11 @@
+import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Note } from "@/types/story";
-import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
-import { useState, type MouseEvent } from "react";
+import type { Note } from "@/types/story";
 import {
     useCreateNoteMutation,
     useDeleteNoteMutation,

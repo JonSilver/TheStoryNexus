@@ -1,8 +1,8 @@
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PromptForm } from "@/features/prompts/components/PromptForm";
 import { PromptsList } from "@/features/prompts/components/PromptList";
 import type { Prompt } from "@/types/story";
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./dialog";
 

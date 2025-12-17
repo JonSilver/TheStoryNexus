@@ -6,9 +6,8 @@
  *
  */
 
-import type { JSX } from "react";
-
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import type { JSX } from "react";
 
 import { logger } from "@/utils/logger";
 import { FlashMessageContext } from "./context/FlashMessageContext";

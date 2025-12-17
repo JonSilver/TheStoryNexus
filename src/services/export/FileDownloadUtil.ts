@@ -1,5 +1,5 @@
+import { parseJSON, storyExportSchema } from "@/schemas/entities";
 import type { Story, StoryExport } from "@/types/story";
-import { storyExportSchema, parseJSON } from "@/schemas/entities";
 
 export class FileDownloadUtil {
     static downloadStoryExport(exportData: StoryExport, story: Story): void {

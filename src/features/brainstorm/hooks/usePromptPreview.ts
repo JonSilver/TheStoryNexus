@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
-import { usePromptParser } from "@/features/prompts/hooks/usePromptParser";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import is from "@sindresorhus/is";
+import { useMutation } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
+import { usePromptParser } from "@/features/prompts/hooks/usePromptParser";
 import type { PromptMessage, PromptParserConfig } from "@/types/story";
 
 interface UsePromptPreviewReturn {

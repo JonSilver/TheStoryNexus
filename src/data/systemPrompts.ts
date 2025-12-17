@@ -1,4 +1,4 @@
-import { Prompt } from "../types/story.js";
+import type { Prompt } from "../types/story.js";
 
 // Define system prompts directly as JavaScript objects
 const systemPrompts: Partial<Prompt>[] = [

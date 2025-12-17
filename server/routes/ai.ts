@@ -1,7 +1,7 @@
-import express from "express";
 import { attemptPromise } from "@jfdi/attempt";
-import { db, schema } from "../db/client.js";
 import { eq } from "drizzle-orm";
+import express from "express";
+import { db, schema } from "../db/client.js";
 
 const router = express.Router();
 

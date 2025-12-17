@@ -1,7 +1,7 @@
+import { attemptPromise } from "@jfdi/attempt";
 import { chaptersApi } from "@/services/api/client";
 import type { Chapter, ChapterOutline } from "@/types/story";
 import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
 
 /**
  * Chapter utility functions - provides methods for content extraction.

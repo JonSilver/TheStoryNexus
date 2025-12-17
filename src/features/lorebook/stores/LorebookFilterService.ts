@@ -11,49 +11,51 @@ export class LorebookFilterService {
         ids: string[],
         includeDisabled: boolean = false
     ): LorebookEntry[] {
-        const filtered = this.getFilteredEntries(entries, includeDisabled);
+        const filtered = LorebookFilterService.getFilteredEntries(entries, includeDisabled);
         return filtered.filter(entry => ids.includes(entry.id));
     }
 
     static getEntriesByTag(entries: LorebookEntry[], tag: string): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(
-            entry => (entry.tags && entry.tags.some(t => stringEquals(t, tag))) || stringEquals(entry.name, tag)
+        return LorebookFilterService.getFilteredEntries(entries).filter(
+            entry => entry.tags?.some(t => stringEquals(t, tag)) || stringEquals(entry.name, tag)
         );
     }
 
     static getEntriesByCategory(entries: LorebookEntry[], category: LorebookEntry["category"]): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(entry => entry.category === category);
+        return LorebookFilterService.getFilteredEntries(entries).filter(entry => entry.category === category);
     }
 
     static getAllEntries(entries: LorebookEntry[]): LorebookEntry[] {
-        return this.getFilteredEntries(entries);
+        return LorebookFilterService.getFilteredEntries(entries);
     }
 
     static getEntriesByImportance(
         entries: LorebookEntry[],
         importance: "major" | "minor" | "background"
     ): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(entry => entry.metadata?.importance === importance);
+        return LorebookFilterService.getFilteredEntries(entries).filter(
+            entry => entry.metadata?.importance === importance
+        );
     }
 
     static getEntriesByStatus(entries: LorebookEntry[], status: "active" | "inactive" | "historical"): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(entry => entry.metadata?.status === status);
+        return LorebookFilterService.getFilteredEntries(entries).filter(entry => entry.metadata?.status === status);
     }
 
     static getEntriesByType(entries: LorebookEntry[], type: string): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(
+        return LorebookFilterService.getFilteredEntries(entries).filter(
             entry => entry.metadata?.type && stringEquals(entry.metadata.type, type)
         );
     }
 
     static getEntriesByRelationship(entries: LorebookEntry[], targetId: string): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(entry =>
+        return LorebookFilterService.getFilteredEntries(entries).filter(entry =>
             entry.metadata?.relationships?.some(rel => rel.type === targetId || rel.description?.includes(targetId))
         );
     }
 
     static getEntriesByCustomField(entries: LorebookEntry[], field: string, value: unknown): LorebookEntry[] {
-        return this.getFilteredEntries(entries).filter(entry => {
+        return LorebookFilterService.getFilteredEntries(entries).filter(entry => {
             const metadata = entry.metadata as Record<string, unknown> | undefined;
             return metadata?.[field] === value;
         });
@@ -69,7 +71,7 @@ export class LorebookFilterService {
     }
 
     static getGlobalEntries(entries: LorebookEntry[]): LorebookEntry[] {
-        return this.filterByLevel(entries, "global");
+        return LorebookFilterService.filterByLevel(entries, "global");
     }
 
     static getSeriesEntries(entries: LorebookEntry[], seriesId: string): LorebookEntry[] {
@@ -81,10 +83,10 @@ export class LorebookFilterService {
     }
 
     static getInheritedEntries(entries: LorebookEntry[], seriesId?: string): LorebookEntry[] {
-        const global = this.getGlobalEntries(entries);
+        const global = LorebookFilterService.getGlobalEntries(entries);
 
         if (seriesId) {
-            const series = this.getSeriesEntries(entries, seriesId);
+            const series = LorebookFilterService.getSeriesEntries(entries, seriesId);
             return [...global, ...series];
         }
 
@@ -97,18 +99,18 @@ export class LorebookFilterService {
         story: LorebookEntry[];
     } {
         return {
-            global: this.filterByLevel(entries, "global"),
-            series: this.filterByLevel(entries, "series"),
-            story: this.filterByLevel(entries, "story")
+            global: LorebookFilterService.filterByLevel(entries, "global"),
+            series: LorebookFilterService.filterByLevel(entries, "series"),
+            story: LorebookFilterService.filterByLevel(entries, "story")
         };
     }
 
     static getEditableEntries(entries: LorebookEntry[], editLevel: LorebookLevel, scopeId?: string): LorebookEntry[] {
-        if (editLevel === "global") return this.getGlobalEntries(entries);
+        if (editLevel === "global") return LorebookFilterService.getGlobalEntries(entries);
 
-        if (editLevel === "series" && scopeId) return this.getSeriesEntries(entries, scopeId);
+        if (editLevel === "series" && scopeId) return LorebookFilterService.getSeriesEntries(entries, scopeId);
 
-        if (editLevel === "story" && scopeId) return this.getStoryEntries(entries, scopeId);
+        if (editLevel === "story" && scopeId) return LorebookFilterService.getStoryEntries(entries, scopeId);
 
         return [];
     }
@@ -124,10 +126,10 @@ export class LorebookFilterService {
         let filtered = entries;
 
         // Filter by level if specified
-        if (options.levels) filtered = this.filterByLevels(filtered, options.levels);
+        if (options.levels) filtered = LorebookFilterService.filterByLevels(filtered, options.levels);
 
         // Filter out disabled unless specified
-        if (!options.includeDisabled) filtered = this.getFilteredEntries(filtered, false);
+        if (!options.includeDisabled) filtered = LorebookFilterService.getFilteredEntries(filtered, false);
 
         // Match tags in text
         const lowerText = text.toLowerCase();

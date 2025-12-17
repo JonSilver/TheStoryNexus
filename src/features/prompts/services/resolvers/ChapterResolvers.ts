@@ -1,11 +1,11 @@
+import { attemptPromise } from "@jfdi/attempt";
 import { fetchChapterSummaries } from "@/features/chapters/hooks/useChapterSummariesQuery";
 import { getChapterOutline, getPreviousChapter } from "@/features/chapters/stores/useChapterStore";
 import { chaptersApi } from "@/services/api/client";
-import { PromptContext } from "@/types/story";
+import type { PromptContext } from "@/types/story";
 import { extractPlainTextFromLexical } from "@/utils/lexicalUtils";
 import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
-import { IVariableResolver } from "./types";
+import type { IVariableResolver } from "./types";
 
 export class ChapterSummariesResolver implements IVariableResolver {
     async resolve(context: PromptContext): Promise<string> {
@@ -97,7 +97,7 @@ export class PreviousWordsResolver implements IVariableResolver {
 
         const prevContent = selectedPrevWords.join(" ").replace(new RegExp(newlineToken, "g"), "\n");
         logger.info(`Added ${selectedPrevWords.length} words from previous chapter to context`);
-        return prevContent + "\n\n[...]\n\n" + currentResult;
+        return `${prevContent}\n\n[...]\n\n${currentResult}`;
     }
 }
 

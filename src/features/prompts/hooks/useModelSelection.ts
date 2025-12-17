@@ -1,8 +1,8 @@
-import { useAvailableModels } from "@/features/ai/hooks/useAvailableModels";
-import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
-import type { AIModel, AllowedModel } from "@/types/story";
 import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
+import { useAvailableModels } from "@/features/ai/hooks/useAvailableModels";
+import type { AIModel, AllowedModel } from "@/types/story";
 
 interface ModelsByProvider {
     [key: string]: AIModel[];
@@ -43,17 +43,17 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
         };
 
         availableModels.forEach(model => {
-            if (model.provider === "local") groups["Local"].push(model);
+            if (model.provider === "local") groups.Local.push(model);
             else if (MOST_USED_MODELS.some(name => model.name === name)) groups["Most Used"].push(model);
-            else if (model.name.toLowerCase().includes("(free)")) groups["Free"].push(model);
-            else if (model.provider === "openai") groups["OpenAI"].push(model);
+            else if (model.name.toLowerCase().includes("(free)")) groups.Free.push(model);
+            else if (model.provider === "openai") groups.OpenAI.push(model);
             else if (model.provider === "openrouter") {
-                if (model.name.includes("Anthropic")) groups["Anthropic"].push(model);
-                else if (model.name.includes("DeepSeek")) groups["DeepSeek"].push(model);
-                else if (model.name.includes("Mistral")) groups["Mistral"].push(model);
-                else if (model.name.includes("NVIDIA")) groups["NVIDIA"].push(model);
-                else if (model.name.includes("xAI")) groups["xAI"].push(model);
-                else groups["Other"].push(model);
+                if (model.name.includes("Anthropic")) groups.Anthropic.push(model);
+                else if (model.name.includes("DeepSeek")) groups.DeepSeek.push(model);
+                else if (model.name.includes("Mistral")) groups.Mistral.push(model);
+                else if (model.name.includes("NVIDIA")) groups.NVIDIA.push(model);
+                else if (model.name.includes("xAI")) groups.xAI.push(model);
+                else groups.Other.push(model);
             }
         });
 

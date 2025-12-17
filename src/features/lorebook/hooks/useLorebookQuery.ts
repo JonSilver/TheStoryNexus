@@ -1,7 +1,7 @@
-import { lorebookApi } from "@/services/api/client";
-import type { LorebookEntry } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { lorebookApi } from "@/services/api/client";
+import type { LorebookEntry } from "@/types/story";
 
 // Query keys
 export const lorebookKeys = {

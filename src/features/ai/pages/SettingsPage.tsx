@@ -1,3 +1,6 @@
+import { AlertTriangle, ArrowLeft, ChevronRight, Loader2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -15,9 +18,6 @@ import {
 } from "@/features/ai/hooks/useAISettingsQuery";
 import { cn } from "@/lib/utils";
 import type { AIModel, AIProvider } from "@/types/story";
-import { AlertTriangle, ArrowLeft, ChevronRight, Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
 
 type ProviderCardProps = {
     provider: AIProvider;

@@ -1,3 +1,5 @@
+import { AlertCircle, MessageSquarePlus, RefreshCcw } from "lucide-react";
+import { useState } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,8 +10,6 @@ import { LorebookProvider } from "@/features/lorebook/context/LorebookContext";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import type { AIChat } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import { AlertCircle, MessageSquarePlus, RefreshCcw } from "lucide-react";
-import { useState } from "react";
 
 const ChatErrorFallback = (error: Error, resetError: () => void) => (
     <div className="flex items-center justify-center h-full p-4">

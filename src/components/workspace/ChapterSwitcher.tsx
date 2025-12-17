@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { Chapter } from "@/types/story";
+import type { Chapter } from "@/types/story";
 
 export const ChapterSwitcher = () => {
     const { currentStoryId, currentChapterId, currentTool, setCurrentChapterId } = useStoryContext();

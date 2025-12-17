@@ -12,7 +12,7 @@ import "./Modal.css";
 
 import { isDOMNode } from "lexical";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 function PortalImpl({

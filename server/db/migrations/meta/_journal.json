@@ -1,41 +1,41 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1762264835707,
-      "tag": "0000_striped_famine",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1762340985439,
-      "tag": "0001_cold_harpoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1762356381694,
-      "tag": "0002_petite_bruce_banner",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1762428745112,
-      "tag": "0003_superb_jimmy_woo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1762436538301,
-      "tag": "0004_complex_titania",
-      "breakpoints": true
-    }
-  ]
+    "version": "7",
+    "dialect": "sqlite",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "6",
+            "when": 1762264835707,
+            "tag": "0000_striped_famine",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1762340985439,
+            "tag": "0001_cold_harpoon",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1762356381694,
+            "tag": "0002_petite_bruce_banner",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "6",
+            "when": 1762428745112,
+            "tag": "0003_superb_jimmy_woo",
+            "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "6",
+            "when": 1762436538301,
+            "tag": "0004_complex_titania",
+            "breakpoints": true
+        }
+    ]
 }

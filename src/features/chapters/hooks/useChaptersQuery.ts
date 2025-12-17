@@ -1,7 +1,7 @@
-import { chaptersApi } from "@/services/api/client";
-import type { Chapter } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { chaptersApi } from "@/services/api/client";
+import type { Chapter } from "@/types/story";
 
 // Query keys (internal use only)
 const chaptersKeys = {

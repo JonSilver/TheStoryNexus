@@ -10,7 +10,7 @@ import type { JSX } from "react";
 
 import "./Dialog.css";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type Props = Readonly<{
     "data-test-id"?: string;

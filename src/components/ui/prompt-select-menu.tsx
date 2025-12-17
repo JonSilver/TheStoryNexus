@@ -1,6 +1,6 @@
-import { AllowedModel, Prompt } from "@/types/story";
 import { ChevronDown, History } from "lucide-react";
 import { useState } from "react";
+import type { AllowedModel, Prompt } from "@/types/story";
 import {
     Menubar,
     MenubarContent,

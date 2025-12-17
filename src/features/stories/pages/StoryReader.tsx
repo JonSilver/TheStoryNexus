@@ -1,9 +1,9 @@
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/urls";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
 import { ChapterReader } from "../components/ChapterReader";
 
 export function StoryReader() {

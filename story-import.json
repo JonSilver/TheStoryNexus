@@ -1,88 +1,88 @@
 {
-  "version": "1.0",
-  "exportedAt": "2025-11-02T23:29:20.144Z",
-  "tables": {
-    "stories": [
-      {
-        "id": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "createdAt": "2025-10-29T16:24:19.581Z",
-        "title": "The Little Mermaid",
-        "author": "Hans Christian Anderson",
-        "language": "English",
-        "synopsis": "A story about a little mermaid"
-      }
-    ],
-    "chapters": [
-      {
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "title": "Chapter One",
-        "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The sea glowed with a soft bioluminescence that pulsed gently with the ocean's breath. Below the surface, where sunlight barely reached and shadows danced like ghosts, Ariadne moved through the water with practiced grace.\\n\\nHer skin bore the iridescent sheen of mother-of-pearl, catching the faint light in ways that made her appear almost ethereal. The lower half of her body tapered into a powerful tail adorned with scales that shimmered in changing colors – deep sapphire, emerald green, and gold. Her top half appeared completely human from the waist up, with arms strong enough to pull herself onto rocks when the tide called.\\n\\nAriadne paused near a coral formation, her large, intelligent eyes scanning the surrounding darkness. The sea around her was alive with sounds she had learned to navigate since birth – the clicking of nearby crustaceans, the distant song of migrating whales, and the constant whisper of currents against ancient stones.\\n\\nShe ran fingers through her long, dark hair as it floated lazily about her face before tucking a few strands behind pointed ears that had helped her hear the slightest vibration in the water for eight summers now. At sixteen human years, she moved with both the recklessness of youth and the wisdom that came from understanding the ocean's moods.\\n\\nThe waters suddenly grew warmer around her ankles.\\n\\nShe turned, catching sight of another merperson approaching from deeper waters – older, wise-eyed, with scales like crushed silver. Her grandmother, Elara, who had taught her most of what she knew about the deep places and their secrets.\\n\\n\\\"You're lingering again,\\\" Elara said without judgment, though the words hung in the water between them like an accusation.\\n\\n\\\"I wanted to see if the currents changed,\\\" Ariadne replied, meeting her grandmother's steady gaze with one of her own. \\\"I could feel something shifting.\\\"\\n\\nElara nodded slowly, understanding passing between generations in this silent exchange. \\\"The surface calls to you.\\\"\\n\\nAriadne looked toward where sunlight filtered down from above, never quite reaching their depth but hinting at the world beyond water that she had only ever witnessed through reflections and fragments carried by stranded humans.\\n\\n\\\"That it does,\\\" she acknowledged softly. \\\"More than before.\\\"\\n\\nHer grandmother watched her with eyes that held all the secrets of the sea they both called home – and some things not yet revealed to this young mermaid balancing between two worlds she could not fully inhabit.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1,\"textFormat\":0,\"textStyle\":\"\"}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
-        "povType": "Third Person Omniscient",
-        "order": 1,
-        "outline": "{\"content\":\"\",\"lastUpdated\":\"2025-10-29T16:24:43.760Z\"}",
-        "id": "6e9e1b3c-7685-4ac9-8c8f-ba7556c0f153",
-        "createdAt": "2025-10-29T16:24:43.765Z",
-        "wordCount": 1972,
-        "summary": "We meet the Little Mermaid. She's lonely."
-      },
-      {
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "title": "Chapter Two",
-        "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The Little Mermaid was sad. She hadn't heard from Johnny for days.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1,\"textFormat\":0,\"textStyle\":\"\"}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
-        "povType": "Third Person Omniscient",
-        "order": 2,
-        "outline": "{\"content\":\"\",\"lastUpdated\":\"2025-10-30T14:30:10.312Z\"}",
-        "id": "dbb557c3-8a09-464e-a56a-428198c7406a",
-        "createdAt": "2025-10-30T14:30:10.325Z",
-        "wordCount": 12,
-        "summary": "The Little Mermaid struggled with growing concern as days passed without any communication from Johnny."
-      }
-    ],
-    "prompts": [],
-    "aiSettings": [],
-    "lorebookEntries": [
-      {
-        "name": "Little Mermaid",
-        "description": "The Little Mermaid is the principle character in this story",
-        "category": "character",
-        "tags": "[\"Little Mermaid\",\"female\",\"mythical creature\"]",
-        "isDisabled": 0,
-        "metadata": "{\"importance\":\"major\",\"status\":\"active\",\"type\":\"\",\"relationships\":[],\"customFields\":{}}",
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "id": "50950475-dbb7-4b22-bac8-10d496a60cd5",
-        "createdAt": "2025-10-29T17:51:34.866Z"
-      }
-    ],
-    "sceneBeats": [],
-    "aiChats": [
-      {
-        "id": "eac2dcde-5b6b-443a-86f7-7f931006123f",
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "title": "New Chat 30/10/2025, 07:32:11",
-        "messages": "[]",
-        "createdAt": "2025-10-30T07:32:11.297Z",
-        "updatedAt": "2025-11-01T23:10:32.136Z"
-      }
-    ],
-    "notes": [
-      {
-        "id": "565dedc1-aba9-4efd-ae91-375c6f5ef757",
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "title": "two",
-        "content": "This is two",
-        "type": "research",
-        "createdAt": "2025-10-30T11:45:05.236Z",
-        "updatedAt": "2025-10-30T11:47:19.444Z"
-      },
-      {
-        "id": "e8d39b14-7f39-40bb-a1f2-b429c4a7d5fb",
-        "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
-        "title": "one",
-        "content": "This is one",
-        "type": "idea",
-        "createdAt": "2025-10-30T11:44:56.588Z",
-        "updatedAt": "2025-10-30T11:47:09.380Z"
-      }
-    ]
-  }
+    "version": "1.0",
+    "exportedAt": "2025-11-02T23:29:20.144Z",
+    "tables": {
+        "stories": [
+            {
+                "id": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "createdAt": "2025-10-29T16:24:19.581Z",
+                "title": "The Little Mermaid",
+                "author": "Hans Christian Anderson",
+                "language": "English",
+                "synopsis": "A story about a little mermaid"
+            }
+        ],
+        "chapters": [
+            {
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "title": "Chapter One",
+                "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The sea glowed with a soft bioluminescence that pulsed gently with the ocean's breath. Below the surface, where sunlight barely reached and shadows danced like ghosts, Ariadne moved through the water with practiced grace.\\n\\nHer skin bore the iridescent sheen of mother-of-pearl, catching the faint light in ways that made her appear almost ethereal. The lower half of her body tapered into a powerful tail adorned with scales that shimmered in changing colors – deep sapphire, emerald green, and gold. Her top half appeared completely human from the waist up, with arms strong enough to pull herself onto rocks when the tide called.\\n\\nAriadne paused near a coral formation, her large, intelligent eyes scanning the surrounding darkness. The sea around her was alive with sounds she had learned to navigate since birth – the clicking of nearby crustaceans, the distant song of migrating whales, and the constant whisper of currents against ancient stones.\\n\\nShe ran fingers through her long, dark hair as it floated lazily about her face before tucking a few strands behind pointed ears that had helped her hear the slightest vibration in the water for eight summers now. At sixteen human years, she moved with both the recklessness of youth and the wisdom that came from understanding the ocean's moods.\\n\\nThe waters suddenly grew warmer around her ankles.\\n\\nShe turned, catching sight of another merperson approaching from deeper waters – older, wise-eyed, with scales like crushed silver. Her grandmother, Elara, who had taught her most of what she knew about the deep places and their secrets.\\n\\n\\\"You're lingering again,\\\" Elara said without judgment, though the words hung in the water between them like an accusation.\\n\\n\\\"I wanted to see if the currents changed,\\\" Ariadne replied, meeting her grandmother's steady gaze with one of her own. \\\"I could feel something shifting.\\\"\\n\\nElara nodded slowly, understanding passing between generations in this silent exchange. \\\"The surface calls to you.\\\"\\n\\nAriadne looked toward where sunlight filtered down from above, never quite reaching their depth but hinting at the world beyond water that she had only ever witnessed through reflections and fragments carried by stranded humans.\\n\\n\\\"That it does,\\\" she acknowledged softly. \\\"More than before.\\\"\\n\\nHer grandmother watched her with eyes that held all the secrets of the sea they both called home – and some things not yet revealed to this young mermaid balancing between two worlds she could not fully inhabit.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1,\"textFormat\":0,\"textStyle\":\"\"}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
+                "povType": "Third Person Omniscient",
+                "order": 1,
+                "outline": "{\"content\":\"\",\"lastUpdated\":\"2025-10-29T16:24:43.760Z\"}",
+                "id": "6e9e1b3c-7685-4ac9-8c8f-ba7556c0f153",
+                "createdAt": "2025-10-29T16:24:43.765Z",
+                "wordCount": 1972,
+                "summary": "We meet the Little Mermaid. She's lonely."
+            },
+            {
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "title": "Chapter Two",
+                "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The Little Mermaid was sad. She hadn't heard from Johnny for days.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1,\"textFormat\":0,\"textStyle\":\"\"}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
+                "povType": "Third Person Omniscient",
+                "order": 2,
+                "outline": "{\"content\":\"\",\"lastUpdated\":\"2025-10-30T14:30:10.312Z\"}",
+                "id": "dbb557c3-8a09-464e-a56a-428198c7406a",
+                "createdAt": "2025-10-30T14:30:10.325Z",
+                "wordCount": 12,
+                "summary": "The Little Mermaid struggled with growing concern as days passed without any communication from Johnny."
+            }
+        ],
+        "prompts": [],
+        "aiSettings": [],
+        "lorebookEntries": [
+            {
+                "name": "Little Mermaid",
+                "description": "The Little Mermaid is the principle character in this story",
+                "category": "character",
+                "tags": "[\"Little Mermaid\",\"female\",\"mythical creature\"]",
+                "isDisabled": 0,
+                "metadata": "{\"importance\":\"major\",\"status\":\"active\",\"type\":\"\",\"relationships\":[],\"customFields\":{}}",
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "id": "50950475-dbb7-4b22-bac8-10d496a60cd5",
+                "createdAt": "2025-10-29T17:51:34.866Z"
+            }
+        ],
+        "sceneBeats": [],
+        "aiChats": [
+            {
+                "id": "eac2dcde-5b6b-443a-86f7-7f931006123f",
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "title": "New Chat 30/10/2025, 07:32:11",
+                "messages": "[]",
+                "createdAt": "2025-10-30T07:32:11.297Z",
+                "updatedAt": "2025-11-01T23:10:32.136Z"
+            }
+        ],
+        "notes": [
+            {
+                "id": "565dedc1-aba9-4efd-ae91-375c6f5ef757",
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "title": "two",
+                "content": "This is two",
+                "type": "research",
+                "createdAt": "2025-10-30T11:45:05.236Z",
+                "updatedAt": "2025-10-30T11:47:19.444Z"
+            },
+            {
+                "id": "e8d39b14-7f39-40bb-a1f2-b429c4a7d5fb",
+                "storyId": "91863e5b-595e-427c-9849-f24f7a55acc0",
+                "title": "one",
+                "content": "This is one",
+                "type": "idea",
+                "createdAt": "2025-10-30T11:44:56.588Z",
+                "updatedAt": "2025-10-30T11:47:09.380Z"
+            }
+        ]
+    }
 }

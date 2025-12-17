@@ -6,10 +6,9 @@
  *
  */
 
-import type { ElementNode, LexicalCommand, LexicalNode, NodeKey } from "lexical";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent, $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
+import type { ElementNode, LexicalCommand, LexicalNode, NodeKey } from "lexical";
 import {
     $createParagraphNode,
     $getNodeByKey,

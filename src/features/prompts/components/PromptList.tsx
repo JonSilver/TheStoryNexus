@@ -1,8 +1,8 @@
+import { ChevronDown, ChevronRight, Copy, Trash2 } from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Prompt } from "@/types/story";
-import { ChevronDown, ChevronRight, Copy, Trash2 } from "lucide-react";
-import { useState, type MouseEvent } from "react";
 import { useClonePromptMutation, useDeletePromptMutation, usePromptsQuery } from "../hooks/usePromptsQuery";
 
 interface PromptsListProps {

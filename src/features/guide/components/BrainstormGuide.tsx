@@ -1,4 +1,4 @@
-import { MessageSquarePlus, Bot, Sparkles, Layers, BookOpen, Trash2 } from "lucide-react";
+import { BookOpen, Bot, Layers, MessageSquarePlus, Sparkles, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

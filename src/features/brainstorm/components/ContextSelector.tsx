@@ -1,11 +1,10 @@
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LorebookEntry, Chapter } from "@/types/story";
+import { Switch } from "@/components/ui/switch";
+import type { Chapter, LorebookEntry } from "@/types/story";
 
 interface ContextSelectorProps {
     includeFullContext: boolean;

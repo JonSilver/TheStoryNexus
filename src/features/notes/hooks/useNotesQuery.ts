@@ -1,7 +1,7 @@
-import { notesApi } from "@/services/api/client";
-import type { Note } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { notesApi } from "@/services/api/client";
+import type { Note } from "@/types/story";
 
 // Query keys
 const notesKeys = {

@@ -2,23 +2,23 @@
  * SlashCommandPlugin - Adds support for slash commands like in Notion
  */
 
-import type { JSX } from "react";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { mergeRegister } from "@lexical/utils";
 import {
-    COMMAND_PRIORITY_NORMAL,
-    KEY_ESCAPE_COMMAND,
-    KEY_ENTER_COMMAND,
-    KEY_ARROW_DOWN_COMMAND,
-    KEY_ARROW_UP_COMMAND,
+    $createParagraphNode,
     $getSelection,
     $isRangeSelection,
-    $createParagraphNode,
-    LexicalEditor
+    COMMAND_PRIORITY_NORMAL,
+    KEY_ARROW_DOWN_COMMAND,
+    KEY_ARROW_UP_COMMAND,
+    KEY_ENTER_COMMAND,
+    KEY_ESCAPE_COMMAND,
+    type LexicalEditor
 } from "lexical";
-import { mergeRegister } from "@lexical/utils";
-import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { Bot } from "lucide-react";
+import type { JSX } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 
 interface SlashCommandItem {
     key: string;

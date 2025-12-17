@@ -1,5 +1,5 @@
-import { useMemo, useRef, useEffect, useCallback } from "react";
-import { debounce, type DebouncedFunc } from "lodash";
+import { type DebouncedFunc, debounce } from "lodash";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useUpdateSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import type { SceneBeat } from "@/types/story";
 import { logger } from "@/utils/logger";

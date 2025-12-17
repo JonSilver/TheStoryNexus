@@ -1,12 +1,12 @@
+import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { AIChat } from "@/types/story";
+import type { AIChat } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
-import { useState, type MouseEvent } from "react";
 import {
     useBrainstormByStoryQuery,
     useCreateBrainstormMutation,

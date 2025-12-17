@@ -16,22 +16,22 @@ import {
     $getSelection,
     $isLineBreakNode,
     $isRangeSelection,
-    BaseSelection,
+    type BaseSelection,
     CLICK_COMMAND,
     COMMAND_PRIORITY_CRITICAL,
     COMMAND_PRIORITY_HIGH,
     COMMAND_PRIORITY_LOW,
     getDOMSelection,
     KEY_ESCAPE_COMMAND,
-    LexicalEditor,
+    type LexicalEditor,
     SELECTION_CHANGE_COMMAND
 } from "lexical";
-import { Dispatch, useCallback, useEffect, useRef, useState } from "react";
-import * as React from "react";
+import { Check, Link as LinkIcon, Pencil, Trash2, X } from "lucide-react";
+import type * as React from "react";
+import { type Dispatch, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, X, Check, Link as LinkIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPositionForLinkEditor } from "../../utils/setFloatingElemPositionForLinkEditor";
@@ -182,7 +182,7 @@ function FloatingLinkEditor({
         if (isLinkEditMode && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isLinkEditMode, /* effect dep */ isLink]);
+    }, [isLinkEditMode]);
 
     const monitorInputInteraction = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Enter") {

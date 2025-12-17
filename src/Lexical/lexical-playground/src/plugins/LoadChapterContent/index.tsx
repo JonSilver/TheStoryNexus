@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { attempt } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useEffect, useState } from "react";
 import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { attempt } from "@jfdi/attempt";
 import { logger } from "@/utils/logger";
 
 export function LoadChapterContentPlugin(): null {

@@ -6,7 +6,7 @@
  *
  */
 
-import { Provider } from "@lexical/yjs";
+import type { Provider } from "@lexical/yjs";
 import { WebsocketProvider } from "y-websocket";
 import { Doc } from "yjs";
 
@@ -26,7 +26,7 @@ export function createWebsocketProvider(id: string, yjsDocMap: Map<string, Doc>)
     } else doc.load();
 
     // @ts-expect-error TODO WTF!? Why expecting an error?!
-    return new WebsocketProvider(WEBSOCKET_ENDPOINT, WEBSOCKET_SLUG + "/" + WEBSOCKET_ID + "/" + id, doc, {
+    return new WebsocketProvider(WEBSOCKET_ENDPOINT, `${WEBSOCKET_SLUG}/${WEBSOCKET_ID}/${id}`, doc, {
         connect: false
     });
 }

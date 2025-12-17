@@ -1,10 +1,10 @@
-import OpenAI from "openai";
-import { AIModel, AIProvider, PromptMessage } from "@/types/story";
-import { IAIProvider } from "./IAIProvider";
 import { attemptPromise } from "@jfdi/attempt";
+import OpenAI from "openai";
 import { API_URLS } from "@/constants/urls";
-import { wrapOpenAIStream } from "../streamUtils";
+import type { AIModel, AIProvider, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
+import { wrapOpenAIStream } from "../streamUtils";
+import type { IAIProvider } from "./IAIProvider";
 
 interface OpenRouterModelResponse {
     id: string;

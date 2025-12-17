@@ -1,16 +1,15 @@
-import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router";
 import { Command } from "cmdk";
-import { BookOpen, FileText, Tags, MessageSquare, FileCode, StickyNote, HelpCircle } from "lucide-react";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { BookOpen, FileCode, FileText, HelpCircle, MessageSquare, StickyNote, Tags } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
-import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { useNotesByStoryQuery } from "@/features/notes/hooks/useNotesQuery";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import type { LorebookEntry } from "@/types/story";
-import type { Note } from "@/types/story";
+import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
+import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
+import type { LorebookEntry, Note } from "@/types/story";
 
 interface CommandItem {
     id: string;
@@ -243,7 +242,7 @@ export const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
                 }
             }
         ],
-        [navigate, onOpenChange]
+        [onOpenChange]
     );
 
     // Combine all commands
