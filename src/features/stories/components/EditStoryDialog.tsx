@@ -46,7 +46,7 @@ export function EditStoryDialog({ story, open, onOpenChange }: EditStoryDialogPr
 
     // Reset form when story changes (dialog opened with different story)
     useEffect(() => {
-        if (story && open) {
+        if (story && open) 
             form.reset({
                 title: story.title || "",
                 author: story.author || "",
@@ -54,7 +54,7 @@ export function EditStoryDialog({ story, open, onOpenChange }: EditStoryDialogPr
                 synopsis: story.synopsis || "",
                 seriesId: story.seriesId || "none"
             });
-        }
+        
     }, [story, open, form]);
 
     const handleSubmit = (data: EditStoryForm) => {

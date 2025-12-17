@@ -43,7 +43,7 @@ export class CollapsibleTitleNode extends ElementNode {
     createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
         const dom = document.createElement("summary");
         dom.classList.add("Collapsible__title");
-        if (IS_CHROME) {
+        if (IS_CHROME) 
             dom.addEventListener("click", () => {
                 editor.update(() => {
                     const collapsibleContainer = this.getLatest().getParentOrThrow();
@@ -54,7 +54,7 @@ export class CollapsibleTitleNode extends ElementNode {
                     collapsibleContainer.toggleOpen();
                 });
             });
-        }
+        
         return dom;
     }
 
@@ -83,29 +83,29 @@ export class CollapsibleTitleNode extends ElementNode {
     static transform(): (node: LexicalNode) => void {
         return (node: LexicalNode) => {
             invariant($isCollapsibleTitleNode(node), "node is not a CollapsibleTitleNode");
-            if (node.isEmpty()) {
+            if (node.isEmpty()) 
                 node.remove();
-            }
+            
         };
     }
 
     insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {
         const containerNode = this.getParentOrThrow();
 
-        if (!$isCollapsibleContainerNode(containerNode)) {
+        if (!$isCollapsibleContainerNode(containerNode)) 
             throw new Error("CollapsibleTitleNode expects to be child of CollapsibleContainerNode");
-        }
+        
 
         if (containerNode.getOpen()) {
             const contentNode = this.getNextSibling();
-            if (!$isCollapsibleContentNode(contentNode)) {
+            if (!$isCollapsibleContentNode(contentNode)) 
                 throw new Error("CollapsibleTitleNode expects to have CollapsibleContentNode sibling");
-            }
+            
 
             const firstChild = contentNode.getFirstChild();
-            if ($isElementNode(firstChild)) {
+            if ($isElementNode(firstChild)) 
                 return firstChild;
-            } else {
+             else {
                 const paragraph = $createParagraphNode();
                 contentNode.append(paragraph);
                 return paragraph;

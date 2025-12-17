@@ -13,14 +13,14 @@ export function LoadChapterContentPlugin(): null {
 
     // Reset hasLoaded when chapter changes
     useEffect(() => {
-        if (currentChapterId) {
+        if (currentChapterId) 
             setHasLoaded(false);
-        }
+        
     }, [currentChapterId]);
 
     // Set editor content when chapter data is available
     useEffect(() => {
-        if (!hasLoaded && currentChapter?.content && currentChapter.id === currentChapterId) {
+        if (!hasLoaded && currentChapter?.content && currentChapter.id === currentChapterId) 
             // Defer to microtask to avoid flushSync warning
             queueMicrotask(() => {
                 const [error] = attempt(() => {
@@ -46,7 +46,7 @@ export function LoadChapterContentPlugin(): null {
                     }
                 }
             });
-        }
+        
     }, [editor, currentChapter, currentChapterId, hasLoaded]);
 
     return null;

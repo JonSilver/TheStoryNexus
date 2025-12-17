@@ -45,11 +45,11 @@ export function StoryProvider({ children }: { children: ReactNode }) {
 
     // Persist currentStoryId to localStorage
     useEffect(() => {
-        if (currentStoryId) {
+        if (currentStoryId) 
             localStorage.setItem(STORAGE_KEY_STORY_ID, currentStoryId);
-        } else {
+         else 
             localStorage.removeItem(STORAGE_KEY_STORY_ID);
-        }
+        
     }, [currentStoryId]);
 
     // Persist currentTool to localStorage
@@ -61,13 +61,13 @@ export function StoryProvider({ children }: { children: ReactNode }) {
         setCurrentStoryIdState(storyId);
         setCurrentChapterId(null);
         // When story selected, switch to editor tool
-        if (storyId && currentTool === "stories") {
+        if (storyId && currentTool === "stories") 
             setCurrentToolState("editor");
-        }
+        
         // When story cleared, switch to stories tool
-        if (!storyId) {
+        if (!storyId) 
             setCurrentToolState("stories");
-        }
+        
     };
 
     const setCurrentTool = (tool: WorkspaceTool) => {

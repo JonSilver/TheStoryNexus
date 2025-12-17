@@ -12,13 +12,13 @@ const SUPPORTED_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:", "sms:", "
 export function sanitizeUrl(url: string): string {
     const [error, parsedUrl] = attempt(() => new URL(url));
 
-    if (error) {
+    if (error) 
         return url;
-    }
+    
 
-    if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+    if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) 
         return "about:blank";
-    }
+    
 
     return url;
 }

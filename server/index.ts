@@ -40,9 +40,9 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // CORS - allow all in development, restrict in production if needed
-if (NODE_ENV === "development") {
+if (NODE_ENV === "development") 
     app.use(cors());
-}
+
 
 // API routes
 app.use("/api/series", seriesRouter);

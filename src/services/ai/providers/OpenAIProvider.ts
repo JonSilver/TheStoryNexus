@@ -54,9 +54,9 @@ export class OpenAIProvider implements IAIProvider {
         maxTokens: number,
         signal?: AbortSignal
     ): Promise<Response> {
-        if (!this.client) {
+        if (!this.client) 
             throw new Error("OpenAI client not initialized");
-        }
+        
 
         const client = this.client;
 

@@ -121,17 +121,17 @@ export class SceneBeatContextResolver implements IVariableResolver {
             const { useMatchedChapter, useMatchedSceneBeat, useCustomContext, customContextItems } =
                 context.sceneBeatContext;
 
-            if (useMatchedChapter && context.chapterMatchedEntries && context.chapterMatchedEntries.size > 0) {
+            if (useMatchedChapter && context.chapterMatchedEntries && context.chapterMatchedEntries.size > 0) 
                 context.chapterMatchedEntries.forEach(entry => {
                     uniqueEntries.set(entry.id, entry);
                 });
-            }
+            
 
-            if (useMatchedSceneBeat && context.sceneBeatMatchedEntries && context.sceneBeatMatchedEntries.size > 0) {
+            if (useMatchedSceneBeat && context.sceneBeatMatchedEntries && context.sceneBeatMatchedEntries.size > 0) 
                 context.sceneBeatMatchedEntries.forEach(entry => {
                     uniqueEntries.set(entry.id, entry);
                 });
-            }
+            
 
             if (useCustomContext && customContextItems && customContextItems.length > 0) {
                 const customEntries = this.entries.filter(entry => customContextItems.includes(entry.id));
@@ -140,11 +140,11 @@ export class SceneBeatContextResolver implements IVariableResolver {
                     uniqueEntries.set(entry.id, entry);
                 });
             }
-        } else if (context.matchedEntries && context.matchedEntries.size > 0) {
+        } else if (context.matchedEntries && context.matchedEntries.size > 0) 
             context.matchedEntries.forEach(entry => {
                 uniqueEntries.set(entry.id, entry);
             });
-        }
+        
 
         const sortedEntries = Array.from(uniqueEntries.values()).sort((a, b) => {
             const importanceOrder = { major: 3, minor: 2, background: 1 };

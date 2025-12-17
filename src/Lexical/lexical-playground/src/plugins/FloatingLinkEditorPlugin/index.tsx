@@ -65,24 +65,24 @@ function FloatingLinkEditor({
             const node = getSelectedNode(selection);
             const linkParent = $findMatchingParent(node, $isLinkNode);
 
-            if (linkParent) {
+            if (linkParent) 
                 setLinkUrl(linkParent.getURL());
-            } else if ($isLinkNode(node)) {
+             else if ($isLinkNode(node)) 
                 setLinkUrl(node.getURL());
-            } else {
+             else 
                 setLinkUrl("");
-            }
-            if (isLinkEditMode) {
+            
+            if (isLinkEditMode) 
                 setEditedLinkUrl(linkUrl);
-            }
+            
         }
         const editorElem = editorRef.current;
         const nativeSelection = getDOMSelection(editor._window);
         const activeElement = document.activeElement;
 
-        if (editorElem === null) {
+        if (editorElem === null) 
             return true;
-        }
+        
 
         const rootElement = editor.getRootElement();
 
@@ -100,9 +100,9 @@ function FloatingLinkEditor({
             }
             setLastSelection(selection);
         } else if (!activeElement || activeElement.className !== "link-input") {
-            if (rootElement !== null) {
+            if (rootElement !== null) 
                 setFloatingElemPositionForLinkEditor(null, editorElem, anchorElem);
-            }
+            
             setLastSelection(null);
             setIsLinkEditMode(false);
             setLinkUrl("");
@@ -122,16 +122,16 @@ function FloatingLinkEditor({
 
         window.addEventListener("resize", update);
 
-        if (scrollerElem) {
+        if (scrollerElem) 
             scrollerElem.addEventListener("scroll", update);
-        }
+        
 
         return () => {
             window.removeEventListener("resize", update);
 
-            if (scrollerElem) {
+            if (scrollerElem) 
                 scrollerElem.removeEventListener("scroll", update);
-            }
+            
         };
     }, [anchorElem.parentElement, editor, $updateLinkEditor]);
 
@@ -176,15 +176,15 @@ function FloatingLinkEditor({
     }, [editor, $updateLinkEditor]);
 
     useEffect(() => {
-        if (isLinkEditMode && inputRef.current) {
+        if (isLinkEditMode && inputRef.current) 
             inputRef.current.focus();
-        }
+        
     }, [isLinkEditMode]);
 
     const monitorInputInteraction = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter") 
             handleLinkSubmission(event);
-        } else if (event.key === "Escape") {
+         else if (event.key === "Escape") {
             event.preventDefault();
             setIsLinkEditMode(false);
         }
@@ -193,7 +193,7 @@ function FloatingLinkEditor({
     const handleLinkSubmission = (event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
         if (lastSelection !== null) {
-            if (linkUrl !== "") {
+            if (linkUrl !== "") 
                 editor.update(() => {
                     editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
                     const selection = $getSelection();
@@ -209,7 +209,7 @@ function FloatingLinkEditor({
                         }
                     }
                 });
-            }
+            
             setEditedLinkUrl("https://");
             setIsLinkEditMode(false);
         }
@@ -329,11 +329,11 @@ function useFloatingLinkEditorToolbar(
                             (autoLinkNode && (!autoLinkNode.is(focusAutoLinkNode) || autoLinkNode.getIsUnlinked()))
                         );
                     });
-                if (!badNode) {
+                if (!badNode) 
                     setIsLink(true);
-                } else {
+                 else 
                     setIsLink(false);
-                }
+                
             }
         }
         return mergeRegister(

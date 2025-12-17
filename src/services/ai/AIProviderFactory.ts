@@ -13,9 +13,9 @@ export class AIProviderFactory {
 
     getProvider(provider: AIProvider): IAIProvider {
         const p = this.providers.get(provider);
-        if (!p) {
+        if (!p) 
             throw new Error(`Provider ${provider} not found`);
-        }
+        
         return p;
     }
 

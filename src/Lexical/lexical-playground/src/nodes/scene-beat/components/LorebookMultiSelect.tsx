@@ -30,9 +30,9 @@ export const LorebookMultiSelect = ({
         onItemSelect(value);
         // Reset the select value after selection
         const selectElement = document.querySelector('[data-lorebook-select="true"]');
-        if (selectElement) {
+        if (selectElement) 
             (selectElement as HTMLSelectElement).value = "";
-        }
+        
     };
 
     return (

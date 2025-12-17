@@ -84,9 +84,9 @@ export const ChaptersTool = () => {
     const handlePovTypeChange = (value: string) => {
         form.setValue("povType", value as POVType);
         // Clear POV character when switching to omniscient
-        if (value === "Third Person Omniscient") {
+        if (value === "Third Person Omniscient") 
             form.setValue("povCharacter", undefined);
-        }
+        
     };
 
     const handleCreateChapter = (data: CreateChapterForm) => {
@@ -160,29 +160,29 @@ export const ChaptersTool = () => {
         setCurrentTool("editor");
     };
 
-    if (!currentStoryId) {
+    if (!currentStoryId) 
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">No story selected</p>
             </div>
         );
-    }
+    
 
-    if (loading) {
+    if (loading) 
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">Loading chapters...</p>
             </div>
         );
-    }
+    
 
-    if (error) {
+    if (error) 
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-destructive">{error}</p>
             </div>
         );
-    }
+    
 
     return (
         <LorebookProvider storyId={currentStoryId}>

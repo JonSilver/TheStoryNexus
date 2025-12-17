@@ -42,13 +42,12 @@ export const BrainstormTool = () => {
     const createMutation = useCreateBrainstormMutation();
     const { data: chats = [] } = useBrainstormByStoryQuery(currentStoryId || "");
 
-    if (!currentStoryId) {
+    if (!currentStoryId)
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">No story selected</p>
             </div>
         );
-    }
 
     const handleCreateNewChat = () => {
         createMutation.mutate(

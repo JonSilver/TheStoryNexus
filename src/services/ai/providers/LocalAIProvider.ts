@@ -12,9 +12,9 @@ export class LocalAIProvider implements IAIProvider {
     }
 
     initialize(apiUrl?: string): void {
-        if (apiUrl) {
+        if (apiUrl) 
             this.apiUrl = apiUrl;
-        }
+        
     }
 
     async fetchModels(): Promise<AIModel[]> {

@@ -68,7 +68,7 @@ export const createCrudRouter = <
                 res.json(rows.map(r => applyTransform(r as TRow)));
             })
         );
-    } else {
+    } else 
         router.get(
             "/",
             asyncHandler(async (_, res) => {
@@ -76,7 +76,7 @@ export const createCrudRouter = <
                 res.json(rows.map(r => applyTransform(r as TRow)));
             })
         );
-    }
+    
 
     // GET by id
     router.get(

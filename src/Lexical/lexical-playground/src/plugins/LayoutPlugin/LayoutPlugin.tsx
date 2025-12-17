@@ -40,9 +40,9 @@ export const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
 export function LayoutPlugin(): null {
     const [editor] = useLexicalComposerContext();
     useEffect(() => {
-        if (!editor.hasNodes([LayoutContainerNode, LayoutItemNode])) {
+        if (!editor.hasNodes([LayoutContainerNode, LayoutItemNode])) 
             throw new Error("LayoutPlugin: LayoutContainerNode, or LayoutItemNode not registered on editor");
-        }
+        
 
         const $onEscape = (before: boolean) => {
             const selection = $getSelection();
@@ -57,13 +57,13 @@ export function LayoutPlugin(): null {
                         ? container.getFirstDescendant<LexicalNode>()?.getKey()
                         : container.getLastDescendant<LexicalNode>()?.getKey();
 
-                    if (parent !== null && child === container && selection.anchor.key === descendant) {
+                    if (parent !== null && child === container && selection.anchor.key === descendant) 
                         if (before) {
                             container.insertBefore($createParagraphNode());
                         } else {
                             container.insertAfter($createParagraphNode());
                         }
-                    }
+                    
                 }
             }
 
@@ -71,18 +71,18 @@ export function LayoutPlugin(): null {
         };
 
         const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
-            if (node.isEmpty()) {
+            if (node.isEmpty()) 
                 node.append($createParagraphNode());
-            }
+            
         };
 
         const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
             const parent = node.getParent<ElementNode>();
             if (!$isLayoutContainerNode(parent)) {
                 const children = node.getChildren<LexicalNode>();
-                for (const child of children) {
+                for (const child of children) 
                     node.insertBefore(child);
-                }
+                
                 node.remove();
                 return true;
             }
@@ -109,9 +109,9 @@ export function LayoutPlugin(): null {
                         const container = $createLayoutContainerNode(template);
                         const itemsCount = getItemsCountFromTemplate(template);
 
-                        for (let i = 0; i < itemsCount; i++) {
+                        for (let i = 0; i < itemsCount; i++) 
                             container.append($createLayoutItemNode().append($createParagraphNode()));
-                        }
+                        
 
                         $insertNodeToNearestRoot(container);
                         container.selectStart();
@@ -127,19 +127,19 @@ export function LayoutPlugin(): null {
                     editor.update(() => {
                         const container = $getNodeByKey<LexicalNode>(nodeKey);
 
-                        if (!$isLayoutContainerNode(container)) {
+                        if (!$isLayoutContainerNode(container)) 
                             return;
-                        }
+                        
 
                         const itemsCount = getItemsCountFromTemplate(template);
                         const prevItemsCount = getItemsCountFromTemplate(container.getTemplateColumns());
 
                         // Add or remove extra columns if new template does not match existing one
-                        if (itemsCount > prevItemsCount) {
+                        if (itemsCount > prevItemsCount) 
                             for (let i = prevItemsCount; i < itemsCount; i++) {
                                 container.append($createLayoutItemNode().append($createParagraphNode()));
                             }
-                        } else if (itemsCount < prevItemsCount) {
+                         else if (itemsCount < prevItemsCount) 
                             for (let i = prevItemsCount - 1; i >= itemsCount; i--) {
                                 const layoutItem = container.getChildAtIndex<LexicalNode>(i);
 
@@ -147,7 +147,7 @@ export function LayoutPlugin(): null {
                                     layoutItem.remove();
                                 }
                             }
-                        }
+                        
 
                         container.setTemplateColumns(template);
                     });
@@ -163,18 +163,18 @@ export function LayoutPlugin(): null {
                 // to regular content.
                 const isRemoved = $removeIsolatedLayoutItem(node);
 
-                if (!isRemoved) {
+                if (!isRemoved) 
                     // Layout item should always have a child. this function will listen
                     // for any empty layout item and fill it with a paragraph node
                     $fillLayoutItemIfEmpty(node);
-                }
+                
             }),
             editor.registerNodeTransform(LayoutContainerNode, node => {
                 const children = node.getChildren<LexicalNode>();
                 if (!children.every($isLayoutItemNode)) {
-                    for (const child of children) {
+                    for (const child of children) 
                         node.insertBefore(child);
-                    }
+                    
                     node.remove();
                 }
             })

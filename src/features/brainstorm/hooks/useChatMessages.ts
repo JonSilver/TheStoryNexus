@@ -18,18 +18,18 @@ export const useChatMessages = ({
         const baseMessages = selectedChat.messages;
         const messagesToAdd: ChatMessage[] = [];
 
-        if (pendingUserMessage) {
+        if (pendingUserMessage) 
             messagesToAdd.push(pendingUserMessage);
-        }
+        
 
-        if (streamingMessageId) {
+        if (streamingMessageId) 
             messagesToAdd.push({
                 id: streamingMessageId,
                 content: streamingContent,
                 role: "assistant",
                 timestamp: new Date()
             });
-        }
+        
 
         return messagesToAdd.length > 0 ? [...baseMessages, ...messagesToAdd] : baseMessages;
     }, [selectedChat.messages, streamingMessageId, streamingContent, pendingUserMessage]);

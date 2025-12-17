@@ -56,9 +56,9 @@ export class LayoutContainerNode extends ElementNode {
     createDOM(config: EditorConfig): HTMLElement {
         const dom = document.createElement("div");
         dom.style.gridTemplateColumns = this.__templateColumns;
-        if (is.string(config.theme.layoutContainer)) {
+        if (is.string(config.theme.layoutContainer)) 
             addClassNamesToElement(dom, config.theme.layoutContainer);
-        }
+        
         return dom;
     }
 
@@ -70,18 +70,18 @@ export class LayoutContainerNode extends ElementNode {
     }
 
     updateDOM(prevNode: this, dom: HTMLElement): boolean {
-        if (prevNode.__templateColumns !== this.__templateColumns) {
+        if (prevNode.__templateColumns !== this.__templateColumns) 
             dom.style.gridTemplateColumns = this.__templateColumns;
-        }
+        
         return false;
     }
 
     static importDOM(): DOMConversionMap | null {
         return {
             div: (domNode: HTMLElement) => {
-                if (!domNode.hasAttribute("data-lexical-layout-container")) {
+                if (!domNode.hasAttribute("data-lexical-layout-container")) 
                     return null;
-                }
+                
                 return {
                     conversion: $convertLayoutContainerElement,
                     priority: 2

@@ -154,7 +154,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     const handleSaveSummary = (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (summary !== chapter.summary) {
+        if (summary !== chapter.summary) 
             updateChapterMutation.mutate(
                 {
                     id: chapter.id,
@@ -167,7 +167,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                     }
                 }
             );
-        }
+        
     };
 
     const handleGenerateSummary = async (prompt: Prompt, model: AllowedModel) => {
@@ -224,9 +224,9 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     };
 
     const handleWriteClick = () => {
-        if (onWriteClick) {
+        if (onWriteClick) 
             onWriteClick();
-        } else {
+         else {
             setCurrentChapterId(chapter.id);
             navigate(ROUTES.DASHBOARD.CHAPTER_EDITOR(storyId, chapter.id));
         }

@@ -74,12 +74,12 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
         };
 
         const [error] = await attemptPromise(async () => {
-            if (prompt?.id) {
+            if (prompt?.id) 
                 await updatePromptMutation.mutateAsync({
                     id: prompt.id,
                     data: promptData
                 });
-            } else await createPromptMutation.mutateAsync(promptData);
+             else await createPromptMutation.mutateAsync(promptData);
 
             onSave?.();
         });
@@ -250,9 +250,9 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                                     modelSelection.handleModelSelect(model.id);
                                                 }}
                                                 onKeyDown={e => {
-                                                    if (e.key === "Enter" || e.key === " ") {
+                                                    if (e.key === "Enter" || e.key === " ") 
                                                         modelSelection.handleModelSelect(model.id);
-                                                    }
+                                                    
                                                 }}
                                             >
                                                 {model.name}

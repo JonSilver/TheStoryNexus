@@ -24,9 +24,9 @@ export default function useModal(): [
     }, []);
 
     const modal = useMemo(() => {
-        if (modalContent === null) {
+        if (modalContent === null) 
             return null;
-        }
+        
         const { title, content, closeOnClickOutside } = modalContent;
         return (
             <Modal onClose={onClose} title={title} closeOnClickOutside={closeOnClickOutside}>

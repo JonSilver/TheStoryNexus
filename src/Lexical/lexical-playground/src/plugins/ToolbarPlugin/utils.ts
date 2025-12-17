@@ -33,9 +33,9 @@ export enum UpdateFontSizeType {
  * @returns the next font size
  */
 export const calculateNextFontSize = (currentFontSize: number, updateType: UpdateFontSizeType | null) => {
-    if (!updateType) {
+    if (!updateType) 
         return currentFontSize;
-    }
+    
 
     let updatedFontSize: number = currentFontSize;
     switch (updateType) {
@@ -100,9 +100,9 @@ export const updateFontSizeInSelection = (
     updateType: UpdateFontSizeType | null
 ) => {
     const getNextFontSize = (prevFontSize: string | null): string => {
-        if (!prevFontSize) {
+        if (!prevFontSize) 
             prevFontSize = `${DEFAULT_FONT_SIZE}px`;
-        }
+        
         prevFontSize = prevFontSize.slice(0, -2);
         const nextFontSize = calculateNextFontSize(Number(prevFontSize), updateType);
         return `${nextFontSize}px`;
@@ -111,11 +111,11 @@ export const updateFontSizeInSelection = (
     editor.update(() => {
         if (editor.isEditable()) {
             const selection = $getSelection();
-            if (selection !== null) {
+            if (selection !== null) 
                 $patchStyleText(selection, {
                     "font-size": newFontSize || getNextFontSize
                 });
-            }
+            
         }
     });
 };
@@ -124,64 +124,64 @@ export const updateFontSize = (editor: LexicalEditor, updateType: UpdateFontSize
     if (inputValue !== "") {
         const nextFontSize = calculateNextFontSize(Number(inputValue), updateType);
         updateFontSizeInSelection(editor, `${String(nextFontSize)}px`, null);
-    } else {
+    } else 
         updateFontSizeInSelection(editor, null, updateType);
-    }
+    
 };
 
 export const formatParagraph = (editor: LexicalEditor) => {
     editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
+        if ($isRangeSelection(selection)) 
             $setBlocksType(selection, () => $createParagraphNode());
-        }
+        
     });
 };
 
 export const formatHeading = (editor: LexicalEditor, blockType: string, headingSize: HeadingTagType) => {
-    if (blockType !== headingSize) {
+    if (blockType !== headingSize) 
         editor.update(() => {
             const selection = $getSelection();
             $setBlocksType(selection, () => $createHeadingNode(headingSize));
         });
-    }
+    
 };
 
 export const formatBulletList = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "bullet") {
+    if (blockType !== "bullet") 
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
-    } else {
+     else 
         formatParagraph(editor);
-    }
+    
 };
 
 export const formatCheckList = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "check") {
+    if (blockType !== "check") 
         editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
-    } else {
+     else 
         formatParagraph(editor);
-    }
+    
 };
 
 export const formatNumberedList = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "number") {
+    if (blockType !== "number") 
         editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
-    } else {
+     else 
         formatParagraph(editor);
-    }
+    
 };
 
 export const formatQuote = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "quote") {
+    if (blockType !== "quote") 
         editor.update(() => {
             const selection = $getSelection();
             $setBlocksType(selection, () => $createQuoteNode());
         });
-    }
+    
 };
 
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "code") {
+    if (blockType !== "code") 
         editor.update(() => {
             let selection = $getSelection();
 
@@ -199,7 +199,7 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
                 }
             }
         });
-    }
+    
 };
 
 export const clearFormatting = (editor: LexicalEditor) => {
@@ -211,9 +211,9 @@ export const clearFormatting = (editor: LexicalEditor) => {
             const nodes = selection.getNodes();
             const extractedNodes = selection.extract();
 
-            if (anchor.key === focus.key && anchor.offset === focus.offset) {
+            if (anchor.key === focus.key && anchor.offset === focus.offset) 
                 return;
-            }
+            
 
             nodes.forEach((node, idx) => {
                 // We split the first and last node by the selection
@@ -221,12 +221,12 @@ export const clearFormatting = (editor: LexicalEditor) => {
                 if ($isTextNode(node)) {
                     // Use a separate variable to ensure TS does not lose the refinement
                     let textNode = node;
-                    if (idx === 0 && anchor.offset !== 0) {
+                    if (idx === 0 && anchor.offset !== 0) 
                         textNode = textNode.splitText(anchor.offset)[1] || textNode;
-                    }
-                    if (idx === nodes.length - 1) {
+                    
+                    if (idx === nodes.length - 1) 
                         textNode = textNode.splitText(focus.offset)[0] || textNode;
-                    }
+                    
                     /**
                      * If the selected text has one format applied
                      * selecting a portion of the text, could
@@ -236,23 +236,23 @@ export const clearFormatting = (editor: LexicalEditor) => {
                      */
                     // We need this in case the selected text only has one format
                     const extractedTextNode = extractedNodes[0];
-                    if (nodes.length === 1 && $isTextNode(extractedTextNode)) {
+                    if (nodes.length === 1 && $isTextNode(extractedTextNode)) 
                         textNode = extractedTextNode;
-                    }
+                    
 
-                    if (textNode.__style !== "") {
+                    if (textNode.__style !== "") 
                         textNode.setStyle("");
-                    }
+                    
                     if (textNode.__format !== 0) {
                         textNode.setFormat(0);
                         $getNearestBlockElementAncestorOrThrow(textNode).setFormat("");
                     }
                     node = textNode;
-                } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
+                } else if ($isHeadingNode(node) || $isQuoteNode(node)) 
                     node.replace($createParagraphNode(), true);
-                } else if ($isDecoratorBlockNode(node)) {
+                 else if ($isDecoratorBlockNode(node)) 
                     node.setFormat("");
-                }
+                
             });
         }
     });

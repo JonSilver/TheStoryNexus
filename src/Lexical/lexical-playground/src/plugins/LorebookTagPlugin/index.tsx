@@ -25,10 +25,10 @@ export default function LorebookTagPlugin(): null {
 
                 // Check for each tag in the content
                 Object.entries(tagMap).forEach(([tag, entry]) => {
-                    if (content.toLowerCase().includes(tag.toLowerCase())) {
+                    if (content.toLowerCase().includes(tag.toLowerCase())) 
                         // Use entry.id as key to prevent duplicates
                         matchedEntries.set(entry.id, entry);
-                    }
+                    
                 });
 
                 // Update the context with matched entries only

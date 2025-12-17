@@ -260,11 +260,11 @@ function FontDropDown({
         (option: string) => {
             editor.update(() => {
                 const selection = $getSelection();
-                if (selection !== null) {
+                if (selection !== null) 
                     $patchStyleText(selection, {
                         [style]: option
                     });
-                }
+                
             });
         },
         [editor, style]
@@ -452,9 +452,9 @@ export default function ToolbarPlugin({
                     "isImageCaption",
                     !!rootElement?.parentElement?.classList.contains("image-caption-container")
                 );
-            } else {
+            } else 
                 updateToolbarState("isImageCaption", false);
-            }
+            
 
             const anchorNode = selection.anchor.getNode();
             let element =
@@ -465,9 +465,9 @@ export default function ToolbarPlugin({
                           return parent !== null && $isRootOrShadowRoot(parent);
                       });
 
-            if (element === null) {
+            if (element === null) 
                 element = anchorNode.getTopLevelElementOrThrow();
-            }
+            
 
             const elementKey = element.getKey();
             const elementDOM = activeEditor.getElementByKey(elementKey);
@@ -479,13 +479,13 @@ export default function ToolbarPlugin({
             const parent = node.getParent();
 
             const tableNode = $findMatchingParent(node, $isTableNode);
-            if ($isTableNode(tableNode)) {
+            if ($isTableNode(tableNode)) 
                 updateToolbarState("rootType", "table");
-            } else {
+             else 
                 updateToolbarState("rootType", "root");
-            }
+            
 
-            if (elementDOM !== null) {
+            if (elementDOM !== null) 
                 // setSelectedElementKey(elementKey); // Unused variable
                 if ($isListNode(element)) {
                     const parentList = $getNearestNodeOfType<ListNode>(anchorNode, ListNode);
@@ -498,7 +498,7 @@ export default function ToolbarPlugin({
                         updateToolbarState("blockType", type as keyof typeof blockTypeToBlockName);
                     }
                 }
-            }
+            
             // Handle buttons
             updateToolbarState("fontColor", $getSelectionStyleValueForProperty(selection, "color", "#000"));
             updateToolbarState("bgColor", $getSelectionStyleValueForProperty(selection, "background-color", "#fff"));

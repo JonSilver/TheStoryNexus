@@ -18,9 +18,9 @@ export function parseAllowedFontSize(input: string): string {
     const match = input.match(/^(\d+(?:\.\d+)?)px$/);
     if (match) {
         const n = Number(match[1]);
-        if (n >= MIN_ALLOWED_FONT_SIZE && n <= MAX_ALLOWED_FONT_SIZE) {
+        if (n >= MIN_ALLOWED_FONT_SIZE && n <= MAX_ALLOWED_FONT_SIZE) 
             return input;
-        }
+        
     }
     return "";
 }
@@ -40,9 +40,9 @@ export default function FontSize({
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const inputValueNumber = Number(inputValue);
 
-        if (e.key === "Tab") {
+        if (e.key === "Tab") 
             return;
-        }
+        
         if (["e", "E", "+", "-"].includes(e.key) || Number.isNaN(inputValueNumber)) {
             e.preventDefault();
             setInputValue("");
@@ -64,11 +64,11 @@ export default function FontSize({
 
     const updateFontSizeByInputValue = (inputValueNumber: number) => {
         let updatedFontSize = inputValueNumber;
-        if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
+        if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) 
             updatedFontSize = MAX_ALLOWED_FONT_SIZE;
-        } else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) {
+         else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) 
             updatedFontSize = MIN_ALLOWED_FONT_SIZE;
-        }
+        
 
         setInputValue(String(updatedFontSize));
         updateFontSizeInSelection(editor, `${String(updatedFontSize)}px`, null);

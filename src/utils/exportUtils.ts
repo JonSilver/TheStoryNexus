@@ -34,25 +34,25 @@ async function convertLexicalToHtml(jsonContent: string): Promise<string> {
             parentElement.appendChild(textNode);
         } else if (node.type === "paragraph") {
             const p = document.createElement("p");
-            if (node.children) {
+            if (node.children) 
                 node.children.forEach(child => processNode(child, p));
-            }
+            
             parentElement.appendChild(p);
         } else if (node.type === "heading" && node.tag) {
             const headingTag = `h${node.tag}`;
             const heading = document.createElement(headingTag);
-            if (node.children) {
+            if (node.children) 
                 node.children.forEach(child => processNode(child, heading));
-            }
+            
             parentElement.appendChild(heading);
-        } else if (node.children) {
+        } else if (node.children) 
             node.children.forEach(child => processNode(child, parentElement));
-        }
+        
     };
 
-    if (editorState.root?.children) {
+    if (editorState.root?.children) 
         editorState.root.children.forEach(node => processNode(node, container));
-    }
+    
 
     return container.innerHTML;
 }
@@ -102,9 +102,9 @@ function convertLexicalToMarkdown(jsonContent: string): string {
                 return formatted;
             }
             return text;
-        } else if (node.type === "linebreak") {
+        } else if (node.type === "linebreak") 
             return "  \n";
-        } else if (node.type === "paragraph") {
+         else if (node.type === "paragraph") {
             const childrenText = node.children ? node.children.map(processNode).join("") : "";
             return `${childrenText}\n\n`;
         } else if (node.type === "heading" && node.tag) {
@@ -112,18 +112,18 @@ function convertLexicalToMarkdown(jsonContent: string): string {
             const prefix = "#".repeat(level);
             const childrenText = node.children ? node.children.map(processNode).join("") : "";
             return `${prefix} ${childrenText}\n\n`;
-        } else if (node.children) {
+        } else if (node.children) 
             return node.children.map(processNode).join("");
-        }
+        
         return "";
     };
 
-    if (editorState.root?.children) {
+    if (editorState.root?.children) 
         editorState.root.children.forEach(node => {
             const text = processNode(node);
             if (text) lines.push(text);
         });
-    }
+    
 
     return lines.join("").trim();
 }
@@ -164,9 +164,9 @@ async function exportStoryAsPdf(story: Story, chapters: Chapter[]): Promise<void
         doc.setFontSize(9);
         doc.setFont("helvetica", "italic");
         doc.text(story.title, margin, headerMargin, { align: "left" });
-        if (currentChapter) {
+        if (currentChapter) 
             doc.text(currentChapter, pageWidth - margin, headerMargin, { align: "right" });
-        }
+        
 
         // Footer - author and page number
         doc.setFontSize(9);
@@ -275,9 +275,9 @@ async function exportStoryAsPdf(story: Story, chapters: Chapter[]): Promise<void
  */
 export async function downloadStory(storyId: string, format: ExportFormat) {
     const story = await storiesApi.getById(storyId);
-    if (!story) {
+    if (!story) 
         throw new Error("Story not found");
-    }
+    
 
     const chaptersUnsorted = await chaptersApi.getByStory(storyId);
     const chapters = chaptersUnsorted.sort((a, b) => a.order - b.order);
@@ -369,14 +369,14 @@ export async function downloadStory(storyId: string, format: ExportFormat) {
  */
 export async function downloadChapter(chapterId: string, format: ExportFormat) {
     const chapter = await chaptersApi.getById(chapterId);
-    if (!chapter) {
+    if (!chapter) 
         throw new Error("Chapter not found");
-    }
+    
 
     const story = await storiesApi.getById(chapter.storyId);
-    if (!story) {
+    if (!story) 
         throw new Error("Story not found");
-    }
+    
 
     const filename = `${story.title} - Chapter ${chapter.order}`;
 

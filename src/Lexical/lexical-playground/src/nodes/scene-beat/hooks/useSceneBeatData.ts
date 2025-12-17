@@ -64,9 +64,9 @@ export const useSceneBeatData = ({
         editor.getEditorState().read(() => {
             const node = $getNodeByKey(nodeKey);
             const nodeType = node?.getType();
-            if (node && nodeType === "scene-beat") {
+            if (node && nodeType === "scene-beat") 
                 nodeSceneBeatId = (node as unknown as SceneBeatNodeType).getSceneBeatId();
-            }
+            
         });
         return nodeSceneBeatId;
     }, [editor, nodeKey]);
@@ -88,9 +88,9 @@ export const useSceneBeatData = ({
             editor.update(
                 () => {
                     const node = $getNodeByKey(nodeKey);
-                    if (node?.getType() === "scene-beat") {
+                    if (node?.getType() === "scene-beat") 
                         (node as unknown as SceneBeatNodeType).setSceneBeatId(newId);
-                    }
+                    
                 },
                 { discrete: true }
             );
@@ -122,9 +122,9 @@ export const useSceneBeatData = ({
                 },
                 onError: err => {
                     // Ignore UNIQUE constraint errors (React strict mode double-mount)
-                    if (!err.message?.includes("UNIQUE constraint")) {
+                    if (!err.message?.includes("UNIQUE constraint")) 
                         logger.error("❌ Failed to create scene beat:", err);
-                    }
+                    
                     setNeedsCreate(false);
                 }
             }
@@ -158,9 +158,9 @@ export const useSceneBeatData = ({
             {
                 onError: err => {
                     // Ignore UNIQUE constraint errors
-                    if (!err.message?.includes("UNIQUE constraint")) {
+                    if (!err.message?.includes("UNIQUE constraint")) 
                         logger.error("❌ Failed to create scene beat:", err);
-                    }
+                    
                 }
             }
         );

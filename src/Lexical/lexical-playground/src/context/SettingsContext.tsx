@@ -42,11 +42,11 @@ export const useSettings = (): SettingsContextShape => useContext(Context);
 function setURLParam(param: SettingName, value: null | boolean) {
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
-    if (value !== DEFAULT_SETTINGS[param]) {
+    if (value !== DEFAULT_SETTINGS[param]) 
         params.set(param, String(value));
-    } else {
+     else 
         params.delete(param);
-    }
+    
     url.search = params.toString();
     window.history.pushState(null, "", url.toString());
 }

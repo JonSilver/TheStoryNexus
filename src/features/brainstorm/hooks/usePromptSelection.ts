@@ -14,14 +14,14 @@ const findInitialSelection = (
     lastUsedModelId: string | undefined,
     prompts: Prompt[]
 ): { prompt: Prompt | null; model: AllowedModel | null } => {
-    if (!lastUsedPromptId || prompts.length === 0) {
+    if (!lastUsedPromptId || prompts.length === 0) 
         return { prompt: null, model: null };
-    }
+    
 
     const lastPrompt = prompts.find(p => p.id === lastUsedPromptId);
-    if (!lastPrompt || lastPrompt.allowedModels.length === 0) {
+    if (!lastPrompt || lastPrompt.allowedModels.length === 0) 
         return { prompt: null, model: null };
-    }
+    
 
     const lastModel = lastUsedModelId ? lastPrompt.allowedModels.find(m => m.id === lastUsedModelId) : undefined;
 
@@ -43,9 +43,9 @@ export const usePromptSelection = (
     const shouldInitialise = initialisedForChatRef.current !== chatId && prompts.length > 0;
     const initialValues = shouldInitialise ? findInitialSelection(lastUsedPromptId, lastUsedModelId, prompts) : null;
 
-    if (shouldInitialise) {
+    if (shouldInitialise) 
         initialisedForChatRef.current = chatId;
-    }
+    
 
     const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(() => initialValues?.prompt ?? null);
     const [selectedModel, setSelectedModel] = useState<AllowedModel | null>(() => initialValues?.model ?? null);

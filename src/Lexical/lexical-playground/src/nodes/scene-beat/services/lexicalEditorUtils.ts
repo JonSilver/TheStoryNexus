@@ -34,9 +34,9 @@ export const extractPreviousText = (editor: LexicalEditor, nodeKey: NodeKey): st
                     textNodes.unshift(nodeText);
 
                     // Add an extra newline after block nodes
-                    if (isBlockNode) {
+                    if (isBlockNode) 
                         textNodes.unshift("\n");
-                    }
+                    
                 }
             }
             currentNode = currentNode.getPreviousSibling();
@@ -60,8 +60,8 @@ export const insertTextAfterNode = (editor: LexicalEditor, nodeKey: NodeKey, tex
         const paragraphNode = $createParagraphNode();
         paragraphNode.append($createTextNode(text));
         const currentNode = $getNodeByKey(nodeKey);
-        if (currentNode) {
+        if (currentNode) 
             currentNode.insertAfter(paragraphNode);
-        }
+        
     });
 };

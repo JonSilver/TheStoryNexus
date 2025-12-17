@@ -28,9 +28,9 @@ export class LayoutItemNode extends ElementNode {
     createDOM(config: EditorConfig): HTMLElement {
         const dom = document.createElement("div");
         dom.setAttribute("data-lexical-layout-item", "true");
-        if (is.string(config.theme.layoutItem)) {
+        if (is.string(config.theme.layoutItem)) 
             addClassNamesToElement(dom, config.theme.layoutItem);
-        }
+        
         return dom;
     }
 
@@ -41,9 +41,9 @@ export class LayoutItemNode extends ElementNode {
     static importDOM(): DOMConversionMap | null {
         return {
             div: (domNode: HTMLElement) => {
-                if (!domNode.hasAttribute("data-lexical-layout-item")) {
+                if (!domNode.hasAttribute("data-lexical-layout-item")) 
                     return null;
-                }
+                
                 return {
                     conversion: $convertLayoutItemElement,
                     priority: 2

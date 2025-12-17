@@ -31,19 +31,19 @@ export function setFloatingElemPosition(
     let top = targetRect.top - floatingElemRect.height - verticalGap;
     let left = targetRect.left - horizontalOffset;
 
-    if (top < editorScrollerRect.top) {
+    if (top < editorScrollerRect.top) 
         // adjusted height for link element if the element is at top
         top += floatingElemRect.height + targetRect.height + verticalGap * (isLink ? 9 : 2);
-    }
+    
 
-    if (left + floatingElemRect.width > editorScrollerRect.right) {
+    if (left + floatingElemRect.width > editorScrollerRect.right) 
         left = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
-    }
+    
 
     // Ensure toolbar doesn't go off-screen on the left
-    if (left < editorScrollerRect.left) {
+    if (left < editorScrollerRect.left) 
         left = editorScrollerRect.left + horizontalOffset;
-    }
+    
 
     top -= anchorElementRect.top;
     left -= anchorElementRect.left;

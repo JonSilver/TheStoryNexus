@@ -86,11 +86,11 @@ export function InsertTableDialog({
     useEffect(() => {
         const row = Number(rows);
         const column = Number(columns);
-        if (row && row > 0 && row <= 500 && column && column > 0 && column <= 50) {
+        if (row && row > 0 && row <= 500 && column && column > 0 && column <= 50) 
             setIsDisabled(false);
-        } else {
+         else 
             setIsDisabled(true);
-        }
+        
     }, [rows, columns]);
 
     const onClick = () => {
@@ -139,9 +139,9 @@ export function TablePlugin({
     const [editor] = useLexicalComposerContext();
     const cellContext = useContext(CellContext);
     useEffect(() => {
-        if (!editor.hasNodes([TableNode, TableRowNode, TableCellNode])) {
+        if (!editor.hasNodes([TableNode, TableRowNode, TableCellNode])) 
             invariant(false, "TablePlugin: TableNode, TableRowNode, or TableCellNode is not registered on editor");
-        }
+        
     }, [editor]);
     useEffect(() => {
         cellContext.set(cellEditorConfig, children);

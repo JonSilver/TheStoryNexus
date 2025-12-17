@@ -20,9 +20,9 @@ export class AIService {
     }
 
     static getInstance(): AIService {
-        if (!AIService.instance) {
+        if (!AIService.instance) 
             AIService.instance = new AIService();
-        }
+        
         return AIService.instance;
     }
 
@@ -38,15 +38,15 @@ export class AIService {
         this.settings = settings;
 
         // Initialize providers with stored keys
-        if (this.settings.openaiKey) {
+        if (this.settings.openaiKey) 
             this.providerFactory.initializeProvider("openai", this.settings.openaiKey);
-        }
-        if (this.settings.openrouterKey) {
+        
+        if (this.settings.openrouterKey) 
             this.providerFactory.initializeProvider("openrouter", this.settings.openrouterKey);
-        }
-        if (this.settings.localApiUrl) {
+        
+        if (this.settings.localApiUrl) 
             this.providerFactory.updateLocalApiUrl(this.settings.localApiUrl);
-        }
+        
     }
 
     async updateKey(provider: AIProvider, key: string) {
@@ -60,9 +60,9 @@ export class AIService {
         };
 
         const result = aiSettingsSchema.partial().safeParse(update);
-        if (!result.success) {
+        if (!result.success) 
             throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        }
+        
 
         // Update via API
         if (!this.settings) throw new Error("Settings not initialized");
@@ -107,9 +107,9 @@ export class AIService {
         };
 
         const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) {
+        if (!result.success) 
             throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        }
+        
 
         // Update via API
         if (!this.settings) throw new Error("Settings not initialized");
@@ -129,14 +129,14 @@ export class AIService {
 
         // Refresh settings from API to ensure we have latest data
         const [error, freshSettings] = await attemptPromise(() => aiApi.getSettings());
-        if (!error && freshSettings) {
+        if (!error && freshSettings) 
             this.settings = freshSettings;
-        }
+        
 
         // Check if we should fetch fresh models
-        if (provider && forceRefresh) {
+        if (provider && forceRefresh) 
             await this.fetchAvailableModels(provider);
-        }
+        
 
         const result = provider
             ? this.settings.availableModels.filter(m => m.provider === provider)
@@ -169,15 +169,15 @@ export class AIService {
                     controller.enqueue(new TextEncoder().encode(formatSSEDone()));
                 });
 
-                if (error) {
+                if (error) 
                     if ((error as Error).name === "AbortError") {
                         controller.close();
                     } else {
                         controller.error(error);
                     }
-                } else {
+                 else 
                     controller.close();
-                }
+                
             }
         });
 
@@ -212,14 +212,14 @@ export class AIService {
         _repetition_penalty?: number,
         _min_p?: number
     ): Promise<Response> {
-        if (!this.settings?.openaiKey) {
+        if (!this.settings?.openaiKey) 
             throw new Error("OpenAI API key not set");
-        }
+        
 
         const provider = this.providerFactory.getProvider("openai");
-        if (!provider.isInitialized()) {
+        if (!provider.isInitialized()) 
             this.providerFactory.initializeProvider("openai", this.settings.openaiKey);
-        }
+        
 
         return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
     }
@@ -234,14 +234,14 @@ export class AIService {
         _repetition_penalty?: number,
         _min_p?: number
     ): Promise<Response> {
-        if (!this.settings?.openrouterKey) {
+        if (!this.settings?.openrouterKey) 
             throw new Error("OpenRouter API key not set");
-        }
+        
 
         const provider = this.providerFactory.getProvider("openrouter");
-        if (!provider.isInitialized()) {
+        if (!provider.isInitialized()) 
             this.providerFactory.initializeProvider("openrouter", this.settings.openrouterKey);
-        }
+        
 
         return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
     }
@@ -261,15 +261,15 @@ export class AIService {
         );
 
         if (error) {
-            if ((error as Error).name === "AbortError") {
+            if ((error as Error).name === "AbortError") 
                 return new Response(null, { status: 204 });
-            }
+            
             throw error;
         }
 
-        if (!response) {
+        if (!response) 
             throw new Error("No response from provider");
-        }
+        
 
         return this.formatStreamAsSSE(response);
     }
@@ -280,9 +280,9 @@ export class AIService {
         onComplete: () => void,
         onError: (error: Error) => void
     ) {
-        if (!response.body) {
+        if (!response.body) 
             return onError(new Error("Response body is null"));
-        }
+        
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -298,7 +298,7 @@ export class AIService {
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split("\n").filter(line => line.trim() !== "");
 
-                for (const line of lines) {
+                for (const line of lines) 
                     if (line.startsWith("data: ")) {
                         const data = line.substring(6);
                         if (data === "[DONE]") {
@@ -313,18 +313,18 @@ export class AIService {
                             }
                         }
                     }
-                }
+                
             }
         });
 
-        if (error) {
+        if (error) 
             if ((error as Error).name === "AbortError") {
                 logger.info("Stream reading aborted.");
                 onComplete();
             } else {
                 onError(error as Error);
             }
-        }
+        
 
         this.abortController = null;
     }
@@ -355,25 +355,25 @@ export class AIService {
     }
 
     async updateDefaultModel(provider: AIProvider, modelId: string | undefined): Promise<void> {
-        if (!this.settings) {
+        if (!this.settings) 
             throw new Error("AI settings not initialized");
-        }
+        
 
         let updateData: Partial<AISettings>;
-        if (provider === "local") {
+        if (provider === "local") 
             updateData = { defaultLocalModel: modelId };
-        } else if (provider === "openai") {
+         else if (provider === "openai") 
             updateData = { defaultOpenAIModel: modelId };
-        } else if (provider === "openrouter") {
+         else if (provider === "openrouter") 
             updateData = { defaultOpenRouterModel: modelId };
-        } else {
+         else 
             return;
-        }
+        
 
         const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) {
+        if (!result.success) 
             throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        }
+        
 
         // Update via API
         const settingsId = this.settings.id;
@@ -387,16 +387,16 @@ export class AIService {
     }
 
     async updateLocalApiUrl(url: string): Promise<void> {
-        if (!this.settings) {
+        if (!this.settings) 
             throw new Error("Settings not initialized");
-        }
+        
 
         const updateData = { localApiUrl: url };
 
         const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) {
+        if (!result.success) 
             throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        }
+        
 
         // Update via API
         const settingsId2 = this.settings.id;

@@ -64,7 +64,7 @@ export default function ChatList({ storyId, selectedChat, onSelectChat }: ChatLi
     };
 
     const handleSaveTitle = () => {
-        if (editingChat && newTitle.trim()) {
+        if (editingChat && newTitle.trim()) 
             updateMutation.mutate(
                 {
                     id: editingChat.id,
@@ -78,7 +78,7 @@ export default function ChatList({ storyId, selectedChat, onSelectChat }: ChatLi
                     }
                 }
             );
-        }
+        
     };
 
     return (

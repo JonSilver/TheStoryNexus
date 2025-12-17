@@ -1,11 +1,11 @@
 export const randomUUID = (): string => {
     // Try native implementations first
-    if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    if (typeof window !== "undefined" && window.crypto?.randomUUID) 
         return window.crypto.randomUUID();
-    }
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    
+    if (typeof crypto !== "undefined" && crypto.randomUUID) 
         return crypto.randomUUID();
-    }
+    
 
     // Fallback: generate UUID v4 using crypto.getRandomValues
     // Available in both secure and insecure contexts

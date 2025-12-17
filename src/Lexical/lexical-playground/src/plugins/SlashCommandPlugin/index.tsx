@@ -137,9 +137,9 @@ export default function SlashCommandPlugin({ editor }: { editor: LexicalEditor }
                 setSlashCommandText(commandText);
                 setShowMenu(true);
                 updateMenuPosition();
-            } else if (showMenu) {
+            } else if (showMenu) 
                 resetMenu();
-            }
+            
         });
 
         return removeTextListener;
@@ -149,9 +149,9 @@ export default function SlashCommandPlugin({ editor }: { editor: LexicalEditor }
     useEffect(() => {
         if (showMenu) {
             const handleClickOutside = (event: MouseEvent) => {
-                if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                if (menuRef.current && !menuRef.current.contains(event.target as Node)) 
                     resetMenu();
-                }
+                
             };
 
             document.addEventListener("mousedown", handleClickOutside);
@@ -197,9 +197,9 @@ export default function SlashCommandPlugin({ editor }: { editor: LexicalEditor }
     );
 
     // If menu is not shown, don't render anything
-    if (!showMenu) {
+    if (!showMenu) 
         return null;
-    }
+    
 
     return createPortal(
         <div

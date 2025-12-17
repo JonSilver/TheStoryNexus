@@ -20,9 +20,9 @@ function registerKeyTimeStampTracker() {
         "keydown",
         (event: KeyboardEvent) => {
             // Tab
-            if (event.key === "Tab") {
+            if (event.key === "Tab") 
                 lastTabKeyDownTimestamp = event.timeStamp;
-            }
+            
         },
         true
     );
@@ -41,11 +41,11 @@ export default function TabFocusPlugin(): null {
             FOCUS_COMMAND,
             (event: FocusEvent) => {
                 const selection = $getSelection();
-                if ($isRangeSelection(selection)) {
+                if ($isRangeSelection(selection)) 
                     if (lastTabKeyDownTimestamp + TAB_TO_FOCUS_INTERVAL > event.timeStamp) {
                         $setSelection(selection.clone());
                     }
-                }
+                
                 return false;
             },
             COMMAND_PRIORITY_LOW

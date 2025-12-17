@@ -115,19 +115,19 @@ export default function SettingsPage() {
             !confirm(
                 "Are you sure you want to delete all demo data? This will remove the demo story, chapters, and lorebook entries. This action cannot be undone."
             )
-        ) {
+        ) 
             return;
-        }
+        
         deleteDemoMutation.mutate();
     };
 
-    if (isLoadingSettings) {
+    if (isLoadingSettings) 
         return (
             <div className="p-8 flex justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
-    }
+    
 
     const allModels = settings?.availableModels || [];
     const openaiModels = allModels.filter(m => m.provider === "openai");

@@ -48,9 +48,9 @@ export class CollapsibleContentNode extends ElementNode {
                     $isCollapsibleContainerNode(containerNode),
                     "Expected parent node to be a CollapsibleContainerNode"
                 );
-                if (!containerNode.__open) {
+                if (!containerNode.__open) 
                     setDomHiddenUntilFound(dom);
-                }
+                
             });
             domOnBeforeMatch(dom, () => {
                 editor.update(() => {
@@ -59,9 +59,9 @@ export class CollapsibleContentNode extends ElementNode {
                         $isCollapsibleContainerNode(containerNode),
                         "Expected parent node to be a CollapsibleContainerNode"
                     );
-                    if (!containerNode.__open) {
+                    if (!containerNode.__open) 
                         containerNode.toggleOpen();
-                    }
+                    
                 });
             });
         }
@@ -75,9 +75,9 @@ export class CollapsibleContentNode extends ElementNode {
     static importDOM(): DOMConversionMap | null {
         return {
             div: (domNode: HTMLElement) => {
-                if (!domNode.hasAttribute("data-lexical-collapsible-content")) {
+                if (!domNode.hasAttribute("data-lexical-collapsible-content")) 
                     return null;
-                }
+                
                 return {
                     conversion: $convertCollapsibleContentElement,
                     priority: 2

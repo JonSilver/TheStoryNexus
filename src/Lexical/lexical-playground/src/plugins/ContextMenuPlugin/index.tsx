@@ -38,9 +38,9 @@ function ContextMenuItem({
     option: ContextMenuOption;
 }) {
     let className = "item";
-    if (isSelected) {
+    if (isSelected) 
         className += " selected";
-    }
+    
     return (
         <li
             key={option.key}
@@ -53,9 +53,9 @@ function ContextMenuItem({
             onMouseEnter={onMouseEnter}
             onClick={onClick}
             onKeyDown={e => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === "Enter" || e.key === " ") 
                     onClick();
-                }
+                
             }}
         >
             <span className="text">{option.title}</span>
@@ -188,9 +188,9 @@ export default function ContextMenuPlugin(): JSX.Element {
                     } else if ($isNodeSelection(selection)) {
                         const selectedNodes = selection.getNodes();
                         selectedNodes.forEach(node => {
-                            if ($isDecoratorNode(node)) {
+                            if ($isDecoratorNode(node)) 
                                 node.remove();
-                            }
+                            
                         });
                     }
                 }
@@ -217,7 +217,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             const node = $getNearestNodeFromDOMNode(event.target as Element);
             if (node) {
                 const parent = node.getParent();
-                if ($isLinkNode(parent)) {
+                if ($isLinkNode(parent)) 
                     newOptions = [
                         new ContextMenuOption(`Remove Link`, {
                             onSelect: _node => {
@@ -226,7 +226,7 @@ export default function ContextMenuPlugin(): JSX.Element {
                         }),
                         ...defaultOptions
                     ];
-                }
+                
             }
         });
         setOptions(newOptions);

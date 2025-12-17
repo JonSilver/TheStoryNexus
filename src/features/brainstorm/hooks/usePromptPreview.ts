@@ -21,9 +21,9 @@ export const usePromptPreview = (): UsePromptPreviewReturn => {
     const previewMutation = useMutation({
         mutationFn: async (config: PromptParserConfig) => {
             const parsedPrompt = await parsePrompt(config);
-            if (parsedPrompt.error) {
+            if (parsedPrompt.error) 
                 throw new Error(parsedPrompt.error);
-            }
+            
             return parsedPrompt.messages;
         },
         onError: (error: Error) => {

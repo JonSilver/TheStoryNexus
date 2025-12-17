@@ -28,7 +28,7 @@ export function MessageInputArea({
 
     useEffect(() => {
         const ta = textareaRef.current;
-        if (ta) {
+        if (ta) 
             if (!input) {
                 ta.style.height = `${INITIAL_TEXTAREA_HEIGHT}px`;
                 ta.style.overflowY = "hidden";
@@ -39,15 +39,15 @@ export function MessageInputArea({
                 ta.style.height = `${newHeight}px`;
                 ta.style.overflowY = contentHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
             }
-        }
+        
     }, [input]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (!isGenerating) {
+            if (!isGenerating) 
                 onSend();
-            }
+            
         }
     };
 

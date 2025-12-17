@@ -59,7 +59,7 @@ const imageCache = new Set();
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> = createCommand("RIGHT_CLICK_IMAGE_COMMAND");
 
 function useSuspenseImage(src: string) {
-    if (!imageCache.has(src)) {
+    if (!imageCache.has(src)) 
         throw new Promise(resolve => {
             const img = new Image();
             img.src = src;
@@ -71,7 +71,7 @@ function useSuspenseImage(src: string) {
                 imageCache.add(src);
             };
         });
-    }
+    
 }
 
 function LazyImage({
@@ -167,9 +167,9 @@ export default function ImageComponent({
                 const event: KeyboardEvent = payload;
                 event.preventDefault();
                 deleteSelection.getNodes().forEach(node => {
-                    if ($isImageNode(node)) {
+                    if ($isImageNode(node)) 
                         node.remove();
-                    }
+                    
                 });
             }
             return false;
@@ -181,7 +181,7 @@ export default function ImageComponent({
         (event: KeyboardEvent) => {
             const latestSelection = $getSelection();
             const buttonElem = buttonRef.current;
-            if (isSelected && $isNodeSelection(latestSelection) && latestSelection.getNodes().length === 1) {
+            if (isSelected && $isNodeSelection(latestSelection) && latestSelection.getNodes().length === 1) 
                 if (showCaption) {
                     // Move focus into nested editor
                     $setSelection(null);
@@ -193,7 +193,7 @@ export default function ImageComponent({
                     buttonElem.focus();
                     return true;
                 }
-            }
+            
             return false;
         },
         [caption, isSelected, showCaption]
@@ -206,9 +206,9 @@ export default function ImageComponent({
                 editor.update(() => {
                     setSelected(true);
                     const parentRootElement = editor.getRootElement();
-                    if (parentRootElement !== null) {
+                    if (parentRootElement !== null) 
                         parentRootElement.focus();
-                    }
+                    
                 });
                 return true;
             }
@@ -221,13 +221,13 @@ export default function ImageComponent({
         (payload: MouseEvent) => {
             const event = payload;
 
-            if (isResizing) {
+            if (isResizing) 
                 return true;
-            }
+            
             if (event.target === imageRef.current) {
-                if (event.shiftKey) {
+                if (event.shiftKey) 
                     setSelected(!isSelected);
-                } else {
+                 else {
                     clearSelection();
                     setSelected(true);
                 }
@@ -248,9 +248,9 @@ export default function ImageComponent({
                     domElement.tagName === "IMG" &&
                     $isRangeSelection(latestSelection) &&
                     latestSelection.getNodes().length === 1
-                ) {
+                ) 
                     editor.dispatchCommand(RIGHT_CLICK_IMAGE_COMMAND, event as MouseEvent);
-                }
+                
             });
         },
         [editor]
@@ -261,9 +261,9 @@ export default function ImageComponent({
         const rootElement = editor.getRootElement();
         const unregister = mergeRegister(
             editor.registerUpdateListener(({ editorState }) => {
-                if (isMounted) {
+                if (isMounted) 
                     setSelection(editorState.read(() => $getSelection()));
-                }
+                
             }),
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
@@ -306,9 +306,9 @@ export default function ImageComponent({
     const setShowCaption = () => {
         editor.update(() => {
             const node = $getNodeByKey(nodeKey);
-            if ($isImageNode(node)) {
+            if ($isImageNode(node)) 
                 node.setShowCaption(true);
-            }
+            
         });
     };
 
@@ -320,9 +320,9 @@ export default function ImageComponent({
 
         editor.update(() => {
             const node = $getNodeByKey(nodeKey);
-            if ($isImageNode(node)) {
+            if ($isImageNode(node)) 
                 node.setWidthAndHeight(nextWidth, nextHeight);
-            }
+            
         });
     };
 

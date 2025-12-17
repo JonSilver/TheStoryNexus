@@ -148,18 +148,18 @@ export function CreateEntryDialog({
                 scopeId: data.level === "global" ? undefined : data.scopeId
             };
 
-            if (entry) {
+            if (entry) 
                 await updateMutation.mutateAsync({
                     id: entry.id,
                     data: dataToSubmit
                 });
-            } else {
+             else 
                 await createMutation.mutateAsync({
                     id: randomUUID(),
                     ...dataToSubmit,
                     storyId: storyId || data.scopeId || ""
                 } as Omit<LorebookEntry, "createdAt">);
-            }
+            
             onOpenChange(false);
         });
         if (error) {

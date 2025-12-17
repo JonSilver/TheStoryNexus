@@ -73,13 +73,13 @@ export function PromptsList({ onPromptSelect, selectedPromptId, onPromptDelete, 
 
     if (isLoading) return <div className="p-4 text-muted-foreground h-full">Loading prompts...</div>;
 
-    if (!filteredPrompts.length) {
+    if (!filteredPrompts.length) 
         return (
             <div className="p-4 text-muted-foreground h-full">
                 {filterByType ? `No ${getPromptTypeLabel(filterByType)} prompts available` : "No prompts available"}
             </div>
         );
-    }
+    
 
     // Group prompts by promptType
     const groupedPrompts = filteredPrompts.reduce(

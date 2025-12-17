@@ -86,14 +86,14 @@ export function InsertImageUploadedDialogBody({ onClick }: { onClick: (payload: 
     const loadImage = (files: FileList | null) => {
         const reader = new FileReader();
         reader.onload = () => {
-            if (is.string(reader.result)) {
+            if (is.string(reader.result)) 
                 setSrc(reader.result);
-            }
+            
             return "";
         };
-        if (files !== null) {
+        if (files !== null) 
             reader.readAsDataURL(files[0]);
-        }
+        
     };
 
     return (
@@ -199,9 +199,9 @@ export default function ImagesPlugin({
     const [editor] = useLexicalComposerContext();
 
     useEffect(() => {
-        if (!editor.hasNodes([ImageNode])) {
+        if (!editor.hasNodes([ImageNode])) 
             throw new Error("ImagesPlugin: ImageNode not registered on editor");
-        }
+        
 
         return mergeRegister(
             editor.registerCommand<InsertImagePayload>(
@@ -209,9 +209,9 @@ export default function ImagesPlugin({
                 payload => {
                     const imageNode = $createImageNode(payload);
                     $insertNodes([imageNode]);
-                    if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
+                    if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) 
                         $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
-                    }
+                    
 
                     return true;
                 },
@@ -232,13 +232,13 @@ img.src = TRANSPARENT_IMAGE;
 
 function $onDragStart(event: DragEvent): boolean {
     const node = $getImageNodeInSelection();
-    if (!node) {
+    if (!node) 
         return false;
-    }
+    
     const dataTransfer = event.dataTransfer;
-    if (!dataTransfer) {
+    if (!dataTransfer) 
         return false;
-    }
+    
     dataTransfer.setData("text/plain", "_");
     dataTransfer.setDragImage(img, 0, 0);
     dataTransfer.setData(
@@ -263,32 +263,32 @@ function $onDragStart(event: DragEvent): boolean {
 
 function $onDragover(event: DragEvent): boolean {
     const node = $getImageNodeInSelection();
-    if (!node) {
+    if (!node) 
         return false;
-    }
-    if (!canDropImage(event)) {
+    
+    if (!canDropImage(event)) 
         event.preventDefault();
-    }
+    
     return true;
 }
 
 function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
     const node = $getImageNodeInSelection();
-    if (!node) {
+    if (!node) 
         return false;
-    }
+    
     const data = getDragImageData(event);
-    if (!data) {
+    if (!data) 
         return false;
-    }
+    
     event.preventDefault();
     if (canDropImage(event)) {
         const range = getDragSelection(event);
         node.remove();
         const rangeSelection = $createRangeSelection();
-        if (range !== null && range !== undefined) {
+        if (range !== null && range !== undefined) 
             rangeSelection.applyDOMRange(range);
-        }
+        
         $setSelection(rangeSelection);
         editor.dispatchCommand(INSERT_IMAGE_COMMAND, data);
     }
@@ -297,9 +297,9 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
 
 function $getImageNodeInSelection(): ImageNode | null {
     const selection = $getSelection();
-    if (!$isNodeSelection(selection)) {
+    if (!$isNodeSelection(selection)) 
         return null;
-    }
+    
     const nodes = selection.getNodes();
     const node = nodes[0];
     return $isImageNode(node) ? node : null;
@@ -307,13 +307,13 @@ function $getImageNodeInSelection(): ImageNode | null {
 
 function getDragImageData(event: DragEvent): null | InsertImagePayload {
     const dragData = event.dataTransfer?.getData("application/x-lexical-drag");
-    if (!dragData) {
+    if (!dragData) 
         return null;
-    }
+    
     const { type, data } = JSON.parse(dragData);
-    if (type !== "image") {
+    if (type !== "image") 
         return null;
-    }
+    
 
     return data;
 }
@@ -338,14 +338,14 @@ function canDropImage(event: DragEvent): boolean {
 function getDragSelection(event: DragEvent): Range | null | undefined {
     let range;
     const domSelection = getDOMSelectionFromTarget(event.target);
-    if (document.caretRangeFromPoint) {
+    if (document.caretRangeFromPoint) 
         range = document.caretRangeFromPoint(event.clientX, event.clientY);
-    } else if (event.rangeParent && domSelection !== null) {
+     else if (event.rangeParent && domSelection !== null) {
         domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
         range = domSelection.getRangeAt(0);
-    } else {
+    } else 
         throw Error(`Cannot get the selection when dragging`);
-    }
+    
 
     return range;
 }

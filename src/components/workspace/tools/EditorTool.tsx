@@ -16,22 +16,22 @@ export const EditorTool = () => {
 
     // Initialize currentChapterId to first chapter if not set
     useEffect(() => {
-        if (currentStoryId && !currentChapterId && chapters.length > 0) {
+        if (currentStoryId && !currentChapterId && chapters.length > 0) 
             setCurrentChapterId(chapters[0].id);
-        }
+        
     }, [currentStoryId, currentChapterId, chapters, setCurrentChapterId]);
 
     // Loading state
-    if (storyLoading || chaptersLoading) {
+    if (storyLoading || chaptersLoading) 
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-muted-foreground">Loading...</div>
             </div>
         );
-    }
+    
 
     // No story selected
-    if (!currentStoryId || !story) {
+    if (!currentStoryId || !story) 
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -40,10 +40,10 @@ export const EditorTool = () => {
                 </div>
             </div>
         );
-    }
+    
 
     // No chapters exist
-    if (chapters.length === 0) {
+    if (chapters.length === 0) 
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -56,19 +56,19 @@ export const EditorTool = () => {
                 </div>
             </div>
         );
-    }
+    
 
     // Loading current chapter
-    if (currentChapterId && chapterLoading) {
+    if (currentChapterId && chapterLoading) 
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-muted-foreground">Loading chapter...</div>
             </div>
         );
-    }
+    
 
     // Chapter not found
-    if (currentChapterId && !chapter) {
+    if (currentChapterId && !chapter) 
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -77,7 +77,7 @@ export const EditorTool = () => {
                 </div>
             </div>
         );
-    }
+    
 
     // Render editor
     return (

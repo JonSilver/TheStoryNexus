@@ -83,9 +83,9 @@ export class OpenRouterProvider implements IAIProvider {
         maxTokens: number,
         signal?: AbortSignal
     ): Promise<Response> {
-        if (!this.client) {
+        if (!this.client) 
             throw new Error("OpenRouter client not initialized");
-        }
+        
 
         const stream = await this.client.chat.completions.create(
             {

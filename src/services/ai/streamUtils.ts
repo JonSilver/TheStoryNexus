@@ -18,17 +18,17 @@ export const wrapOpenAIStream = async (stream: AsyncIterable<ChatCompletionChunk
                 const [error] = await attemptPromise(async () => {
                     for await (const chunk of stream) {
                         const content = chunk.choices[0]?.delta?.content;
-                        if (content) {
+                        if (content) 
                             controller.enqueue(new TextEncoder().encode(content));
-                        }
+                        
                     }
                 });
 
-                if (error) {
+                if (error) 
                     controller.error(error);
-                } else {
+                 else 
                     controller.close();
-                }
+                
             }
         })
     );

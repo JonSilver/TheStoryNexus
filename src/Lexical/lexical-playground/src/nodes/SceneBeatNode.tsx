@@ -152,9 +152,9 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const handleCommandChange = useCallback(
         (newCommand: string) => {
             baseHandleCommandChange(newCommand);
-            if (sceneBeatId && isLoaded) {
+            if (sceneBeatId && isLoaded) 
                 saveCommand(newCommand);
-            }
+            
         },
         [baseHandleCommandChange, sceneBeatId, isLoaded, saveCommand]
     );
@@ -191,7 +191,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     const handleDelete = () => {
         flushCommand();
 
-        if (sceneBeatId && currentChapterId) {
+        if (sceneBeatId && currentChapterId) 
             deleteMutation.mutate(
                 { id: sceneBeatId, chapterId: currentChapterId },
                 {
@@ -201,7 +201,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                     }
                 }
             );
-        }
+        
 
         editor.update(() => {
             const node = editor.getEditorState().read(() => editor._editorState._nodeMap.get(nodeKey));

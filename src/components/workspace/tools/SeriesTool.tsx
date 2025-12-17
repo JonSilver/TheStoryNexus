@@ -26,9 +26,9 @@ function SeriesCard({
 
     const handleDelete = async (e: MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm(`Delete series "${series.name}" and all its stories?`)) {
+        if (window.confirm(`Delete series "${series.name}" and all its stories?`)) 
             deleteSeriesMutation.mutate(series.id);
-        }
+        
     };
 
     const handleEdit = (e: MouseEvent) => {

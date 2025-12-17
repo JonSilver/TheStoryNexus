@@ -15,22 +15,22 @@ export function StoryReader() {
 
     const isLoading = storyLoading || chaptersLoading;
 
-    if (isLoading) {
+    if (isLoading) 
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
-    }
+    
 
-    if (!story) {
+    if (!story) 
         return (
             <div className="flex flex-col items-center justify-center min-h-screen gap-4">
                 <p className="text-muted-foreground">Story not found</p>
                 <Button onClick={() => navigate(ROUTES.STORIES)}>Return to Stories</Button>
             </div>
         );
-    }
+    
 
     const sortedChapters = [...chapters].sort((a, b) => a.order - b.order);
 

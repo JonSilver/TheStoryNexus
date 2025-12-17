@@ -97,9 +97,9 @@ export const seriesApi = {
             method: "POST",
             body: formData
         }).then(async response => {
-            if (!response.ok) {
+            if (!response.ok) 
                 throw new Error("Failed to import series");
-            }
+            
             return response.json();
         });
     }
@@ -159,9 +159,9 @@ export const lorebookApi = {
             method: "POST",
             body: formData
         }).then(async response => {
-            if (!response.ok) {
+            if (!response.ok) 
                 throw new Error("Failed to import global lorebook");
-            }
+            
             return response.json();
         });
     }

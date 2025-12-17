@@ -18,9 +18,9 @@ export const useLorebookMatching = (
         const lowerCommand = command.toLowerCase();
 
         Object.entries(tagMap).forEach(([tag, entry]) => {
-            if (lowerCommand.includes(tag.toLowerCase())) {
+            if (lowerCommand.includes(tag.toLowerCase())) 
                 matchedEntries.set(entry.id, entry);
-            }
+            
         });
 
         return matchedEntries;

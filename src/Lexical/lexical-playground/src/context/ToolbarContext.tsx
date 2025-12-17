@@ -107,9 +107,9 @@ export const ToolbarContext = ({ children }: { children: ReactNode }): JSX.Eleme
 export const useToolbarState = () => {
     const context = useContext(Context);
 
-    if (context === undefined) {
+    if (context === undefined) 
         throw new Error("useToolbarState must be used within a ToolbarProvider");
-    }
+    
 
     return context;
 };

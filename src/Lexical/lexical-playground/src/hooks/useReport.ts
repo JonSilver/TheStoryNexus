@@ -23,9 +23,9 @@ const getElement = (): HTMLElement => {
         element.style.background = "rgba(240, 240, 240, 0.4)";
         element.style.borderRadius = "20px";
 
-        if (document.body) {
+        if (document.body) 
             document.body.appendChild(element);
-        }
+        
     }
 
     return element;
@@ -39,9 +39,9 @@ export default function useReport(): (arg0: string) => ReturnType<typeof setTime
             timer.current = null;
         }
 
-        if (document.body) {
+        if (document.body) 
             document.body.removeChild(getElement());
-        }
+        
     }, []);
 
     useEffect(() => cleanup, [cleanup]);
@@ -50,9 +50,9 @@ export default function useReport(): (arg0: string) => ReturnType<typeof setTime
         content => {
             logger.info(content);
             const element = getElement();
-            if (timer.current !== null) {
+            if (timer.current !== null) 
                 clearTimeout(timer.current);
-            }
+            
             element.innerHTML = content;
             timer.current = setTimeout(cleanup, 1000);
             return timer.current;

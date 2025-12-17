@@ -54,9 +54,9 @@ function SpeechToTextPlugin(): null {
                 const { transcript } = resultItem.item(0);
                 report(transcript);
 
-                if (!resultItem.isFinal) {
+                if (!resultItem.isFinal) 
                     return;
-                }
+                
 
                 editor.update(() => {
                     const selection = $getSelection();
@@ -64,33 +64,33 @@ function SpeechToTextPlugin(): null {
                     if ($isRangeSelection(selection)) {
                         const command = VOICE_COMMANDS[normalizeString(transcript)];
 
-                        if (command) {
+                        if (command) 
                             command({
                                 editor,
                                 selection
                             });
-                        } else if (transcript.match(/\s*\n\s*/)) {
+                         else if (transcript.match(/\s*\n\s*/)) 
                             selection.insertParagraph();
-                        } else {
+                         else 
                             selection.insertText(transcript);
-                        }
+                        
                     }
                 });
             });
         }
 
-        if (recognition.current) {
+        if (recognition.current) 
             if (isEnabled) {
                 recognition.current.start();
             } else {
                 recognition.current.stop();
             }
-        }
+        
 
         return () => {
-            if (recognition.current !== null) {
+            if (recognition.current !== null) 
                 recognition.current.stop();
-            }
+            
         };
     }, [SpeechRecognition, editor, isEnabled, report]);
     useEffect(

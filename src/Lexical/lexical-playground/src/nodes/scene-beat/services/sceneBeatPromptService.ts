@@ -53,18 +53,18 @@ export const createPromptConfig = (
     const combinedMatchedEntries = new Set<LorebookEntry>();
 
     // Only include chapter matched entries if the toggle is enabled
-    if (sceneBeatContext.useMatchedChapter && chapterMatchedEntries) {
+    if (sceneBeatContext.useMatchedChapter && chapterMatchedEntries) 
         chapterMatchedEntries.forEach(entry => {
             combinedMatchedEntries.add(entry);
         });
-    }
+    
 
     // Only include scene beat matched entries if the toggle is enabled
-    if (sceneBeatContext.useMatchedSceneBeat && localMatchedEntries) {
+    if (sceneBeatContext.useMatchedSceneBeat && localMatchedEntries) 
         localMatchedEntries.forEach(entry => {
             combinedMatchedEntries.add(entry);
         });
-    }
+    
 
     return {
         promptId: prompt.id,

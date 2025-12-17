@@ -21,9 +21,9 @@ export const EntryBadgeList = ({
     showCategory = false,
     className = ""
 }: EntryBadgeListProps): JSX.Element => {
-    if (entries.length === 0) {
+    if (entries.length === 0) 
         return <div className="text-muted-foreground text-sm">{emptyMessage}</div>;
-    }
+    
 
     return (
         <div className={`flex flex-wrap gap-2 max-h-[150px] overflow-y-auto ${className}`}>

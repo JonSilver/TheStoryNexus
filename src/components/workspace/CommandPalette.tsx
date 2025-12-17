@@ -40,9 +40,9 @@ export const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
 
     // Reset search when dialog opens
     useEffect(() => {
-        if (open) {
+        if (open) 
             setSearch("");
-        }
+        
     }, [open]);
 
     // Tool navigation commands

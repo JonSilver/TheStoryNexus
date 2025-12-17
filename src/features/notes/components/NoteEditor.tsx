@@ -13,13 +13,13 @@ export default function NoteEditor({ selectedNoteId }: NoteEditorProps) {
     const { data: selectedNote } = useNoteQuery(selectedNoteId || "");
     const updateNoteMutation = useUpdateNoteMutation();
 
-    if (!selectedNoteId || !selectedNote) {
+    if (!selectedNoteId || !selectedNote) 
         return (
             <div className="h-full flex items-center justify-center text-muted-foreground">
                 <p>Select a note to start editing</p>
             </div>
         );
-    }
+    
 
     return <NoteEditorContent note={selectedNote} updateMutation={updateNoteMutation} />;
 }

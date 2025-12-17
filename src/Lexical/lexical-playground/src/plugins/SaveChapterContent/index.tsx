@@ -36,9 +36,9 @@ export function SaveChapterContentPlugin(): null {
 
         const removeUpdateListener = editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
             // Skip if no changes
-            if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
+            if (dirtyElements.size === 0 && dirtyLeaves.size === 0) 
                 return;
-            }
+            
 
             // Get the editor state as JSON
             const content = JSON.stringify(editorState.toJSON());

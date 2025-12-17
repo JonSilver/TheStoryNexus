@@ -489,9 +489,9 @@ function useMentionLookupService(mentionString: string | null) {
             return;
         }
 
-        if (cachedResults === null) {
+        if (cachedResults === null) 
             return;
-        } else if (cachedResults !== undefined) {
+         else if (cachedResults !== undefined) {
             setResults(cachedResults);
             return;
         }
@@ -509,22 +509,22 @@ function useMentionLookupService(mentionString: string | null) {
 function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextMatch | null {
     let match = AtSignMentionsRegex.exec(text);
 
-    if (match === null) {
+    if (match === null) 
         match = AtSignMentionsRegexAliasRegex.exec(text);
-    }
+    
     if (match !== null) {
         // The strategy ignores leading whitespace but we need to know it's
         // length to add it to the leadOffset
         const maybeLeadingWhitespace = match[1];
 
         const matchingString = match[3];
-        if (matchingString.length >= minMatchLength) {
+        if (matchingString.length >= minMatchLength) 
             return {
                 leadOffset: match.index + maybeLeadingWhitespace.length,
                 matchingString,
                 replaceableString: match[2]
             };
-        }
+        
     }
     return null;
 }
@@ -556,9 +556,9 @@ function MentionsTypeaheadMenuItem({
     option: MentionTypeaheadOption;
 }) {
     let className = "item";
-    if (isSelected) {
+    if (isSelected) 
         className += " selected";
-    }
+    
     return (
         <li
             key={option.key}
@@ -571,9 +571,9 @@ function MentionsTypeaheadMenuItem({
             onMouseEnter={onMouseEnter}
             onClick={onClick}
             onKeyDown={e => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === "Enter" || e.key === " ") 
                     onClick();
-                }
+                
             }}
         >
             {option.picture}
@@ -605,9 +605,9 @@ export default function NewMentionsPlugin(): JSX.Element | null {
         (selectedOption: MentionTypeaheadOption, nodeToReplace: TextNode | null, closeMenu: () => void) => {
             editor.update(() => {
                 const mentionNode = $createMentionNode(selectedOption.name);
-                if (nodeToReplace) {
+                if (nodeToReplace) 
                     nodeToReplace.replace(mentionNode);
-                }
+                
                 mentionNode.select();
                 closeMenu();
             });
@@ -618,9 +618,9 @@ export default function NewMentionsPlugin(): JSX.Element | null {
     const checkForMentionMatch = useCallback(
         (text: string) => {
             const slashMatch = checkForSlashTriggerMatch(text, editor);
-            if (slashMatch !== null) {
+            if (slashMatch !== null) 
                 return null;
-            }
+            
             return getPossibleQueryMatch(text);
         },
         [checkForSlashTriggerMatch, editor]

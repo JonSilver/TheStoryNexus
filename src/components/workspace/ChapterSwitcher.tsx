@@ -18,13 +18,13 @@ export const ChapterSwitcher = () => {
     const currentChapterNumber = currentChapterIndex !== -1 ? currentChapterIndex + 1 : null;
 
     // Only show for editor tool
-    if (currentTool !== "editor") {
+    if (currentTool !== "editor") 
         return null;
-    }
+    
 
-    if (!currentStoryId || !currentChapterId || chapters.length === 0) {
+    if (!currentStoryId || !currentChapterId || chapters.length === 0) 
         return null;
-    }
+    
 
     return (
         <DropdownMenu>

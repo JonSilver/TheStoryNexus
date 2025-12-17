@@ -32,13 +32,13 @@ export default function EmbeddedPlayground() {
     const { currentChapterId } = useStoryContext();
     const { data: currentChapter } = useChapterQuery(currentChapterId || "");
 
-    if (!currentChapterId || !currentChapter) {
+    if (!currentChapterId || !currentChapter) 
         return (
             <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">Select a chapter to start editing</p>
             </div>
         );
-    }
+    
 
     return (
         <div className="h-full flex flex-col">

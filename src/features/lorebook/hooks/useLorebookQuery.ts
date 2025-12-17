@@ -115,7 +115,7 @@ export const useDeleteLorebookMutation = () => {
         onSuccess: (_, __, context) => {
             const entry = context?.entry;
 
-            if (entry) {
+            if (entry) 
                 // Invalidate level-based queries
                 if (entry.level === "global") queryClient.invalidateQueries({ queryKey: lorebookKeys.global() });
                 else if (entry.level === "series" && entry.scopeId)
@@ -124,7 +124,7 @@ export const useDeleteLorebookMutation = () => {
                     queryClient.invalidateQueries({ queryKey: lorebookKeys.story(entry.scopeId) });
                     queryClient.invalidateQueries({ queryKey: lorebookKeys.hierarchical(entry.scopeId) });
                 }
-            }
+            
 
             // Always invalidate lists as fallback
             queryClient.invalidateQueries({ queryKey: lorebookKeys.lists() });

@@ -78,9 +78,9 @@ export class MentionNode extends TextNode {
     exportDOM(): DOMExportOutput {
         const element = document.createElement("span");
         element.setAttribute("data-lexical-mention", "true");
-        if (this.__text !== this.__mention) {
+        if (this.__text !== this.__mention) 
             element.setAttribute("data-lexical-mention-name", this.__mention);
-        }
+        
         element.textContent = this.__text;
         return { element };
     }
@@ -88,9 +88,9 @@ export class MentionNode extends TextNode {
     static importDOM(): DOMConversionMap | null {
         return {
             span: (domNode: HTMLElement) => {
-                if (!domNode.hasAttribute("data-lexical-mention")) {
+                if (!domNode.hasAttribute("data-lexical-mention")) 
                     return null;
-                }
+                
                 return {
                     conversion: $convertMentionElement,
                     priority: 1

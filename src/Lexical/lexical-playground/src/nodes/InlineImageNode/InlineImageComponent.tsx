@@ -45,7 +45,7 @@ import "./InlineImageNode.css";
 const imageCache = new Set();
 
 function useSuspenseImage(src: string) {
-    if (!imageCache.has(src)) {
+    if (!imageCache.has(src)) 
         throw new Promise(resolve => {
             const img = new Image();
             img.src = src;
@@ -54,7 +54,7 @@ function useSuspenseImage(src: string) {
                 resolve(null);
             };
         });
-    }
+    
 }
 
 function LazyImage({
@@ -117,11 +117,11 @@ export function UpdateInlineImageDialog({
 
     const handleOnConfirm = () => {
         const payload = { altText, position, showCaption };
-        if (node) {
+        if (node) 
             activeEditor.update(() => {
                 node.update(payload);
             });
-        }
+        
         onClose();
     };
 
@@ -198,13 +198,13 @@ export default function InlineImageComponent({
             if (isSelected && $isNodeSelection(deleteSelection)) {
                 const event: KeyboardEvent = payload;
                 event.preventDefault();
-                if (isSelected && $isNodeSelection(deleteSelection)) {
+                if (isSelected && $isNodeSelection(deleteSelection)) 
                     deleteSelection.getNodes().forEach(node => {
                         if ($isInlineImageNode(node)) {
                             node.remove();
                         }
                     });
-                }
+                
             }
             return false;
         },
@@ -215,7 +215,7 @@ export default function InlineImageComponent({
         (event: KeyboardEvent) => {
             const latestSelection = $getSelection();
             const buttonElem = buttonRef.current;
-            if (isSelected && $isNodeSelection(latestSelection) && latestSelection.getNodes().length === 1) {
+            if (isSelected && $isNodeSelection(latestSelection) && latestSelection.getNodes().length === 1) 
                 if (showCaption) {
                     // Move focus into nested editor
                     $setSelection(null);
@@ -227,7 +227,7 @@ export default function InlineImageComponent({
                     buttonElem.focus();
                     return true;
                 }
-            }
+            
             return false;
         },
         [caption, isSelected, showCaption]
@@ -240,9 +240,9 @@ export default function InlineImageComponent({
                 editor.update(() => {
                     setSelected(true);
                     const parentRootElement = editor.getRootElement();
-                    if (parentRootElement !== null) {
+                    if (parentRootElement !== null) 
                         parentRootElement.focus();
-                    }
+                    
                 });
                 return true;
             }
@@ -255,9 +255,9 @@ export default function InlineImageComponent({
         let isMounted = true;
         const unregister = mergeRegister(
             editor.registerUpdateListener(({ editorState }) => {
-                if (isMounted) {
+                if (isMounted) 
                     setSelection(editorState.read(() => $getSelection()));
-                }
+                
             }),
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
@@ -272,9 +272,9 @@ export default function InlineImageComponent({
                 payload => {
                     const event = payload;
                     if (event.target === imageRef.current) {
-                        if (event.shiftKey) {
+                        if (event.shiftKey) 
                             setSelected(!isSelected);
-                        } else {
+                         else {
                             clearSelection();
                             setSelected(true);
                         }

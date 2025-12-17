@@ -41,13 +41,13 @@ export const NotesTool = () => {
         );
     };
 
-    if (!currentStoryId) {
+    if (!currentStoryId) 
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">No story selected</p>
             </div>
         );
-    }
+    
 
     return (
         <div className="h-full flex flex-col md:flex-row">

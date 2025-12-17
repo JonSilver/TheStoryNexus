@@ -64,9 +64,9 @@ export class CollapsibleContainerNode extends ElementNode {
             detailsDom.open = this.__open;
             detailsDom.addEventListener("toggle", () => {
                 const open = editor.getEditorState().read(() => this.getOpen());
-                if (open !== detailsDom.open) {
+                if (open !== detailsDom.open) 
                     editor.update(() => this.toggleOpen());
-                }
+                
             });
             dom = detailsDom;
         }
@@ -77,7 +77,7 @@ export class CollapsibleContainerNode extends ElementNode {
 
     updateDOM(prevNode: this, dom: HTMLDetailsElement): boolean {
         const currentOpen = this.__open;
-        if (prevNode.__open !== currentOpen) {
+        if (prevNode.__open !== currentOpen) 
             // details is not well supported in Chrome #5582
             if (IS_CHROME) {
                 const contentDom = dom.children[1];
@@ -92,7 +92,7 @@ export class CollapsibleContainerNode extends ElementNode {
             } else {
                 dom.open = this.__open;
             }
-        }
+        
 
         return false;
     }

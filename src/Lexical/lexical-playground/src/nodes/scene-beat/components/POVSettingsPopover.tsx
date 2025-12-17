@@ -41,9 +41,9 @@ export const POVSettingsPopover = ({
     const handlePovTypeChange = (value: POVType) => {
         setTempPovType(value);
         // If switching to omniscient, clear character
-        if (value === "Third Person Omniscient") {
+        if (value === "Third Person Omniscient") 
             setTempPovCharacter(undefined);
-        }
+        
     };
 
     const handleSave = () => {

@@ -125,9 +125,9 @@ export const buildTagMap = (entries: LorebookEntry[]): Record<string, LorebookEn
             if (!normalizedTag.includes(" ")) continue;
 
             const words = normalizedTag.split(" ");
-            for (const word of words) {
+            for (const word of words) 
                 if (entry.tags.some(t => stringEquals(t, word))) tagMap[word] = entry;
-            }
+            
         }
     }
 

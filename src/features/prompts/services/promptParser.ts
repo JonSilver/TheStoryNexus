@@ -97,30 +97,30 @@ export class PromptParser {
     async parse(config: PromptParserConfig): Promise<ParsedPrompt> {
         const [promptError, prompt] = await attemptPromise(() => promptsApi.getById(config.promptId));
 
-        if (promptError || !prompt) {
+        if (promptError || !prompt) 
             return {
                 messages: [],
                 error: promptError?.message || "Prompt not found"
             };
-        }
+        
 
         const [contextError, context] = await attemptPromise(() => this.contextBuilder.buildContext(config));
 
-        if (contextError) {
+        if (contextError) 
             return {
                 messages: [],
                 error: contextError.message
             };
-        }
+        
 
         const [parseError, parsedMessages] = await attemptPromise(() => this.parseMessages(prompt.messages, context));
 
-        if (parseError) {
+        if (parseError) 
             return {
                 messages: [],
                 error: parseError.message
             };
-        }
+        
 
         return { messages: parsedMessages };
     }
@@ -186,9 +186,9 @@ export class PromptParser {
     }
 
     private getMatchedEntriesFormatted(context: PromptContext): string {
-        if (!context.chapterMatchedEntries || context.chapterMatchedEntries.size === 0) {
+        if (!context.chapterMatchedEntries || context.chapterMatchedEntries.size === 0) 
             return "";
-        }
+        
 
         const entries = Array.from(context.chapterMatchedEntries);
         const sorted = entries.sort((a, b) => {
@@ -203,9 +203,9 @@ export class PromptParser {
 
     private getAdditionalContextFormatted(context: PromptContext): string {
         const selectedItems = context.additionalContext?.selectedItems;
-        if (!selectedItems || !is.array(selectedItems) || selectedItems.length === 0) {
+        if (!selectedItems || !is.array(selectedItems) || selectedItems.length === 0) 
             return "";
-        }
+        
 
         const selectedItemIds = selectedItems as string[];
         const entries = this.dependencies.entries.filter(entry => selectedItemIds.includes(entry.id));
@@ -228,9 +228,9 @@ export class PromptParser {
             const [fullMatch, variable] = match;
             const [varName, ...params] = variable.trim().split(" ");
 
-            if (varName === "scenebeat" && context.scenebeat) {
+            if (varName === "scenebeat" && context.scenebeat) 
                 return acc.replace(fullMatch, context.scenebeat);
-            }
+            
 
             if (varName.startsWith("all_") && this.registry.has(varName)) {
                 const resolved = await this.registry.resolve(varName, context);

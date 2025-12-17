@@ -46,9 +46,9 @@ function WorkspaceStoryCard({
 
     const handleDelete = async (e: MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this story?")) {
+        if (window.confirm("Are you sure you want to delete this story?")) 
             deleteStoryMutation.mutate(story.id);
-        }
+        
     };
 
     const handleEdit = (e: MouseEvent) => {
@@ -208,9 +208,9 @@ export const StoriesTool = () => {
         if (error) {
             logger.error("Demo import failed:", error);
             toast.error("Failed to import demo story");
-        } else {
+        } else 
             toast.success("Demo story imported successfully");
-        }
+        
 
         setIsImportingDemo(false);
     };

@@ -19,15 +19,15 @@ export function WordCountPlugin() {
                         function traverse(node: LexicalNode) {
                             if ($isElementNode(node)) {
                                 const children = node.getChildren();
-                                if (children.length === 0 && node.getTextContent) {
+                                if (children.length === 0 && node.getTextContent) 
                                     // Element node with no children, treat as leaf
                                     text += `${node.getTextContent()} `;
-                                } else {
+                                 else 
                                     children.forEach(traverse);
-                                }
-                            } else if (node.getTextContent) {
+                                
+                            } else if (node.getTextContent) 
                                 text += `${node.getTextContent()} `;
-                            }
+                            
                         }
                         root.getChildren().forEach(traverse);
                     }

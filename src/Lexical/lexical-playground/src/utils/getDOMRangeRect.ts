@@ -12,13 +12,13 @@ export function getDOMRangeRect(nativeSelection: Selection, rootElement: HTMLEle
 
     if (nativeSelection.anchorNode === rootElement) {
         let inner = rootElement;
-        while (inner.firstElementChild != null) {
+        while (inner.firstElementChild != null) 
             inner = inner.firstElementChild as HTMLElement;
-        }
+        
         rect = inner.getBoundingClientRect();
-    } else {
+    } else 
         rect = domRange.getBoundingClientRect();
-    }
+    
 
     return rect;
 }

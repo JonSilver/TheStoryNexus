@@ -133,9 +133,9 @@ router.post("/import", upload.single("file"), async (req, res) => {
 
         console.log(`[Import] Importing ${data.length} ${tableName} records...`);
         const [error] = await attemptPromise(async () => {
-            for (const item of data) {
+            for (const item of data) 
                 await db.insert(tableSchema).values(transform(item));
-            }
+            
         });
 
         if (error) {

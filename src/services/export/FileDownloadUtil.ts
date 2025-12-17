@@ -14,8 +14,8 @@ export const downloadStoryExport = (exportData: StoryExport, story: Story): void
 
 export const parseImportFile = (jsonData: string): StoryExport => {
     const result = parseJSON(storyExportSchema, jsonData);
-    if (!result.success) {
+    if (!result.success) 
         throw new Error(`Invalid story export data: ${result.error.message}`);
-    }
+    
     return result.data;
 };
