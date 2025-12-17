@@ -116,6 +116,7 @@ export function ContextSelector({
                                                 <Badge key={chapterId} variant="secondary">
                                                     Chapter {chapter?.order}: {chapter?.title}
                                                     <button
+                                                        type="button"
                                                         className="ml-2"
                                                         onClick={() => onRemoveChapterContent(chapterId)}
                                                     >
@@ -152,7 +153,11 @@ export function ContextSelector({
                                         {selectedItems.map(item => (
                                             <Badge key={item.id} variant="secondary">
                                                 {item.category}: {item.name}
-                                                <button className="ml-2" onClick={() => onRemoveItem(item.id)}>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2"
+                                                    onClick={() => onRemoveItem(item.id)}
+                                                >
                                                     <X className="h-3 w-3" />
                                                 </button>
                                             </Badge>

@@ -85,22 +85,8 @@ if (error) return handleError(error);
 - Prefer custom React hooks over complex, multi-hook, in-component logic.
 - Modules should be small and focused on a single responsibility.
 - Prefer the iterative data-driven type-inference pattern over switch statements and if/else chains. Make a data structure, derive types from it, index into or iterate over the structure.
-- Where many functions follow the same pattern, prefer factory functions or higher-order functions to reduce boilerplate and improve maintainability. 
-
-#### Architectural Exceptions to Functional Programming
-
-The following classes are justified exceptions to the functional programming preference:
-
-1. **AIService (Singleton)** - Manages stateful API client instances, settings synchronisation, and stream lifecycle for multiple AI providers
-2. **AIProviderFactory** - Factory pattern for provider-specific client creation and initialisation (OpenAI, OpenRouter, Local)
-3. **AI Provider Classes** (OpenAIProvider, OpenRouterProvider, LocalAIProvider) - Encapsulate provider-specific client state, model fetching, and generation logic
-4. **PromptParser** - Complex parsing system with registry pattern for variable resolution and context building
-5. **ContextBuilder** - Manages database-dependent context construction for prompt parsing
-6. **VariableResolverRegistry** - Registry pattern for managing and resolving dynamic prompt variables
-7. **LorebookFilterService** - Static utility class providing filtering, matching, and query methods for lorebook entries
-8. **Export/Import Services** (StoryExportService, StoryImportService, SeriesExportService, SeriesImportService, LorebookImportExportService) - Thin wrapper classes around API calls for data portability
-
-All other services should use functional patterns if practical.
+- Where many functions follow the same pattern, prefer factory functions or higher-order functions to reduce boilerplate and improve maintainability.
+- Avoid classes. Use plain functions and modules. Classes are only acceptable when managing genuinely stateful resources (e.g., API client instances with lifecycle). Static-only classes are never acceptable — convert to exported functions.
 
 ## Architecture
 

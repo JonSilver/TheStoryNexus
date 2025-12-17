@@ -302,6 +302,7 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
             <div className="flex items-center justify-between p-2 gap-1">
                 <div className="flex items-center gap-2 min-w-0">
                     <button
+                        type="button"
                         onClick={() => {
                             const newCollapsed = !collapsed;
                             hasEditedCollapsedRef.current = true;

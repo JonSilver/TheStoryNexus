@@ -1,7 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { toast } from "react-toastify";
 import { logger } from "@/utils/logger";
-import { FileDownloadUtil } from "./export/FileDownloadUtil";
+import { downloadStoryExport } from "./export/FileDownloadUtil";
 import { StoryExportService } from "./export/StoryExportService";
 import { StoryImportService } from "./export/StoryImportService";
 
@@ -21,7 +21,7 @@ export const storyExportService = {
             throw error;
         }
 
-        FileDownloadUtil.downloadStoryExport(exportData, exportData.story);
+        downloadStoryExport(exportData, exportData.story);
         toast.success(`Story "${exportData.story.title}" exported successfully`);
     },
 

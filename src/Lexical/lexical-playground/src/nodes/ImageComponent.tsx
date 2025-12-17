@@ -119,6 +119,7 @@ function BrokenImage(): JSX.Element {
     return (
         <img
             src={brokenImage}
+            alt="Failed to load"
             style={{
                 height: 200,
                 opacity: 0.2,

@@ -103,6 +103,7 @@ export function PromptsList({ onPromptSelect, selectedPromptId, onPromptDelete, 
                 return (
                     <div key={promptType} className="mb-2">
                         <button
+                            type="button"
                             onClick={() => toggleGroup(promptType)}
                             className="w-full px-4 py-2.5 bg-slate-300 dark:bg-slate-700 font-medium text-sm sticky top-0 shadow-sm border-b border-slate-500 dark:border-slate-600 flex items-center justify-between z-10 text-slate-800 dark:text-white hover:bg-slate-500 dark:hover:bg-slate-600 transition-colors cursor-pointer"
                         >
@@ -130,6 +131,7 @@ export function PromptsList({ onPromptSelect, selectedPromptId, onPromptDelete, 
                                         )}
                                     >
                                         <button
+                                            type="button"
                                             onClick={() => onPromptSelect(prompt)}
                                             className={cn(
                                                 "w-full text-left p-4 hover:bg-muted transition-colors",

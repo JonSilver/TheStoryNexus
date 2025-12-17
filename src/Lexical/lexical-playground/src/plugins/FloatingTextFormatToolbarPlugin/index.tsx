@@ -89,7 +89,7 @@ function TextFormatFloatingToolbar({
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
 
-    function mouseMoveListener(e: MouseEvent) {
+    const mouseMoveListener = useCallback((e: MouseEvent) => {
         if (popupCharStylesEditorRef?.current && (e.buttons === 1 || e.buttons === 3)) {
             if (popupCharStylesEditorRef.current.style.pointerEvents !== "none") {
                 const x = e.clientX;
@@ -102,14 +102,15 @@ function TextFormatFloatingToolbar({
                 }
             }
         }
-    }
-    function mouseUpListener(_e: MouseEvent) {
+    }, []);
+
+    const mouseUpListener = useCallback((_e: MouseEvent) => {
         if (popupCharStylesEditorRef?.current) {
             if (popupCharStylesEditorRef.current.style.pointerEvents !== "auto") {
                 popupCharStylesEditorRef.current.style.pointerEvents = "auto";
             }
         }
-    }
+    }, []);
 
     useEffect(() => {
         if (popupCharStylesEditorRef?.current) {

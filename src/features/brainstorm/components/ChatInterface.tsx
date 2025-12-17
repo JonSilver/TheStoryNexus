@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAvailableModels } from "@/features/ai/hooks/useAvailableModels";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
-import { LorebookFilterService } from "@/features/lorebook/stores/LorebookFilterService";
+import { getFilteredEntries as getFilteredLorebookEntries } from "@/features/lorebook/stores/LorebookFilterService";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import type { AIChat, AllowedModel, Prompt, PromptParserConfig } from "@/types/story";
 import { useChatMessages } from "../hooks/useChatMessages";
@@ -117,7 +117,7 @@ export default function ChatInterface({ storyId, selectedChat, onChatUpdate }: C
         clearSelections();
     }, [clearSelections]);
 
-    const getFilteredEntries = () => LorebookFilterService.getFilteredEntries(lorebookEntries, false);
+    const getFilteredEntries = () => getFilteredLorebookEntries(lorebookEntries, false);
 
     const handlePromptSelect = (prompt: Prompt, model: AllowedModel) => {
         selectPrompt(prompt, model);
@@ -135,7 +135,7 @@ export default function ChatInterface({ storyId, selectedChat, onChatUpdate }: C
     };
 
     const handleItemSelect = (itemId: string) => {
-        const filteredEntries = LorebookFilterService.getFilteredEntries(lorebookEntries, false);
+        const filteredEntries = getFilteredLorebookEntries(lorebookEntries, false);
         const item = filteredEntries.find(entry => entry.id === itemId);
         if (item) addItem(item);
     };

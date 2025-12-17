@@ -93,8 +93,9 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
         >
             {/* Toggle button */}
             <button
+                type="button"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10 
+                className="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10
                     bg-background border-input border rounded-full p-1 shadow-sm hover:bg-muted"
             >
                 {isCollapsed ? (

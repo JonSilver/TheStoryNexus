@@ -13,7 +13,7 @@ import { logger } from "@/utils/logger";
 import { CreateEntryDialog } from "../components/CreateEntryDialog";
 import { LorebookEntryList } from "../components/LorebookEntryList";
 import { lorebookKeys, useHierarchicalLorebookQuery, useSeriesLorebookQuery } from "../hooks/useLorebookQuery";
-import { LorebookImportExportService } from "../stores/LorebookImportExportService";
+import { exportEntries, importEntries } from "../stores/LorebookImportExportService";
 
 type LorebookCategory = LorebookEntry["category"];
 
@@ -66,7 +66,7 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
     // Handle export functionality
     const handleExport = async () => {
         if (storyId) {
-            const [error] = attempt(() => LorebookImportExportService.exportEntries(entries, storyId));
+            const [error] = attempt(() => exportEntries(entries, storyId));
             if (error) {
                 logger.error("Export failed:", error);
                 toast.error("Failed to export lorebook entries");
@@ -87,7 +87,7 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
             reader.onload = async e => {
                 const [error] = await attemptPromise(async () => {
                     const content = e.target?.result as string;
-                    await LorebookImportExportService.importEntries(content, storyId, () => {
+                    await importEntries(content, storyId, () => {
                         queryClient.invalidateQueries({ queryKey: lorebookKeys.byStory(storyId) });
                     });
                 });
