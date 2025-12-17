@@ -1,9 +1,11 @@
 import { BookOpen, Edit, FolderUp, Trash2 } from "lucide-react";
 import type { MouseEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROUTES } from "@/constants/urls";
@@ -23,10 +25,11 @@ export const WorkspaceStoryCard = ({ story, onEdit, onExport }: WorkspaceStoryCa
     const { setCurrentStoryId } = useStoryContext();
     const { data: series } = useSingleSeriesQuery(story.seriesId);
     const navigate = useNavigate();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const handleDelete = (e: MouseEvent) => {
+    const handleDeleteClick = (e: MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this story?")) deleteStoryMutation.mutate(story.id);
+        setDeleteDialogOpen(true);
     };
 
     const handleEdit = (e: MouseEvent) => {
@@ -66,19 +69,7 @@ export const WorkspaceStoryCard = ({ story, onEdit, onExport }: WorkspaceStoryCa
             </CardHeader>
             <CardContent>{story.synopsis && <p className="text-sm text-muted-foreground">{story.synopsis}</p>}</CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleRead}>
-                                <BookOpen className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Read story</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
+                <ActionButton icon={BookOpen} tooltip="Read story" onClick={handleRead} />
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -91,46 +82,16 @@ export const WorkspaceStoryCard = ({ story, onEdit, onExport }: WorkspaceStoryCa
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleEdit}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Edit story details</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleExport}>
-                                <FolderUp className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Export story as JSON</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleDelete}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Delete story</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <ActionButton icon={Edit} tooltip="Edit story details" onClick={handleEdit} />
+                <ActionButton icon={FolderUp} tooltip="Export story as JSON" onClick={handleExport} />
+                <ActionButton icon={Trash2} tooltip="Delete story" onClick={handleDeleteClick} />
             </CardFooter>
+            <ConfirmDeleteDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                description={`Delete "${story.title}"? This action cannot be undone.`}
+                onConfirm={() => deleteStoryMutation.mutate(story.id)}
+            />
         </Card>
     );
 };

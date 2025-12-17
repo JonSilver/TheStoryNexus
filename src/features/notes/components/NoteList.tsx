@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/types/story";
 import { useCreateNoteMutation, useDeleteNoteMutation, useNotesByStoryQuery, useUpdateNoteMutation } from "../hooks/useNotesQuery";
@@ -84,12 +85,13 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
                 </div>
                 <ul className="overflow-y-auto flex-1">
                     {notes.length === 0 ? (
-                        <li className="p-8 flex flex-col items-center justify-center text-center">
-                            <p className="text-muted-foreground mb-4">No notes yet</p>
-                            <Button onClick={() => setIsNewNoteDialogOpen(true)} className="flex items-center gap-1">
-                                <Plus className="h-4 w-4" />
-                                Create Note
-                            </Button>
+                        <li>
+                            <EmptyState
+                                message="No notes yet"
+                                actionLabel="Create Note"
+                                onAction={() => setIsNewNoteDialogOpen(true)}
+                                className="p-8"
+                            />
                         </li>
                     ) : (
                         notes.map(note => (
