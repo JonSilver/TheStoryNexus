@@ -46,6 +46,21 @@ router.get("/export", async (_, res) => {
     });
 });
 
+router.get("/demo/exists", async (_, res) => {
+    const [error, result] = await attemptPromise(async () => {
+        const demoStory = await db.select({ id: schema.stories.id }).from(schema.stories).where(eq(schema.stories.isDemo, true)).limit(1);
+        return demoStory.length > 0;
+    });
+
+    if (error) {
+        console.error("Error checking demo data:", error);
+        res.status(500).json({ error: "Failed to check demo data", details: error.message });
+        return;
+    }
+
+    res.json({ exists: result });
+});
+
 router.post("/demo/import", async (_, res) => {
     const { seedDemoStory } = await import("../db/seedDemoStory.js");
 

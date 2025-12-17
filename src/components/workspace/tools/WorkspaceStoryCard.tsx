@@ -3,7 +3,7 @@ import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,11 +86,12 @@ export const WorkspaceStoryCard = ({ story, onEdit, onExport }: WorkspaceStoryCa
                 <ActionButton icon={FolderUp} tooltip="Export story as JSON" onClick={handleExport} />
                 <ActionButton icon={Trash2} tooltip="Delete story" onClick={handleDeleteClick} />
             </CardFooter>
-            <ConfirmDeleteDialog
+            <ConfirmDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 description={`Delete "${story.title}"? This action cannot be undone.`}
                 onConfirm={() => deleteStoryMutation.mutate(story.id)}
+                confirmLabel="Delete"
             />
         </Card>
     );
