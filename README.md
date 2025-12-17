@@ -22,7 +22,7 @@ I'm also in the process of reworking the UI/UX to be more of a writer's workspac
 
 - **Story Management**: Create and organize your stories with chapters, outlines, and summaries
 - **Rich Text Editor**: Write and edit your stories using a powerful Lexical-based editor
-- **AI Integration**: Generate content using AI models from providers like OpenAI and OpenRouter or use a locally hosted model
+- **AI Integration**: Generate content using AI models from OpenAI, Google Gemini, OpenRouter, or locally hosted models
 - **Custom Prompts**: Create and manage custom prompts to guide AI generation
 - **Scene Beats Addon to Editor**: Press alt (option for mac) + s in editor to open Scene Beat AI command
 - **Lorebook**: Maintain a database of characters, locations, items, events, and notes for your story

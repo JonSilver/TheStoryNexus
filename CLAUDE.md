@@ -130,6 +130,7 @@ if (error) return handleError(error);
 **AI & Content**:
 
 - OpenAI SDK v4 - AI provider integration (OpenAI, OpenRouter, local models)
+- Google GenAI SDK - Gemini provider integration
 - gpt-tokenizer - Token counting
 - React Markdown + remark-gfm + rehype - Markdown rendering
 
@@ -196,7 +197,7 @@ All data fetched from Express API endpoints. Mutations use TanStack Query mutati
 
 `AIService` (`src/services/ai/AIService.ts`) is a singleton managing:
 
-- Three AI providers: OpenAI, OpenRouter, and Local (via LM Studio-compatible API)
+- Four AI providers: OpenAI, Gemini, OpenRouter, and Local (via LM Studio-compatible API)
 - API key storage and initialization
 - Model fetching from each provider
 - Streaming chat completions with abort support
@@ -345,7 +346,7 @@ All database operations handled server-side via Drizzle ORM. Cascading deletes c
 
 All AI generation uses streaming responses. The `AIService` provides:
 
-- `generateWithLocalModel()`, `generateWithOpenAI()`, `generateWithOpenRouter()` - Return Response objects
+- `generateWithLocalModel()`, `generateWithOpenAI()`, `generateWithGemini()`, `generateWithOpenRouter()` - Return Response objects
 - `processStreamedResponse()` - Unified stream processor with token callback, completion, and error handlers
 - `abortStream()` - Abort ongoing generation
 
