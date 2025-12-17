@@ -1,18 +1,18 @@
 {
-  "name": "The Story Nexus",
-  "short_name": "Story Nexus",
-  "description": "AI-assisted creative writing application",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#334155",
-  "background_color": "#0a1628",
-  "icons": [
-    {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
-  ]
+    "name": "The Story Nexus",
+    "short_name": "Story Nexus",
+    "description": "AI-assisted creative writing application",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#334155",
+    "background_color": "#0a1628",
+    "icons": [
+        {
+            "src": "/icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
 }

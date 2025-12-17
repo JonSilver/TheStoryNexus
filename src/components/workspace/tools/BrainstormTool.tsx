@@ -76,9 +76,7 @@ export const BrainstormTool = () => {
                     <Popover open={mobileOpen} onOpenChange={setMobileOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" className="flex-1 justify-between">
-                                <span className="truncate">
-                                    {selectedChat ? selectedChat.title : "Select chat..."}
-                                </span>
+                                <span className="truncate">{selectedChat ? selectedChat.title : "Select chat..."}</span>
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>

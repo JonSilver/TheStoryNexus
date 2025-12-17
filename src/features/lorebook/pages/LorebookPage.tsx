@@ -127,12 +127,7 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
                         <span className="hidden sm:inline ml-2">Export</span>
                     </Button>
                     <label htmlFor="import-lorebook">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            asChild
-                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
-                        >
+                        <Button variant="outline" size="icon" asChild className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                             <div title="Import">
                                 <Upload className="w-4 h-4" />
                                 <span className="hidden sm:inline ml-2">Import</span>
@@ -140,7 +135,12 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
                         </Button>
                     </label>
                     <input id="import-lorebook" type="file" accept=".json" className="hidden" onChange={handleImport} />
-                    <Button size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsCreateDialogOpen(true)} title="New Entry">
+                    <Button
+                        size="icon"
+                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                        onClick={() => setIsCreateDialogOpen(true)}
+                        title="New Entry"
+                    >
                         <Plus className="w-4 h-4" />
                         <span className="hidden sm:inline ml-2">New Entry</span>
                     </Button>
@@ -154,7 +154,8 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
                 <Select value={selectedCategory} onValueChange={v => setSelectedCategory(v as LorebookCategory)}>
                     <SelectTrigger className="w-full">
                         <SelectValue>
-                            {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} ({categoryCounts[selectedCategory] || 0})
+                            {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} (
+                            {categoryCounts[selectedCategory] || 0})
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>

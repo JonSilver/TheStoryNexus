@@ -51,5 +51,7 @@ export const MainContent = () => {
         }
     };
 
-    return <div className={cn("min-h-full transition-colors duration-300", toolTints[currentTool])}>{renderTool()}</div>;
+    return (
+        <div className={cn("min-h-full transition-colors duration-300", toolTints[currentTool])}>{renderTool()}</div>
+    );
 };

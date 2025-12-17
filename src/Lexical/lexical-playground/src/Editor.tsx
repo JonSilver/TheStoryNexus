@@ -136,9 +136,7 @@ export default function Editor(): JSX.Element {
                         <LayoutPlugin />
                         <SceneBeatShortcutPlugin editor={editor} />
                         <SlashCommandPlugin editor={editor} />
-                        {floatingAnchorElem && (
-                            <FloatingTextFormatToolbarPlugin anchorElem={floatingAnchorElem} />
-                        )}
+                        {floatingAnchorElem && <FloatingTextFormatToolbarPlugin anchorElem={floatingAnchorElem} />}
                         {floatingAnchorElem && !isSmallWidthViewport && (
                             <>
                                 <DraggableBlockPlugin anchorElem={floatingAnchorElem} />

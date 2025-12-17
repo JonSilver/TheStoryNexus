@@ -253,7 +253,10 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                                 </h3>
                                 {(chapter.povCharacter || chapter.povType) && (
                                     <span className="text-xs text-muted-foreground block truncate">
-                                        POV: {chapter.povCharacter ? `${chapter.povCharacter} (${chapter.povType})` : chapter.povType}
+                                        POV:{" "}
+                                        {chapter.povCharacter
+                                            ? `${chapter.povCharacter} (${chapter.povType})`
+                                            : chapter.povType}
                                     </span>
                                 )}
                             </div>
@@ -265,7 +268,12 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleWriteClick}>
                                 <PenLine className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowDeleteDialog(true)}>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setShowDeleteDialog(true)}
+                            >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleExpanded}>

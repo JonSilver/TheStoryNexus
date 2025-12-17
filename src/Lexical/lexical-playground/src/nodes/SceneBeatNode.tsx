@@ -317,7 +317,12 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                     {streaming && (
-                        <Button variant="default" size="sm" onClick={stopGeneration} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={stopGeneration}
+                            className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                        >
                             Stop
                         </Button>
                     )}
