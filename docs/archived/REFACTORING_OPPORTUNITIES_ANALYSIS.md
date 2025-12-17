@@ -18,6 +18,7 @@ This report identifies opportunities to **reduce code volume** and **increase re
 3. **Consolidate duplication** - Where custom code is justified, extract once and reuse
 
 **Target outcomes**:
+
 - **Delete ~1,500-2,000 lines of custom code** (15-20% reduction)
 - **Migrate 58 manual type guards** to @sindresorhus/is
 - **Replace custom utilities** with loglevel, date-fns, Zod
@@ -48,6 +49,7 @@ export const generatePromptId = (): string => generateId();
 ```
 
 **Recommendation**:
+
 - **Option A**: Remove file entirely, use `crypto.randomUUID()` directly at call sites
 - **Option B**: Keep single `generateId()` export, remove entity-specific wrappers
 
@@ -74,17 +76,19 @@ static getAllLocations(entries: LorebookEntry[]): LorebookEntry[] {
 ```
 
 **Recommendation**:
+
 - **Option A**: Remove wrapper methods, call `getEntriesByCategory(entries, category)` directly
 - **Option B**: Use lodash groupBy/filter (already in dependencies) for more powerful filtering
 
 **Alternative using lodash**:
+
 ```typescript
-import { groupBy, filter } from 'lodash';
+import { groupBy, filter } from "lodash";
 
 // Single call replaces 8 methods
 const grouped = groupBy(
     filter(entries, e => !e.isDisabled),
-    'category'
+    "category"
 );
 const characters = grouped.character || [];
 ```
@@ -96,6 +100,7 @@ const characters = grouped.character || [];
 ### 1.3 Stream Wrapping Code Duplication (HIGH PRIORITY)
 
 **Location**:
+
 - `src/services/ai/providers/OpenAIProvider.ts:66-85`
 - `src/services/ai/providers/OpenRouterProvider.ts:100-119`
 
@@ -129,9 +134,7 @@ return new Response(
 
 ```typescript
 // Proposed: src/services/ai/streamUtils.ts
-export const wrapOpenAIStream = async (
-    stream: AsyncIterable<any>
-): Promise<Response> => {
+export const wrapOpenAIStream = async (stream: AsyncIterable<any>): Promise<Response> => {
     return new Response(
         new ReadableStream({
             async start(controller) {
@@ -166,6 +169,7 @@ export const wrapOpenAIStream = async (
 **Issue**: Despite having structured logger utility (`src/utils/logger.ts`), 180 direct `console.log/error/warn` calls remain throughout codebase.
 
 **Files with most violations**:
+
 - `src/features/prompts/services/resolvers/BrainstormResolvers.ts`: 13 instances
 - `src/features/chapters/stores/useChapterMetadataStore.ts`: 10 instances
 - `src/services/dbSeed.ts`: 14 instances
@@ -174,19 +178,21 @@ export const wrapOpenAIStream = async (
 **Recommendation**: Enforce logger usage via ESLint rule, migrate console calls to logger methods.
 
 ```typescript
-// Instead of:
-console.log('[OpenAIProvider] Fetching models');
-console.error('[OpenAIProvider] Error fetching models:', error);
-
 // Use:
-import { logger } from '@/utils/logger';
-logger.info('[OpenAIProvider] Fetching models');
-logger.error('[OpenAIProvider] Error fetching models', error);
+import { logger } from "@/utils/logger";
+
+// Instead of:
+console.log("[OpenAIProvider] Fetching models");
+console.error("[OpenAIProvider] Error fetching models:", error);
+
+logger.info("[OpenAIProvider] Fetching models");
+logger.error("[OpenAIProvider] Error fetching models", error);
 ```
 
 **Recommendation**: Replace with `loglevel` library.
 
 **Why loglevel**:
+
 - Industry-standard logging library (8K+ GitHub stars, 13M+ weekly downloads)
 - Minimal API surface - drop-in replacement for console
 - Runtime log level control (suppress debug logs in production)
@@ -196,46 +202,48 @@ logger.error('[OpenAIProvider] Error fetching models', error);
 
 ```typescript
 // src/utils/logger.ts - Replace with loglevel
-import log from 'loglevel';
+import log from "loglevel";
 
 // Configure once at app startup
 if (import.meta.env.PROD) {
-    log.setLevel('warn');  // Production: only warnings and errors
+    log.setLevel("warn"); // Production: only warnings and errors
 } else {
-    log.setLevel('debug'); // Development: all logs
+    log.setLevel("debug"); // Development: all logs
 }
 
 export const logger = log;
 
 // Usage - identical API to current logger
-logger.info('[OpenAIProvider] Fetching models');
-logger.error('[OpenAIProvider] Error fetching models', error);
-logger.debug('Detailed debug info', { context });
+logger.info("[OpenAIProvider] Fetching models");
+logger.error("[OpenAIProvider] Error fetching models", error);
+logger.debug("Detailed debug info", { context });
 
 // Runtime control (useful for debugging production issues)
-logger.setLevel('debug');  // Enable debug logs temporarily
+logger.setLevel("debug"); // Enable debug logs temporarily
 ```
 
 **Additional capabilities**:
+
 ```typescript
-// Per-module log levels
-const editorLogger = log.getLogger('editor');
-editorLogger.setLevel('debug');
-
-const dbLogger = log.getLogger('database');
-dbLogger.setLevel('warn');
-
 // Custom plugins for remote logging
-import loglevel from 'loglevel';
-import remote from 'loglevel-plugin-remote';
+import loglevel from "loglevel";
+import remote from "loglevel-plugin-remote";
+
+// Per-module log levels
+const editorLogger = log.getLogger("editor");
+editorLogger.setLevel("debug");
+
+const dbLogger = log.getLogger("database");
+dbLogger.setLevel("warn");
 
 remote.apply(loglevel, {
-    url: '/api/logs',  // Send errors to backend
-    level: 'error'
+    url: "/api/logs", // Send errors to backend
+    level: "error"
 });
 ```
 
 **Installation**:
+
 ```bash
 npm install loglevel
 npm install --save-dev @types/loglevel
@@ -252,6 +260,7 @@ npm install --save-dev @types/loglevel
 **Issue**: @sindresorhus/is library is installed but not used. Manual `typeof` checks scattered throughout codebase should use the library instead.
 
 **Current violations**:
+
 - `src/features/prompts/store/promptStore.ts:38-42` - 4 manual type checks
 - `src/Lexical/lexical-playground/src/nodes/scene-beat/hooks/useSceneBeatData.ts:16,101,104,107` - 6 manual checks
 - `src/features/prompts/services/resolvers/BrainstormResolvers.ts` - 3 manual checks
@@ -260,42 +269,44 @@ npm install --save-dev @types/loglevel
 **Examples of what needs migrating**:
 
 ```typescript
-// WRONG - Manual type guards
-validatePromptData: (messages) => {
-    return messages.every(msg =>
-        typeof msg === 'object' &&
-        ('role' in msg) &&
-        ('content' in msg) &&
-        ['system', 'user', 'assistant'].includes(msg.role) &&
-        typeof msg.content === 'string'
-    );
-}
-
 // CORRECT - Using @sindresorhus/is
-import is from '@sindresorhus/is';
+import is from "@sindresorhus/is";
 
-validatePromptData: (messages) => {
-    return messages.every(msg =>
-        is.plainObject(msg) &&
-        is.string(msg.role) &&
-        is.string(msg.content) &&
-        ['system', 'user', 'assistant'].includes(msg.role)
+// WRONG - Manual type guards
+validatePromptData: messages => {
+    return messages.every(
+        msg =>
+            typeof msg === "object" &&
+            "role" in msg &&
+            "content" in msg &&
+            ["system", "user", "assistant"].includes(msg.role) &&
+            typeof msg.content === "string"
     );
-}
+};
+
+validatePromptData: messages => {
+    return messages.every(
+        msg =>
+            is.plainObject(msg) &&
+            is.string(msg.role) &&
+            is.string(msg.content) &&
+            ["system", "user", "assistant"].includes(msg.role)
+    );
+};
 ```
 
 **More examples**:
 
 ```typescript
+// Scene beat data validation - AFTER
+import is from "@sindresorhus/is";
+
 // Scene beat data validation - BEFORE
 if (typeof node === "object" && node !== null) {
     if (typeof data.metadata.useMatchedChapter === "boolean") {
         // ...
     }
 }
-
-// Scene beat data validation - AFTER
-import is from '@sindresorhus/is';
 
 if (is.plainObject(node)) {
     if (is.boolean(data.metadata.useMatchedChapter)) {
@@ -304,7 +315,7 @@ if (is.plainObject(node)) {
 }
 
 // Image plugin - BEFORE
-if (typeof reader.result === 'string') {
+if (typeof reader.result === "string") {
     // ...
 }
 
@@ -315,6 +326,7 @@ if (is.string(reader.result)) {
 ```
 
 **@sindresorhus/is advantages**:
+
 - Comprehensive type checking (70+ type guards)
 - Handles edge cases (e.g., `is.plainObject` excludes arrays, null, class instances)
 - More readable and expressive
@@ -322,6 +334,7 @@ if (is.string(reader.result)) {
 - Consistent API across codebase
 
 **Common patterns to migrate**:
+
 - `typeof x === 'string'` → `is.string(x)`
 - `typeof x === 'number'` → `is.number(x)`
 - `typeof x === 'boolean'` → `is.boolean(x)`
@@ -359,25 +372,26 @@ fetchEntities: async () => {
 
     if (error) {
         set({
-            error: formatError(error, ERROR_MESSAGES.FETCH_FAILED('entities')),
+            error: formatError(error, ERROR_MESSAGES.FETCH_FAILED("entities")),
             loading: false
         });
         return;
     }
 
     set({ entities, loading: false });
-}
+};
 ```
 
 **Recommendation**: Delete ~1,200 lines of duplicated CRUD code by extracting to single factory.
 
 **Proposed implementation** (write once, delete everywhere else):
+
 ```typescript
 // src/utils/createCRUDStore.ts
-import { create } from 'zustand';
-import { attemptPromise } from '@jfdi/attempt';
-import { formatError } from '@/utils/errorUtils';
-import { ERROR_MESSAGES } from '@/constants/errorMessages';
+import { attemptPromise } from "@jfdi/attempt";
+import { create } from "zustand";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
+import { formatError } from "@/utils/errorUtils";
 
 interface CRUDStoreConfig<T> {
     table: any; // Dexie table
@@ -385,12 +399,8 @@ interface CRUDStoreConfig<T> {
     generateId: () => string;
 }
 
-export const createCRUDStore = <T extends { id: string }>({
-    table,
-    entityName,
-    generateId
-}: CRUDStoreConfig<T>) => {
-    return create<CRUDStore<T>>((set) => ({
+export const createCRUDStore = <T extends { id: string }>({ table, entityName, generateId }: CRUDStoreConfig<T>) => {
+    return create<CRUDStore<T>>(set => ({
         items: [],
         loading: false,
         error: null,
@@ -410,7 +420,7 @@ export const createCRUDStore = <T extends { id: string }>({
             set({ items, loading: false });
         },
 
-        create: async (data: Omit<T, 'id' | 'createdAt'>) => {
+        create: async (data: Omit<T, "id" | "createdAt">) => {
             set({ loading: true, error: null });
 
             const item = {
@@ -435,7 +445,7 @@ export const createCRUDStore = <T extends { id: string }>({
             }));
 
             return item.id;
-        },
+        }
 
         // ... update, delete, etc.
     }));
@@ -444,12 +454,13 @@ export const createCRUDStore = <T extends { id: string }>({
 // Usage:
 export const useStoryStore = createCRUDStore({
     table: db.stories,
-    entityName: 'story',
+    entityName: "story",
     generateId: () => crypto.randomUUID()
 });
 ```
 
 **Impact**:
+
 - **Delete ~1,200 lines of duplicated code** (write ~150 lines once, delete ~150 × 8 everywhere else)
 - Zero custom CRUD code to maintain in feature stores
 - Single source of truth - bugs fixed once, not eight times
@@ -459,17 +470,18 @@ export const useStoryStore = createCRUDStore({
 ### 2.2 Lexical Text Extraction Duplication (HIGH PRIORITY)
 
 **Location**:
+
 - `src/utils/exportUtils.ts:22-51` (extractPlainTextFromLexical)
 - `src/features/chapters/stores/useChapterContentStore.ts:49-88` (extractPlainTextFromLexicalState)
 
 **Issue**: Two different implementations doing similar recursive tree-walking to extract plain text from Lexical JSON. They handle different edge cases:
 
-| Feature | exportUtils | useChapterContentStore |
-|---------|-------------|----------------------|
-| Handles linebreak nodes | ❌ | ✅ |
-| Handles scene-beat nodes | ❌ | ✅ |
-| Multiple newline cleanup | ❌ | ✅ |
-| Paragraph spacing | Double newline | Single newline |
+| Feature                  | exportUtils    | useChapterContentStore |
+| ------------------------ | -------------- | ---------------------- |
+| Handles linebreak nodes  | ❌             | ✅                     |
+| Handles scene-beat nodes | ❌             | ✅                     |
+| Multiple newline cleanup | ❌             | ✅                     |
+| Paragraph spacing        | Double newline | Single newline         |
 
 **Recommendation**: Unify into single, comprehensive implementation that handles all node types.
 
@@ -477,7 +489,7 @@ export const useStoryStore = createCRUDStore({
 
 ```typescript
 interface LexicalTextExtractionOptions {
-    paragraphSpacing: '\n' | '\n\n';
+    paragraphSpacing: "\n" | "\n\n";
     excludeNodeTypes?: string[];
     cleanupMultipleNewlines?: boolean;
 }
@@ -487,50 +499,45 @@ export const extractPlainTextFromLexical = (
     options: Partial<LexicalTextExtractionOptions> = {}
 ): string => {
     const opts: LexicalTextExtractionOptions = {
-        paragraphSpacing: '\n\n',
-        excludeNodeTypes: ['scene-beat'],
+        paragraphSpacing: "\n\n",
+        excludeNodeTypes: ["scene-beat"],
         cleanupMultipleNewlines: true,
         ...options
     };
 
     const [parseError, editorState] = attempt(() => JSON.parse(jsonContent));
-    if (parseError) return '';
+    if (parseError) return "";
 
     const extractText = (node: any): string => {
-        if (!node) return '';
+        if (!node) return "";
 
         if (opts.excludeNodeTypes?.includes(node.type)) {
-            return '';
+            return "";
         }
 
-        if (node.type === 'text') {
-            return node.text || '';
+        if (node.type === "text") {
+            return node.text || "";
         }
 
-        if (node.type === 'linebreak') {
-            return '\n';
+        if (node.type === "linebreak") {
+            return "\n";
         }
 
-        const childrenText = Array.isArray(node.children)
-            ? node.children.map(extractText).join('')
-            : '';
+        const childrenText = Array.isArray(node.children) ? node.children.map(extractText).join("") : "";
 
-        const lineBreak = (node.type === 'paragraph' || node.type === 'heading')
-            ? opts.paragraphSpacing
-            : '';
+        const lineBreak = node.type === "paragraph" || node.type === "heading" ? opts.paragraphSpacing : "";
 
         return childrenText + lineBreak;
     };
 
     const rawText = extractText(editorState.root);
 
-    return opts.cleanupMultipleNewlines
-        ? rawText.replace(/\n{3,}/g, '\n\n').trim()
-        : rawText.trim();
+    return opts.cleanupMultipleNewlines ? rawText.replace(/\n{3,}/g, "\n\n").trim() : rawText.trim();
 };
 ```
 
 **Impact**:
+
 - Single implementation used by export utils, content store, and future features
 - Consistent text extraction behaviour
 - Configurable for different use cases
@@ -566,9 +573,9 @@ export const normalizeAdvanced = (str: string): string => {
     return str
         .toLowerCase()
         .trim()
-        .replace(/\s+/g, ' ')  // Collapse multiple spaces
-        .normalize('NFD')       // Unicode normalization
-        .replace(/[\u0300-\u036f]/g, '');  // Remove diacritics
+        .replace(/\s+/g, " ") // Collapse multiple spaces
+        .normalize("NFD") // Unicode normalization
+        .replace(/[\u0300-\u036f]/g, ""); // Remove diacritics
 };
 ```
 
@@ -594,6 +601,7 @@ return template.trim().split(/\s+/).length;
 ```
 
 **Problems**:
+
 - Inconsistent handling of empty strings
 - Implementation 1 counts empty string as 1 word
 - Implementation 2 correctly filters falsy values
@@ -625,17 +633,20 @@ export const countWords = (text: string): number => words(text).length;
 **Issue**: `react-hook-form` is in dependencies but only 3 files use it. Others use manual `useState`:
 
 **Using react-hook-form (3 files)**:
+
 - `src/features/chapters/pages/Chapters.tsx`
 - `src/features/chapters/components/ChapterCard.tsx`
 - `src/features/chapters/components/ChapterPOVEditor.tsx`
 
 **Using manual useState (5+ files)**:
+
 - `src/features/stories/components/CreateStoryDialog.tsx` - 4 useState calls
 - `src/features/stories/components/EditStoryDialog.tsx` - 4 useState calls
 - `src/features/lorebook/components/CreateEntryDialog.tsx` - Large form state object
 - Plus prompt forms, brainstorm forms, etc.
 
 **Example of manual state management**:
+
 ```typescript
 // CreateStoryDialog.tsx - manual useState
 const [title, setTitle] = useState("");
@@ -650,10 +661,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 ```
 
 **Recommendation**:
+
 - **Option A**: Standardise on react-hook-form for all forms (already in dependencies)
 - **Option B**: Remove react-hook-form, use manual state consistently (simpler forms don't need library)
 
 Given CLAUDE.md philosophy ("delete code, trust libraries"), **Option A** is better:
+
 - Built-in validation
 - Error state management
 - Form reset handling
@@ -671,11 +684,11 @@ Given CLAUDE.md philosophy ("delete code, trust libraries"), **Option A** is bet
 
 ```typescript
 // Pattern repeated 50+ times:
-toast.error('Failed to delete prompt');
-toast.success('Prompt deleted successfully');
+toast.error("Failed to delete prompt");
+toast.success("Prompt deleted successfully");
 
-toast.error('Failed to import prompts');
-toast.success('Prompts imported successfully');
+toast.error("Failed to import prompts");
+toast.success("Prompts imported successfully");
 ```
 
 **Recommendation**: Extract to utility for consistent messaging and reduce duplication.
@@ -688,13 +701,13 @@ export const toastCRUD = {
     updateSuccess: (entity: string) => toast.success(`${entity} updated successfully`),
     updateError: (entity: string) => toast.error(`Failed to update ${entity}`),
     deleteSuccess: (entity: string) => toast.success(`${entity} deleted successfully`),
-    deleteError: (entity: string) => toast.error(`Failed to delete ${entity}`),
+    deleteError: (entity: string) => toast.error(`Failed to delete ${entity}`)
     // etc.
 };
 
 // Usage
-toastCRUD.deleteSuccess('Prompt');
-toastCRUD.importError('Prompts');
+toastCRUD.deleteSuccess("Prompt");
+toastCRUD.importError("Prompts");
 ```
 
 **Impact**: Consistent messaging, less duplication, easier to change toast library or add features (e.g., i18n).
@@ -704,6 +717,7 @@ toastCRUD.importError('Prompts');
 ### 2.7 Import/Export JSON Pattern Duplication (MEDIUM PRIORITY)
 
 **Location**:
+
 - `src/features/lorebook/stores/LorebookImportExportService.ts` (72 lines)
 - `src/features/prompts/store/promptStore.ts` (exportPrompts, importPrompts methods)
 
@@ -712,9 +726,9 @@ toastCRUD.importError('Prompts');
 ```typescript
 // Export: Stringify → Blob → Download
 const json = JSON.stringify(data, null, 2);
-const blob = new Blob([json], { type: 'application/json' });
+const blob = new Blob([json], { type: "application/json" });
 const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
+const a = document.createElement("a");
 a.href = url;
 a.download = filename;
 a.click();
@@ -722,11 +736,11 @@ URL.revokeObjectURL(url);
 
 // Import: Parse → Validate → DB Write
 const [parseError, data] = attempt(() => JSON.parse(jsonString));
-if (parseError) throw new Error('Invalid JSON');
+if (parseError) throw new Error("Invalid JSON");
 
 // Validate structure
 if (!data.version || !data.type || !Array.isArray(data.items)) {
-    throw new Error('Invalid format');
+    throw new Error("Invalid format");
 }
 
 // Write to DB
@@ -751,12 +765,7 @@ interface ImportConfig<T> {
     processor?: (item: T) => T;
 }
 
-export const exportToJSON = <T>({
-    data,
-    filename,
-    type,
-    version
-}: ExportConfig<T>): void => {
+export const exportToJSON = <T>({ data, filename, type, version }: ExportConfig<T>): void => {
     const exportData = {
         version,
         type,
@@ -765,25 +774,20 @@ export const exportToJSON = <T>({
     };
 
     const json = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${filename}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
 };
 
-export const importFromJSON = <T>({
-    jsonData,
-    type,
-    validator,
-    processor = (item) => item
-}: ImportConfig<T>): T[] => {
+export const importFromJSON = <T>({ jsonData, type, validator, processor = item => item }: ImportConfig<T>): T[] => {
     const [parseError, data] = attempt(() => JSON.parse(jsonData));
 
     if (parseError) {
-        throw new Error('Invalid JSON format');
+        throw new Error("Invalid JSON format");
     }
 
     if (data.type !== type) {
@@ -831,13 +835,12 @@ if (getError || !updatedEntity) {
 }
 
 set(state => ({
-    items: state.items.map(item =>
-        item.id === id ? updatedEntity : item
-    )
+    items: state.items.map(item => (item.id === id ? updatedEntity : item))
 }));
 ```
 
 **Recommendation**:
+
 - **Option A**: Trust local state update (optimistic update pattern)
 - **Option B**: Use Dexie's transaction hooks or observe() for reactive updates
 - **Option C**: If CRUD factory (recommendation 2.1) is implemented, this becomes moot
@@ -851,6 +854,7 @@ set(state => ({
 ### 3.1 Validation with Zod (HIGH PRIORITY)
 
 **Location**:
+
 - `src/features/prompts/store/promptStore.ts:36-44` (validatePromptData)
 - `src/features/lorebook/stores/LorebookImportExportService.ts` (manual validation)
 - Import/export validation across features
@@ -861,25 +865,26 @@ set(state => ({
 
 ```typescript
 // Current manual validation (promptStore.ts:36-44)
-validatePromptData: (messages) => {
-    return messages.every(msg =>
-        typeof msg === 'object' &&
-        ('role' in msg) &&
-        ('content' in msg) &&
-        ['system', 'user', 'assistant'].includes(msg.role) &&
-        typeof msg.content === 'string'
+validatePromptData: messages => {
+    return messages.every(
+        msg =>
+            typeof msg === "object" &&
+            "role" in msg &&
+            "content" in msg &&
+            ["system", "user", "assistant"].includes(msg.role) &&
+            typeof msg.content === "string"
     );
-}
+};
 ```
 
 **Recommendation**: Use Zod schemas throughout application for type-safe validation.
 
 ```typescript
 // src/schemas/promptSchemas.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const PromptMessageSchema = z.object({
-    role: z.enum(['system', 'user', 'assistant']),
+    role: z.enum(["system", "user", "assistant"]),
     content: z.string()
 });
 
@@ -899,15 +904,15 @@ export const PromptSchema = z.object({
 
 export const PromptExportSchema = z.object({
     version: z.string(),
-    type: z.literal('prompts'),
+    type: z.literal("prompts"),
     prompts: z.array(PromptSchema)
 });
 
 // Usage in store
-validatePromptData: (messages) => {
+validatePromptData: messages => {
     const result = z.array(PromptMessageSchema).safeParse(messages);
     return result.success;
-}
+};
 
 // Better: Get detailed errors
 importPrompts: async (jsonData: string) => {
@@ -915,24 +920,24 @@ importPrompts: async (jsonData: string) => {
     const result = PromptExportSchema.safeParse(parsed);
 
     if (!result.success) {
-        throw new Error(
-            `Validation failed: ${result.error.issues.map(i => i.message).join(', ')}`
-        );
+        throw new Error(`Validation failed: ${result.error.issues.map(i => i.message).join(", ")}`);
     }
 
     // Type-safe from here
     const prompts = result.data.prompts;
     // ...
-}
+};
 ```
 
 **Impact**:
+
 - Type-safe validation with detailed error messages
 - Runtime type checking that mirrors TypeScript types
 - Automatic type inference from schemas
 - Better error messages for users
 
 **Files to migrate**:
+
 - All import/export validation
 - API response validation (AI provider responses)
 - Form validation
@@ -950,66 +955,66 @@ importPrompts: async (jsonData: string) => {
 
 ```typescript
 // Examples throughout codebase
-createdAt: new Date()
-exportedAt: new Date().toISOString()
-lastModified: new Date()
+createdAt: new Date();
+exportedAt: new Date().toISOString();
+lastModified: new Date();
 
 // Sorting by date
-chapters.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+chapters.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 ```
 
 **Recommendation**: Add `date-fns` (lightweight, tree-shakeable, functional) or `dayjs` (smaller, moment-like API).
 
 **Comparison**:
 
-| Library | Size | Tree-shakeable | API Style | TypeScript |
-|---------|------|----------------|-----------|------------|
-| date-fns | ~13KB (individual functions) | ✅ Yes | Functional | ✅ Excellent |
-| dayjs | ~7KB | ⚠️ Partial | Chainable | ✅ Good |
+| Library  | Size                         | Tree-shakeable | API Style  | TypeScript   |
+| -------- | ---------------------------- | -------------- | ---------- | ------------ |
+| date-fns | ~13KB (individual functions) | ✅ Yes         | Functional | ✅ Excellent |
+| dayjs    | ~7KB                         | ⚠️ Partial     | Chainable  | ✅ Good      |
 
 **Recommendation**: **date-fns** for functional programming preference stated in CLAUDE.md.
 
 ```typescript
 // src/utils/dateUtils.ts
-import { format, formatDistance, parseISO, compareDesc } from 'date-fns';
+import { format, formatDistance, parseISO, compareDesc } from "date-fns";
 
 export const formatDate = (date: Date | string): string => {
-    const d = typeof date === 'string' ? parseISO(date) : date;
-    return format(d, 'dd MMM yyyy');
+    const d = typeof date === "string" ? parseISO(date) : date;
+    return format(d, "dd MMM yyyy");
 };
 
 export const formatDateTime = (date: Date | string): string => {
-    const d = typeof date === 'string' ? parseISO(date) : date;
-    return format(d, 'dd MMM yyyy HH:mm');
+    const d = typeof date === "string" ? parseISO(date) : date;
+    return format(d, "dd MMM yyyy HH:mm");
 };
 
 export const formatRelative = (date: Date | string): string => {
-    const d = typeof date === 'string' ? parseISO(date) : date;
+    const d = typeof date === "string" ? parseISO(date) : date;
     return formatDistance(d, new Date(), { addSuffix: true });
 };
 
-export const sortByDateDesc = <T extends { createdAt: Date | string }>(
-    items: T[]
-): T[] => {
+export const sortByDateDesc = <T extends { createdAt: Date | string }>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-        const dateA = typeof a.createdAt === 'string' ? parseISO(a.createdAt) : a.createdAt;
-        const dateB = typeof b.createdAt === 'string' ? parseISO(b.createdAt) : b.createdAt;
+        const dateA = typeof a.createdAt === "string" ? parseISO(a.createdAt) : a.createdAt;
+        const dateB = typeof b.createdAt === "string" ? parseISO(b.createdAt) : b.createdAt;
         return compareDesc(dateA, dateB);
     });
 };
 
 // Usage
-const formattedDate = formatDate(story.createdAt);  // "31 Oct 2025"
-const relative = formatRelative(story.updatedAt);  // "2 hours ago"
+const formattedDate = formatDate(story.createdAt); // "31 Oct 2025"
+const relative = formatRelative(story.updatedAt); // "2 hours ago"
 const sorted = sortByDateDesc(stories);
 ```
 
 **Installation**:
+
 ```bash
 npm install date-fns
 ```
 
 **Impact**:
+
 - Consistent date formatting throughout app
 - Timezone-safe operations
 - Human-readable relative dates ("2 hours ago")
@@ -1020,6 +1025,7 @@ npm install date-fns
 ### 3.3 File Downloads with file-saver (LOW PRIORITY)
 
 **Location**:
+
 - `src/utils/exportUtils.ts:97-108` (downloadAsFile)
 - `src/services/export/FileDownloadUtil.ts`
 
@@ -1030,7 +1036,7 @@ npm install date-fns
 function downloadAsFile(content: string, filename: string, contentType: string) {
     const blob = new Blob([content], { type: contentType });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
@@ -1041,26 +1047,24 @@ function downloadAsFile(content: string, filename: string, contentType: string) 
 **Recommendation**: Use battle-tested `file-saver` library.
 
 ```typescript
-import { saveAs } from 'file-saver';
+import { saveAs } from "file-saver";
 
 // Replaces downloadAsFile
-export const downloadAsFile = (
-    content: string,
-    filename: string,
-    contentType: string
-): void => {
+export const downloadAsFile = (content: string, filename: string, contentType: string): void => {
     const blob = new Blob([content], { type: contentType });
     saveAs(blob, filename);
 };
 ```
 
 **Installation**:
+
 ```bash
 npm install file-saver
 npm install --save-dev @types/file-saver
 ```
 
 **Benefits**:
+
 - Better iOS Safari support
 - Handles large files correctly
 - Automatic memory cleanup
@@ -1119,14 +1123,11 @@ const uniqueEntries = allEntries.filter(e => {
 
 ```typescript
 // In Lexical SaveChapterContent plugin - lodash debounce is still best
-import { debounce } from 'lodash';
+import { debounce } from "lodash";
 
-const debouncedSave = debounce(
-    async (editorState) => {
-        await saveChapter(editorState);
-    },
-    1000
-);
+const debouncedSave = debounce(async editorState => {
+    await saveChapter(editorState);
+}, 1000);
 
 // Native alternative would require manual implementation
 ```
@@ -1161,11 +1162,13 @@ const exportData = prompts.map(({ id, name, messages, temperature }) =>
 ```
 
 **Keep Lodash For**:
+
 - `debounce` / `throttle` - no native equivalent
 - `cloneDeep` - native structuredClone exists but lodash handles edge cases
 - Complex path operations - `get(obj, 'deeply.nested.path', defaultValue)`
 
 **Replace with Native**:
+
 - `groupBy` → `Object.groupBy()` / `Map.groupBy()`
 - `uniqBy` → Set-based deduplication
 - `partition` → reduce or double filter
@@ -1189,23 +1192,23 @@ Manual implementation is error-prone.
 **Recommendation**: Use `p-retry` for declarative retry logic.
 
 ```typescript
-import pRetry from 'p-retry';
+import pRetry from "p-retry";
 
 // Git push with retry
 const pushWithRetry = async (branch: string) => {
     return pRetry(
         async () => {
             const result = await fetch(`/git/push`, {
-                method: 'POST',
+                method: "POST",
                 body: JSON.stringify({ branch })
             });
 
             if (!result.ok && result.status === 403) {
-                throw new pRetry.AbortError('Permission denied');
+                throw new pRetry.AbortError("Permission denied");
             }
 
             if (!result.ok) {
-                throw new Error('Push failed');
+                throw new Error("Push failed");
             }
 
             return result;
@@ -1215,11 +1218,8 @@ const pushWithRetry = async (branch: string) => {
             factor: 2,
             minTimeout: 2000,
             maxTimeout: 16000,
-            onFailedAttempt: (error) => {
-                console.log(
-                    `Attempt ${error.attemptNumber} failed. ` +
-                    `${error.retriesLeft} retries left.`
-                );
+            onFailedAttempt: error => {
+                console.log(`Attempt ${error.attemptNumber} failed. ` + `${error.retriesLeft} retries left.`);
             }
         }
     );
@@ -1227,6 +1227,7 @@ const pushWithRetry = async (branch: string) => {
 ```
 
 **Installation**:
+
 ```bash
 npm install p-retry
 ```
@@ -1244,14 +1245,14 @@ npm install p-retry
 **Recommendation**: Use `eventsource-parser` for robust SSE handling.
 
 ```typescript
-import { createParser } from 'eventsource-parser';
+import { createParser } from "eventsource-parser";
 
 const processStream = async (response: Response) => {
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
 
-    const parser = createParser((event) => {
-        if (event.type === 'event') {
+    const parser = createParser(event => {
+        if (event.type === "event") {
             const data = JSON.parse(event.data);
             onToken(data.content);
         }
@@ -1268,6 +1269,7 @@ const processStream = async (response: Response) => {
 ```
 
 **Installation**:
+
 ```bash
 npm install eventsource-parser
 ```
@@ -1285,7 +1287,7 @@ npm install eventsource-parser
 **Recommendation**: When enabling strict mode, leverage Zod schemas to bridge runtime/compile-time type safety.
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // Schema serves as single source of truth
 const StorySchema = z.object({
@@ -1301,7 +1303,7 @@ export type Story = z.infer<typeof StorySchema>;
 
 // Runtime validation + compile-time types
 const validateStory = (data: unknown): Story => {
-    return StorySchema.parse(data);  // Throws if invalid
+    return StorySchema.parse(data); // Throws if invalid
 };
 ```
 
@@ -1314,6 +1316,7 @@ const validateStory = (data: unknown): Story => {
 **Observation**: CLAUDE.md explicitly warns against `useEffect` abuse for derived state. Current codebase generally follows best practices, but worth periodic review.
 
 **Recommendation**: Consider ESLint rules:
+
 - `react-hooks/exhaustive-deps`
 - `react/no-unstable-nested-components`
 
@@ -1350,29 +1353,30 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 
 ## 5. Implementation Priority Matrix
 
-| Priority | Category | Items | Estimated Impact |
-|----------|----------|-------|------------------|
-| **HIGH** | Duplication | Stream wrapping code | High - Immediate DRY gains |
-| **HIGH** | Duplication | Lexical text extraction | High - Prevents bugs |
-| **HIGH** | Abstraction | CRUD store factory | Very High - ~1,200 lines |
-| **HIGH** | Library | Zod validation | High - Type safety |
-| **HIGH** | Dependencies | ID generator removal | Medium - Less noise |
-| **HIGH** | Dependencies | Migrate to @sindresorhus/is | High - Robust type checking |
-| **MEDIUM** | Duplication | Word count calculations | Medium - Consistency, use lodash |
-| **MEDIUM** | Duplication | Import/export utils | Medium - Consistency |
-| **MEDIUM** | Duplication | String normalization | Low - Maintainability |
-| **MEDIUM** | Library | date-fns integration | Medium - Better UX |
-| **MEDIUM** | Library | Native JS vs lodash migration | Medium - Bundle size |
-| **MEDIUM** | Library | Replace logger with loglevel | Medium - Production readiness |
-| **MEDIUM** | Dependencies | Lorebook filter methods | Medium - DRY |
-| **LOW-MEDIUM** | Pattern | Form state management | Medium - Consistency, already have react-hook-form |
-| **LOW** | Duplication | Toast notification patterns | Low - Consistency |
-| **LOW** | Library | file-saver | Low - Reliability |
-| **LOW** | Library | p-retry | Low - Reliability |
-| **LOW** | Library | eventsource-parser | Low - Robustness |
-| **LOW** | Pattern | Fetch-after-update | Low - Performance |
+| Priority       | Category     | Items                         | Estimated Impact                                   |
+| -------------- | ------------ | ----------------------------- | -------------------------------------------------- |
+| **HIGH**       | Duplication  | Stream wrapping code          | High - Immediate DRY gains                         |
+| **HIGH**       | Duplication  | Lexical text extraction       | High - Prevents bugs                               |
+| **HIGH**       | Abstraction  | CRUD store factory            | Very High - ~1,200 lines                           |
+| **HIGH**       | Library      | Zod validation                | High - Type safety                                 |
+| **HIGH**       | Dependencies | ID generator removal          | Medium - Less noise                                |
+| **HIGH**       | Dependencies | Migrate to @sindresorhus/is   | High - Robust type checking                        |
+| **MEDIUM**     | Duplication  | Word count calculations       | Medium - Consistency, use lodash                   |
+| **MEDIUM**     | Duplication  | Import/export utils           | Medium - Consistency                               |
+| **MEDIUM**     | Duplication  | String normalization          | Low - Maintainability                              |
+| **MEDIUM**     | Library      | date-fns integration          | Medium - Better UX                                 |
+| **MEDIUM**     | Library      | Native JS vs lodash migration | Medium - Bundle size                               |
+| **MEDIUM**     | Library      | Replace logger with loglevel  | Medium - Production readiness                      |
+| **MEDIUM**     | Dependencies | Lorebook filter methods       | Medium - DRY                                       |
+| **LOW-MEDIUM** | Pattern      | Form state management         | Medium - Consistency, already have react-hook-form |
+| **LOW**        | Duplication  | Toast notification patterns   | Low - Consistency                                  |
+| **LOW**        | Library      | file-saver                    | Low - Reliability                                  |
+| **LOW**        | Library      | p-retry                       | Low - Reliability                                  |
+| **LOW**        | Library      | eventsource-parser            | Low - Robustness                                   |
+| **LOW**        | Pattern      | Fetch-after-update            | Low - Performance                                  |
 
 **Quick Wins** (high impact):
+
 1. Remove ID generator wrappers → use `crypto.randomUUID()` directly
 2. Migrate manual type guards to @sindresorhus/is (58 occurrences)
 3. Replace logger with loglevel
@@ -1383,6 +1387,7 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 ## 6. Migration Strategy
 
 ### Phase 1: Quick Wins
+
 - Remove ID generator wrappers → use `crypto.randomUUID()` directly
 - Migrate all manual type guards to @sindresorhus/is (58 occurrences across 25 files)
 - Replace logger utility with loglevel
@@ -1390,11 +1395,13 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 - Create string normalization utility
 
 ### Phase 2: Validation & Types
+
 - Add Zod schemas for all entities
 - Migrate validation logic
 - Add runtime validation to import/export
 
 ### Phase 3: Utilities & Consolidation
+
 - Unify Lexical text extraction
 - Create import/export utilities
 - Add date-fns and migrate date operations
@@ -1402,11 +1409,13 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 - Extract toast notification utility
 
 ### Phase 4: Major Refactor
+
 - Design and implement CRUD store factory
 - Migrate stores one-by-one
 - Comprehensive testing
 
 ### Phase 5: Polish & Consistency
+
 - Migrate lodash usage to native JS where appropriate
 - Standardise form state management (react-hook-form everywhere or remove it)
 - Add p-retry for network operations
@@ -1417,30 +1426,33 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 
 ## 7. Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| Breaking changes in store refactor | High | High | Incremental migration, comprehensive testing per store |
-| Type errors from Zod schemas | Medium | Medium | Start with non-critical features, gradual rollout |
-| Performance regression | Low | Medium | Benchmark before/after, use React DevTools Profiler |
-| Increased bundle size | Low | Low | Use tree-shakeable libraries (date-fns), monitor with webpack-bundle-analyzer |
-| Developer learning curve | Medium | Low | Documentation, code review sessions, pair programming |
+| Risk                               | Likelihood | Impact | Mitigation                                                                    |
+| ---------------------------------- | ---------- | ------ | ----------------------------------------------------------------------------- |
+| Breaking changes in store refactor | High       | High   | Incremental migration, comprehensive testing per store                        |
+| Type errors from Zod schemas       | Medium     | Medium | Start with non-critical features, gradual rollout                             |
+| Performance regression             | Low        | Medium | Benchmark before/after, use React DevTools Profiler                           |
+| Increased bundle size              | Low        | Low    | Use tree-shakeable libraries (date-fns), monitor with webpack-bundle-analyzer |
+| Developer learning curve           | Medium     | Low    | Documentation, code review sessions, pair programming                         |
 
 ---
 
 ## 8. Success Metrics
 
 ### Code Quality Metrics
+
 - **Lines of code reduction**: Target 15-20% reduction (~1,500-2,000 lines)
 - **Duplication reduction**: Target 80% reduction in duplicated logic
 - **Test coverage**: Maintain or increase current coverage
 - **TypeScript errors**: Zero increase when strict mode enabled
 
 ### Developer Experience Metrics
+
 - **New entity development**: Should improve significantly with CRUD factory
 - **Validation error debugging**: Should improve with Zod detailed errors
 - **Code review feedback cycles**: Should decrease with consistent patterns
 
 ### Reliability Metrics
+
 - **Import/export errors**: Target 90% reduction
 - **Date formatting inconsistencies**: Target 100% elimination
 - **Cross-browser compatibility issues**: Track reduction in bug reports
@@ -1454,6 +1466,7 @@ Using `react-error-boundary` (already in dependencies, `package.json:55`).
 The Story Nexus codebase has good architecture and patterns, but carries **unnecessary custom code** where battle-tested libraries should be used instead:
 
 ### What to Delete
+
 - **9 lines**: ID generator file (use `crypto.randomUUID()` directly)
 - **58 manual type guards**: Replace with @sindresorhus/is
 - **24 lines**: Custom logger (use loglevel)
@@ -1464,13 +1477,16 @@ The Story Nexus codebase has good architecture and patterns, but carries **unnec
 - **Manual form state**: Migrate to react-hook-form (already in dependencies) or remove it
 
 ### What to Add (Minimal, Proven Libraries)
+
 - **loglevel**: Industry standard (13M+ weekly downloads)
 - **@sindresorhus/is**: Comprehensive type guards (already installed, unused)
 - **date-fns**: Standard date handling (tree-shakeable)
 - **Zod**: Runtime validation (already installed, underused)
 
 ### The Outcome
+
 After refactoring:
+
 - **~1,500-2,000 fewer lines of custom code** to maintain, test, and debug
 - **More reliance on proven, maintained libraries** with millions of users finding bugs
 - **Faster development** - use existing solutions instead of rolling your own
@@ -1479,6 +1495,7 @@ After refactoring:
 **This is not about writing clever new code. It's about deleting code and trusting excellent libraries.**
 
 **Immediate Actions**:
+
 1. Delete ID generators, migrate to @sindresorhus/is, replace logger (Phase 1)
 2. Add Zod schemas before TypeScript strict mode
 3. Design CRUD factory to eliminate duplication

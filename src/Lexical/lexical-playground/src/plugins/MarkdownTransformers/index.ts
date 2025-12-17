@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
     $convertFromMarkdownString,
     $convertToMarkdownString,
@@ -36,7 +35,6 @@ import {
     TableRowNode
 } from "@lexical/table";
 import { $isParagraphNode, $isTextNode, type LexicalNode } from "lexical";
-
 import { $createImageNode, $isImageNode, ImageNode } from "../../nodes/ImageNode";
 
 export const HR: ElementTransformer = {

@@ -2,16 +2,15 @@ import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
+// Styles
+import "react-toastify/dist/ReactToastify.css";
 import { StoryProvider } from "@/features/stories/context/StoryContext";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { Workspace } from "./components/workspace/Workspace";
-import { ThemeProvider } from "./lib/theme-provider";
-// Styles
-import "react-toastify/dist/ReactToastify.css";
-import "./index.css";
-
 import { MainLayout } from "./components/MainLayout";
+import { Workspace } from "./components/workspace/Workspace";
+import "./index.css";
+import { ThemeProvider } from "./lib/theme-provider";
 
 // Lazy loaded pages
 const StoryReader = lazy(() => import("./features/stories/pages/StoryReader").then(m => ({ default: m.StoryReader })));

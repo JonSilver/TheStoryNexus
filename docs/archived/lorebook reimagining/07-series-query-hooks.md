@@ -1,46 +1,51 @@
 # Task 07: Series TanStack Query Hooks
 
 ## Objective
+
 Create TanStack Query hooks for series data fetching, mutations, and cache management.
 
 ## Context
+
 - Follow existing patterns from `useStoriesQuery.ts` and `useChaptersQuery.ts`
 - Implement query keys, queries, mutations with cache invalidation
 - Enable optimistic updates for better UX
 
 ## Dependencies
+
 - **Task 02**: Updated types
 - **Task 06**: API client with series methods
 
 ## File Locations
+
 - **Create**: `src/features/series/hooks/useSeriesQuery.ts`
 
 ## Implementation Steps
 
 ### 1. Create Series Query Hook File
+
 Create `src/features/series/hooks/useSeriesQuery.ts`:
 
 ```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { seriesApi } from '@/services/api/client';
-import type { Series } from '@/types/entities';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { seriesApi } from "@/services/api/client";
+import type { Series } from "@/types/entities";
 
 // Query keys factory
 export const seriesKeys = {
-    all: ['series'] as const,
-    lists: () => [...seriesKeys.all, 'list'] as const,
+    all: ["series"] as const,
+    lists: () => [...seriesKeys.all, "list"] as const,
     list: () => [...seriesKeys.lists()] as const,
-    details: () => [...seriesKeys.all, 'detail'] as const,
+    details: () => [...seriesKeys.all, "detail"] as const,
     detail: (id: string) => [...seriesKeys.details(), id] as const,
-    stories: (id: string) => [...seriesKeys.detail(id), 'stories'] as const,
-    lorebook: (id: string) => [...seriesKeys.detail(id), 'lorebook'] as const,
+    stories: (id: string) => [...seriesKeys.detail(id), "stories"] as const,
+    lorebook: (id: string) => [...seriesKeys.detail(id), "lorebook"] as const
 };
 
 // Query: List all series
 export const useSeriesQuery = () => {
     return useQuery({
         queryKey: seriesKeys.list(),
-        queryFn: seriesApi.getAll,
+        queryFn: seriesApi.getAll
     });
 };
 
@@ -49,7 +54,7 @@ export const useSingleSeriesQuery = (id: string | undefined) => {
     return useQuery({
         queryKey: seriesKeys.detail(id!),
         queryFn: () => seriesApi.getById(id!),
-        enabled: !!id,
+        enabled: !!id
     });
 };
 
@@ -58,7 +63,7 @@ export const useSeriesStoriesQuery = (seriesId: string | undefined) => {
     return useQuery({
         queryKey: seriesKeys.stories(seriesId!),
         queryFn: () => seriesApi.getStories(seriesId!),
-        enabled: !!seriesId,
+        enabled: !!seriesId
     });
 };
 
@@ -67,7 +72,7 @@ export const useSeriesLorebookQuery = (seriesId: string | undefined) => {
     return useQuery({
         queryKey: seriesKeys.lorebook(seriesId!),
         queryFn: () => seriesApi.getLorebook(seriesId!),
-        enabled: !!seriesId,
+        enabled: !!seriesId
     });
 };
 
@@ -80,7 +85,7 @@ export const useCreateSeriesMutation = () => {
         onSuccess: () => {
             // Invalidate series list
             queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-        },
+        }
     });
 };
 
@@ -89,13 +94,13 @@ export const useUpdateSeriesMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Series, 'id' | 'createdAt'>> }) =>
+        mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Series, "id" | "createdAt">> }) =>
             seriesApi.update(id, data),
         onSuccess: (_, variables) => {
             // Invalidate specific series and list
             queryClient.invalidateQueries({ queryKey: seriesKeys.detail(variables.id) });
             queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-        },
+        }
     });
 };
 
@@ -108,13 +113,14 @@ export const useDeleteSeriesMutation = () => {
         onSuccess: () => {
             // Invalidate series list and stories list (orphaned stories update)
             queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-            queryClient.invalidateQueries({ queryKey: ['stories'] });
-        },
+            queryClient.invalidateQueries({ queryKey: ["stories"] });
+        }
     });
 };
 ```
 
 ### 2. Add Optimistic Updates (Optional Enhancement)
+
 For better UX, add optimistic updates to mutations:
 
 ```typescript
@@ -122,8 +128,7 @@ export const useUpdateSeriesMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<Series> }) =>
-            seriesApi.update(id, data),
+        mutationFn: ({ id, data }: { id: string; data: Partial<Series> }) => seriesApi.update(id, data),
         onMutate: async ({ id, data }) => {
             // Cancel outgoing refetches
             await queryClient.cancelQueries({ queryKey: seriesKeys.detail(id) });
@@ -135,7 +140,7 @@ export const useUpdateSeriesMutation = () => {
             if (previousSeries) {
                 queryClient.setQueryData<Series>(seriesKeys.detail(id), {
                     ...previousSeries,
-                    ...data,
+                    ...data
                 });
             }
 
@@ -149,36 +154,42 @@ export const useUpdateSeriesMutation = () => {
         },
         onSettled: (_, __, variables) => {
             queryClient.invalidateQueries({ queryKey: seriesKeys.detail(variables.id) });
-        },
+        }
     });
 };
 ```
 
 ### 3. Export from Feature Index (Optional)
+
 Create `src/features/series/hooks/index.ts`:
 
 ```typescript
-export * from './useSeriesQuery';
+export * from "./useSeriesQuery";
 ```
 
 ## Hook Summary
+
 After implementation:
 
 **Queries:**
+
 - `useSeriesQuery()` - List all series
 - `useSingleSeriesQuery(id)` - Get single series
 - `useSeriesStoriesQuery(seriesId)` - Stories in series
 - `useSeriesLorebookQuery(seriesId)` - Series lorebook entries
 
 **Mutations:**
+
 - `useCreateSeriesMutation()` - Create series
 - `useUpdateSeriesMutation()` - Update series
 - `useDeleteSeriesMutation()` - Delete series
 
 **Query keys:**
+
 - `seriesKeys.*` - Hierarchical query key factory
 
 ## Validation
+
 - Hooks return correctly typed data
 - Mutations trigger appropriate cache invalidations
 - Query keys are unique and hierarchical
@@ -188,6 +199,7 @@ After implementation:
 - Test delete → list and stories list refresh
 
 ## Notes
+
 - Query keys follow TanStack Query best practices (hierarchical structure)
 - Mutations invalidate related queries to keep UI synchronized
 - Optimistic updates optional but improve perceived performance

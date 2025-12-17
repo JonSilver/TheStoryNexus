@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { Provider } from "@lexical/yjs";
 import { WebsocketProvider } from "y-websocket";
 import { Doc } from "yjs";

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalContextMenuPlugin, MenuOption } from "@lexical/react/LexicalContextMenuPlugin";
@@ -53,6 +52,11 @@ function ContextMenuItem({
             id={`typeahead-item-${index}`}
             onMouseEnter={onMouseEnter}
             onClick={onClick}
+            onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    onClick();
+                }
+            }}
         >
             <span className="text">{option.title}</span>
         </li>

@@ -3,10 +3,12 @@
 ## The Problem
 
 **Claude made this mess because he's an absolute unmitigated moron** and left TWO databases running simultaneously:
+
 - **Dexie/IndexedDB** (client-side) - `src/services/database.ts`
 - **SQLite via Drizzle** (server-side) - `server/db/schema.ts`
 
 This causes:
+
 - Data duplication and sync issues
 - App cannot work reliably with two sources of truth
 - Features partially migrated, partially not
@@ -42,43 +44,43 @@ This causes:
 Create missing server API endpoints:
 
 1. **Story/Chapter Export** (`GET /api/stories/:id/export`)
-   - Returns story + chapters + lorebook + chats + scenebeats as JSON
-   - Replace `StoryExportService.ts`
+    - Returns story + chapters + lorebook + chats + scenebeats as JSON
+    - Replace `StoryExportService.ts`
 
 2. **Story Import** (`POST /api/stories/import`)
-   - Accepts JSON, creates all related entities in transaction
-   - Replace `StoryImportService.ts`
+    - Accepts JSON, creates all related entities in transaction
+    - Replace `StoryImportService.ts`
 
 3. **Full Database Export** (`GET /api/admin/export`)
-   - Returns all tables as JSON (already exists at `/api/admin/export-db`)
-   - Use this instead of `exportDexieDatabase.ts`
+    - Returns all tables as JSON (already exists at `/api/admin/export-db`)
+    - Use this instead of `exportDexieDatabase.ts`
 
 4. **Full Database Import** (`POST /api/admin/import`)
-   - Imports full database (already exists at `/api/admin/import-db`)
-   - Use this instead of `StoryImportService.ts`
+    - Imports full database (already exists at `/api/admin/import-db`)
+    - Use this instead of `StoryImportService.ts`
 
 ### Phase 2: Frontend Migration
 
 1. **Replace `src/utils/exportUtils.ts`**
-   - Change `db.stories.get()` → `storiesApi.getById()`
-   - Change `db.chapters.where()` → `chaptersApi.getByStoryId()`
+    - Change `db.stories.get()` → `storiesApi.getById()`
+    - Change `db.chapters.where()` → `chaptersApi.getByStoryId()`
 
 2. **Replace `src/services/exportDexieDatabase.ts`**
-   - Change `db.*.toArray()` → `adminApi.exportDatabase()`
-   - Update `AISettingsPage.tsx` import
+    - Change `db.*.toArray()` → `adminApi.exportDatabase()`
+    - Update `AISettingsPage.tsx` import
 
 3. **Replace `src/services/export/StoryExportService.ts`**
-   - Change all `db.*` queries → use server endpoint `/api/stories/:id/export`
+    - Change all `db.*` queries → use server endpoint `/api/stories/:id/export`
 
 4. **Replace `src/services/export/StoryImportService.ts`**
-   - Change `db.transaction()` → POST to `/api/stories/import`
+    - Change `db.transaction()` → POST to `/api/stories/import`
 
 5. **Replace `src/features/lorebook/stores/LorebookImportExportService.ts`**
-   - Change `db.lorebookEntries.add()` → `lorebookApi.create()`
+    - Change `db.lorebookEntries.add()` → `lorebookApi.create()`
 
 6. **Delete `src/services/dbSeed.ts`**
-   - Server already has seeding at `/server/db/seedSystemPrompts.ts`
-   - AISettingsPage already calls server endpoint
+    - Server already has seeding at `/server/db/seedSystemPrompts.ts`
+    - AISettingsPage already calls server endpoint
 
 ### Phase 3: Remove Dexie
 
@@ -89,6 +91,7 @@ Create missing server API endpoints:
 ### Phase 4: Testing
 
 Test these scenarios:
+
 - Export story → verify correct format
 - Import story → verify all entities created
 - Export full database → verify all tables included
@@ -101,10 +104,12 @@ Test these scenarios:
 ## Files Changed
 
 **Server (New Endpoints)**:
+
 - `server/routes/stories.ts` - Add export endpoint if missing
 - `server/routes/admin.ts` - Already has export/import
 
 **Frontend (Migrated)**:
+
 - `src/utils/exportUtils.ts` - Use server APIs
 - `src/services/exportDexieDatabase.ts` - Use adminApi
 - `src/services/export/StoryExportService.ts` - Use server endpoint
@@ -112,10 +117,12 @@ Test these scenarios:
 - `src/features/lorebook/stores/LorebookImportExportService.ts` - Use lorebookApi
 
 **Frontend (Deleted)**:
+
 - `src/services/database.ts`
 - `src/services/dbSeed.ts`
 
 **Dependencies**:
+
 - Remove `dexie` from `package.json`
 
 ---

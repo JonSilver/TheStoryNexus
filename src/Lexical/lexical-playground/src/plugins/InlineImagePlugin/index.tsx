@@ -5,15 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import is from "@sindresorhus/is";
-import type { JSX } from "react";
-import type { Position } from "../../nodes/InlineImageNode/InlineImageNode";
-
-import "../../nodes/InlineImageNode/InlineImageNode.css";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $wrapNodeInElement, mergeRegister } from "@lexical/utils";
+import is from "@sindresorhus/is";
 import {
     $createParagraphNode,
     $createRangeSelection,
@@ -34,15 +28,17 @@ import {
     type LexicalCommand,
     type LexicalEditor
 } from "lexical";
+import type { JSX } from "react";
 import type * as React from "react";
 import { useEffect, useRef, useState } from "react";
-
+import type { Position } from "../../nodes/InlineImageNode/InlineImageNode";
 import {
     $createInlineImageNode,
     $isInlineImageNode,
     InlineImageNode,
     type InlineImagePayload
 } from "../../nodes/InlineImageNode/InlineImageNode";
+import "../../nodes/InlineImageNode/InlineImageNode.css";
 import Button from "../../ui/Button";
 import { DialogActions } from "../../ui/Dialog";
 import FileInput from "../../ui/FileInput";

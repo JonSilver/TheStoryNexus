@@ -19,7 +19,6 @@ import { $patchStyleText, $setBlocksType } from "@lexical/selection";
 import { $isTableSelection } from "@lexical/table";
 import { $getNearestBlockElementAncestorOrThrow } from "@lexical/utils";
 import { $createParagraphNode, $getSelection, $isRangeSelection, $isTextNode, type LexicalEditor } from "lexical";
-
 import { DEFAULT_FONT_SIZE, MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 
 export enum UpdateFontSizeType {

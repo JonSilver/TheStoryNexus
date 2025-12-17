@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $wrapNodeInElement, mergeRegister } from "@lexical/utils";
 import is from "@sindresorhus/is";
@@ -31,7 +30,6 @@ import {
 } from "lexical";
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
-
 import landscapeImage from "../../images/landscape.jpg";
 import yellowFlowerImage from "../../images/yellow-flower.jpg";
 import { $createImageNode, $isImageNode, ImageNode, type ImagePayload } from "../../nodes/ImageNode";

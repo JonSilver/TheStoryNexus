@@ -1,24 +1,29 @@
 # Task 12: Story Form - Series Selection
 
 ## Objective
+
 Add series dropdown to story creation and editing forms.
 
 ## Context
+
 - Allow users to assign stories to a series (optional)
 - Display "None" option for stories without series
 - Update story mutations to include seriesId field
 
 ## Dependencies
+
 - **Task 02**: Updated Story type with seriesId
 - **Task 07**: Series query hooks
 - **Existing**: Story form components
 
 ## File Locations
+
 - **Modify**: `src/features/stories/components/StoryForm.tsx` (or wherever story create/edit form lives)
 
 ## Implementation Steps
 
 ### 1. Update StoryForm Component
+
 Add series selection dropdown:
 
 ```typescript
@@ -133,6 +138,7 @@ export const StoryForm = ({ story, onSuccess }: StoryFormProps) => {
 ```
 
 ### 2. Update StoryFormData Type
+
 ```typescript
 // In same file or types file
 interface StoryFormData {
@@ -140,11 +146,12 @@ interface StoryFormData {
     author: string;
     language: string;
     synopsis?: string;
-    seriesId?: string;  // NEW
+    seriesId?: string; // NEW
 }
 ```
 
 ### 3. Update Story Mutations (if needed)
+
 Ensure mutations handle seriesId field:
 
 ```typescript
@@ -154,10 +161,10 @@ export const useCreateStoryMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Omit<Story, 'id' | 'createdAt'>) => storiesApi.create(data),
+        mutationFn: (data: Omit<Story, "id" | "createdAt">) => storiesApi.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['stories'] });
-        },
+            queryClient.invalidateQueries({ queryKey: ["stories"] });
+        }
     });
 };
 
@@ -165,21 +172,21 @@ export const useUpdateStoryMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<Story> }) =>
-            storiesApi.update(id, data),
+        mutationFn: ({ id, data }: { id: string; data: Partial<Story> }) => storiesApi.update(id, data),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['stories', variables.id] });
-            queryClient.invalidateQueries({ queryKey: ['stories'] });
+            queryClient.invalidateQueries({ queryKey: ["stories", variables.id] });
+            queryClient.invalidateQueries({ queryKey: ["stories"] });
             // Also invalidate series queries if seriesId changed
             if (variables.data.seriesId) {
-                queryClient.invalidateQueries({ queryKey: ['series', variables.data.seriesId, 'stories'] });
+                queryClient.invalidateQueries({ queryKey: ["series", variables.data.seriesId, "stories"] });
             }
-        },
+        }
     });
 };
 ```
 
 ### 4. Display Series in Story List/Card (Optional Enhancement)
+
 ```typescript
 // In src/features/stories/components/StoryCard.tsx
 
@@ -205,6 +212,7 @@ export const StoryCard = ({ story }: { story: Story }) => {
 ```
 
 ### 5. Add Series Filter to Story List (Optional Enhancement)
+
 ```typescript
 // In src/features/stories/pages/StoryListPage.tsx
 
@@ -247,16 +255,20 @@ export const StoryListPage = () => {
 ```
 
 ## Component Summary
+
 After implementation:
 
 **Modified Components:**
+
 - `StoryForm` - Series dropdown selection
 
 **Optional Enhancements:**
+
 - `StoryCard` - Display series badge
 - `StoryListPage` - Filter stories by series
 
 ## Validation
+
 - Story form displays series dropdown with all available series
 - "None" option deselects series
 - Creating story with series sets seriesId correctly
@@ -265,6 +277,7 @@ After implementation:
 - Form validation allows series to be optional
 
 ## Notes
+
 - Series selection is optional (stories can exist without series)
 - Series dropdown loads all available series
 - Consider adding "Create New Series" quick action in dropdown (advanced)

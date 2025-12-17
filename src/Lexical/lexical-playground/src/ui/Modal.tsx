@@ -5,15 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type { JSX } from "react";
-
-import "./Modal.css";
-
 import { isDOMNode } from "lexical";
-
+import type { JSX } from "react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import "./Modal.css";
 
 function PortalImpl({
     onClose,

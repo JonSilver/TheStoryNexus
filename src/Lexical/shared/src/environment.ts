@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { CAN_USE_DOM } from "shared/canUseDOM";
 
 declare global {

@@ -5,12 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type * as React from "react";
 import type { JSX } from "react";
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
 import type { SettingName } from "../appSettings";
-
 import { DEFAULT_SETTINGS, INITIAL_SETTINGS } from "../appSettings";
 
 type SettingsContextShape = {

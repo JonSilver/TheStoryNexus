@@ -141,7 +141,11 @@ export default function ChatList({ storyId, selectedChat, onSelectChat }: ChatLi
                                         selectedChat?.id === chat.id && "bg-muted/50"
                                     )}
                                 >
-                                    <div onClick={() => onSelectChat(chat)} className="flex flex-col gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => onSelectChat(chat)}
+                                        className="flex flex-col gap-2 w-full text-left"
+                                    >
                                         {/* Title and timestamp with tooltip */}
                                         <div className="flex-1 min-w-0">
                                             <TooltipProvider delayDuration={100}>
@@ -190,7 +194,7 @@ export default function ChatList({ storyId, selectedChat, onSelectChat }: ChatLi
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
-                                    </div>
+                                    </button>
                                 </li>
                             ))
                         )}

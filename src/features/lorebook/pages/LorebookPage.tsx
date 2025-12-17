@@ -126,7 +126,7 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
                         <Download className="w-4 h-4" />
                         <span className="hidden sm:inline ml-2">Export</span>
                     </Button>
-                    <label htmlFor="import-lorebook">
+                    <label htmlFor="import-lorebook" aria-label="Import lorebook entries">
                         <Button variant="outline" size="icon" asChild className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                             <div title="Import">
                                 <Upload className="w-4 h-4" />

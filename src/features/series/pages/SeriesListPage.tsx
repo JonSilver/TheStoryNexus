@@ -55,7 +55,7 @@ const SeriesListPage = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Series</h1>
                 <div className="flex gap-2">
-                    <label htmlFor="import-series">
+                    <label htmlFor="import-series" aria-label="Import series">
                         <Button variant="outline" asChild>
                             <div>
                                 <Upload className="w-4 h-4 mr-2" />

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
     type DOMConversionMap,
     type DOMConversionOutput,
@@ -18,7 +17,6 @@ import {
 } from "lexical";
 import { IS_CHROME } from "shared/environment";
 import invariant from "shared/invariant";
-
 import { $isCollapsibleContainerNode } from "./CollapsibleContainerNode";
 import { domOnBeforeMatch, setDomHiddenUntilFound } from "./CollapsibleUtils";
 

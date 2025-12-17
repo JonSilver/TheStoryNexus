@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { calculateZoomLevel } from "@lexical/utils";
 import type { LexicalEditor } from "lexical";
 import type { JSX } from "react";
-
 import { useRef } from "react";
 
 function clamp(value: number, min: number, max: number) {

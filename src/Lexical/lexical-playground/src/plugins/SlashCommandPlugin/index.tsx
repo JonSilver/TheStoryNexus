@@ -1,7 +1,6 @@
 /**
  * SlashCommandPlugin - Adds support for slash commands like in Notion
  */
-
 import { mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
@@ -224,12 +223,21 @@ export default function SlashCommandPlugin({ editor }: { editor: LexicalEditor }
                 {filteredCommands.map((command, index) => (
                     <div
                         key={command.key}
+                        role="option"
+                        tabIndex={0}
+                        aria-selected={index === selectedCommandIndex}
                         className={`flex items-center gap-2 p-2 cursor-pointer hover:bg-accent/50 ${
                             index === selectedCommandIndex ? "bg-accent/50" : ""
                         }`}
                         onClick={() => {
                             command.onSelect(editor);
                             resetMenu();
+                        }}
+                        onKeyDown={e => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                command.onSelect(editor);
+                                resetMenu();
+                            }
                         }}
                     >
                         <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-muted-foreground">

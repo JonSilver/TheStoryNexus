@@ -52,16 +52,18 @@ I'm also in the process of reworking the UI/UX to be more of a writer's workspac
 
 1. Clone the repository
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 3. Start both backend and frontend servers:
-   ```bash
-   npm run dev
-   ```
-   This runs both:
-   - Backend API server on `http://localhost:3001`
-   - Frontend dev server on `http://localhost:5173` (with proxy to backend)
+
+    ```bash
+    npm run dev
+    ```
+
+    This runs both:
+    - Backend API server on `http://localhost:3001`
+    - Frontend dev server on `http://localhost:5173` (with proxy to backend)
 
 4. Open `http://localhost:5173` in your browser
 
@@ -75,16 +77,18 @@ npm run dev:client   # Frontend only (Vite)
 ### Building for Production
 
 1. Build both backend and frontend:
-   ```bash
-   npm run build
-   ```
+
+    ```bash
+    npm run build
+    ```
 
 2. Start production server:
-   ```bash
-   npm start
-   ```
 
-   App runs on `http://localhost:3000` (configurable via `PORT` environment variable)
+    ```bash
+    npm start
+    ```
+
+    App runs on `http://localhost:3000` (configurable via `PORT` environment variable)
 
 ### Database Management
 
@@ -114,10 +118,10 @@ Database persists in `./data/storynexus.db` (mounted volume).
 ```yaml
 # docker-compose.yml
 services:
-  storynexus:
-    image: jonsilver/storynexus:0.6.0  # Pin to specific version
-    # or: jonsilver/storynexus:0.6      # Auto-update patches
-    # or: jonsilver/storynexus:latest   # Latest release
+    storynexus:
+        image: jonsilver/storynexus:0.6.0 # Pin to specific version
+        # or: jonsilver/storynexus:0.6      # Auto-update patches
+        # or: jonsilver/storynexus:latest   # Latest release
 ```
 
 #### Development (local build)
@@ -174,16 +178,18 @@ The script automatically bumps the version, pushes to GitHub, and opens the rele
 ## Project Structure
 
 ### Backend
+
 - `server/` - Express.js API server
-  - `db/` - Database schema, client, migrations, and seeding
-  - `routes/` - API route handlers (stories, chapters, prompts, lorebook, etc.)
-  - `index.ts` - Server entry point
+    - `db/` - Database schema, client, migrations, and seeding
+    - `routes/` - API route handlers (stories, chapters, prompts, lorebook, etc.)
+    - `index.ts` - Server entry point
 
 ### Frontend
+
 - `src/features/` - Feature modules (stories, chapters, prompts, ai, lorebook, brainstorm, notes)
-  - `*/hooks/` - TanStack Query hooks for data fetching
-  - `*/pages/` - Route components
-  - `*/components/` - Feature-specific UI components
+    - `*/hooks/` - TanStack Query hooks for data fetching
+    - `*/pages/` - Route components
+    - `*/components/` - Feature-specific UI components
 - `src/components/` - Reusable UI components
 - `src/Lexical/` - Text editor implementation (custom Lexical editor)
 - `src/services/` - Services (AI, database, export utilities, API client)
@@ -201,6 +207,7 @@ Export and import your entire database from the AI Settings page:
 **Import**: Replaces all current data with data from a JSON file. System prompts are preserved.
 
 Migration workflow:
+
 1. Export from old IndexedDB-based version (if migrating)
 2. Import into new SQLite-based version
 3. System prompts automatically initialized on first run
@@ -214,11 +221,14 @@ Export and import individual prompts from the Prompts Manager UI:
 **Import**: Validates and creates imported prompts as non-system (editable). Duplicate names get `(Imported)` suffix. New IDs and timestamps generated.
 
 Format:
+
 ```json
 {
-   "version": "1.0",
-   "type": "prompts",
-   "prompts": [ /* array of prompt objects */ ]
+    "version": "1.0",
+    "type": "prompts",
+    "prompts": [
+        /* array of prompt objects */
+    ]
 }
 ```
 

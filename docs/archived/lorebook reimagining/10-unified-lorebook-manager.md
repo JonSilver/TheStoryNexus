@@ -1,19 +1,23 @@
 # Task 10: Unified Lorebook Manager UI
 
 ## Objective
+
 Create single unified lorebook management UI with level/scope selector for managing global, series, and story-level entries.
 
 ## Context
+
 - Replace three separate lorebook UIs with one unified manager
 - User selects context via level dropdown and conditional scope selector
 - All lorebook operations happen in one place
 - Story lorebook view (Task 11) is just a shortcut to this unified manager
 
 ## Dependencies
+
 - **Task 08**: Lorebook query hooks with level-based queries
 - **Existing**: Lorebook components in `src/features/lorebook/components/`
 
 ## File Locations
+
 - **Modify**: `src/features/lorebook/pages/LorebookPage.tsx`
 - **Create**: `src/features/lorebook/components/LevelScopeSelector.tsx`
 - **Create**: `src/features/lorebook/components/LevelBadge.tsx`
@@ -23,6 +27,7 @@ Create single unified lorebook management UI with level/scope selector for manag
 ## Implementation Steps
 
 ### 1. Create LevelBadge Component
+
 Visual indicator for entry level:
 
 ```typescript
@@ -56,6 +61,7 @@ export const LevelBadge = ({ level }: LevelBadgeProps) => {
 ```
 
 ### 2. Create LevelScopeSelector Component
+
 Combined level and scope selection UI:
 
 ```typescript
@@ -145,6 +151,7 @@ export const LevelScopeSelector = ({
 ```
 
 ### 3. Update LorebookPage to Unified Manager
+
 Replace existing lorebook page with unified manager:
 
 ```typescript
@@ -313,6 +320,7 @@ export const LorebookPage = () => {
 ```
 
 ### 4. Update LorebookEntryCard for Read-Only Support
+
 ```typescript
 // In src/features/lorebook/components/LorebookEntryCard.tsx
 
@@ -358,6 +366,7 @@ export const LorebookEntryCard = ({
 ```
 
 ### 5. Update LorebookEntryDialog
+
 Ensure dialog passes level/scopeId to form:
 
 ```typescript
@@ -402,6 +411,7 @@ export const LorebookEntryDialog = ({
 ```
 
 ### 6. Update Routes
+
 ```typescript
 // Main lorebook manager
 {
@@ -417,26 +427,32 @@ export const LorebookEntryDialog = ({
 ```
 
 ## Component Summary
+
 After implementation:
 
 **Modified Pages:**
+
 - `LorebookPage` - Unified manager with level/scope selector
 
 **New Components:**
+
 - `LevelScopeSelector` - Combined level and scope dropdown UI
 - `LevelBadge` - Visual level indicator
 
 **Modified Components:**
+
 - `LorebookEntryCard` - Supports read-only mode and level badge
 - `LorebookEntryDialog` - Accepts level/scopeId props
 
 **Routes:**
+
 - `/lorebook` - Main unified lorebook manager
 - `/dashboard/:storyId/lorebook` - Story shortcut (same UI, pre-filtered)
 
 ## Behavior Summary
 
 ### Main Manager (`/lorebook`)
+
 1. User selects level (Global/Series/Story)
 2. If Series/Story, conditional dropdown appears
 3. Entries filtered by selected level/scope
@@ -444,6 +460,7 @@ After implementation:
 5. Create button respects selected context
 
 ### Story Shortcut (`/dashboard/:storyId/lorebook`)
+
 1. Pre-selects story from route
 2. Shows hierarchical entries (global + series + story)
 3. Entries display level badges
@@ -451,6 +468,7 @@ After implementation:
 5. Inherited entries show as read-only
 
 ## Validation
+
 - Level selector shows Global/Series/Story options
 - Selecting Series shows series dropdown
 - Selecting Story shows story dropdown
@@ -463,6 +481,7 @@ After implementation:
 - All existing lorebook features still work
 
 ## Notes
+
 - Single codebase for all lorebook management
 - Story shortcut uses same component with route-based context
 - Hierarchical query only used in story shortcut view

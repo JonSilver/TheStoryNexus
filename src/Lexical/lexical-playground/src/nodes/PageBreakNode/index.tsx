@@ -5,11 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type { JSX } from "react";
-
-import "./index.css";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
@@ -28,7 +23,9 @@ import {
     type NodeKey,
     type SerializedLexicalNode
 } from "lexical";
+import type { JSX } from "react";
 import { useCallback, useEffect } from "react";
+import "./index.css";
 
 export type SerializedPageBreakNode = SerializedLexicalNode;
 

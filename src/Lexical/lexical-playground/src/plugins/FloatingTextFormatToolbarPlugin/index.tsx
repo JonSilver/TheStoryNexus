@@ -5,15 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import is from "@sindresorhus/is";
-import type { JSX } from "react";
-
-import "./index.css";
-
 import { attemptPromise } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
+import is from "@sindresorhus/is";
 import {
     $getSelection,
     $isElementNode,
@@ -28,6 +23,7 @@ import {
     SELECTION_CHANGE_COMMAND
 } from "lexical";
 import { Bold, Italic, Loader2, Underline, Wand2 } from "lucide-react";
+import type { JSX } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
@@ -49,6 +45,7 @@ import { $isSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { getDOMRangeRect } from "../../utils/getDOMRangeRect";
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPosition } from "../../utils/setFloatingElemPosition";
+import "./index.css";
 
 function TextFormatFloatingToolbar({
     editor,

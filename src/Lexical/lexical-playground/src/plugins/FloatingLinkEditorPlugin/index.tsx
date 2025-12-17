@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { JSX } from "react";
-
-import "./index.css";
-
 import { $createLinkNode, $isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent, mergeRegister } from "@lexical/utils";
@@ -27,15 +23,16 @@ import {
     SELECTION_CHANGE_COMMAND
 } from "lexical";
 import { Check, Link as LinkIcon, Pencil, Trash2, X } from "lucide-react";
+import type { JSX } from "react";
 import type * as React from "react";
 import { type Dispatch, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPositionForLinkEditor } from "../../utils/setFloatingElemPositionForLinkEditor";
 import { sanitizeUrl } from "../../utils/url";
+import "./index.css";
 
 function preventDefault(event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>): void {
     event.preventDefault();

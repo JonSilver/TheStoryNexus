@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
 import "./Input.css";
 
 type Props = Readonly<{

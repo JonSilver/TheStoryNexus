@@ -5,13 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_EDITOR, createCommand, type LexicalCommand } from "lexical";
 import type { JSX } from "react";
 import { useEffect } from "react";
-
 import { $createPageBreakNode, PageBreakNode } from "../../nodes/PageBreakNode";
 
 export const INSERT_PAGE_BREAK: LexicalCommand<undefined> = createCommand();

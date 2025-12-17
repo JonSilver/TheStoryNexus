@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { addClassNamesToElement } from "@lexical/utils";
 import type { EditorConfig, LexicalNode, SerializedTextNode } from "lexical";
 import { $applyNodeReplacement, TextNode } from "lexical";

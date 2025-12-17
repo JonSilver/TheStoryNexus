@@ -5,13 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type { BaseSelection, LexicalEditor, NodeKey } from "lexical";
-import type { JSX } from "react";
-import type { Position } from "./InlineImageNode";
-
-import "./InlineImageNode.css";
-
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
@@ -20,6 +13,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { useLexicalEditable } from "@lexical/react/useLexicalEditable";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
+import type { BaseSelection, LexicalEditor, NodeKey } from "lexical";
 import {
     $getNodeByKey,
     $getSelection,
@@ -34,9 +28,9 @@ import {
     KEY_ESCAPE_COMMAND,
     SELECTION_CHANGE_COMMAND
 } from "lexical";
+import type { JSX } from "react";
 import type * as React from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-
 import useModal from "../../hooks/useModal";
 import LinkPlugin from "../../plugins/LinkPlugin";
 import Button from "../../ui/Button";
@@ -44,7 +38,9 @@ import ContentEditable from "../../ui/ContentEditable";
 import { DialogActions } from "../../ui/Dialog";
 import Select from "../../ui/Select";
 import TextInput from "../../ui/TextInput";
+import type { Position } from "./InlineImageNode";
 import { $isInlineImageNode, type InlineImageNode } from "./InlineImageNode";
+import "./InlineImageNode.css";
 
 const imageCache = new Set();
 

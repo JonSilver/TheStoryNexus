@@ -145,7 +145,7 @@ async function exportStoryAsEpub(story: Story): Promise<void> {
 async function exportStoryAsPdf(story: Story, chapters: Chapter[]): Promise<void> {
     const { jsPDF } = await import("jspdf");
 
-    // biome-ignore lint/suspicious/noExplicitAny: jsPDF types are incomplete
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- jsPDF types are incomplete
     const doc = new jsPDF() as any;
 
     const pageWidth = doc.internal.pageSize.getWidth();

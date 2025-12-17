@@ -5,12 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
-import "./Dialog.css";
-
 import type { ReactNode } from "react";
+import "./Dialog.css";
 
 type Props = Readonly<{
     "data-test-id"?: string;

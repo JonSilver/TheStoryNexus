@@ -5,11 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-
 import FlashMessage from "../ui/FlashMessage";
 
 export type ShowFlashMessage = (message?: ReactNode, duration?: number) => void;

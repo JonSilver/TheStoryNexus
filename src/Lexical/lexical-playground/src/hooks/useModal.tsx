@@ -5,11 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
 import { useCallback, useMemo, useState } from "react";
-
 import Modal from "../ui/Modal";
 
 export default function useModal(): [

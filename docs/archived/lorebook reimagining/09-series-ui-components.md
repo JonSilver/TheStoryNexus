@@ -1,18 +1,22 @@
 # Task 09: Series UI Components
 
 ## Objective
+
 Create React components for series management: list, dashboard, and forms.
 
 ## Context
+
 - Reuse existing patterns from `StoryListPage` and `StoryDashboard`
 - Use shadcn/ui components for consistency
 - Integrate with series query hooks from Task 07
 
 ## Dependencies
+
 - **Task 02**: Updated types
 - **Task 07**: Series query hooks
 
 ## File Locations
+
 - **Create**: `src/features/series/pages/SeriesListPage.tsx`
 - **Create**: `src/features/series/pages/SeriesDashboard.tsx`
 - **Create**: `src/features/series/components/SeriesForm.tsx`
@@ -21,6 +25,7 @@ Create React components for series management: list, dashboard, and forms.
 ## Implementation Steps
 
 ### 1. Create SeriesListPage Component
+
 Similar to `StoryListPage.tsx`:
 
 ```typescript
@@ -95,6 +100,7 @@ export const SeriesListPage = () => {
 ```
 
 ### 2. Create SeriesCard Component
+
 Similar to `StoryCard.tsx`:
 
 ```typescript
@@ -144,6 +150,7 @@ export const SeriesCard = ({ series, onDelete, onClick }: SeriesCardProps) => {
 ```
 
 ### 3. Create SeriesForm Component
+
 ```typescript
 // src/features/series/components/SeriesForm.tsx
 import { useForm } from 'react-hook-form';
@@ -217,6 +224,7 @@ export const SeriesForm = ({ series, onSuccess }: SeriesFormProps) => {
 ```
 
 ### 4. Create SeriesDashboard Component
+
 Shows series metadata with inline edit and lists stories in series:
 
 ```typescript
@@ -299,6 +307,7 @@ export const SeriesDashboard = () => {
 ```
 
 ### 5. Add Routes
+
 Update routing configuration (e.g., `src/App.tsx` or routes file):
 
 ```typescript
@@ -314,21 +323,26 @@ Update routing configuration (e.g., `src/App.tsx` or routes file):
 ```
 
 ## Component Summary
+
 After implementation:
 
 **Pages:**
+
 - `SeriesListPage` - List all series with create/delete
 - `SeriesDashboard` - View/edit series metadata and list stories
 
 **Components:**
+
 - `SeriesCard` - Card display for series
 - `SeriesForm` - Create/edit series form
 
 **Routes:**
+
 - `/series` - Series list
 - `/series/:seriesId` - Series dashboard
 
 ## Validation
+
 - Series list displays all series
 - Create series opens dialog, saves successfully
 - Delete series shows confirmation, updates list
@@ -338,6 +352,7 @@ After implementation:
 - "New Story" button navigates to story creation with series pre-selected
 
 ## Notes
+
 - No separate lorebook tab - lorebook managed via unified `/lorebook` page
 - Series dashboard focuses on metadata and story list only
 - Reuse existing `StoryCard` component for displaying stories

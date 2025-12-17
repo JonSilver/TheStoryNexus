@@ -5,13 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
-import "./FlashMessage.css";
-
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import "./FlashMessage.css";
 
 export interface FlashMessageProps {
     children: ReactNode;

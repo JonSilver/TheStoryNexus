@@ -1,7 +1,6 @@
 /**
  * SceneBeatShortcutPlugin - Adds keyboard shortcut support for inserting Scene Beat nodes
  */
-
 import {
     $createParagraphNode,
     $getSelection,

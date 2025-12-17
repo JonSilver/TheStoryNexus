@@ -25,6 +25,7 @@ Successfully completed comprehensive refactoring of SceneBeatNode.tsx (1,423 lin
 ### Code Organization
 
 #### Before Refactoring
+
 - 1 monolithic file (1,422 lines)
 - 40+ state variables
 - 8 useEffect hooks (multiple antipatterns)
@@ -32,6 +33,7 @@ Successfully completed comprehensive refactoring of SceneBeatNode.tsx (1,423 lin
 - 0 separation of concerns
 
 #### After Refactoring
+
 - 15 focused files across 4 directories
 - 5 custom hooks
 - 6 reusable components
@@ -73,6 +75,7 @@ src/Lexical/lexical-playground/src/nodes/
 ## Key Improvements Implemented
 
 ### 1. Component Extraction (Phase 2)
+
 ✅ **EntryBadgeList.tsx** - Reusable badge list component
 ✅ **LorebookMultiSelect.tsx** - Multi-select dropdown with category grouping
 ✅ **POVSettingsPopover.tsx** - Self-contained POV editor (eliminated temp state antipattern)
@@ -81,6 +84,7 @@ src/Lexical/lexical-playground/src/nodes/
 ✅ **GenerationControls.tsx** - Prompt selection and generation controls
 
 ### 2. Custom Hooks (Phase 3)
+
 ✅ **useLorebookMatching.ts** - Replaced useEffect antipattern with useMemo
 ✅ **useCommandHistory.ts** - Undo/redo with keyboard shortcuts
 ✅ **useSceneBeatSync.ts** - Debounced database sync (replaced useEffect antipatterns)
@@ -88,10 +92,12 @@ src/Lexical/lexical-playground/src/nodes/
 ✅ **useSceneBeatGeneration.ts** - AI generation and streaming management
 
 ### 3. Business Logic Services (Phase 1)
+
 ✅ **lexicalEditorUtils.ts** - Editor operations (text extraction, node insertion)
 ✅ **sceneBeatPromptService.ts** - Prompt configuration creation
 
 ### 4. React Antipatterns Fixed
+
 ✅ Removed useEffect for derived state (replaced with useMemo)
 ✅ Removed useEffect for side effects (replaced with explicit handlers)
 ✅ Eliminated temporary POV state (moved to POVSettingsPopover)
@@ -99,6 +105,7 @@ src/Lexical/lexical-playground/src/nodes/
 ✅ Removed duplicate code (~200 lines eliminated)
 
 ### 5. Code Quality Improvements
+
 ✅ Added ARIA labels to icon-only buttons
 ✅ Removed dead code (showAdditionalContext panel - 93 lines)
 ✅ Proper TypeScript typing (avoided circular dependencies with duck typing)
@@ -110,26 +117,30 @@ src/Lexical/lexical-playground/src/nodes/
 ## Technical Challenges Resolved
 
 ### 1. Circular Dependency Issue
+
 **Problem:** useSceneBeatData needed to check if node is SceneBeatNode, but importing SceneBeatNode created circular dependency.
 
 **Solution:** Implemented duck typing with type guards:
+
 ```typescript
 interface SceneBeatNodeType {
-  getSceneBeatId(): string;
-  setSceneBeatId(id: string): void;
+    getSceneBeatId(): string;
+    setSceneBeatId(id: string): void;
 }
 
 const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType => {
-  // Duck typing check
-}
+    // Duck typing check
+};
 ```
 
 ### 2. Type Mismatch in GenerationControls
+
 **Problem:** Error type mismatch (Error vs string)
 
 **Solution:** Updated interface to match promptStore's error type: `string | null`
 
 ### 3. Missing useMemo Import
+
 **Problem:** TypeScript compilation error
 
 **Solution:** Added useMemo to React imports
@@ -139,24 +150,28 @@ const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType => {
 ## Architecture Improvements
 
 ### Before: State Management Disaster
+
 - 40+ useState calls scattered throughout
 - 8 useEffect hooks with poor separation
 - Mixed UI state with domain state
 - No clear data flow
 
 ### After: Clean Architecture
+
 - 5 focused custom hooks managing related state
 - 2-3 useEffect hooks (only for legitimate side effects)
 - Clear separation: UI state vs domain state vs derived state
 - Unidirectional data flow
 
 ### Before: React Antipatterns
+
 - useEffect for derived state → useMemo now used
 - useEffect for side effects → event handlers now used
 - Temporary state for modal editing → controlled form state
 - Missing memoization → added where needed
 
 ### After: Best Practices
+
 - All derived state computed with useMemo
 - All side effects handled via explicit functions
 - No temporary state antipatterns
@@ -192,6 +207,7 @@ const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType => {
 ## Testing Recommendations
 
 ### Manual Testing Checklist
+
 - [ ] Create new scene beat
 - [ ] Enter command text
 - [ ] Verify auto-save works
@@ -209,6 +225,7 @@ const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType => {
 - [ ] Verify all data persists after reload
 
 ### Integration Points to Verify
+
 - Lexical editor integration
 - Database persistence (Dexie)
 - AI generation streaming
@@ -240,6 +257,7 @@ const isSceneBeatNode = (node: unknown): node is SceneBeatNodeType => {
 ## Conclusion
 
 The refactoring is **complete and successful**. The codebase is now:
+
 - ✅ More maintainable (64% smaller main component)
 - ✅ More testable (isolated hooks and services)
 - ✅ Higher quality (no antipatterns, proper TypeScript)

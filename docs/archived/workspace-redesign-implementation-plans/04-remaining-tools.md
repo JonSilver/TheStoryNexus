@@ -9,6 +9,7 @@ Integrate the remaining 4 tools into workspace: Chapters, Lorebook, Brainstorm, 
 ## Common Pattern
 
 **For each tool:**
+
 1. Find existing page component
 2. Create tool wrapper component
 3. Integrate with workspace context (read currentStoryId, currentChapterId if needed)
@@ -19,16 +20,19 @@ Integrate the remaining 4 tools into workspace: Chapters, Lorebook, Brainstorm, 
 ## Chapters Tool
 
 ### Current State
+
 - Chapters list at `/dashboard/:storyId/chapters`
 - Create, view, reorder, delete chapters
 - View chapter outline, POV settings
 
 ### Target State
+
 - Chapters tool in workspace
 - Click chapter → `setCurrentChapterId`, `setCurrentTool('editor')`
 - All chapter management in main content area
 
 ### Functionality to Preserve
+
 - [ ] List all chapters for current story
 - [ ] Create new chapter
 - [ ] Delete chapter (with confirmation)
@@ -41,17 +45,20 @@ Integrate the remaining 4 tools into workspace: Chapters, Lorebook, Brainstorm, 
 - [ ] Export chapter
 
 ### Integration Points
+
 - `useChaptersQuery(storyId)` - list chapters
 - `useCreateChapter`, `useUpdateChapter`, `useDeleteChapter` mutations
 - Drag-and-drop with `@dnd-kit` (existing)
 
 ### Chapter Click Behavior
+
 ```typescript
 const handleChapterClick = (chapterId: string) => {
-  setCurrentChapterId(chapterId)
-  setCurrentTool('editor')
-}
+    setCurrentChapterId(chapterId);
+    setCurrentTool("editor");
+};
 ```
+
 Switches to Editor tool with that chapter loaded.
 
 ---
@@ -59,17 +66,20 @@ Switches to Editor tool with that chapter loaded.
 ## Lorebook Tool
 
 ### Current State
+
 - Lorebook at `/dashboard/:storyId/lorebook`
 - CRUD for lorebook entries
 - Categories, tags, matching, disabled state
 - Global/series/story hierarchy
 
 ### Target State
+
 - Lorebook tool in workspace
 - Split view: categories + entry list + entry editor
 - Or: mobile two-stage (list → editor)
 
 ### Functionality to Preserve
+
 - [ ] List entries (all or filtered by category)
 - [ ] Create entry
 - [ ] Edit entry
@@ -84,10 +94,12 @@ Switches to Editor tool with that chapter loaded.
 - [ ] Export/import lorebook
 
 ### UI Options
+
 **Desktop:** Three-column split (categories | entry list | entry editor)
 **Mobile:** Two-stage (list with category tabs → full-screen entry editor)
 
 ### Integration Points
+
 - `useLorebookQuery(storyId)` - fetch entries
 - Lorebook mutations (create, update, delete)
 - LorebookFilterService (existing) for matching
@@ -97,6 +109,7 @@ Switches to Editor tool with that chapter loaded.
 ## Brainstorm Tool
 
 ### Current State
+
 - Brainstorm chat at `/dashboard/:storyId/brainstorm`
 - AI chat for story development
 - Message history
@@ -104,11 +117,13 @@ Switches to Editor tool with that chapter loaded.
 - Actions: copy message, create lorebook entry from message
 
 ### Target State
+
 - Brainstorm tool in workspace
 - Full-height chat interface
 - All existing functionality preserved
 
 ### Functionality to Preserve
+
 - [ ] Chat message history
 - [ ] Send message to AI
 - [ ] Select prompt for chat
@@ -119,6 +134,7 @@ Switches to Editor tool with that chapter loaded.
 - [ ] Stop generation
 
 ### Integration Points
+
 - `useBrainstormQuery(storyId)` - fetch chat messages
 - `useSendBrainstormMessage` mutation
 - AIService for streaming
@@ -129,6 +145,7 @@ Switches to Editor tool with that chapter loaded.
 ## Prompts Tool
 
 ### Current State
+
 - Prompts manager at `/dashboard/:storyId/prompts`
 - CRUD for prompts
 - System vs user prompts
@@ -136,11 +153,13 @@ Switches to Editor tool with that chapter loaded.
 - Import/export
 
 ### Target State
+
 - Prompts tool in workspace
 - Split view: prompt list | prompt editor
 - System prompts read-only
 
 ### Functionality to Preserve
+
 - [ ] List prompts
 - [ ] Create prompt
 - [ ] Edit prompt
@@ -153,10 +172,12 @@ Switches to Editor tool with that chapter loaded.
 - [ ] System prompt protection (can't edit/delete)
 
 ### UI Layout
+
 **Desktop:** Split view (prompt list | prompt editor)
 **Mobile:** Two-stage (list → editor)
 
 ### Integration Points
+
 - `usePromptsQuery()` - fetch prompts
 - Prompt mutations
 - Import/export utilities
@@ -166,15 +187,18 @@ Switches to Editor tool with that chapter loaded.
 ## Notes Tool
 
 ### Current State
+
 - Notes at `/dashboard/:storyId/notes`
 - Create/edit/delete notes
 - Markdown support
 
 ### Target State
+
 - Notes tool in workspace
 - Split view: note list | note editor
 
 ### Functionality to Preserve
+
 - [ ] List notes for current story
 - [ ] Create note
 - [ ] Edit note (markdown)
@@ -183,10 +207,12 @@ Switches to Editor tool with that chapter loaded.
 - [ ] Search notes (if exists)
 
 ### UI Layout
+
 **Desktop:** Split view (note list | markdown editor)
 **Mobile:** Two-stage (list → editor)
 
 ### Integration Points
+
 - `useNotesQuery(storyId)` - fetch notes
 - Note mutations
 - Markdown rendering (react-markdown, existing)
@@ -196,6 +222,7 @@ Switches to Editor tool with that chapter loaded.
 ## Implementation Sequence
 
 **Recommended order:**
+
 1. Chapters tool (interacts with Editor tool)
 2. Lorebook tool (complex UI, used by other tools)
 3. Brainstorm tool (standalone, straightforward)
@@ -207,31 +234,32 @@ Switches to Editor tool with that chapter loaded.
 ## Common Implementation Steps (Per Tool)
 
 1. **Locate existing page component**
-   - Find in `src/features/[tool]/pages/` or similar
-   - Identify main component and sub-components
+    - Find in `src/features/[tool]/pages/` or similar
+    - Identify main component and sub-components
 
 2. **Create tool wrapper**
-   - `src/components/workspace/tools/[Tool]Tool.tsx`
-   - Import existing page component
-   - Add workspace context integration if needed
-   - Pass storyId prop from context
+    - `src/components/workspace/tools/[Tool]Tool.tsx`
+    - Import existing page component
+    - Add workspace context integration if needed
+    - Pass storyId prop from context
 
 3. **Update Workspace MainContent**
-   - Add case for tool in switch statement
-   - Render tool component
+    - Add case for tool in switch statement
+    - Render tool component
 
 4. **Test functionality**
-   - All CRUD operations work
-   - All existing features work
-   - No console errors
+    - All CRUD operations work
+    - All existing features work
+    - No console errors
 
 5. **Remove old route**
-   - Delete route from App.tsx
-   - Add redirect if necessary
+    - Delete route from App.tsx
+    - Add redirect if necessary
 
 ## Common Testing Criteria
 
 **For each tool:**
+
 - [ ] Tool renders in workspace
 - [ ] All CRUD operations work
 - [ ] All existing features preserved
@@ -246,20 +274,24 @@ Switches to Editor tool with that chapter loaded.
 ### Tool Interdependencies
 
 **Chapters ↔ Editor:**
+
 - Clicking chapter in Chapters tool switches to Editor
 - Chapter switcher in top bar (from #03) works from Chapters tool
 
 **Brainstorm → Lorebook:**
+
 - "Create lorebook entry" from message should open modal
 - Doesn't switch to Lorebook tool (convenience workflow #11)
 
 **Editor ↔ Lorebook:**
+
 - Matched entries in Editor (right panel #09)
 - Quick reference without leaving Editor
 
 ### Story Context
 
 All tools need `currentStoryId`:
+
 - Read from workspace context
 - Show "Select a story" message if no story selected
 - Or disable tool in sidebar if no story (from #01)
@@ -267,18 +299,22 @@ All tools need `currentStoryId`:
 ### Mobile Layouts
 
 **Split view tools (Lorebook, Prompts, Notes):**
+
 - Desktop: multi-column with resizable panels
 - Mobile: two-stage (list → editor with back button)
 
 **Full-screen tools (Editor, Brainstorm):**
+
 - Same on desktop and mobile (full content area)
 
 **Chapters tool:**
+
 - Simple list view on both desktop and mobile
 
 ## Notes for Implementer
 
 **Do:**
+
 - Reuse existing components where possible
 - Test each tool thoroughly before moving to next
 - Check mobile layouts
@@ -286,6 +322,7 @@ All tools need `currentStoryId`:
 - Test empty states
 
 **Don't:**
+
 - Rebuild components from scratch
 - Break existing functionality
 - Remove features
@@ -295,6 +332,7 @@ All tools need `currentStoryId`:
 ## Success Criteria
 
 **After this plan:**
+
 - All 7 tools implemented in workspace
 - All existing functionality preserved across all tools
 - All old routes removed (except AI settings, guide if they're separate)

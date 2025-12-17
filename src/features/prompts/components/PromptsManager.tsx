@@ -89,7 +89,13 @@ export function PromptsManager() {
             <div className={cn("md:hidden p-2 border-b flex gap-2", showMobileForm && "hidden")}>
                 <Popover open={mobileOpen} onOpenChange={setMobileOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="flex-1 justify-between">
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={mobileOpen}
+                            aria-controls="prompts-listbox"
+                            className="flex-1 justify-between"
+                        >
                             <span className="truncate">
                                 {selectedPrompt ? selectedPrompt.name : "Select prompt..."}
                             </span>
@@ -97,7 +103,7 @@ export function PromptsManager() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[calc(100vw-2rem)] p-0" align="start">
-                        <Command>
+                        <Command id="prompts-listbox">
                             <CommandInput placeholder="Search prompts..." />
                             <CommandList>
                                 <CommandEmpty>No prompts found.</CommandEmpty>

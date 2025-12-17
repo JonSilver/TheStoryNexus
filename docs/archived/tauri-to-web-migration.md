@@ -20,10 +20,10 @@ Convert The Story Nexus from Tauri desktop app to web app running in Docker cont
 - Remove `@tauri-apps/cli` from devDependencies
 - Remove `tauri` script from package.json
 - Clean up vite.config.ts:
-  - Remove `TAURI_DEV_HOST` logic
-  - Remove fixed port requirements (1420/1421)
-  - Remove `src-tauri` watch ignore
-  - Standard Vite web app config
+    - Remove `TAURI_DEV_HOST` logic
+    - Remove fixed port requirements (1420/1421)
+    - Remove `src-tauri` watch ignore
+    - Standard Vite web app config
 
 ### 2. Add Backend (Express + Drizzle + SQLite)
 
@@ -57,25 +57,30 @@ Simple migration page in new app with two buttons.
 ## Implementation Details
 
 **AI Integration:**
+
 - API keys stored in SQLite, fetched by client via API
 - Client makes direct AI calls using existing AIService (no server proxy)
 - No changes to existing streaming mechanism
 
 **State Management:**
+
 - TanStack Query for all server data
 - React Context for UI state (replace Zustand where used)
 - Remove Zustand dependency if not needed
 
 **Migration UI:**
+
 - Add to settings page (not separate route)
 - Export: read IndexedDB → download JSON
 - Import: upload JSON → replace SQLite
 
 **Build Process:**
+
 - Single `npm run build` compiles backend TS + frontend Vite
 - Express serves built frontend in production
 - Development: concurrent Express (3001) + Vite (5173)
 
 **Constraints:**
+
 - Single-user, no auth, no concurrent edit handling
 - LAN-only, no public internet exposure

@@ -6,8 +6,11 @@
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
         "prefer-arrow-callback": "error",
+        "arrow-body-style": "warn",
         "no-non-null-assertion": "warn",
         "jsx-a11y/alt-text": "warn",
+        "react/jsx-key": "error",
+
         "max-lines": ["warn", { "max": 200, "skipBlankLines": true, "skipComments": true }]
     },
     "plugins": ["react", "typescript", "jsx-a11y"],

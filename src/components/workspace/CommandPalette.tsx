@@ -242,7 +242,7 @@ export const CommandPalette = ({ open, onOpenChange }: CommandPaletteProps) => {
                 }
             }
         ],
-        [onOpenChange]
+        [onOpenChange, navigate]
     );
 
     // Combine all commands

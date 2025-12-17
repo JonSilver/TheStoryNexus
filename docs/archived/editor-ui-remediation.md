@@ -139,12 +139,12 @@ const setCurrentStoryId = (storyId: string | null) => {
 
 ## Key Files to Modify
 
-| File | Changes |
-|------|---------|
-| [StoryContext.tsx](src/features/stories/context/StoryContext.tsx) | Clear chapter on story change |
-| [Workspace.tsx](src/components/workspace/Workspace.tsx) | Restructure layout, lift maximise state |
+| File                                                                                | Changes                                        |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [StoryContext.tsx](src/features/stories/context/StoryContext.tsx)                   | Clear chapter on story change                  |
+| [Workspace.tsx](src/components/workspace/Workspace.tsx)                             | Restructure layout, lift maximise state        |
 | [EmbeddedPlayground.tsx](src/Lexical/lexical-playground/src/EmbeddedPlayground.tsx) | Remove title bar, restructure scroll container |
-| [StoryEditor.tsx](src/features/chapters/components/StoryEditor.tsx) | Right sidebar collapse logic |
-| [Sidebar.tsx](src/components/workspace/Sidebar.tsx) | Width reduction, tooltips, forceCollapsed prop |
-| [Editor.tsx](src/Lexical/lexical-playground/src/Editor.tsx) | Adjust scroll container structure |
-| [index.css](src/Lexical/lexical-playground/src/index.css) | Adjust toolbar positioning if needed |
+| [StoryEditor.tsx](src/features/chapters/components/StoryEditor.tsx)                 | Right sidebar collapse logic                   |
+| [Sidebar.tsx](src/components/workspace/Sidebar.tsx)                                 | Width reduction, tooltips, forceCollapsed prop |
+| [Editor.tsx](src/Lexical/lexical-playground/src/Editor.tsx)                         | Adjust scroll container structure              |
+| [index.css](src/Lexical/lexical-playground/src/index.css)                           | Adjust toolbar positioning if needed           |

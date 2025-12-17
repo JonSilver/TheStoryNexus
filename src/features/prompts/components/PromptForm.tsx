@@ -227,7 +227,7 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                 value={modelSelection.modelSearch}
                                 onChange={e => modelSelection.setModelSearch(e.target.value)}
                                 className="mb-2"
-                                autoFocus
+                                
                             />
 
                             <div className="max-h-64 overflow-auto">
@@ -242,9 +242,17 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                         {models.map(model => (
                                             <div
                                                 key={model.id}
+                                                role="option"
+                                                tabIndex={0}
+                                                aria-selected={modelSelection.selectedModels.some(m => m.id === model.id)}
                                                 className={`px-2 py-1 hover:bg-accent hover:text-accent-foreground cursor-pointer ${modelSelection.selectedModels.some(m => m.id === model.id) ? "opacity-50 pointer-events-none" : ""}`}
                                                 onClick={() => {
                                                     modelSelection.handleModelSelect(model.id);
+                                                }}
+                                                onKeyDown={e => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        modelSelection.handleModelSelect(model.id);
+                                                    }
                                                 }}
                                             >
                                                 {model.name}

@@ -1,21 +1,21 @@
 services:
-  storynexus:
-    image: ${DOCKER_IMAGE:-jonsilver/storynexus}:${IMAGE_TAG:-latest}
-    container_name: storynexus-app
-    pull_policy: always
-    user: "${PUID:-1000}:${PGID:-1000}"
-    ports:
-      - "${APP_PORT:-3000}:${APP_PORT:-3000}"
-    environment:
-      - NODE_ENV=production
-      - PORT=${APP_PORT:-3000}
-      - DATABASE_PATH=/app/data/storynexus.db
-    volumes:
-      - ${DATA_PATH:-./data}:/app/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "sh", "-c", "wget --quiet --tries=1 --spider http://localhost:${PORT:-3000}/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    storynexus:
+        image: ${DOCKER_IMAGE:-jonsilver/storynexus}:${IMAGE_TAG:-latest}
+        container_name: storynexus-app
+        pull_policy: always
+        user: "${PUID:-1000}:${PGID:-1000}"
+        ports:
+            - "${APP_PORT:-3000}:${APP_PORT:-3000}"
+        environment:
+            - NODE_ENV=production
+            - PORT=${APP_PORT:-3000}
+            - DATABASE_PATH=/app/data/storynexus.db
+        volumes:
+            - ${DATA_PATH:-./data}:/app/data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "sh", "-c", "wget --quiet --tries=1 --spider http://localhost:${PORT:-3000}/api/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s

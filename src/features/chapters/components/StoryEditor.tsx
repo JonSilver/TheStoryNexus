@@ -1,7 +1,8 @@
 import { BookOpen, ChevronLeft, ChevronRight, type LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import EmbeddedPlayground from "@/Lexical/lexical-playground/src/EmbeddedPlayground";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
+import { Button } from "@/components/ui/button";
 import {
     Drawer,
     DrawerClose,
@@ -24,7 +25,6 @@ import { ChapterPOVEditor } from "@/features/chapters/components/ChapterPOVEdito
 import { MatchedTagEntries } from "@/features/chapters/components/MatchedTagEntries";
 import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import EmbeddedPlayground from "@/Lexical/lexical-playground/src/EmbeddedPlayground";
 import { cn } from "@/lib/utils";
 import { ChapterOutline } from "./ChapterOutline";
 

@@ -1,4 +1,5 @@
 # React Antipatterns Analysis & Remediation Plan
+
 ## The Story Nexus Tauri App
 
 **Analysis Date:** 30 October 2025
@@ -14,6 +15,7 @@
 **Low Priority**: 6
 
 The codebase exhibits several recurring React antipatterns, particularly:
+
 1. Excessive and inappropriate `useEffect` usage (most common issue)
 2. Dependency array violations
 3. Missing memoization for callbacks in large components
@@ -25,15 +27,19 @@ The codebase exhibits several recurring React antipatterns, particularly:
 ## Critical Issues (Immediate Attention Required)
 
 ### 1. PromptsManager.tsx - Dangerous useState Misuse
+
 **File**: `src/features/prompts/components/PromptsManager.tsx:21`
 **Severity**: CRITICAL
 **Issue**: Using `useState` to store a DOM ref
+
 ```typescript
 const fileInputRef = useState<HTMLInputElement | null>(null);
 ```
+
 **Problem**: This is a severe antipattern - `useState` for refs causes unnecessary re-renders and incorrect behavior. The code then uses `fileInputRef[0]` and `fileInputRef[1]` like a tuple, which is completely wrong.
 
 **Fix**:
+
 ```typescript
 const fileInputRef = useRef<HTMLInputElement | null>(null);
 // Then use fileInputRef.current instead of fileInputRef[0]
@@ -44,18 +50,21 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
 ---
 
 ### 2. ChatInterface.tsx - useEffect for Derived State
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:134`
 **Severity**: CRITICAL
 **Issue**: Using `useEffect` to trigger preview when dependencies change
+
 ```typescript
 useEffect(() => {
-  if (showPreview && selectedPrompt) {
-    handlePreviewPrompt();
-  }
+    if (showPreview && selectedPrompt) {
+        handlePreviewPrompt();
+    }
 }, [includeFullContext, selectedSummaries, selectedItems, selectedChapterContent, input]);
 ```
 
 **Problem**:
+
 - Violates exhaustive-deps (missing `showPreview`, `selectedPrompt`, `handlePreviewPrompt`)
 - Side effect runs on every render when dependencies change
 - Should be triggered by user action, not automatic side effect
@@ -66,11 +75,13 @@ useEffect(() => {
 ---
 
 ### 3. ChatInterface.tsx - Multiple useEffect Synchronization
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:79-134`
 **Severity**: CRITICAL
 **Issue**: Four separate `useEffect` hooks managing related state
 
 **Effects**:
+
 1. Lines 79-109: Initial data loading
 2. Lines 111-113: Sync input with draft message
 3. Lines 115-120: Sync messages with selectedChat
@@ -80,6 +91,7 @@ useEffect(() => {
 **Problem**: State synchronization cascades - changes in one effect trigger others, creating potential loops and making state transitions unpredictable.
 
 **Fix**:
+
 - Consolidate initialization into one effect
 - Use event handlers instead of effects for user-triggered changes
 - Derive state during render instead of synchronizing in effects
@@ -87,11 +99,13 @@ useEffect(() => {
 ---
 
 ### 4. SceneBeatNode.tsx - Massive Component with Excessive State
+
 **File**: `src/Lexical/lexical-playground/src/nodes/SceneBeatNode.tsx`
 **Severity**: CRITICAL
 **Issue**: 1355-line component with 30+ state variables and 10+ useEffect hooks
 
 **State variables** (lines 97-145):
+
 - `collapsed`, `command`, `streamedText`, `streamComplete`, `streaming`
 - `localMatchedEntries`, `showMatchedEntries`, `selectedPrompt`, `selectedModel`
 - `showPreviewDialog`, `previewMessages`, `previewLoading`, `previewError`
@@ -104,12 +118,14 @@ useEffect(() => {
 **useEffect hooks**: Lines 152-157, 160-167, 170-239, 257-261, 264-283, 286-309, 312-337, 340-345
 
 **Problem**:
+
 - Component is doing too much (editing, AI generation, context management, history tracking)
 - State management is complex and error-prone
 - Multiple effects create synchronization issues
 - Poor separation of concerns
 
 **Fix**: Split into multiple components:
+
 - `SceneBeatEditor` - command input and basic UI
 - `SceneBeatAIGenerator` - AI generation logic
 - `SceneBeatContextSelector` - context management
@@ -119,11 +135,13 @@ useEffect(() => {
 ---
 
 ### 5. SceneBeatNode.tsx - Missing Dependencies in Multiple Effects
+
 **File**: `src/Lexical/lexical-playground/src/nodes/SceneBeatNode.tsx`
 **Severity**: CRITICAL
 **Issue**: Multiple useEffect hooks with incomplete dependency arrays
 
 **Examples**:
+
 1. Lines 170-239: Missing `isLoaded` in dependencies (used in condition but not listed)
 2. Lines 340-345: Effect reads `commandHistory` length but doesn't depend on it properly
 3. Lines 286-309: Missing `isLoaded` and `sceneBeatId` check consistency
@@ -133,94 +151,107 @@ useEffect(() => {
 ---
 
 ### 6. SaveChapterContent Plugin - Dependency Array Issue
+
 **File**: `src/Lexical/lexical-playground/src/plugins/SaveChapterContent/index.tsx:54`
 **Severity**: HIGH (bordering CRITICAL)
 **Issue**: Including `saveContent` in dependency array of useEffect
+
 ```typescript
 useEffect(() => {
-  // ... register listener
-  return () => {
-    removeUpdateListener();
-    saveContent.cancel();
-  };
+    // ... register listener
+    return () => {
+        removeUpdateListener();
+        saveContent.cancel();
+    };
 }, [editor, currentChapterId, saveContent]);
 ```
 
 **Problem**:
+
 - `saveContent` is created with `useCallback` that has dependencies
 - If `saveContent` changes, the effect re-runs unnecessarily
 - The debounced function is recreated, losing pending debounced calls
 
 **Fix**: Only depend on `currentChapterId` and `editor`:
+
 ```typescript
 }, [editor, currentChapterId]);
 ```
+
 Ensure `saveContent` is stable via `useCallback` with proper deps.
 
 ---
 
 ### 7. MatchedTagEntries.tsx - useEffect Resetting State
+
 **File**: `src/features/chapters/components/MatchedTagEntries.tsx:21-28`
 **Severity**: HIGH
 **Issue**: useEffect that resets ALL open states whenever matched entries change
+
 ```typescript
 useEffect(() => {
-  const newOpenStates: Record<string, boolean> = {};
-  Array.from(chapterMatchedEntries.values()).forEach(entry => {
-    newOpenStates[entry.id] = false;
-  });
-  setOpenStates(newOpenStates);
+    const newOpenStates: Record<string, boolean> = {};
+    Array.from(chapterMatchedEntries.values()).forEach(entry => {
+        newOpenStates[entry.id] = false;
+    });
+    setOpenStates(newOpenStates);
 }, [chapterMatchedEntries]);
 ```
 
 **Problem**:
+
 - User opens an entry → matched entries update → all entries close
 - Poor UX - user loses their place
 - Should merge with existing state, not replace it
 
 **Fix**:
+
 ```typescript
 useEffect(() => {
-  setOpenStates(prev => {
-    const newState = { ...prev };
-    Array.from(chapterMatchedEntries.values()).forEach(entry => {
-      if (!(entry.id in newState)) {
-        newState[entry.id] = false;
-      }
+    setOpenStates(prev => {
+        const newState = { ...prev };
+        Array.from(chapterMatchedEntries.values()).forEach(entry => {
+            if (!(entry.id in newState)) {
+                newState[entry.id] = false;
+            }
+        });
+        return newState;
     });
-    return newState;
-  });
 }, [chapterMatchedEntries]);
 ```
 
 ---
 
 ### 8. ChapterCard.tsx - Multiple useEffect for Simple Synchronization
+
 **File**: `src/features/chapters/components/ChapterCard.tsx:130-153`
 **Severity**: HIGH
 **Issue**: Four separate useEffect hooks for textarea height and local storage
 
 **Effects**:
+
 1. Lines 130-138: Adjust height when expanded changes
 2. Lines 140-142: Adjust height when summary changes
 3. Lines 144-146: Save expanded state to localStorage
 4. Lines 149-153: Reset POV character when switching to omniscient
 
 **Problem**:
+
 - First two effects do the same thing with different triggers
 - LocalStorage effect runs on every expand/collapse
 - Can be simplified
 
 **Fix**: Consolidate to 2 effects, use layout effect for height:
+
 ```typescript
 useLayoutEffect(() => {
-  if (isExpanded) {
-    adjustTextareaHeight();
-  }
+    if (isExpanded) {
+        adjustTextareaHeight();
+    }
 }, [isExpanded, summary, adjustTextareaHeight]);
 
 useEffect(() => {
-  localStorage.setItem(expandedStateKey, JSON.stringify(isExpanded));
+    localStorage.setItem(expandedStateKey, JSON.stringify(isExpanded));
 }, [isExpanded, expandedStateKey]);
 ```
 
@@ -229,37 +260,41 @@ useEffect(() => {
 ## High Priority Issues
 
 ### 9. ChatInterface.tsx - Complex State That Should Be Reducer
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:28-54`
 **Severity**: HIGH
 **Issue**: 20+ separate useState calls for related state
 
 State variables include:
+
 - Chat state: `input`, `isGenerating`, `messages`, `currentChatId`
 - Context state: `includeFullContext`, `contextOpen`, `chapters`, `selectedSummaries`, `selectedChapterContent`, `selectedItems`
 - Prompt state: `selectedPrompt`, `selectedModel`, `availableModels`, `showPreview`, `previewMessages`, `previewLoading`, `previewError`
 - Editing state: `editingMessageId`, `editingContent`, `streamingMessageId`
 
 **Problem**:
+
 - State updates scattered across component
 - Hard to ensure consistency (e.g., clearing chat should reset all related state)
 - Multiple setState calls can cause multiple renders
 
 **Fix**: Use `useReducer` with actions:
+
 ```typescript
 type ChatState = {
-  input: string;
-  isGenerating: boolean;
-  messages: ChatMessage[];
-  currentChatId: string;
-  // ... etc
+    input: string;
+    isGenerating: boolean;
+    messages: ChatMessage[];
+    currentChatId: string;
+    // ... etc
 };
 
 type ChatAction =
-  | { type: 'START_GENERATION'; prompt: Prompt; model: AllowedModel }
-  | { type: 'APPEND_TOKEN'; token: string }
-  | { type: 'COMPLETE_GENERATION' }
-  | { type: 'RESET_CHAT' }
-  // ... etc
+    | { type: "START_GENERATION"; prompt: Prompt; model: AllowedModel }
+    | { type: "APPEND_TOKEN"; token: string }
+    | { type: "COMPLETE_GENERATION" }
+    | { type: "RESET_CHAT" };
+// ... etc
 
 const [state, dispatch] = useReducer(chatReducer, initialState);
 ```
@@ -267,22 +302,25 @@ const [state, dispatch] = useReducer(chatReducer, initialState);
 ---
 
 ### 10. PromptForm.tsx - useMemo for Filtering, Not Computation
+
 **File**: `src/features/prompts/components/PromptForm.tsx:92-134`
 **Severity**: HIGH
 **Issue**: Using `useMemo` for simple filtering operations
 
 ```typescript
 const modelGroups = useMemo(() => {
-  const groups: ModelsByProvider = { /* ... */ };
-  availableModels.forEach(model => {
-    // Simple categorization logic
-  });
-  return Object.fromEntries(/*...*/);
+    const groups: ModelsByProvider = {
+        /* ... */
+    };
+    availableModels.forEach(model => {
+        // Simple categorization logic
+    });
+    return Object.fromEntries(/*...*/);
 }, [availableModels]);
 
 const filteredModelGroups = useMemo(() => {
-  if (!modelSearch.trim()) return modelGroups;
-  // Simple filtering
+    if (!modelSearch.trim()) return modelGroups;
+    // Simple filtering
 }, [modelGroups, modelSearch]);
 ```
 
@@ -293,9 +331,11 @@ const filteredModelGroups = useMemo(() => {
 ---
 
 ### 11. ChapterCard.tsx - useMemo for JSX (Questionable)
+
 **File**: `src/features/chapters/components/ChapterCard.tsx:258-301`
 **Severity**: MEDIUM-HIGH
 **Issue**: Memoizing JSX content
+
 ```typescript
 const cardContent = useMemo(
   () => (
@@ -308,6 +348,7 @@ const cardContent = useMemo(
 ```
 
 **Problem**:
+
 - JSX memoization is rarely beneficial
 - React's reconciliation is usually faster than memo comparison
 - Dependencies list is incomplete (missing handlers)
@@ -318,12 +359,14 @@ const cardContent = useMemo(
 ---
 
 ### 12. SceneBeatNode.tsx - useMemo for Simple Array Filter
+
 **File**: `src/Lexical/lexical-playground/src/nodes/SceneBeatNode.tsx:148-150`
 **Severity**: MEDIUM
 **Issue**:
+
 ```typescript
 const characterEntries = useMemo(() => {
-  return entries.filter((entry) => entry.category === "character");
+    return entries.filter(entry => entry.category === "character");
 }, [entries]);
 ```
 
@@ -334,75 +377,86 @@ const characterEntries = useMemo(() => {
 ---
 
 ### 13. ChatMessageList.tsx - useEffect for Scroll Behavior
+
 **File**: `src/features/brainstorm/components/ChatMessageList.tsx:34-36`
 **Severity**: MEDIUM
 **Issue**:
+
 ```typescript
 useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 }, [messages]);
 ```
 
 **Problem**:
+
 - Effect runs on every message change, even edits
 - Should only scroll when new messages are added, not modified
 - Smooth scrolling can be janky during streaming
 
 **Fix**:
+
 ```typescript
 const prevMessagesLengthRef = useRef(messages.length);
 useEffect(() => {
-  if (messages.length > prevMessagesLengthRef.current) {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    prevMessagesLengthRef.current = messages.length;
-  }
+    if (messages.length > prevMessagesLengthRef.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        prevMessagesLengthRef.current = messages.length;
+    }
 }, [messages]);
 ```
 
 ---
 
 ### 14. LorebookEntryList.tsx - Derived State Not Memoized
+
 **File**: `src/features/lorebook/components/LorebookEntryList.tsx:39-69`
 **Severity**: MEDIUM
 **Issue**: Filter and sort operations run on every render
+
 ```typescript
 const filteredEntries = allEntries.filter(entry => {
-  // filtering logic
+    // filtering logic
 });
 
 const sortedEntries = [...filteredEntries].sort((a, b) => {
-  // sorting logic
+    // sorting logic
 });
 ```
 
 **Problem**: With large lorebook (100s of entries), this recalculates on every render even if inputs haven't changed.
 
 **Fix**: Memoize both operations:
+
 ```typescript
-const filteredEntries = useMemo(() =>
-  allEntries.filter(entry => {
-    // filtering logic
-  }),
-  [allEntries, searchTerm, showDisabled]
+const filteredEntries = useMemo(
+    () =>
+        allEntries.filter(entry => {
+            // filtering logic
+        }),
+    [allEntries, searchTerm, showDisabled]
 );
 
-const sortedEntries = useMemo(() =>
-  [...filteredEntries].sort((a, b) => {
-    // sorting logic
-  }),
-  [filteredEntries, sortBy]
+const sortedEntries = useMemo(
+    () =>
+        [...filteredEntries].sort((a, b) => {
+            // sorting logic
+        }),
+    [filteredEntries, sortBy]
 );
 ```
 
 ---
 
 ### 15. ChapterCard.tsx - Multiple useMemo for Simple Filters
+
 **File**: `src/features/chapters/components/ChapterCard.tsx:102-104`
 **Severity**: LOW-MEDIUM
 **Issue**:
+
 ```typescript
 const characterEntries = useMemo(() => {
-  return entries.filter((entry) => entry.category === "character");
+    return entries.filter(entry => entry.category === "character");
 }, [entries]);
 ```
 
@@ -415,28 +469,28 @@ const characterEntries = useMemo(() => {
 ## Medium Priority Issues
 
 ### 16. ChatInterface.tsx - Inline Function in processStreamedResponse
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:245-268`
 **Severity**: MEDIUM
 **Issue**: Creating new functions on every handleSubmit call
+
 ```typescript
 await processStreamedResponse(
-  response,
-  (token) => {
-    fullResponse += token;
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === assistantMessage.id ? { ...msg, content: fullResponse } : msg
-      )
-    );
-  },
-  () => {
-    setIsGenerating(false);
-    // ...
-  },
-  (error) => {
-    console.error("Streaming error:", error);
-    // ...
-  }
+    response,
+    token => {
+        fullResponse += token;
+        setMessages(prev =>
+            prev.map(msg => (msg.id === assistantMessage.id ? { ...msg, content: fullResponse } : msg))
+        );
+    },
+    () => {
+        setIsGenerating(false);
+        // ...
+    },
+    error => {
+        console.error("Streaming error:", error);
+        // ...
+    }
 );
 ```
 
@@ -451,6 +505,7 @@ await processStreamedResponse(
 Multiple components pass handler functions to child components without useCallback:
 
 **Files**:
+
 - `ContextSelector.tsx` - handlers passed to child components
 - `PromptControls.tsx` - event handlers
 - `MessageInputArea.tsx` - input handlers
@@ -460,34 +515,38 @@ Multiple components pass handler functions to child components without useCallba
 **Problem**: If child components use React.memo, parent re-renders cause child re-renders due to new function references.
 
 **Fix**: Wrap in useCallback only if child is memoized:
+
 ```typescript
 const handleToggle = useCallback(() => {
-  setIncludeFullContext(prev => !prev);
+    setIncludeFullContext(prev => !prev);
 }, []);
 ```
 
 ---
 
 ### 25. SceneBeatNode - Debounced Function Creation Pattern
+
 **File**: `src/Lexical/lexical-playground/src/nodes/SceneBeatNode.tsx:242-254`
 **Severity**: MEDIUM
 **Issue**: Creating debounced function in useMemo
+
 ```typescript
 const saveCommand = useMemo(
-  () =>
-    debounce(async (id: string, newCommand: string) => {
-      if (!id) return;
-      try {
-        await sceneBeatService.updateSceneBeat(id, { command: newCommand });
-      } catch (error) {
-        console.error("Error saving SceneBeat command:", error);
-      }
-    }, 500),
-  []
+    () =>
+        debounce(async (id: string, newCommand: string) => {
+            if (!id) return;
+            try {
+                await sceneBeatService.updateSceneBeat(id, { command: newCommand });
+            } catch (error) {
+                console.error("Error saving SceneBeat command:", error);
+            }
+        }, 500),
+    []
 );
 ```
 
 **Problem**:
+
 - Empty dependency array means function never updates
 - If component uses different `sceneBeatService` instance, it won't reflect
 - Debounce should be created once and stable
@@ -501,11 +560,13 @@ const saveCommand = useMemo(
 Several list renders use array index as key:
 
 **Files & Lines**:
+
 - `LorebookEntryList.tsx:181` - tags map uses index
 - `PromptForm.tsx:307` - messages map uses index
 
 **Severity**: MEDIUM
 **Issue**:
+
 ```typescript
 {entry.tags && entry.tags.map((tag, index) => (
   <Badge key={index} /* ... */>
@@ -517,6 +578,7 @@ Several list renders use array index as key:
 **Problem**: If tags array is reordered, React won't properly track which elements changed.
 
 **Fix**: Use unique value as key:
+
 ```typescript
 {entry.tags && entry.tags.map((tag) => (
   <Badge key={tag} /* ... */>
@@ -524,6 +586,7 @@ Several list renders use array index as key:
   </Badge>
 ))}
 ```
+
 (Assuming tags are unique within an entry)
 
 ---
@@ -535,6 +598,7 @@ Several list renders use array index as key:
 Several components create new objects in render:
 
 **Examples**:
+
 - `ChapterCard.tsx:116-120` - DnD style object created on every render
 - `SceneBeatNode.tsx:569-594` - Config object created in function (acceptable)
 
@@ -546,9 +610,11 @@ Several components create new objects in render:
 ---
 
 ### 36. StoryEditor.tsx - Inline Object in Template Literal
+
 **File**: `src/features/chapters/components/StoryEditor.tsx:56`
 **Severity**: LOW
 **Issue**:
+
 ```typescript
 <div className={`flex-1 flex justify-center ${isMaximized ? '' : 'px-4'}`}>
 ```
@@ -562,6 +628,7 @@ Several components create new objects in render:
 ### 37-42. Various - Missing Error Boundaries
 
 Many components perform async operations without error boundaries:
+
 - `ChatInterface.tsx` - AI generation
 - `SceneBeatNode.tsx` - AI generation
 - `PromptForm.tsx` - Model loading
@@ -588,29 +655,31 @@ Multiple Lexical plugins follow patterns that aren't antipatterns but could be i
 
 ## Antipattern Summary by Type
 
-| Antipattern Type | Count | Example File |
-|-----------------|-------|--------------|
-| useEffect Abuse | 12 | ChatInterface.tsx, SceneBeatNode.tsx |
-| Missing Dependencies | 8 | SceneBeatNode.tsx, SaveChapterContent |
-| Excessive useState | 6 | ChatInterface.tsx, SceneBeatNode.tsx |
-| Premature useMemo | 7 | PromptForm.tsx, ChapterCard.tsx |
-| Component Too Large | 3 | SceneBeatNode.tsx |
-| State Sync Issues | 5 | ChatInterface.tsx, MatchedTagEntries.tsx |
-| Ref Misuse | 1 | PromptsManager.tsx (CRITICAL) |
-| Index as Key | 2 | LorebookEntryList.tsx, PromptForm.tsx |
-| Inline Object Creation | 3 | ChapterCard.tsx |
+| Antipattern Type       | Count | Example File                             |
+| ---------------------- | ----- | ---------------------------------------- |
+| useEffect Abuse        | 12    | ChatInterface.tsx, SceneBeatNode.tsx     |
+| Missing Dependencies   | 8     | SceneBeatNode.tsx, SaveChapterContent    |
+| Excessive useState     | 6     | ChatInterface.tsx, SceneBeatNode.tsx     |
+| Premature useMemo      | 7     | PromptForm.tsx, ChapterCard.tsx          |
+| Component Too Large    | 3     | SceneBeatNode.tsx                        |
+| State Sync Issues      | 5     | ChatInterface.tsx, MatchedTagEntries.tsx |
+| Ref Misuse             | 1     | PromptsManager.tsx (CRITICAL)            |
+| Index as Key           | 2     | LorebookEntryList.tsx, PromptForm.tsx    |
+| Inline Object Creation | 3     | ChapterCard.tsx                          |
 
 ---
 
 ## Recommended Fix Priority
 
 ### Phase 1 (Critical - Fix Immediately):
+
 1. **PromptsManager.tsx** - Fix useState ref (lines 21, 104-107, 124-125, 134-135)
 2. **ChatInterface.tsx** - Remove auto-preview effect (lines 130-134)
 3. **SceneBeatNode.tsx** - Split into smaller components (1355 lines → multiple files)
 4. **ChatInterface.tsx** - Fix dependency arrays in all useEffect hooks
 
 ### Phase 2 (High - Fix Within Sprint):
+
 5. **ChatInterface.tsx** - Convert to useReducer
 6. **SaveChapterContent** - Fix dependency array
 7. **MatchedTagEntries.tsx** - Fix state reset logic
@@ -618,12 +687,14 @@ Multiple Lexical plugins follow patterns that aren't antipatterns but could be i
 9. **LorebookEntryList.tsx** - Add memoization for filtering
 
 ### Phase 3 (Medium - Address in Next Sprint):
+
 10. Remove unnecessary useMemo from simple operations
 11. Add useCallback for handlers passed to memoized children
 12. Fix key props using index
 13. Refactor large components (ToolbarPlugin, PromptForm)
 
 ### Phase 4 (Low - Technical Debt):
+
 14. Add error boundaries
 15. Optimize inline object creation (only if profiling shows issues)
 16. Code splitting for large features
@@ -643,6 +714,7 @@ Multiple Lexical plugins follow patterns that aren't antipatterns but could be i
 ## Positive Patterns Observed
 
 Despite the antipatterns, the codebase shows good practices:
+
 - ✅ Zustand stores are clean and functional
 - ✅ Component composition generally good
 - ✅ TypeScript usage (though not strict mode)
@@ -658,6 +730,7 @@ Despite the antipatterns, the codebase shows good practices:
 The codebase has a solid foundation but suffers from **useEffect overuse** and **component complexity** in key areas. The most critical issue is the `useState` ref misuse in PromptsManager. The SceneBeatNode component requires a significant refactor due to its size and complexity.
 
 Recommended approach:
+
 1. Fix critical issues immediately (PromptsManager ref)
 2. Refactor SceneBeatNode into multiple components over 1-2 sprints
 3. Convert ChatInterface to use Reducer pattern
@@ -678,6 +751,7 @@ Exhaustive codebase inspection confirms all antipatterns identified in this docu
 ### Issues Resolved (17 total):
 
 #### Critical Issues (6/6 excluding SceneBeatNode):
+
 - ✅ **Issue #1** - PromptsManager.tsx: `useState` ref → `useRef` (line 21)
 - ✅ **Issue #2** - ChatInterface.tsx: Removed auto-preview `useEffect` (line 134)
 - ✅ **Issue #3** - ChatInterface.tsx: Consolidated multiple effects, implemented `useReducer` pattern
@@ -686,6 +760,7 @@ Exhaustive codebase inspection confirms all antipatterns identified in this docu
 - ✅ **Issue #8** - ChapterCard.tsx: Consolidated 4 effects → 3, using `useLayoutEffect` appropriately (lines 130-153)
 
 #### High-Priority Issues (5/5 excluding SceneBeatNode):
+
 - ✅ **Issue #9** - ChatInterface.tsx: Refactored to `useReducer` with 27 action types
 - ✅ **Issue #10** - PromptForm.tsx: Removed unnecessary memoization from filtering (lines 92-134)
 - ✅ **Issue #11** - ChapterCard.tsx: Removed JSX memoization (lines 258-301)
@@ -693,6 +768,7 @@ Exhaustive codebase inspection confirms all antipatterns identified in this docu
 - ✅ **Issue #15** - ChapterCard.tsx: Removed unnecessary memoization from simple filters (lines 102-104)
 
 #### Medium-Priority Issues (4/4):
+
 - ✅ **Issue #26** - LorebookEntryList.tsx: Using `key={tag}` instead of index
 - ✅ **Issue #27** - PromptForm.tsx: Using `key={message._id}` with unique IDs
 - ✅ **Issue #16** - ChatInterface.tsx: Inline functions correctly identified as acceptable pattern

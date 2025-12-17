@@ -5,14 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { JSX } from "react";
-
-import "./Button.css";
-
 import type { ReactNode } from "react";
-
 import joinClasses from "../utils/joinClasses";
+import "./Button.css";
 
 export default function Button({
     "data-test-id": dataTestId,

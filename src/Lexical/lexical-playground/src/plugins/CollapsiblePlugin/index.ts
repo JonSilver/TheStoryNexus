@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import "./Collapsible.css";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent, $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import {
@@ -26,7 +23,7 @@ import {
     type LexicalNode
 } from "lexical";
 import { useEffect } from "react";
-
+import "./Collapsible.css";
 import {
     $createCollapsibleContainerNode,
     $isCollapsibleContainerNode,

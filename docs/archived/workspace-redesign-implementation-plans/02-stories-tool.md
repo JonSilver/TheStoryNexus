@@ -9,13 +9,16 @@ Implement Stories tool - the story and series management interface. This is wher
 ## Architectural Changes
 
 ### What Stories Tool Replaces
+
 **Current:**
+
 - Landing page at `/`
 - Story list page at `/stories`
 - Series list page at `/series`
 - Story dashboard at `/dashboard/:storyId`
 
 **Target:**
+
 - All of this becomes the Stories tool
 - No separate pages
 - Series and story management unified in one tool interface
@@ -24,12 +27,14 @@ Implement Stories tool - the story and series management interface. This is wher
 ### Stories Tool Interface
 
 **Main content area shows:**
+
 1. Series/story list view (primary)
 2. Story creation form (modal or slide-in panel)
 3. Series creation form (modal or slide-in panel)
 4. Story edit panel (modal or slide-in panel)
 
 **Key interaction:**
+
 - Click story card/row → `setCurrentStoryId(story.id)`, `setCurrentTool('editor')`
 - "Continue" button on story → same as clicking story
 - Edit story button → opens story edit panel within Stories tool
@@ -39,6 +44,7 @@ Implement Stories tool - the story and series management interface. This is wher
 ### Story Selection Flow
 
 **User flow:**
+
 1. User in Stories tool
 2. Sees list of stories (optionally grouped by series)
 3. Clicks story → story loads, Editor tool activates, first chapter opens
@@ -46,6 +52,7 @@ Implement Stories tool - the story and series management interface. This is wher
 5. Wants different story → clicks Stories tool → back to list → selects different story
 
 **Top bar quick switcher:**
+
 - Once story selected, story name appears in top bar
 - Click → dropdown of all stories for quick switching
 - Select from dropdown → `setCurrentStoryId(newId)`, stays on current tool
@@ -56,6 +63,7 @@ Implement Stories tool - the story and series management interface. This is wher
 **Must preserve ALL existing functionality:**
 
 ### Series Management
+
 - [ ] Create new series (name, description)
 - [ ] Edit series details
 - [ ] Delete series (with confirmation)
@@ -63,6 +71,7 @@ Implement Stories tool - the story and series management interface. This is wher
 - [ ] Toggle grouping by series in list
 
 ### Story Management
+
 - [ ] Create story (standalone or in series)
 - [ ] Edit story details (title, synopsis, language setting, etc.)
 - [ ] Delete story (with confirmation, cascade delete chapters/lorebook/etc.)
@@ -71,21 +80,25 @@ Implement Stories tool - the story and series management interface. This is wher
 - [ ] Sort stories (by date, title, etc.)
 
 ### Story Creation Flows
+
 - [ ] Create standalone story
 - [ ] Create story in existing series
 - [ ] Create series and story together
 - [ ] Demo story loading/creation
 
 ### Export/Import (if currently in dashboard)
+
 - [ ] Export story
 - [ ] Import story
 - [ ] Export series
 - [ ] Import series
 - [ ] Lorebook import/export
-*Where does this functionality currently live? If in story dashboard, move to Stories tool. If in respective tools (Lorebook tool for lorebook export), leave there.*
+      _Where does this functionality currently live? If in story dashboard, move to Stories tool. If in respective tools (Lorebook tool for lorebook export), leave there._
 
 ### Story Dashboard Features to Migrate
+
 **Current story dashboard likely has:**
+
 - Story title/synopsis display
 - Edit story button
 - Export story button
@@ -93,6 +106,7 @@ Implement Stories tool - the story and series management interface. This is wher
 - Navigation to chapters/lorebook/etc. (now replaced by tool switching)
 
 **Where this goes:**
+
 - Story details → Stories tool (edit story panel)
 - Export → Stories tool or specific tools
 - Delete → Stories tool
@@ -103,17 +117,20 @@ Implement Stories tool - the story and series management interface. This is wher
 ### UI Layout Options
 
 **Option A: Card grid**
+
 - Story cards in grid layout
 - Each card: title, synopsis snippet, word count, last edited
 - Actions on hover/click (edit, delete, export)
 - Series shown as sections or tabs
 
 **Option B: List view**
+
 - Story rows in table/list
 - Columns: title, series, word count, last edited, actions
 - Series collapsible groups
 
 **Option C: Hybrid**
+
 - Series shown as expandable cards
 - Stories within series as list rows
 - Standalone stories as cards
@@ -123,12 +140,13 @@ Implement Stories tool - the story and series management interface. This is wher
 ### Story Selection Mechanism
 
 When user clicks story:
+
 ```typescript
 const handleStoryClick = (storyId: string) => {
-  setCurrentStoryId(storyId)
-  setCurrentTool('editor')
-  // localStorage persistence happens in context
-}
+    setCurrentStoryId(storyId);
+    setCurrentTool("editor");
+    // localStorage persistence happens in context
+};
 ```
 
 Simple state update, no navigation.
@@ -136,10 +154,12 @@ Simple state update, no navigation.
 ### Editing vs Viewing
 
 **View mode (default):**
+
 - List of stories
 - Quick actions visible
 
 **Edit mode:**
+
 - Modal or slide-in panel
 - Form for story details
 - Save/cancel buttons
@@ -148,6 +168,7 @@ Simple state update, no navigation.
 ### Series Grouping State
 
 **Decision:** Should series grouping toggle be:
+
 - A: Persisted in localStorage (remembers preference)
 - B: Session-only (resets on reload)
 
@@ -156,6 +177,7 @@ Simple state update, no navigation.
 ## Integration Points
 
 ### Data Fetching
+
 - `useStoriesQuery()` - fetch all stories
 - `useSeriesQuery()` - fetch all series
 - `useStoryQuery(id)` - fetch specific story details
@@ -164,11 +186,13 @@ Simple state update, no navigation.
 All already exist in existing code - reuse them.
 
 ### Story Context
+
 - When story selected, fetch story data for display
 - Store in workspace context or fetch separately in each tool
 - **Decision:** Fetch in workspace (top bar needs it), tools can access via context or refetch
 
 ### Chapter Initialization
+
 - When story selected and Editor tool activates, need to initialize currentChapterId
 - **Where:** Editor tool checks if currentChapterId is set, if not, sets to first chapter
 - Don't do this in Stories tool (separation of concerns)
@@ -176,55 +200,56 @@ All already exist in existing code - reuse them.
 ## Implementation Steps
 
 1. **Identify existing components**
-   - Find current story list component
-   - Find series list component
-   - Find story creation form
-   - Find story edit form
-   - Assess if they can be reused or need refactoring
+    - Find current story list component
+    - Find series list component
+    - Find story creation form
+    - Find story edit form
+    - Assess if they can be reused or need refactoring
 
 2. **Create Stories tool component structure**
-   - `StoriesTool.tsx` - main container
-   - `StoryList.tsx` - list view (if doesn't exist)
-   - `StoryCard.tsx` - story card component (if doesn't exist)
-   - `SeriesSection.tsx` - series grouping (if doesn't exist)
-   - `StoryCreateModal.tsx` - creation form
-   - `StoryEditModal.tsx` - edit form
-   - Reuse existing components where possible
+    - `StoriesTool.tsx` - main container
+    - `StoryList.tsx` - list view (if doesn't exist)
+    - `StoryCard.tsx` - story card component (if doesn't exist)
+    - `SeriesSection.tsx` - series grouping (if doesn't exist)
+    - `StoryCreateModal.tsx` - creation form
+    - `StoryEditModal.tsx` - edit form
+    - Reuse existing components where possible
 
 3. **Wire up story selection**
-   - Click handler calls `setCurrentStoryId` and `setCurrentTool('editor')`
-   - Test state updates correctly
+    - Click handler calls `setCurrentStoryId` and `setCurrentTool('editor')`
+    - Test state updates correctly
 
 4. **Implement quick story switcher in top bar**
-   - Dropdown showing all stories
-   - Current story highlighted
-   - Click story in dropdown updates currentStoryId
-   - Doesn't change tool (stays on whatever tool you're in)
+    - Dropdown showing all stories
+    - Current story highlighted
+    - Click story in dropdown updates currentStoryId
+    - Doesn't change tool (stays on whatever tool you're in)
 
 5. **Migrate story/series CRUD**
-   - Ensure create/edit/delete all work within Stories tool
-   - No navigation, no route changes
-   - Modals or panels for forms
+    - Ensure create/edit/delete all work within Stories tool
+    - No navigation, no route changes
+    - Modals or panels for forms
 
 6. **Handle empty states**
-   - No stories: "Create your first story" CTA
-   - No series: "Create a series" CTA
-   - Demo content option
+    - No stories: "Create your first story" CTA
+    - No series: "Create a series" CTA
+    - Demo content option
 
 7. **Update Workspace MainContent**
-   - Add `case 'stories':` → render StoriesTool
-   - Remove placeholder
+    - Add `case 'stories':` → render StoriesTool
+    - Remove placeholder
 
 8. **Remove old routes**
-   - Remove `/stories` route
-   - Remove `/series` route
-   - Remove `/` landing page route
-   - Remove story dashboard route (or keep temporarily for #03-#08)
-   - Redirect old routes to `/` (workspace)
+    - Remove `/stories` route
+    - Remove `/series` route
+    - Remove `/` landing page route
+    - Remove story dashboard route (or keep temporarily for #03-#08)
+    - Redirect old routes to `/` (workspace)
 
 ## Testing Criteria
 
 ### Functional
+
 - [ ] Stories tool shows all stories
 - [ ] Series grouping works (if applicable)
 - [ ] Click story → loads story, switches to Editor, opens first chapter
@@ -243,6 +268,7 @@ All already exist in existing code - reuse them.
 - [ ] Sort works (if exists)
 
 ### Technical
+
 - [ ] Zero lint errors
 - [ ] Zero build errors
 - [ ] No console errors
@@ -257,6 +283,7 @@ All already exist in existing code - reuse them.
 **Features from old pages that MUST work in Stories tool:**
 
 From `/stories` page:
+
 - [ ] List all stories
 - [ ] Create new story
 - [ ] Search stories
@@ -264,6 +291,7 @@ From `/stories` page:
 - [ ] Sort stories
 
 From `/series` page:
+
 - [ ] List all series
 - [ ] Create new series
 - [ ] View stories in series
@@ -271,21 +299,24 @@ From `/series` page:
 - [ ] Delete series
 
 From story dashboard:
+
 - [ ] Edit story details
 - [ ] Delete story
 - [ ] Export story
 - [ ] View story metadata
-- *(Note: Chapter/lorebook/etc. navigation replaced by tool switching)*
+- _(Note: Chapter/lorebook/etc. navigation replaced by tool switching)_
 
 From landing page:
+
 - [ ] Access to stories (now default view if no story selected)
 - [ ] AI settings configuration (now in top bar)
 - [ ] User guide access (now in top bar)
-- *(Note: Landing was probably minimal, most functionality already in /stories)*
+- _(Note: Landing was probably minimal, most functionality already in /stories)_
 
 ## Known Limitations
 
 **Resolved in later plans:**
+
 - Editor tool not implemented yet → #03
 - Clicking story won't do anything useful until Editor exists
 - Other tools not implemented → #04-#08
@@ -293,6 +324,7 @@ From landing page:
 ## Notes for Implementer
 
 **Do:**
+
 - Reuse existing story/series components where possible
 - Test story selection flow thoroughly
 - Verify all CRUD operations work
@@ -300,6 +332,7 @@ From landing page:
 - Test quick switcher in top bar
 
 **Don't:**
+
 - Rebuild components from scratch if existing ones work
 - Remove old routes until Stories tool fully working
 - Break existing functionality
@@ -308,6 +341,7 @@ From landing page:
 ## Success Criteria
 
 **After this plan:**
+
 - Stories tool fully functional
 - All series/story management works
 - Story selection updates context and switches to Editor tool (even if Editor is still placeholder)

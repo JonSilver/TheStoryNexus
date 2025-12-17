@@ -9,12 +9,14 @@
 ## Executive Summary
 
 Comprehensive code review identified **39 issues** across code style, DRY violations, hardcoded strings, and architecture:
+
 - **4 Critical** severity issues
 - **12 High** severity issues
 - **15 Medium** severity issues
 - **8 Low** severity issues
 
 **Estimated Impact**:
+
 - Code reduction: ~800 lines via DRY improvements
 - Maintainability: 35+ hardcoded strings → typed constants
 - Type safety: Routes, DB tables, categories all typed
@@ -23,6 +25,7 @@ Comprehensive code review identified **39 issues** across code style, DRY violat
 ---
 
 ## Phase 1: Constants & Utilities (Foundation)
+
 **Priority**: Critical | **Effort**: Low | **Impact**: High
 
 ### 1.1 Create Constants Directory
@@ -30,13 +33,14 @@ Comprehensive code review identified **39 issues** across code style, DRY violat
 Create `src/constants/` with centralized constants:
 
 #### `src/constants/errorMessages.ts`
+
 ```typescript
 export const ERROR_MESSAGES = {
-  FETCH_FAILED: (entity: string) => `Failed to fetch ${entity}`,
-  CREATE_FAILED: (entity: string) => `Failed to create ${entity}`,
-  UPDATE_FAILED: (entity: string) => `Failed to update ${entity}`,
-  DELETE_FAILED: (entity: string) => `Failed to delete ${entity}`,
-  NOT_FOUND: (entity: string) => `${entity} not found`,
+    FETCH_FAILED: (entity: string) => `Failed to fetch ${entity}`,
+    CREATE_FAILED: (entity: string) => `Failed to create ${entity}`,
+    UPDATE_FAILED: (entity: string) => `Failed to update ${entity}`,
+    DELETE_FAILED: (entity: string) => `Failed to delete ${entity}`,
+    NOT_FOUND: (entity: string) => `${entity} not found`
 } as const;
 ```
 
@@ -45,32 +49,32 @@ export const ERROR_MESSAGES = {
 ---
 
 #### `src/constants/routes.ts`
+
 ```typescript
 export const ROUTES = {
-  HOME: '/',
-  STORIES: '/stories',
-  AI_SETTINGS: '/ai-settings',
-  GUIDE: '/guide',
-  DASHBOARD: {
-    BASE: (storyId: string) => `/dashboard/${storyId}`,
-    CHAPTERS: (storyId: string) => `/dashboard/${storyId}/chapters`,
-    CHAPTER_EDITOR: (storyId: string, chapterId: string) =>
-      `/dashboard/${storyId}/chapters/${chapterId}`,
-    PROMPTS: (storyId: string) => `/dashboard/${storyId}/prompts`,
-    LOREBOOK: (storyId: string) => `/dashboard/${storyId}/lorebook`,
-    BRAINSTORM: (storyId: string) => `/dashboard/${storyId}/brainstorm`,
-    NOTES: (storyId: string) => `/dashboard/${storyId}/notes`,
-  }
+    HOME: "/",
+    STORIES: "/stories",
+    AI_SETTINGS: "/ai-settings",
+    GUIDE: "/guide",
+    DASHBOARD: {
+        BASE: (storyId: string) => `/dashboard/${storyId}`,
+        CHAPTERS: (storyId: string) => `/dashboard/${storyId}/chapters`,
+        CHAPTER_EDITOR: (storyId: string, chapterId: string) => `/dashboard/${storyId}/chapters/${chapterId}`,
+        PROMPTS: (storyId: string) => `/dashboard/${storyId}/prompts`,
+        LOREBOOK: (storyId: string) => `/dashboard/${storyId}/lorebook`,
+        BRAINSTORM: (storyId: string) => `/dashboard/${storyId}/brainstorm`,
+        NOTES: (storyId: string) => `/dashboard/${storyId}/notes`
+    }
 } as const;
 
 export const ROUTE_PATTERNS = {
-  DASHBOARD_BASE: '/dashboard/:storyId',
-  CHAPTERS: '/dashboard/:storyId/chapters',
-  CHAPTER_EDITOR: '/dashboard/:storyId/chapters/:chapterId',
-  PROMPTS: '/dashboard/:storyId/prompts',
-  LOREBOOK: '/dashboard/:storyId/lorebook',
-  BRAINSTORM: '/dashboard/:storyId/brainstorm',
-  NOTES: '/dashboard/:storyId/notes',
+    DASHBOARD_BASE: "/dashboard/:storyId",
+    CHAPTERS: "/dashboard/:storyId/chapters",
+    CHAPTER_EDITOR: "/dashboard/:storyId/chapters/:chapterId",
+    PROMPTS: "/dashboard/:storyId/prompts",
+    LOREBOOK: "/dashboard/:storyId/lorebook",
+    BRAINSTORM: "/dashboard/:storyId/brainstorm",
+    NOTES: "/dashboard/:storyId/notes"
 } as const;
 ```
 
@@ -79,19 +83,20 @@ export const ROUTE_PATTERNS = {
 ---
 
 #### `src/constants/databaseTables.ts`
+
 ```typescript
 export const DB_TABLES = {
-  STORIES: 'stories',
-  CHAPTERS: 'chapters',
-  AI_CHATS: 'aiChats',
-  PROMPTS: 'prompts',
-  AI_SETTINGS: 'aiSettings',
-  LOREBOOK_ENTRIES: 'lorebookEntries',
-  SCENE_BEATS: 'sceneBeats',
-  NOTES: 'notes',
+    STORIES: "stories",
+    CHAPTERS: "chapters",
+    AI_CHATS: "aiChats",
+    PROMPTS: "prompts",
+    AI_SETTINGS: "aiSettings",
+    LOREBOOK_ENTRIES: "lorebookEntries",
+    SCENE_BEATS: "sceneBeats",
+    NOTES: "notes"
 } as const;
 
-export type DbTableName = typeof DB_TABLES[keyof typeof DB_TABLES];
+export type DbTableName = (typeof DB_TABLES)[keyof typeof DB_TABLES];
 ```
 
 **Replaces**: Magic strings in database.ts and 35+ store queries
@@ -99,19 +104,20 @@ export type DbTableName = typeof DB_TABLES[keyof typeof DB_TABLES];
 ---
 
 #### `src/constants/lorebookCategories.ts`
+
 ```typescript
 export const LOREBOOK_CATEGORIES = {
-  CHARACTER: 'character',
-  LOCATION: 'location',
-  ITEM: 'item',
-  EVENT: 'event',
-  NOTE: 'note',
-  SYNOPSIS: 'synopsis',
-  STARTING_SCENARIO: 'starting scenario',
-  TIMELINE: 'timeline',
+    CHARACTER: "character",
+    LOCATION: "location",
+    ITEM: "item",
+    EVENT: "event",
+    NOTE: "note",
+    SYNOPSIS: "synopsis",
+    STARTING_SCENARIO: "starting scenario",
+    TIMELINE: "timeline"
 } as const;
 
-export type LorebookCategory = typeof LOREBOOK_CATEGORIES[keyof typeof LOREBOOK_CATEGORIES];
+export type LorebookCategory = (typeof LOREBOOK_CATEGORIES)[keyof typeof LOREBOOK_CATEGORIES];
 
 export const LOREBOOK_CATEGORY_LIST = Object.values(LOREBOOK_CATEGORIES);
 ```
@@ -121,12 +127,13 @@ export const LOREBOOK_CATEGORY_LIST = Object.values(LOREBOOK_CATEGORIES);
 ---
 
 #### `src/constants/apiConfig.ts`
+
 ```typescript
 export const API_CONFIG = {
-  LOCAL_DEFAULT_URL: import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:1234/v1',
-  LOCAL_DEFAULT_PORT: 1234,
-  OPENAI_BASE_URL: 'https://api.openai.com/v1',
-  OPENROUTER_BASE_URL: 'https://openrouter.ai/api/v1',
+    LOCAL_DEFAULT_URL: import.meta.env.VITE_LOCAL_API_URL || "http://localhost:1234/v1",
+    LOCAL_DEFAULT_PORT: 1234,
+    OPENAI_BASE_URL: "https://api.openai.com/v1",
+    OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1"
 } as const;
 ```
 
@@ -137,6 +144,7 @@ export const API_CONFIG = {
 ### 1.2 Create Utility Functions
 
 #### `src/utils/idGenerator.ts`
+
 ```typescript
 export const generateId = (): string => crypto.randomUUID();
 
@@ -153,14 +161,14 @@ export const generatePromptId = (): string => generateId();
 ---
 
 #### `src/utils/errorUtils.ts`
+
 ```typescript
 export const formatError = (error: unknown, fallback: string): string =>
-  error instanceof Error ? error.message : fallback;
+    error instanceof Error ? error.message : fallback;
 
 export const isError = (e: unknown): e is Error => e instanceof Error;
 
-export const getErrorMessage = (error: unknown): string =>
-  isError(error) ? error.message : String(error);
+export const getErrorMessage = (error: unknown): string => (isError(error) ? error.message : String(error));
 ```
 
 **Replaces**: 35+ `error instanceof Error ? error.message : 'fallback'` patterns
@@ -168,36 +176,37 @@ export const getErrorMessage = (error: unknown): string =>
 ---
 
 #### `src/utils/storageService.ts`
+
 ```typescript
 export const storageService = {
-  get: <T>(key: string, defaultValue: T): T => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch {
-      return defaultValue;
-    }
-  },
+    get: <T>(key: string, defaultValue: T): T => {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch {
+            return defaultValue;
+        }
+    },
 
-  set: <T>(key: string, value: T): void => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error(`Failed to save to localStorage: ${key}`, error);
-    }
-  },
+    set: <T>(key: string, value: T): void => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            console.error(`Failed to save to localStorage: ${key}`, error);
+        }
+    },
 
-  remove: (key: string): void => {
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Failed to remove from localStorage: ${key}`, error);
+    remove: (key: string): void => {
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.error(`Failed to remove from localStorage: ${key}`, error);
+        }
     }
-  },
 };
 
 export const STORAGE_KEYS = {
-  LAST_EDITED_CHAPTERS: 'lastEditedChapterIds',
+    LAST_EDITED_CHAPTERS: "lastEditedChapterIds"
 } as const;
 ```
 
@@ -302,6 +311,7 @@ async parse(config: Config): Promise<ParsedResult> {
 ---
 
 ## Phase 2: DRY Violations (Core Logic)
+
 **Priority**: Critical | **Effort**: Medium | **Impact**: High
 
 ### 2.1 Refactor AI Generation Duplication
@@ -311,51 +321,63 @@ async parse(config: Config): Promise<ParsedResult> {
 **Problem**: Lines 132-254 contain massive duplication in `generateWithPrompt` and `generateWithParsedMessages`
 
 #### Create shared types:
+
 ```typescript
 // src/features/ai/types/generationParams.ts
 export interface GenerationParams {
-  temperature?: number;
-  maxTokens?: number;
-  top_p?: number;
-  top_k?: number;
-  repetition_penalty?: number;
-  min_p?: number;
+    temperature?: number;
+    maxTokens?: number;
+    top_p?: number;
+    top_k?: number;
+    repetition_penalty?: number;
+    min_p?: number;
 }
 ```
 
 #### Extract provider switching logic:
+
 ```typescript
 // src/features/ai/services/aiGenerationHelper.ts
-import type { AIProvider } from '@/types/ai';
-import type { GenerationParams } from '../types/generationParams';
-import { aiService } from '@/services/ai/AIService';
+import { aiService } from "@/services/ai/AIService";
+import type { AIProvider } from "@/types/ai";
+import type { GenerationParams } from "../types/generationParams";
 
 export const generateWithProvider = (
-  provider: AIProvider,
-  messages: Array<{ role: string; content: string }>,
-  modelId: string,
-  params: GenerationParams
+    provider: AIProvider,
+    messages: Array<{ role: string; content: string }>,
+    modelId: string,
+    params: GenerationParams
 ): Promise<Response> => {
-  const { temperature, maxTokens, top_p, top_k, repetition_penalty, min_p } = params;
+    const { temperature, maxTokens, top_p, top_k, repetition_penalty, min_p } = params;
 
-  switch (provider) {
-    case 'local':
-      return aiService.generateWithLocalModel(
-        messages, modelId, temperature, maxTokens,
-        top_p, top_k, repetition_penalty, min_p
-      );
-    case 'openai':
-      return aiService.generateWithOpenAI(
-        messages, modelId, temperature, maxTokens
-      );
-    case 'openrouter':
-      return aiService.generateWithOpenRouter(
-        messages, modelId, temperature, maxTokens,
-        top_p, top_k, repetition_penalty, min_p
-      );
-    default:
-      throw new Error(`Unknown provider: ${provider}`);
-  }
+    switch (provider) {
+        case "local":
+            return aiService.generateWithLocalModel(
+                messages,
+                modelId,
+                temperature,
+                maxTokens,
+                top_p,
+                top_k,
+                repetition_penalty,
+                min_p
+            );
+        case "openai":
+            return aiService.generateWithOpenAI(messages, modelId, temperature, maxTokens);
+        case "openrouter":
+            return aiService.generateWithOpenRouter(
+                messages,
+                modelId,
+                temperature,
+                maxTokens,
+                top_p,
+                top_k,
+                repetition_penalty,
+                min_p
+            );
+        default:
+            throw new Error(`Unknown provider: ${provider}`);
+    }
 };
 ```
 
@@ -370,6 +392,7 @@ export const generateWithProvider = (
 **Problem**: Lines 177-209 and 249-277 contain identical stream formatting logic
 
 #### Create shared method:
+
 ```typescript
 // Add to AIService class
 private formatStreamAsSSE(response: Response): Response {
@@ -410,6 +433,7 @@ private formatStreamAsSSE(response: Response): Response {
 ```
 
 **Then refactor both methods**:
+
 ```typescript
 async generateWithOpenAI(/* params */): Promise<Response> {
   // ... existing validation and request code ...
@@ -433,51 +457,45 @@ async generateWithOpenRouter(/* params */): Promise<Response> {
 **File**: `src/utils/databaseHelpers.ts`
 
 ```typescript
-import { attemptPromise } from '@jfdi/attempt';
+import { attemptPromise } from "@jfdi/attempt";
 
 interface FetchAndSetOptions<T> {
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  setData: (data: T) => void;
+    setLoading: (loading: boolean) => void;
+    setError: (error: string | null) => void;
+    setData: (data: T) => void;
 }
 
-export const fetchAndSet = async <T>(
-  query: () => Promise<T>,
-  options: FetchAndSetOptions<T>
-): Promise<void> => {
-  const { setLoading, setError, setData } = options;
+export const fetchAndSet = async <T>(query: () => Promise<T>, options: FetchAndSetOptions<T>): Promise<void> => {
+    const { setLoading, setError, setData } = options;
 
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    setError(null);
 
-  const [error, data] = await attemptPromise(query);
+    const [error, data] = await attemptPromise(query);
 
-  if (error) {
-    setError(error.message);
+    if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+    }
+
+    setData(data);
     setLoading(false);
-    return;
-  }
-
-  setData(data);
-  setLoading(false);
 };
 
 // Usage example in stores:
 export const useStoryStore = create<StoryStore>((set, get) => ({
-  stories: [],
-  loading: false,
-  error: null,
+    stories: [],
+    loading: false,
+    error: null,
 
-  fetchStories: async () => {
-    await fetchAndSet(
-      () => db.stories.toArray(),
-      {
-        setLoading: (loading) => set({ loading }),
-        setError: (error) => set({ error }),
-        setData: (stories) => set({ stories }),
-      }
-    );
-  },
+    fetchStories: async () => {
+        await fetchAndSet(() => db.stories.toArray(), {
+            setLoading: loading => set({ loading }),
+            setError: error => set({ error }),
+            setData: stories => set({ stories })
+        });
+    }
 }));
 ```
 
@@ -569,6 +587,7 @@ getAllChapterSummaries: () => {
 ---
 
 ## Phase 3: Error Handling Pattern
+
 **Priority**: High | **Effort**: Medium | **Impact**: High
 
 ### 3.1 Replace try-catch with @jfdi/attempt
@@ -578,6 +597,7 @@ getAllChapterSummaries: () => {
 **Example refactor** - `src/features/stories/stores/useStoryStore.ts`:
 
 #### Before (lines 26-42):
+
 ```typescript
 fetchStories: async () => {
   set({ loading: true, error: null });
@@ -594,6 +614,7 @@ fetchStories: async () => {
 ```
 
 #### After:
+
 ```typescript
 import { attemptPromise } from '@jfdi/attempt';
 import { formatError } from '@/utils/errorUtils';
@@ -617,6 +638,7 @@ fetchStories: async () => {
 ```
 
 **Apply to all stores**:
+
 - useStoryStore.ts
 - useChapterDataStore.ts
 - useChapterContentStore.ts
@@ -689,6 +711,7 @@ export class ErrorBoundary extends Component<Props, State> {
 ```
 
 **Integrate in** `src/main.tsx`:
+
 ```typescript
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -704,11 +727,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ---
 
 ## Phase 4: Code Style Compliance
+
 **Priority**: High | **Effort**: Medium | **Impact**: Medium
 
 ### 4.1 Replace `let` with `const`
 
 **Affected files** (20+ files):
+
 - `src/features/chapters/stores/useChapterContentStore.ts`
 - `src/features/prompts/services/promptParser.ts`
 - `src/features/brainstorm/components/ChatInterface.tsx`
@@ -717,36 +742,42 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 **Examples**:
 
 #### `promptParser.ts` (line 119)
+
 **Before**:
+
 ```typescript
-let parsedContent = content.replace(/\/\*[\s\S]*?\*\//g, '');
+let parsedContent = content.replace(/\/\*[\s\S]*?\*\//g, "");
 ```
 
 **After**:
+
 ```typescript
-const parsedContent = content.replace(/\/\*[\s\S]*?\*\//g, '');
+const parsedContent = content.replace(/\/\*[\s\S]*?\*\//g, "");
 ```
 
 #### `ChatInterface.tsx` (retry logic)
+
 **Before**:
+
 ```typescript
 let attempt = 0;
 while (attempt < maxRetries) {
-  attempt += 1;
-  // ...
+    attempt += 1;
+    // ...
 }
 ```
 
 **After**:
+
 ```typescript
 const retry = async (maxAttempts: number): Promise<void> => {
-  const attempts = Array.from({ length: maxAttempts }, (_, i) => i);
+    const attempts = Array.from({ length: maxAttempts }, (_, i) => i);
 
-  for (const attemptIndex of attempts) {
-    const [error, result] = await attemptPromise(operation);
-    if (!error) return result;
-    if (attemptIndex === maxAttempts - 1) throw error;
-  }
+    for (const attemptIndex of attempts) {
+        const [error, result] = await attemptPromise(operation);
+        if (!error) return result;
+        if (attemptIndex === maxAttempts - 1) throw error;
+    }
 };
 ```
 
@@ -761,35 +792,38 @@ const retry = async (maxAttempts: number): Promise<void> => {
 #### 4.2.1 Lexical Editor Node Types (Critical)
 
 **Files**:
+
 - `src/utils/exportUtils.ts` (lines 20, 27, 34, 39, 45, 151, 241)
 - `src/features/chapters/stores/useChapterContentStore.ts` (line 51)
 
 **Problem**: Lexical nodes typed as `any`
 
 **Before**:
+
 ```typescript
 const processNode = (node: any, parentElement: HTMLElement) => {
-  if (node.type === 'text') {
-    // ...
-  }
-}
+    if (node.type === "text") {
+        // ...
+    }
+};
 ```
 
 **After**:
+
 ```typescript
 interface SerializedLexicalNode {
-  type: string;
-  text?: string;
-  children?: SerializedLexicalNode[];
-  tag?: string;
-  version: number;
+    type: string;
+    text?: string;
+    children?: SerializedLexicalNode[];
+    tag?: string;
+    version: number;
 }
 
 const processNode = (node: SerializedLexicalNode, parentElement: HTMLElement) => {
-  if (node.type === 'text') {
-    // ...
-  }
-}
+    if (node.type === "text") {
+        // ...
+    }
+};
 ```
 
 ---
@@ -801,6 +835,7 @@ const processNode = (node: SerializedLexicalNode, parentElement: HTMLElement) =>
 **Problem**: Messages typed as `any[]` when `ChatMessage` type exists
 
 **Before**:
+
 ```typescript
 addChat: (storyId: string, title: string, messages: any[]) => Promise<string>;
 // ...
@@ -809,6 +844,7 @@ addChat: (storyId: string, title: string, messages: any[]) => Promise<string>;
 ```
 
 **After**:
+
 ```typescript
 import type { ChatMessage } from '@/types/story';
 
@@ -825,13 +861,15 @@ addChat: (storyId: string, title: string, messages: ChatMessage[]) => Promise<st
 **File**: `src/features/brainstorm/components/MessageInputArea.tsx` (line 9)
 
 **Before**:
+
 ```typescript
 selectedPrompt: any;
 ```
 
 **After**:
+
 ```typescript
-import type { Prompt } from '@/types/story';
+import type { Prompt } from "@/types/story";
 
 selectedPrompt: Prompt | null;
 ```
@@ -843,11 +881,13 @@ selectedPrompt: Prompt | null;
 **File**: `src/features/brainstorm/stores/useBrainstormStore.ts` (line 23)
 
 **Before**:
+
 ```typescript
 updateMessage: (chatId: string, messageId: string, updates: Partial<any>) => Promise<void>;
 ```
 
 **After**:
+
 ```typescript
 updateMessage: (chatId: string, messageId: string, updates: Partial<ChatMessage>) => Promise<void>;
 ```
@@ -859,28 +899,30 @@ updateMessage: (chatId: string, messageId: string, updates: Partial<ChatMessage>
 **File**: `src/services/ai/providers/OpenRouterProvider.ts` (line 38)
 
 **Before**:
+
 ```typescript
 const models: AIModel[] = result.data.map((model: any) => ({
-  id: model.id,
-  name: model.name,
+    id: model.id,
+    name: model.name
 }));
 ```
 
 **After**:
+
 ```typescript
 interface OpenRouterModelResponse {
-  id: string;
-  name: string;
-  context_length?: number;
-  pricing?: {
-    prompt: string;
-    completion: string;
-  };
+    id: string;
+    name: string;
+    context_length?: number;
+    pricing?: {
+        prompt: string;
+        completion: string;
+    };
 }
 
 const models: AIModel[] = result.data.map((model: OpenRouterModelResponse) => ({
-  id: model.id,
-  name: model.name,
+    id: model.id,
+    name: model.name
 }));
 ```
 
@@ -891,15 +933,17 @@ const models: AIModel[] = result.data.map((model: OpenRouterModelResponse) => ({
 **File**: `src/services/database.ts` (line 56)
 
 **Before**:
+
 ```typescript
-(m: any) => m.id === 'local' && m.name === 'local'
+(m: any) => m.id === "local" && m.name === "local";
 ```
 
 **After**:
-```typescript
-import type { AllowedModel } from '@/types/story';
 
-(m: AllowedModel) => m.id === 'local' && m.name === 'local'
+```typescript
+import type { AllowedModel } from "@/types/story";
+
+(m: AllowedModel) => m.id === "local" && m.name === "local";
 ```
 
 ---
@@ -907,20 +951,27 @@ import type { AllowedModel } from '@/types/story';
 #### 4.2.7 Lexical Playground Plugins
 
 **Files**:
+
 - `src/Lexical/lexical-playground/src/plugins/FloatingTextFormatToolbarPlugin/index.tsx` (lines 238, 310)
 - `src/Lexical/lexical-playground/src/plugins/TestRecorderPlugin/index.tsx` (line 153)
 
 **Before**:
+
 ```typescript
-const traverseNodes = (node: any): boolean => { /* ... */ };
+const traverseNodes = (node: any): boolean => {
+    /* ... */
+};
 let selection: any = null;
 ```
 
 **After**:
-```typescript
-import type { LexicalNode, RangeSelection } from 'lexical';
 
-const traverseNodes = (node: LexicalNode): boolean => { /* ... */ };
+```typescript
+import type { LexicalNode, RangeSelection } from "lexical";
+
+const traverseNodes = (node: LexicalNode): boolean => {
+    /* ... */
+};
 let selection: RangeSelection | null = null;
 ```
 
@@ -929,9 +980,11 @@ let selection: RangeSelection | null = null;
 #### 4.2.8 Replace `Record<string, any>` with `unknown`
 
 **Files**:
+
 - `src/types/story.ts` (lines 53, 167, 190)
 
 **Before**:
+
 ```typescript
 metadata?: {
   useMatchedChapter?: boolean;
@@ -944,6 +997,7 @@ additionalContext?: Record<string, any>;
 ```
 
 **After**:
+
 ```typescript
 metadata?: {
   useMatchedChapter?: boolean;
@@ -961,10 +1015,11 @@ if (typeof context.someKey === 'string') {
 ```
 
 **Create type guards**:
+
 ```typescript
 // src/utils/typeGuards.ts
 export const isValidMetadataValue = (value: unknown): value is boolean | string | number =>
-  typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number';
+    typeof value === "boolean" || typeof value === "string" || typeof value === "number";
 ```
 
 ---
@@ -976,29 +1031,25 @@ export const isValidMetadataValue = (value: unknown): value is boolean | string 
 **File**: `src/features/prompts/services/promptParser.ts`
 
 **Before**:
+
 ```typescript
 export class PromptParser {
-  parse(template: string, variables: Record<string, any>): string {
-    // ...
-  }
+    parse(template: string, variables: Record<string, any>): string {
+        // ...
+    }
 }
 ```
 
 **After**:
+
 ```typescript
-export const parsePrompt = (
-  template: string,
-  variables: Record<string, any>
-): string => {
-  // ... same logic as functional code
+export const parsePrompt = (template: string, variables: Record<string, any>): string => {
+    // ... same logic as functional code
 };
 
-export const parsePromptWithContext = (
-  template: string,
-  context: PromptContext
-): string => {
-  const variables = buildVariables(context);
-  return parsePrompt(template, variables);
+export const parsePromptWithContext = (template: string, context: PromptContext): string => {
+    const variables = buildVariables(context);
+    return parsePrompt(template, variables);
 };
 ```
 
@@ -1029,54 +1080,64 @@ All other services should use functional patterns.
 ---
 
 ## Phase 5: Architecture Improvements
+
 **Priority**: Medium | **Effort**: Medium | **Impact**: Medium
 
 ### 5.1 Standardize Store Architecture
 
 **Document pattern** in `docs/ARCHITECTURE.md`:
 
-```markdown
+````markdown
 ## Store Architecture Patterns
 
 ### Direct Database Access Pattern
+
 Use for simple CRUD operations on single entities:
+
 - useStoryStore
 - useBrainstormStore
 - useNotesStore
 
 Example:
+
 ```typescript
-export const useStoryStore = create<StoryStore>((set) => ({
-  stories: [],
-  fetchStories: async () => {
-    const [error, stories] = await attemptPromise(() => db.stories.toArray());
-    // ...
-  },
+export const useStoryStore = create<StoryStore>(set => ({
+    stories: [],
+    fetchStories: async () => {
+        const [error, stories] = await attemptPromise(() => db.stories.toArray());
+        // ...
+    }
 }));
 ```
+````
 
 ### Facade Store Pattern
+
 Use for complex entities requiring coordination between multiple concerns:
+
 - useChapterStore (coordinates data + content + metadata)
 - useLorebookStore (coordinates data + filtering + matching)
 
 Example:
+
 ```typescript
 export const useChapterStore = create<ChapterStore>(() => ({
-  // Delegate to specialized sub-stores
-  get chapters() {
-    return useChapterDataStore.getState().chapters;
-  },
-  get content() {
-    return useChapterContentStore.getState().content;
-  },
+    // Delegate to specialized sub-stores
+    get chapters() {
+        return useChapterDataStore.getState().chapters;
+    },
+    get content() {
+        return useChapterContentStore.getState().content;
+    }
 }));
 ```
 
 ### When to Use Each Pattern
+
 - **Direct Access**: Single responsibility, straightforward CRUD
 - **Facade**: Multiple related concerns, complex coordination, shared state
-```
+
+````
 
 ---
 
@@ -1091,9 +1152,10 @@ export const useChapterStore = create<ChapterStore>(() => ({
 get chapters() {
   return useChapterDataStore.getState().chapters;
 },
-```
+````
 
 **After** - Use proper Zustand subscription:
+
 ```typescript
 // Remove getters, use selectors in components instead:
 
@@ -1103,14 +1165,15 @@ const content = useChapterContentStore(state => state.content);
 ```
 
 Or if facade is truly needed:
+
 ```typescript
 // Create proper facade with subscriptions
 export const useChapterStore = () => {
-  const chapters = useChapterDataStore(state => state.chapters);
-  const content = useChapterContentStore(state => state.content);
-  const metadata = useChapterMetadataStore(state => state.metadata);
+    const chapters = useChapterDataStore(state => state.chapters);
+    const content = useChapterContentStore(state => state.content);
+    const metadata = useChapterMetadataStore(state => state.metadata);
 
-  return { chapters, content, metadata };
+    return { chapters, content, metadata };
 };
 ```
 
@@ -1127,34 +1190,30 @@ export const useChapterStore = () => {
 ```typescript
 // src/features/prompts/services/variableResolvers.ts
 export interface VariableResolver {
-  canResolve: (variableName: string, context: PromptContext) => boolean;
-  resolve: (variableName: string, context: PromptContext) => string;
+    canResolve: (variableName: string, context: PromptContext) => boolean;
+    resolve: (variableName: string, context: PromptContext) => string;
 }
 
 export const matchedEntriesResolver: VariableResolver = {
-  canResolve: (name) =>
-    name === 'matched_entries_chapter' ||
-    name === 'lorebook_chapter_matched_entries',
+    canResolve: name => name === "matched_entries_chapter" || name === "lorebook_chapter_matched_entries",
 
-  resolve: (name, context) => {
-    const useSceneBeat = context.variables?.additional_scenebeat_context === 'true';
-    return useSceneBeat
-      ? context.sceneBeatMatchedEntries
-      : context.chapterMatchedEntries;
-  },
+    resolve: (name, context) => {
+        const useSceneBeat = context.variables?.additional_scenebeat_context === "true";
+        return useSceneBeat ? context.sceneBeatMatchedEntries : context.chapterMatchedEntries;
+    }
 };
 
 export const variableResolvers: VariableResolver[] = [
-  matchedEntriesResolver,
-  summariesResolver,
-  povResolver,
-  // ... more resolvers
+    matchedEntriesResolver,
+    summariesResolver,
+    povResolver
+    // ... more resolvers
 ];
 
 // Then in parsePrompt:
 const resolveVariable = (name: string, context: PromptContext): string => {
-  const resolver = variableResolvers.find(r => r.canResolve(name, context));
-  return resolver ? resolver.resolve(name, context) : '';
+    const resolver = variableResolvers.find(r => r.canResolve(name, context));
+    return resolver ? resolver.resolve(name, context) : "";
 };
 ```
 
@@ -1169,47 +1228,41 @@ const resolveVariable = (name: string, context: PromptContext): string => {
 **Problem**: Lines 152-186 rollback loses all optimistic state
 
 **Before**:
+
 ```typescript
 // Optimistically update
 set(state => ({
-  chats: state.chats.map(chat =>
-    chat.id === chatId ? { ...chat, messages: updatedMessages } : chat
-  )
+    chats: state.chats.map(chat => (chat.id === chatId ? { ...chat, messages: updatedMessages } : chat))
 }));
 
 try {
-  await db.aiChats.update(chatId, { messages: updatedMessages });
+    await db.aiChats.update(chatId, { messages: updatedMessages });
 } catch (error) {
-  // Loses all other optimistic updates!
-  const chats = await db.aiChats.toArray();
-  set({ chats });
+    // Loses all other optimistic updates!
+    const chats = await db.aiChats.toArray();
+    set({ chats });
 }
 ```
 
 **After**:
+
 ```typescript
 // Store previous state for rollback
 const previousState = get().chats.find(c => c.id === chatId);
 
 // Optimistically update
 set(state => ({
-  chats: state.chats.map(chat =>
-    chat.id === chatId ? { ...chat, messages: updatedMessages } : chat
-  )
+    chats: state.chats.map(chat => (chat.id === chatId ? { ...chat, messages: updatedMessages } : chat))
 }));
 
-const [error] = await attemptPromise(() =>
-  db.aiChats.update(chatId, { messages: updatedMessages })
-);
+const [error] = await attemptPromise(() => db.aiChats.update(chatId, { messages: updatedMessages }));
 
 if (error && previousState) {
-  // Rollback only this specific update
-  set(state => ({
-    chats: state.chats.map(chat =>
-      chat.id === chatId ? previousState : chat
-    )
-  }));
-  // Show error toast
+    // Rollback only this specific update
+    set(state => ({
+        chats: state.chats.map(chat => (chat.id === chatId ? previousState : chat))
+    }));
+    // Show error toast
 }
 ```
 
@@ -1218,6 +1271,7 @@ if (error && previousState) {
 ---
 
 ## Phase 6: Polish
+
 **Priority**: Low | **Effort**: Low | **Impact**: Low
 
 ### 6.1 Add Type Guards
@@ -1227,14 +1281,11 @@ if (error && previousState) {
 ```typescript
 export const isError = (e: unknown): e is Error => e instanceof Error;
 
-export const isDefined = <T>(value: T | null | undefined): value is T =>
-  value !== null && value !== undefined;
+export const isDefined = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
 
-export const isString = (value: unknown): value is string =>
-  typeof value === 'string';
+export const isString = (value: unknown): value is string => typeof value === "string";
 
-export const isArray = <T>(value: unknown): value is T[] =>
-  Array.isArray(value);
+export const isArray = <T>(value: unknown): value is T[] => Array.isArray(value);
 ```
 
 **Use throughout codebase** instead of direct `instanceof` checks
@@ -1246,32 +1297,32 @@ export const isArray = <T>(value: unknown): value is T[] =>
 **File**: `src/features/prompts/stores/promptStore.ts`
 
 **Before** (line 210):
+
 ```typescript
 // eslint-disable-next-line no-constant-condition
 while (true) {
-  const existing = await db.prompts.where('name').equals(newName).first();
-  if (!existing) break;
-  attempt += 1;
-  newName = `${p.name} (Imported${attempt > 1 ? ` ${attempt}` : ''})`;
+    const existing = await db.prompts.where("name").equals(newName).first();
+    if (!existing) break;
+    attempt += 1;
+    newName = `${p.name} (Imported${attempt > 1 ? ` ${attempt}` : ""})`;
 }
 ```
 
 **After**:
+
 ```typescript
 const MAX_IMPORT_ATTEMPTS = 100;
 const attempts = Array.from({ length: MAX_IMPORT_ATTEMPTS }, (_, i) => i + 1);
 
 for (const attempt of attempts) {
-  newName = attempt === 1
-    ? p.name
-    : `${p.name} (Imported${attempt > 1 ? ` ${attempt}` : ''})`;
+    newName = attempt === 1 ? p.name : `${p.name} (Imported${attempt > 1 ? ` ${attempt}` : ""})`;
 
-  const existing = await db.prompts.where('name').equals(newName).first();
-  if (!existing) break;
+    const existing = await db.prompts.where("name").equals(newName).first();
+    if (!existing) break;
 
-  if (attempt === MAX_IMPORT_ATTEMPTS) {
-    throw new Error(`Failed to generate unique name after ${MAX_IMPORT_ATTEMPTS} attempts`);
-  }
+    if (attempt === MAX_IMPORT_ATTEMPTS) {
+        throw new Error(`Failed to generate unique name after ${MAX_IMPORT_ATTEMPTS} attempts`);
+    }
 }
 ```
 
@@ -1283,23 +1334,23 @@ for (const attempt of attempts) {
 
 ```typescript
 export const logger = {
-  error: (message: string, error?: unknown, context?: Record<string, any>) => {
-    console.error(`[ERROR] ${message}`, { error, context });
-  },
+    error: (message: string, error?: unknown, context?: Record<string, any>) => {
+        console.error(`[ERROR] ${message}`, { error, context });
+    },
 
-  warn: (message: string, context?: Record<string, any>) => {
-    console.warn(`[WARN] ${message}`, context);
-  },
+    warn: (message: string, context?: Record<string, any>) => {
+        console.warn(`[WARN] ${message}`, context);
+    },
 
-  info: (message: string, context?: Record<string, any>) => {
-    console.info(`[INFO] ${message}`, context);
-  },
+    info: (message: string, context?: Record<string, any>) => {
+        console.info(`[INFO] ${message}`, context);
+    },
 
-  debug: (message: string, context?: Record<string, any>) => {
-    if (import.meta.env.DEV) {
-      console.debug(`[DEBUG] ${message}`, context);
+    debug: (message: string, context?: Record<string, any>) => {
+        if (import.meta.env.DEV) {
+            console.debug(`[DEBUG] ${message}`, context);
+        }
     }
-  },
 };
 ```
 
@@ -1323,14 +1374,14 @@ export const logger = {
 
 ```typescript
 export const SSE_FORMAT = {
-  DATA_PREFIX: 'data: ',
-  DONE_MESSAGE: 'data: [DONE]\n\n',
-  NEWLINE: '\n\n',
+    DATA_PREFIX: "data: ",
+    DONE_MESSAGE: "data: [DONE]\n\n",
+    NEWLINE: "\n\n"
 } as const;
 
 export const formatSSEChunk = (content: string): string => {
-  const data = JSON.stringify({ choices: [{ delta: { content } }] });
-  return `${SSE_FORMAT.DATA_PREFIX}${data}${SSE_FORMAT.NEWLINE}`;
+    const data = JSON.stringify({ choices: [{ delta: { content } }] });
+    return `${SSE_FORMAT.DATA_PREFIX}${data}${SSE_FORMAT.NEWLINE}`;
 };
 ```
 
@@ -1341,6 +1392,7 @@ export const formatSSEChunk = (content: string): string => {
 ## Implementation Checklist
 
 ### Phase 1: Constants & Utilities ✅
+
 - [x] Create `src/constants/errorMessages.ts`
 - [x] Create `src/constants/routes.ts`
 - [x] Create `src/constants/databaseTables.ts`
@@ -1353,6 +1405,7 @@ export const formatSSEChunk = (content: string): string => {
 - [x] Test all affected functionality
 
 ### Phase 2: DRY Violations ✅
+
 - [x] Create `src/features/ai/types/generationParams.ts`
 - [x] Create `src/features/ai/services/aiGenerationHelper.ts`
 - [x] Refactor `useAIStore.ts` to use helper
@@ -1367,6 +1420,7 @@ export const formatSSEChunk = (content: string): string => {
 - [x] Test all database operations
 
 ### Phase 3: Error Handling ✅
+
 - [x] Install/verify `@jfdi/attempt` dependency
 - [x] Refactor useStoryStore.ts
 - [x] Refactor useChapterDataStore.ts
@@ -1383,22 +1437,24 @@ export const formatSSEChunk = (content: string): string => {
 - [x] Test error scenarios in all stores
 
 ### Phase 4: Code Style & Type Safety ✅
+
 - [x] Audit and replace `let` with `const` in 20+ files
 - [x] Refactor PromptParser to functional
 - [x] Refactor StreamProcessor to functional
 - [x] Update CLAUDE.md with class exceptions
 - [x] Fix explicit `any` types (20+ occurrences):
-  - [x] Lexical editor node types in exportUtils.ts (8 occurrences)
-  - [x] Chat messages in useBrainstormStore.ts (use ChatMessage type)
-  - [x] Prompt type in MessageInputArea.tsx
-  - [x] OpenRouter API response types
-  - [x] Database migration filter types
-  - [x] Lexical playground plugin types
-  - [x] Replace Record<string, any> with Record<string, unknown>
+    - [x] Lexical editor node types in exportUtils.ts (8 occurrences)
+    - [x] Chat messages in useBrainstormStore.ts (use ChatMessage type)
+    - [x] Prompt type in MessageInputArea.tsx
+    - [x] OpenRouter API response types
+    - [x] Database migration filter types
+    - [x] Lexical playground plugin types
+    - [x] Replace Record<string, any> with Record<string, unknown>
 - [x] Run linter/formatter
 - [x] Test refactored services
 
 ### Phase 5: Architecture ✅
+
 - [x] Create `docs/ARCHITECTURE.md`
 - [x] Document store patterns
 - [x] Refactor useChapterStore cross-store coupling
@@ -1408,10 +1464,11 @@ export const formatSSEChunk = (content: string): string => {
 - [x] Test all architectural changes
 
 ### Phase 6: Polish ✅
+
 - [x] Create `src/utils/typeGuards.ts` (using @sindresorhus/is)
 - [x] Add max attempts to import loop (already completed in Phase 5)
 - [x] Create `src/utils/logger.ts`
-- [x] Replace console.* with logger (key files: promptStore, storageService)
+- [x] Replace console.\* with logger (key files: promptStore, storageService)
 - [x] Remove unused state properties (removed `summariesSoFar` from chapter stores)
 - [x] Create `src/constants/aiConstants.ts`
 - [x] Update SSE formatting to use constants
@@ -1426,27 +1483,27 @@ After each phase:
 1. **Unit Tests**: Test new utility functions
 2. **Integration Tests**: Test refactored stores with database
 3. **Manual Testing**:
-   - Create/edit/delete stories
-   - Create/edit chapters
-   - Generate AI content
-   - Import/export prompts
-   - Manage lorebook entries
-   - Chat brainstorming
+    - Create/edit/delete stories
+    - Create/edit chapters
+    - Generate AI content
+    - Import/export prompts
+    - Manage lorebook entries
+    - Chat brainstorming
 4. **Regression Tests**: Ensure no functionality broken
 
 ---
 
 ## Estimated Effort
 
-| Phase | Time Estimate | Priority |
-|-------|---------------|----------|
-| Phase 1 | 4-6 hours | Critical |
-| Phase 2 | 6-8 hours | Critical |
-| Phase 3 | 8-10 hours | High |
-| Phase 4 | 6-8 hours | High |
-| Phase 5 | 6-8 hours | Medium |
-| Phase 6 | 4-6 hours | Low |
-| **Total** | **34-46 hours** | - |
+| Phase     | Time Estimate   | Priority |
+| --------- | --------------- | -------- |
+| Phase 1   | 4-6 hours       | Critical |
+| Phase 2   | 6-8 hours       | Critical |
+| Phase 3   | 8-10 hours      | High     |
+| Phase 4   | 6-8 hours       | High     |
+| Phase 5   | 6-8 hours       | Medium   |
+| Phase 6   | 4-6 hours       | Low      |
+| **Total** | **34-46 hours** | -        |
 
 ---
 

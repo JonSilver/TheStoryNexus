@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { addClassNamesToElement } from "@lexical/utils";
 import is from "@sindresorhus/is";
 import type {

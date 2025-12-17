@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
     $createParagraphNode,
     $isElementNode,
@@ -20,7 +19,6 @@ import {
 } from "lexical";
 import { IS_CHROME } from "shared/environment";
 import invariant from "shared/invariant";
-
 import { $isCollapsibleContainerNode } from "./CollapsibleContainerNode";
 import { $isCollapsibleContentNode } from "./CollapsibleContentNode";
 

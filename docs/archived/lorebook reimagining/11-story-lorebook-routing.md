@@ -1,24 +1,29 @@
 # Task 11: Story Lorebook Routing & Integration
 
 ## Objective
+
 Add story lorebook route that acts as shortcut to unified lorebook manager with story pre-selected.
 
 ## Context
+
 - Story lorebook view uses the same `LorebookPage` component from Task 10
 - Route parameter determines pre-filtering and display mode
 - Shows hierarchical entries (global + series + story) in story context
 - No separate component needed - just routing integration
 
 ## Dependencies
+
 - **Task 10**: Unified lorebook manager must be implemented
 
 ## File Locations
+
 - **Modify**: Route configuration (e.g., `src/App.tsx` or routes file)
 - **Modify**: Story dashboard navigation (add lorebook link)
 
 ## Implementation Steps
 
 ### 1. Add Story Lorebook Route
+
 The unified `LorebookPage` component already handles story context via route parameter:
 
 ```typescript
@@ -56,6 +61,7 @@ The unified `LorebookPage` component already handles story context via route par
 ```
 
 ### 2. Update Story Dashboard Navigation
+
 Add lorebook tab to story dashboard:
 
 ```typescript
@@ -101,6 +107,7 @@ export const StoryDashboard = () => {
 ```
 
 ### 3. Add Navigation Link in Main App
+
 Ensure main lorebook manager is accessible from app navigation:
 
 ```typescript
@@ -118,6 +125,7 @@ Ensure main lorebook manager is accessible from app navigation:
 ## Behavior Differences
 
 ### Main Lorebook Manager (`/lorebook`)
+
 - Shows level/scope selector
 - User manually selects context
 - All entries editable in their own context
@@ -125,6 +133,7 @@ Ensure main lorebook manager is accessible from app navigation:
 - Used for managing any story's entries
 
 ### Story Lorebook Shortcut (`/dashboard/:storyId/lorebook`)
+
 - No level/scope selector shown
 - Pre-filtered to specific story
 - Shows hierarchical entries (global + series + story)
@@ -134,6 +143,7 @@ Ensure main lorebook manager is accessible from app navigation:
 - Convenience view for writers working on a story
 
 ## Route Summary
+
 After implementation:
 
 - `/lorebook` - Main unified lorebook manager
@@ -142,6 +152,7 @@ After implementation:
 Both routes render the same `LorebookPage` component with different behavior based on route context.
 
 ## Validation
+
 - Story dashboard shows lorebook tab
 - Clicking lorebook tab navigates to `/dashboard/:storyId/lorebook`
 - Page shows hierarchical entries (global + series + story)
@@ -153,6 +164,7 @@ Both routes render the same `LorebookPage` component with different behavior bas
 - Main lorebook manager shows level/scope selector
 
 ## Notes
+
 - No new components needed - uses unified manager from Task 10
 - Route parameter (`storyId`) determines behavior
 - Same codebase serves both use cases

@@ -134,11 +134,17 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
                         notes.map(note => (
                             <li
                                 key={note.id}
+                                role="option"
+                                tabIndex={0}
+                                aria-selected={selectedNoteId === note.id}
                                 className={cn(
                                     "p-4 border-b border-input hover:bg-muted cursor-pointer relative group",
                                     selectedNoteId === note.id && "bg-muted/50"
                                 )}
                                 onClick={() => onSelectNote(note)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter" || e.key === " ") onSelectNote(note);
+                                }}
                             >
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center justify-between">

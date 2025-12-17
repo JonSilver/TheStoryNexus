@@ -3,6 +3,7 @@
 ## Executive Summary
 
 ChatInterface has significant architectural issues:
+
 - 40+ action reducer mixing server/UI/derived state
 - Imperative data fetching instead of Tanstack Query
 - useEffects with ref hacks and dependency issues
@@ -17,6 +18,7 @@ ChatInterface has significant architectural issues:
 ## Critical Problems
 
 ### 1. Dispatch During Render
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:44-52`
 
 ```typescript
@@ -33,9 +35,11 @@ if (prevChatIdRef.current !== selectedChat.id) {
 **Fix**: Don't duplicate `selectedChat.messages` in reducer. Use props directly.
 
 ### 2. Server State in Reducer
+
 **File**: `src/features/brainstorm/reducers/chatReducer.ts`
 
 Reducer manages server state that should be in Tanstack Query:
+
 - `messages` - Duplicates `selectedChat.messages` prop
 - `currentChatId` - Duplicates `selectedChat.id` prop
 - `availableModels` - Fetched data
@@ -45,17 +49,18 @@ Reducer manages server state that should be in Tanstack Query:
 **Fix**: Server state lives in Tanstack Query cache. Reducer only manages UI state.
 
 ### 3. Stale Closures in Streaming
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:273-287`
 
 ```typescript
 () => {
-  const updatedMessages = [
-    ...state.messages,  // Captured at handleSubmit start - STALE
-    userMessage,
-    { ...assistantMessage, content: fullResponse },
-  ];
-  updateMutation.mutate({ id: chatId, data: { messages: updatedMessages }})
-}
+    const updatedMessages = [
+        ...state.messages, // Captured at handleSubmit start - STALE
+        userMessage,
+        { ...assistantMessage, content: fullResponse }
+    ];
+    updateMutation.mutate({ id: chatId, data: { messages: updatedMessages } });
+};
 ```
 
 **Problem**: `state.messages` is captured when `handleSubmit` starts. If user switches chats mid-stream, this references the wrong chat.
@@ -63,6 +68,7 @@ Reducer manages server state that should be in Tanstack Query:
 **Fix**: Use `selectedChat.messages` from props (fresh on every render).
 
 ### 4. Ref Hacks
+
 **File**: `src/features/brainstorm/components/ChatInterface.tsx:41`
 
 ```typescript
@@ -95,6 +101,7 @@ const usePromptSelection = (
 ```
 
 **Responsibilities**:
+
 - Maintains prompt + model selection state
 - Loads last used prompt on mount (once)
 - Persists changes via mutation
@@ -106,17 +113,18 @@ const usePromptSelection = (
 
 ```typescript
 const useAvailableModels = () =>
-  useQuery({
-    queryKey: ['ai', 'models'],
-    queryFn: async () => {
-      await initialize();
-      return getAvailableModels();
-    },
-    staleTime: 5 * 60 * 1000
-  })
+    useQuery({
+        queryKey: ["ai", "models"],
+        queryFn: async () => {
+            await initialize();
+            return getAvailableModels();
+        },
+        staleTime: 5 * 60 * 1000
+    });
 ```
 
 **Responsibilities**:
+
 - Fetches models via Tanstack Query
 - Caches for 5 minutes
 - Returns loading/error states
@@ -141,6 +149,7 @@ const usePromptPreview = (
 ```
 
 **Responsibilities**:
+
 - Manages preview modal state
 - Handles async prompt parsing
 - Returns preview state + control functions
@@ -170,6 +179,7 @@ const useContextSelection = (): UseContextSelectionReturn
 ```
 
 **Responsibilities**:
+
 - Manages all context selection state
 - Clears selections when `includeFullContext` enabled
 - Returns all handlers
@@ -183,31 +193,33 @@ const useContextSelection = (): UseContextSelectionReturn
 **Problem**: Messages stream faster than DB writes. Need local state for UI updates.
 
 **Solution**:
+
 ```typescript
 const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
 const [streamingContent, setStreamingContent] = useState("");
 
 // During streaming:
 const displayMessages = streamingMessageId
-  ? [...selectedChat.messages, { id: streamingMessageId, content: streamingContent, role: 'assistant' }]
-  : selectedChat.messages;
+    ? [...selectedChat.messages, { id: streamingMessageId, content: streamingContent, role: "assistant" }]
+    : selectedChat.messages;
 
 // On completion:
 await updateMutation.mutate({
-  id: chatId,
-  data: {
-    messages: [
-      ...selectedChat.messages,  // Use props, not captured state
-      userMessage,
-      assistantMessage
-    ]
-  }
+    id: chatId,
+    data: {
+        messages: [
+            ...selectedChat.messages, // Use props, not captured state
+            userMessage,
+            assistantMessage
+        ]
+    }
 });
 setStreamingMessageId(null);
 setStreamingContent("");
 ```
 
 **Key Points**:
+
 - Streaming state is local useState
 - Base messages from `selectedChat.messages` prop
 - Completion handler uses fresh props, not captured state
@@ -218,12 +230,14 @@ setStreamingContent("");
 ## Migration Steps
 
 ### Phase 1: Create Hooks
+
 1. Create `useAvailableModels` in `src/features/ai/hooks/`
 2. Create `usePromptSelection` in `src/features/brainstorm/hooks/`
 3. Create `usePromptPreview` in `src/features/brainstorm/hooks/`
 4. Create `useContextSelection` in `src/features/brainstorm/hooks/`
 
 ### Phase 2: Refactor ChatInterface
+
 1. Replace model fetching effect with `useAvailableModels`
 2. Replace prompt state with `usePromptSelection`
 3. Replace preview state with `usePromptPreview`
@@ -234,12 +248,15 @@ setStreamingContent("");
 8. Update event handlers to use hook functions
 
 ### Phase 3: Cleanup
+
 1. Delete `chatReducer.ts`
 2. Remove refs: `prevChatIdRef`, `loadedPromptForChatRef`
 3. Keep `editingTextareaRef` (legitimate focus management)
 
 ### Phase 4: Testing
+
 Test these scenarios:
+
 - Switch chat → prompt loads correctly
 - Switch chat → messages reset
 - Switch mid-stream → saves to correct chat
@@ -254,18 +271,22 @@ Test these scenarios:
 ## Bug Fixes
 
 ### Dispatch During Render
+
 **Before**: `Promise.resolve().then(dispatch)`
 **After**: Don't duplicate props in state. Use `selectedChat.messages` directly.
 
 ### Stale Closure
+
 **Before**: `const updatedMessages = [...state.messages, ...]` (captured)
 **After**: `const updatedMessages = [...selectedChat.messages, ...]` (fresh)
 
 ### Infinite Loop
+
 **Before**: `loadedPromptForChatRef` prevents re-running effect
 **After**: Hook manages loaded state internally with proper dependencies
 
 ### Unstable References
+
 **Before**: Effect depends on `getAvailableModels` (Zustand function)
 **After**: Tanstack Query hook with stable reference
 
@@ -274,13 +295,16 @@ Test these scenarios:
 ## Files Changed
 
 **Created**:
+
 - `src/features/ai/hooks/useAvailableModels.ts`
 - `src/features/brainstorm/hooks/usePromptSelection.ts`
 - `src/features/brainstorm/hooks/usePromptPreview.ts`
 - `src/features/brainstorm/hooks/useContextSelection.ts`
 
 **Modified**:
+
 - `src/features/brainstorm/components/ChatInterface.tsx`
 
 **Deleted**:
+
 - `src/features/brainstorm/reducers/chatReducer.ts`

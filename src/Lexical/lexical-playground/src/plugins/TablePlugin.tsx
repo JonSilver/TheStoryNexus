@@ -5,14 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { INSERT_TABLE_COMMAND, TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import type { EditorThemeClasses, Klass, LexicalEditor, LexicalNode } from "lexical";
 import type { JSX } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import invariant from "shared/invariant";
-
 import Button from "../ui/Button";
 import { DialogActions } from "../ui/Dialog";
 import TextInput from "../ui/TextInput";

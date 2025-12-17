@@ -27,6 +27,7 @@ export const ModelCombobox = ({
 }: ModelComboboxProps) => {
     const [open, setOpen] = useState(false);
     const selectedModel = models.find(m => m.id === value);
+    const listboxId = id ? `${id}-listbox` : "model-combobox-listbox";
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -36,6 +37,7 @@ export const ModelCombobox = ({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    aria-controls={listboxId}
                     className={cn("w-full justify-between font-normal", className)}
                 >
                     {selectedModel ? selectedModel.name : placeholder}
@@ -43,7 +45,7 @@ export const ModelCombobox = ({
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
+                <Command id={listboxId}>
                     <CommandInput placeholder="Type to filter..." />
                     <CommandList>
                         <CommandEmpty>{emptyText}</CommandEmpty>

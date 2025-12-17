@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent, $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import type { ElementNode, LexicalCommand, LexicalNode, NodeKey } from "lexical";
@@ -23,7 +22,6 @@ import {
     KEY_ARROW_UP_COMMAND
 } from "lexical";
 import { useEffect } from "react";
-
 import { countWords } from "@/utils/textUtils";
 import {
     $createLayoutContainerNode,

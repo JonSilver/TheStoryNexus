@@ -10,7 +10,6 @@ import { Minus, Plus } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import { updateFontSizeInSelection } from "./utils";

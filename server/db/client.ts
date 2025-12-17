@@ -1,6 +1,6 @@
-import path from "node:path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import path from "node:path";
 import * as schema from "./schema.js";
 
 // Database path - default to ./data/storynexus.db, overridable via environment variable

@@ -3,6 +3,7 @@
 ## Development
 
 ### Prerequisites
+
 - Node.js 20+
 - npm
 
@@ -17,6 +18,7 @@ npm run dev
 ```
 
 Development servers:
+
 - Backend API: http://localhost:3001
 - Frontend: http://localhost:5173 (proxies /api to backend)
 
@@ -28,6 +30,7 @@ npm run build
 ```
 
 Built files:
+
 - Frontend: `dist/client/`
 - Backend: `dist/server/`
 
@@ -67,6 +70,7 @@ docker run -d \
 SQLite database is stored in `./data/storynexus.db` (mounted as volume).
 
 To backup:
+
 ```bash
 cp data/storynexus.db data/storynexus.db.backup
 ```
@@ -93,18 +97,19 @@ cp data/storynexus.db data/storynexus.db.backup
 ## Accessing from Other Devices
 
 1. Find your server's LAN IP address:
-   ```bash
-   # Linux/Mac
-   hostname -I
 
-   # Windows
-   ipconfig
-   ```
+    ```bash
+    # Linux/Mac
+    hostname -I
+
+    # Windows
+    ipconfig
+    ```
 
 2. Access from other devices on the same network:
-   ```
-   http://YOUR-SERVER-IP:3000
-   ```
+    ```
+    http://YOUR-SERVER-IP:3000
+    ```
 
 Example: `http://192.168.1.100:3000`
 

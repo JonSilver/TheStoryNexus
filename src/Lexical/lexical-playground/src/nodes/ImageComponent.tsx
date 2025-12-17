@@ -5,12 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type { BaseSelection, LexicalCommand, LexicalEditor, NodeKey } from "lexical";
-import type { JSX } from "react";
-
-import "./ImageNode.css";
-
 import { HashtagNode } from "@lexical/hashtag";
 import { LinkNode } from "@lexical/link";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
@@ -25,6 +19,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { useLexicalEditable } from "@lexical/react/useLexicalEditable";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
+import type { BaseSelection, LexicalCommand, LexicalEditor, NodeKey } from "lexical";
 import {
     $getNodeByKey,
     $getSelection,
@@ -45,8 +40,8 @@ import {
     SELECTION_CHANGE_COMMAND,
     TextNode
 } from "lexical";
+import type { JSX } from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-
 import { createWebsocketProvider } from "../collaboration";
 import { useSettings } from "../context/SettingsContext";
 import { useSharedHistoryContext } from "../context/SharedHistoryContext";
@@ -57,6 +52,7 @@ import TreeViewPlugin from "../plugins/TreeViewPlugin";
 import ContentEditable from "../ui/ContentEditable";
 import ImageResizer from "../ui/ImageResizer";
 import { $isImageNode } from "./ImageNode";
+import "./ImageNode.css";
 
 const imageCache = new Set();
 

@@ -5,12 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { JSX, RefObject } from "react";
-
-import "./index.css";
-
 import { DraggableBlockPlugin_EXPERIMENTAL } from "@lexical/react/LexicalDraggableBlockPlugin";
+import type { JSX, RefObject } from "react";
 import { useRef } from "react";
+import "./index.css";
 
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = "draggable-block-menu";
 

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     LexicalTypeaheadMenuPlugin,
@@ -16,9 +15,7 @@ import {
 import type { TextNode } from "lexical";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
 import * as ReactDOM from "react-dom";
-
 import { $createMentionNode } from "../../nodes/MentionNode";
 
 const PUNCTUATION = "\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%'\"~=<>_:;";
@@ -532,9 +529,7 @@ function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextM
     return null;
 }
 
-function getPossibleQueryMatch(text: string): MenuTextMatch | null {
-    return checkForAtSignMentions(text, 1);
-}
+const getPossibleQueryMatch = (text: string): MenuTextMatch | null => checkForAtSignMentions(text, 1);
 
 class MentionTypeaheadOption extends MenuOption {
     name: string;
@@ -575,6 +570,11 @@ function MentionsTypeaheadMenuItem({
             id={`typeahead-item-${index}`}
             onMouseEnter={onMouseEnter}
             onClick={onClick}
+            onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    onClick();
+                }
+            }}
         >
             {option.picture}
             <span className="text">{option.name}</span>
@@ -596,7 +596,7 @@ export default function NewMentionsPlugin(): JSX.Element | null {
     const options = useMemo(
         () =>
             results
-                .map(result => new MentionTypeaheadOption(result, <i className="icon user" />))
+                .map(result => new MentionTypeaheadOption(result, <i key={result} className="icon user" />))
                 .slice(0, SUGGESTION_LIST_LENGTH_LIMIT),
         [results]
     );

@@ -18,7 +18,8 @@
             "Bash(gh issue view:*)",
             "Bash(gh repo view:*)",
             "Bash(git remote:*)",
-            "Bash(npm run format:*)"
+            "Bash(npm run format:*)",
+            "Bash(npm run lint:server:*)"
         ],
         "deny": [],
         "ask": []

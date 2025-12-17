@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { IS_APPLE } from "shared/environment";
 
 export const SHORTCUTS = Object.freeze({

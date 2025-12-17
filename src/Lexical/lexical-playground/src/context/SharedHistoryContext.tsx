@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type { HistoryState } from "@lexical/react/LexicalHistoryPlugin";
 import { createEmptyHistoryState } from "@lexical/react/LexicalHistoryPlugin";
 import type * as React from "react";

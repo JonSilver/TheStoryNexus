@@ -5,16 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import type { JSX } from "react";
-
 import { logger } from "@/utils/logger";
+import Editor from "./Editor";
 import { FlashMessageContext } from "./context/FlashMessageContext";
 import { SettingsContext } from "./context/SettingsContext";
 import { SharedHistoryContext } from "./context/SharedHistoryContext";
 import { ToolbarContext } from "./context/ToolbarContext";
-import Editor from "./Editor";
 import PlaygroundNodes from "./nodes/PlaygroundNodes";
 import { TableContext } from "./plugins/TablePlugin";
 import PlaygroundEditorTheme from "./themes/PlaygroundEditorTheme";
