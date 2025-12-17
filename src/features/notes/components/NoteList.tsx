@@ -1,17 +1,11 @@
-import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/types/story";
-import {
-    useCreateNoteMutation,
-    useDeleteNoteMutation,
-    useNotesByStoryQuery,
-    useUpdateNoteMutation
-} from "../hooks/useNotesQuery";
+import { useCreateNoteMutation, useDeleteNoteMutation, useNotesByStoryQuery, useUpdateNoteMutation } from "../hooks/useNotesQuery";
+import { NoteFormDialog } from "./NoteFormDialog";
+import { NoteListItem } from "./NoteListItem";
 
 interface NoteListProps {
     storyId: string;
@@ -29,8 +23,6 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<Note | null>(null);
-    const [newTitle, setNewTitle] = useState("");
-    const [noteType, setNoteType] = useState<Note["type"]>("idea");
 
     const handleDeleteNote = async (noteId: string) => {
         await deleteNoteMutation.mutateAsync(noteId);
@@ -40,48 +32,19 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
     const handleEditClick = (note: Note, e: MouseEvent) => {
         e.stopPropagation();
         setEditingNote(note);
-        setNewTitle(note.title);
-        setNoteType(note.type);
         setIsEditDialogOpen(true);
     };
 
-    const handleCreateNote = async () => {
-        if (newTitle.trim()) {
-            await createNoteMutation.mutateAsync({
-                storyId,
-                title: newTitle.trim(),
-                content: "",
-                type: noteType
-            });
-            setIsNewNoteDialogOpen(false);
-            setNewTitle("");
-            setNoteType("idea");
-        }
+    const handleCreateNote = async (title: string, type: Note["type"]) => {
+        await createNoteMutation.mutateAsync({ storyId, title, content: "", type });
+        setIsNewNoteDialogOpen(false);
     };
 
-    const handleSaveEdit = async () => {
-        if (editingNote && newTitle.trim()) {
-            await updateNoteMutation.mutateAsync({
-                id: editingNote.id,
-                data: {
-                    title: newTitle.trim(),
-                    type: noteType
-                }
-            });
-            setIsEditDialogOpen(false);
-            setEditingNote(null);
-            setNewTitle("");
-        }
-    };
-
-    const getNoteTypeLabel = (type: Note["type"]) => {
-        const labels: Record<Note["type"], string> = {
-            idea: "Idea",
-            research: "Research",
-            todo: "To-Do",
-            other: "Other"
-        };
-        return labels[type];
+    const handleSaveEdit = async (title: string, type: Note["type"]) => {
+        if (editingNote)
+            await updateNoteMutation.mutateAsync({ id: editingNote.id, data: { title, type } });
+        setIsEditDialogOpen(false);
+        setEditingNote(null);
     };
 
     return (
@@ -91,7 +54,6 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
                 isCollapsed ? "w-[40px]" : "w-[250px] sm:w-[300px]"
             )}
         >
-            {/* Toggle button */}
             <button
                 type="button"
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -105,7 +67,6 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
                 )}
             </button>
 
-            {/* Note list content */}
             <div className={cn("h-full overflow-y-auto", isCollapsed ? "hidden" : "block")}>
                 <div className="p-4 border-b border-input">
                     <div className="flex justify-between items-center mb-4">
@@ -132,139 +93,39 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
                         </li>
                     ) : (
                         notes.map(note => (
-                            <li
+                            <NoteListItem
                                 key={note.id}
-                                role="option"
-                                tabIndex={0}
-                                aria-selected={selectedNoteId === note.id}
-                                className={cn(
-                                    "p-4 border-b border-input hover:bg-muted cursor-pointer relative group",
-                                    selectedNoteId === note.id && "bg-muted/50"
-                                )}
-                                onClick={() => onSelectNote(note)}
-                                onKeyDown={e => {
-                                    if (e.key === "Enter" || e.key === " ") onSelectNote(note);
+                                note={note}
+                                isSelected={selectedNoteId === note.id}
+                                onSelect={() => onSelectNote(note)}
+                                onEdit={e => handleEditClick(note, e)}
+                                onDelete={e => {
+                                    e.stopPropagation();
+                                    handleDeleteNote(note.id);
                                 }}
-                            >
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium truncate">{note.title}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {getNoteTypeLabel(note.type)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground">
-                                            {new Date(note.updatedAt).toLocaleDateString()}
-                                        </span>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={e => handleEditClick(note, e)}
-                                                className="h-6 w-6"
-                                            >
-                                                <Edit2 className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    handleDeleteNote(note.id);
-                                                }}
-                                                className="h-6 w-6 hover:text-destructive"
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
+                            />
                         ))
                     )}
                 </ul>
             </div>
 
-            {/* New Note Dialog */}
-            <Dialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Create New Note</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Input
-                                value={newTitle}
-                                onChange={e => setNewTitle(e.target.value)}
-                                placeholder="Note title"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Select value={noteType} onValueChange={value => setNoteType(value as Note["type"])}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select note type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="idea">Idea</SelectItem>
-                                    <SelectItem value="research">Research</SelectItem>
-                                    <SelectItem value="todo">To-Do</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsNewNoteDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleCreateNote} disabled={!newTitle.trim()}>
-                            Create
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <NoteFormDialog
+                open={isNewNoteDialogOpen}
+                onOpenChange={setIsNewNoteDialogOpen}
+                title="Create New Note"
+                submitLabel="Create"
+                onSubmit={handleCreateNote}
+            />
 
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Note</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Input
-                                value={newTitle}
-                                onChange={e => setNewTitle(e.target.value)}
-                                placeholder="Note title"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Select value={noteType} onValueChange={value => setNoteType(value as Note["type"])}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select note type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="idea">Idea</SelectItem>
-                                    <SelectItem value="research">Research</SelectItem>
-                                    <SelectItem value="todo">To-Do</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveEdit} disabled={!newTitle.trim()}>
-                            Save
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <NoteFormDialog
+                open={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                title="Edit Note"
+                submitLabel="Save"
+                initialTitle={editingNote?.title}
+                initialType={editingNote?.type}
+                onSubmit={handleSaveEdit}
+            />
         </div>
     );
 }
