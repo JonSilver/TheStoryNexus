@@ -1,58 +1,20 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { attemptPromise } from "@jfdi/attempt";
 import { ChevronDown, ChevronUp, GripVertical, Pencil, PenLine, Trash2 } from "lucide-react";
-import { type MouseEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type MouseEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
 import { z } from "zod";
-import { DownloadMenu } from "@/components/ui/DownloadMenu";
-import { AIGenerateMenu } from "@/components/ui/ai-generate-menu";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ROUTES } from "@/constants/urls";
-import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
 import { useDeleteChapterMutation, useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
-import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
-import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { parseLocalStorage } from "@/schemas/entities";
-import { aiService } from "@/services/ai/AIService";
-import { chaptersApi } from "@/services/api/client";
-import type { PromptParserConfig } from "@/types/story";
-import { extractPlainTextFromLexical } from "@/utils/lexicalUtils";
-import { logger } from "@/utils/logger";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle
-} from "../../../components/ui/alert-dialog";
-import { Button } from "../../../components/ui/button";
-import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle
-} from "../../../components/ui/dialog";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
-import { Textarea } from "../../../components/ui/textarea";
-import type { AllowedModel, Chapter, Prompt } from "../../../types/story";
-
-interface ChapterCardProps {
-    chapter: Chapter;
-    storyId: string;
-    onWriteClick?: () => void;
-}
+import type { Chapter } from "@/types/story";
+import { ChapterSummarySection } from "./ChapterSummarySection";
+import { DeleteChapterDialog } from "./DeleteChapterDialog";
+import { EditChapterDialog } from "./EditChapterDialog";
 
 type POVType = "First Person" | "Third Person Limited" | "Third Person Omniscient";
 
@@ -62,40 +24,24 @@ interface EditChapterForm {
     povType?: POVType;
 }
 
+interface ChapterCardProps {
+    chapter: Chapter;
+    storyId: string;
+    onWriteClick?: () => void;
+}
+
 export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const expandedStateKey = `chapter-${chapter.id}-expanded`;
     const [isExpanded, setIsExpanded] = useState(() => parseLocalStorage(z.boolean(), expandedStateKey, false));
-    // Local summary state: null = use chapter.summary prop, non-null = user has edited
-    const [localSummary, setLocalSummary] = useState<string | null>(null);
-    const summary = localSummary ?? chapter.summary ?? "";
-    const setSummary = (value: string) => setLocalSummary(value);
 
     const deleteChapterMutation = useDeleteChapterMutation();
     const updateChapterMutation = useUpdateChapterMutation();
-    const form = useForm<EditChapterForm>();
-    const povType = form.watch("povType");
-
-    // Reset form when dialog opens - ensures fresh values from chapter prop
-    const openEditDialog = () => {
-        form.reset({
-            title: chapter.title,
-            povCharacter: chapter.povCharacter,
-            povType: chapter.povType || "Third Person Omniscient"
-        });
-        setShowEditDialog(true);
-    };
     const { setCurrentChapterId } = useStoryContext();
     const navigate = useNavigate();
-    const { generateWithPrompt } = useGenerateWithPrompt();
     const { entries } = useLorebookContext();
-    const { data: prompts = [], isLoading, error: queryError } = usePromptsQuery({ includeSystem: true });
-    const { lastUsed, saveSelection } = useLastUsedPrompt("gen_summary", prompts);
-    const [isGenerating, setIsGenerating] = useState(false);
     const characterEntries = entries.filter(entry => entry.category === "character");
-    const error = queryError?.message ?? null;
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: chapter.id });
 
@@ -105,116 +51,21 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
         opacity: isDragging ? 0.5 : 1
     };
 
-    const adjustTextareaHeight = useCallback(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = "auto";
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        }
-    }, []);
-
-    // Adjust textarea height when expanded or summary changes
-    useLayoutEffect(() => {
-        if (isExpanded) adjustTextareaHeight();
-    }, [isExpanded, adjustTextareaHeight]);
-
-    // Save expanded state to localStorage
     useEffect(() => {
         localStorage.setItem(expandedStateKey, JSON.stringify(isExpanded));
     }, [isExpanded, expandedStateKey]);
 
     const handleDelete = () => {
         deleteChapterMutation.mutate(chapter.id, {
-            onSuccess: () => {
-                setShowDeleteDialog(false);
-            }
+            onSuccess: () => setShowDeleteDialog(false)
         });
     };
 
     const handleEdit = (data: EditChapterForm) => {
-        // Only include povCharacter if not omniscient
-        const povCharacter = data.povType !== "Third Person Omniscient" ? data.povCharacter : undefined;
-
         updateChapterMutation.mutate(
-            {
-                id: chapter.id,
-                data: {
-                    ...data,
-                    povCharacter
-                }
-            },
-            {
-                onSuccess: () => {
-                    setShowEditDialog(false);
-                }
-            }
+            { id: chapter.id, data },
+            { onSuccess: () => setShowEditDialog(false) }
         );
-    };
-
-    const handleSaveSummary = (e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (summary !== chapter.summary) 
-            updateChapterMutation.mutate(
-                {
-                    id: chapter.id,
-                    data: { summary }
-                },
-                {
-                    onSuccess: () => {
-                        setLocalSummary(null); // Reset to use prop value
-                        toast.success("Summary saved successfully");
-                    }
-                }
-            );
-        
-    };
-
-    const handleGenerateSummary = async (prompt: Prompt, model: AllowedModel) => {
-        saveSelection(prompt, model);
-        setIsGenerating(true);
-
-        const [error] = await attemptPromise(async () => {
-            const chapterData = await chaptersApi.getById(chapter.id);
-            const plainTextContent = chapterData?.content ? extractPlainTextFromLexical(chapterData.content) : "";
-
-            const config: PromptParserConfig = {
-                promptId: prompt.id,
-                storyId: storyId,
-                chapterId: chapter.id,
-                additionalContext: {
-                    plainTextContent
-                }
-            };
-
-            const response = await generateWithPrompt(config, model);
-            let text = "";
-
-            await new Promise<void>((resolve, reject) => {
-                aiService.processStreamedResponse(
-                    response,
-                    token => {
-                        text += token;
-                        setSummary(text);
-                    },
-                    resolve,
-                    reject
-                );
-            });
-
-            updateChapterMutation.mutate(
-                { id: chapter.id, data: { summary: text } },
-                { onSuccess: () => setLocalSummary(null) }
-            );
-            toast.success("Summary generated successfully");
-        });
-
-        if (error) {
-            logger.error("Failed to generate summary:", error);
-            toast.error("Failed to generate summary");
-        }
-
-        setIsGenerating(false);
     };
 
     const toggleExpanded = (e: MouseEvent) => {
@@ -224,9 +75,8 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     };
 
     const handleWriteClick = () => {
-        if (onWriteClick) 
-            onWriteClick();
-         else {
+        if (onWriteClick) onWriteClick();
+        else {
             setCurrentChapterId(chapter.id);
             navigate(ROUTES.DASHBOARD.CHAPTER_EDITOR(storyId, chapter.id));
         }
@@ -262,7 +112,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                             </div>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={openEditDialog}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowEditDialog(true)}>
                                 <Pencil className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleWriteClick}>
@@ -284,128 +134,26 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                 </CardHeader>
                 {isExpanded && (
                     <CardContent className="p-4">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor={`summary-${chapter.id}`}>Chapter Summary</Label>
-                                <Textarea
-                                    ref={textareaRef}
-                                    id={`summary-${chapter.id}`}
-                                    placeholder="Enter a brief summary of this chapter..."
-                                    value={summary}
-                                    onChange={e => {
-                                        setSummary(e.target.value);
-                                    }}
-                                    className="min-h-[100px] overflow-hidden"
-                                />
-                                <div className="flex justify-between items-center">
-                                    <Button type="button" variant="secondary" size="sm" onClick={handleSaveSummary}>
-                                        Save Summary
-                                    </Button>
-                                    <AIGenerateMenu
-                                        isGenerating={isGenerating}
-                                        isLoading={isLoading}
-                                        error={error}
-                                        prompts={prompts}
-                                        promptType="gen_summary"
-                                        buttonText="Generate Summary"
-                                        onGenerate={handleGenerateSummary}
-                                        lastUsed={lastUsed}
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-2 pt-3 border-t">
-                                    <DownloadMenu type="chapter" id={chapter.id} />
-                                </div>
-                            </div>
-                        </div>
+                        <ChapterSummarySection chapter={chapter} storyId={storyId} />
                     </CardContent>
                 )}
             </Card>
 
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete Chapter {chapter.order}: {chapter.title}. This action cannot be
-                            undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <DeleteChapterDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                chapterOrder={chapter.order}
+                chapterTitle={chapter.title}
+                onDelete={handleDelete}
+            />
 
-            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                <DialogContent>
-                    <form onSubmit={form.handleSubmit(handleEdit)}>
-                        <DialogHeader>
-                            <DialogTitle>Edit Chapter</DialogTitle>
-                            <DialogDescription>Make changes to your chapter details.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="title">Title</Label>
-                                <Input
-                                    id="title"
-                                    placeholder="Enter chapter title"
-                                    {...form.register("title", { required: true })}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="povType">POV Type</Label>
-                                <Select
-                                    defaultValue={chapter.povType || "Third Person Omniscient"}
-                                    onValueChange={value => {
-                                        form.setValue("povType", value as POVType);
-                                        if (value === "Third Person Omniscient")
-                                            form.setValue("povCharacter", undefined);
-                                    }}
-                                >
-                                    <SelectTrigger id="povType">
-                                        <SelectValue placeholder="Select POV type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="First Person">First Person</SelectItem>
-                                        <SelectItem value="Third Person Limited">Third Person Limited</SelectItem>
-                                        <SelectItem value="Third Person Omniscient">Third Person Omniscient</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {povType && povType !== "Third Person Omniscient" && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="povCharacter">POV Character</Label>
-                                    <Select
-                                        value={form.getValues("povCharacter")}
-                                        onValueChange={value => form.setValue("povCharacter", value)}
-                                    >
-                                        <SelectTrigger id="povCharacter">
-                                            <SelectValue placeholder="Select character" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {characterEntries.length === 0 ? (
-                                                <SelectItem value="none" disabled>
-                                                    No characters available
-                                                </SelectItem>
-                                            ) : (
-                                                characterEntries.map(character => (
-                                                    <SelectItem key={character.id} value={character.name}>
-                                                        {character.name}
-                                                    </SelectItem>
-                                                ))
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit">Save Changes</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <EditChapterDialog
+                open={showEditDialog}
+                onOpenChange={setShowEditDialog}
+                chapter={chapter}
+                characterEntries={characterEntries}
+                onSubmit={handleEdit}
+            />
         </div>
     );
 }
