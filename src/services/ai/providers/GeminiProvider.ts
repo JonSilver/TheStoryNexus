@@ -37,11 +37,6 @@ export class GeminiProvider implements IAIProvider {
                 if (!model.name || !model.supportedActions?.includes("generateContent")) continue;
 
                 const modelId = model.name.replace("models/", "");
-
-                // Only include official Gemini models - third-party models (gemma, learnlm, etc.)
-                // don't support system instructions which our prompts require
-                if (!modelId.startsWith("gemini-")) continue;
-
                 models.push({
                     id: modelId,
                     name: model.displayName || modelId,
@@ -70,13 +65,15 @@ export class GeminiProvider implements IAIProvider {
     ): Promise<Response> {
         if (!this.client) throw new Error("Gemini client not initialized");
 
-        const { systemInstruction, contents } = this.convertMessages(messages);
+        // Only gemini-* models support native systemInstruction
+        const supportsSystemInstruction = model.startsWith("gemini-");
+        const { systemInstruction, contents } = this.convertMessages(messages, supportsSystemInstruction);
 
         const stream = await this.client.models.generateContentStream({
             model,
             contents,
             config: {
-                ...(systemInstruction && { systemInstruction }),
+                ...(supportsSystemInstruction && systemInstruction && { systemInstruction }),
                 temperature,
                 maxOutputTokens: maxTokens,
                 abortSignal: signal
@@ -90,7 +87,10 @@ export class GeminiProvider implements IAIProvider {
         return this.client !== null;
     }
 
-    private convertMessages(messages: PromptMessage[]): {
+    private convertMessages(
+        messages: PromptMessage[],
+        supportsSystemInstruction: boolean
+    ): {
         systemInstruction: string | undefined;
         contents: Array<{ role: string; parts: Array<{ text: string }> }>;
     } {
@@ -107,6 +107,16 @@ export class GeminiProvider implements IAIProvider {
                     role: msg.role === "assistant" ? "model" : "user",
                     parts: [{ text: msg.content }]
                 });
+
+        // For models without native system instruction support, prepend to first user message
+        if (!supportsSystemInstruction && systemInstruction && contents.length > 0) {
+            const firstUserIdx = contents.findIndex(c => c.role === "user");
+            if (firstUserIdx !== -1) {
+                const original = contents[firstUserIdx].parts[0].text;
+                contents[firstUserIdx].parts[0].text = `${systemInstruction}\n\n${original}`;
+            }
+            return { systemInstruction: undefined, contents };
+        }
 
         return { systemInstruction, contents };
     }
