@@ -281,6 +281,7 @@ export const adminApi = {
             return response.json();
         });
     },
+    checkDemoExists: () => fetchJSON<{ exists: boolean }>("/admin/demo/exists"),
     importDemoData: () =>
         fetchJSON<{ success: boolean; message: string }>("/admin/demo/import", {
             method: "POST"

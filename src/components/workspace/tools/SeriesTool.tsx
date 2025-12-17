@@ -3,7 +3,7 @@ import { Edit, FolderUp, Trash2 } from "lucide-react";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateSeriesDialog } from "@/features/series/components/CreateSeriesDialog";
 import { EditSeriesDialog } from "@/features/series/components/EditSeriesDialog";
@@ -54,11 +54,12 @@ function SeriesCard({
                     <ActionButton icon={Trash2} tooltip="Delete series" onClick={handleDeleteClick} />
                 </CardFooter>
             </Card>
-            <ConfirmDeleteDialog
+            <ConfirmDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 description={`Delete series "${series.name}" and all its stories? This action cannot be undone.`}
                 onConfirm={() => deleteSeriesMutation.mutate(series.id)}
+                confirmLabel="Delete"
             />
         </>
     );

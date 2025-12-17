@@ -1,4 +1,4 @@
-import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface DeleteChapterDialogProps {
     open: boolean;
@@ -15,10 +15,11 @@ export const DeleteChapterDialog = ({
     chapterTitle,
     onDelete
 }: DeleteChapterDialogProps) => (
-    <ConfirmDeleteDialog
+    <ConfirmDialog
         open={open}
         onOpenChange={onOpenChange}
         description={`This will permanently delete Chapter ${chapterOrder}: ${chapterTitle}. This action cannot be undone.`}
         onConfirm={onDelete}
+        confirmLabel="Delete"
     />
 );
