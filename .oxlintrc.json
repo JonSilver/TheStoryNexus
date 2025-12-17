@@ -1,0 +1,15 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "rules": {
+        "no-unused-vars": "warn",
+        "no-explicit-any": "error",
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn",
+        "prefer-arrow-callback": "error",
+        "no-non-null-assertion": "warn",
+        "jsx-a11y/alt-text": "warn",
+        "max-lines": ["warn", { "max": 200, "skipBlankLines": true, "skipComments": true }]
+    },
+    "plugins": ["react", "typescript", "jsx-a11y"],
+    "ignorePatterns": ["dist", "node_modules"]
+}

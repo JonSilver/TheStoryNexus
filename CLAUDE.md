@@ -19,6 +19,7 @@ The Story Nexus is a local-first web application for AI-assisted creative writin
 ## Development Commands
 
 ### Development
+
 ```bash
 npm run dev          # Start both backend (port 3001) and frontend (port 5173) servers
 npm run dev:server   # Backend only (Express + SQLite)
@@ -26,31 +27,37 @@ npm run dev:client   # Frontend only (Vite)
 ```
 
 ### Linting & Formatting
+
 ```bash
-npm run lint         # Run Biome check (linting + formatting)
-npm run lint:fix     # Fix linting and formatting issues
-npm run format       # Format all files
+npm run lint         # Run OxLint
+npm run lint:fix     # Fix linting issues
+npm run format       # Format all files with Prettier
+npm run format:check # Check formatting without writing
 ```
 
 ### Production
+
 ```bash
 npm run build        # Build both backend and frontend
 npm start            # Start production server (port 3000, configurable via PORT env)
 ```
 
 ### Database Management
+
 ```bash
 npm run db:generate  # Generate migration from schema changes
 npm run db:migrate   # Apply migrations to database
 ```
 
 ### Docker
+
 ```bash
 docker-compose up --build  # Run app in container, access on port 3000
 ```
 
 ### Code Quality
-The project uses Biome for linting and formatting (replacing ESLint + Prettier). TypeScript has `strict: false` but enables specific strict checks (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters`).
+
+The project uses OxLint for linting and Prettier for formatting. TypeScript has `strict: false` but enables specific strict checks (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters`).
 
 Knip (`npm run knip`) identifies unused files, dependencies, and exports. Run periodically to prevent accumulation of dead code. After significant refactoring, check Knip output and remove genuinely unused code to maintain codebase hygiene.
 
@@ -93,6 +100,7 @@ if (error) return handleError(error);
 ### Technology Stack
 
 **Backend**:
+
 - Express.js v5 - API server
 - SQLite + better-sqlite3 - Database
 - Drizzle ORM v0.44 - Type-safe database queries
@@ -101,6 +109,7 @@ if (error) return handleError(error);
 - Zod - Schema validation
 
 **Frontend**:
+
 - React 18 - UI framework
 - TypeScript 5.6 - Type safety
 - Vite 6 - Build tool with HMR
@@ -110,6 +119,7 @@ if (error) return handleError(error);
 - Lexical v0.24.0 - Rich text editor (custom implementation in `src/Lexical/`)
 
 **UI Libraries**:
+
 - Tailwind CSS - Utility-first styling
 - Shadcn UI (Radix UI primitives) - Accessible components
 - Lucide React - Icons
@@ -118,23 +128,30 @@ if (error) return handleError(error);
 - @dnd-kit - Drag and drop
 
 **AI & Content**:
+
 - OpenAI SDK v4 - AI provider integration (OpenAI, OpenRouter, local models)
 - gpt-tokenizer - Token counting
 - React Markdown + remark-gfm + rehype - Markdown rendering
 
 **Development**:
+
 - tsx + concurrently - Backend watch mode + parallel dev servers
-- Biome - Linting and formatting
+- OxLint - Linting
+- Prettier - Formatting
 - Drizzle Kit - Database migrations
 - cross-env - Environment variable management
 
 ### Path Aliases
+
 The project uses TypeScript path aliases configured in both `tsconfig.json` and `vite.config.ts`:
+
 - `@/*` → `./src/*`
 - `shared/*` → `src/Lexical/shared/src/*`
 
 ### Lexical Dependencies
+
 The following Lexical packages are available as transitive dependencies of `@lexical/react` and DO NOT need to be added to package.json:
+
 - `@lexical/mark` - Provided by @lexical/react
 - `@lexical/yjs` - Provided by @lexical/react
 - `@lexical/utils` - Provided by @lexical/code, @lexical/hashtag, @lexical/link, @lexical/list, @lexical/markdown, @lexical/react
@@ -146,7 +163,9 @@ Never add these to package.json. They install automatically.
 ### Core Architecture Patterns
 
 #### Database Schema (SQLite)
+
 The server-side database (`server/db/schema.ts`) uses Drizzle ORM with SQLite. Tables:
+
 - `series` - Series metadata (name, description)
 - `stories` - Story metadata, synopsis, optional `seriesId` foreign key
 - `chapters` - Chapter content, outlines, POV settings, word count
@@ -160,6 +179,7 @@ The server-side database (`server/db/schema.ts`) uses Drizzle ORM with SQLite. T
 All entities have `id`, `createdAt`, and optional `isDemo` fields. Database migrations managed via Drizzle Kit. System prompts seeded on first run via `server/db/seedSystemPrompts.ts`.
 
 #### State Management
+
 Features use TanStack Query hooks in `src/features/*/hooks/`:
 
 - `useSeriesQuery` - Series queries
@@ -173,7 +193,9 @@ Features use TanStack Query hooks in `src/features/*/hooks/`:
 All data fetched from Express API endpoints. Mutations use TanStack Query mutations with automatic cache invalidation.
 
 #### AI Service Architecture
+
 `AIService` (`src/services/ai/AIService.ts`) is a singleton managing:
+
 - Three AI providers: OpenAI, OpenRouter, and Local (via LM Studio-compatible API)
 - API key storage and initialization
 - Model fetching from each provider
@@ -183,7 +205,9 @@ All data fetched from Express API endpoints. Mutations use TanStack Query mutati
 Default local API URL: `http://localhost:1234/v1`
 
 #### Prompt System
+
 The `PromptParser` (`src/features/prompts/services/promptParser.ts`) processes prompt templates with variable substitution using `{{variable_name}}` or `{{function_name(args)}}` syntax. Key variables:
+
 - `{{matched_entries_chapter}}` / `{{lorebook_chapter_matched_entries}}` - Lorebook entries matched in chapter
 - `{{lorebook_scenebeat_matched_entries}}` - Lorebook entries matched in scene beat
 - `{{summaries}}` - Chapter summaries
@@ -199,7 +223,9 @@ The `PromptParser` (`src/features/prompts/services/promptParser.ts`) processes p
 Prompts support multiple prompt types: `scene_beat`, `gen_summary`, `selection_specific`, `continue_writing`, `brainstorm`, `other`.
 
 #### Lexical Editor Integration
+
 The Lexical editor is embedded from `src/Lexical/lexical-playground/` with custom plugins:
+
 - **SceneBeatNode** - Inline scene beat commands (triggered by Alt+S / Option+S)
 - **LorebookTagPlugin** - Autocomplete for `@tag` mentions that match lorebook tags
 - **SaveChapterContent** / **LoadChapterContent** - Auto-save and load chapter content from database
@@ -210,12 +236,14 @@ The editor uses a modified version of the Lexical playground and includes custom
 ### Project Structure
 
 #### Backend
+
 - `server/` - Express.js API server
-  - `db/` - Database schema, client, migrations, and seeding
-  - `routes/` - API route handlers (stories, chapters, prompts, lorebook, etc.)
-  - `index.ts` - Server entry point
+    - `db/` - Database schema, client, migrations, and seeding
+    - `routes/` - API route handlers (stories, chapters, prompts, lorebook, etc.)
+    - `index.ts` - Server entry point
 
 #### Frontend
+
 Features are organized in `src/features/` by domain:
 
 - `series/` - Series creation, listing, dashboard
@@ -230,12 +258,14 @@ Features are organized in `src/features/` by domain:
 - `guide/` - In-app user guide
 
 Each feature typically contains:
+
 - `hooks/` - TanStack Query hooks for data fetching
 - `pages/` - Route components
 - `components/` - Feature-specific UI components
 - `services/` - Business logic (if needed)
 
 Other frontend directories:
+
 - `src/components/` - Reusable UI components
 - `src/Lexical/` - Text editor implementation (custom Lexical editor)
 - `src/services/` - Services (AI, API client, export utilities)
@@ -243,6 +273,7 @@ Other frontend directories:
 - `src/lib/` - Utility functions and helpers
 
 ### Routing Structure
+
 ```
 / - Landing page
 /series - Series listing
@@ -262,6 +293,7 @@ Other frontend directories:
 Story-specific routes are nested under `/dashboard/:storyId` with a shared layout showing story navigation. Series provide optional grouping for related stories with inherited lorebook entries.
 
 ### Lorebook System
+
 Lorebook entries support:
 
 - **Three-level hierarchy**: `global` (all stories), `series` (stories in a series), `story` (single story)
@@ -273,24 +305,31 @@ Lorebook entries support:
 Lorebook entries are integrated into the prompt system for context injection. Stories inherit global entries and series-level entries (if part of a series).
 
 ### Scene Beat System
+
 Scene beats are inline writing commands in the editor:
+
 - Triggered by Alt+S (Option+S on Mac)
 - Store command, POV settings, generated content, and acceptance status
 - Support three context modes:
-  - `useMatchedChapter` - Include chapter-matched lorebook entries
-  - `useMatchedSceneBeat` - Include scene-beat-matched lorebook entries
-  - `useCustomContext` - Include manually selected lorebook entries
+    - `useMatchedChapter` - Include chapter-matched lorebook entries
+    - `useMatchedSceneBeat` - Include scene-beat-matched lorebook entries
+    - `useCustomContext` - Include manually selected lorebook entries
 - Generated content can be accepted (inserted into editor) or regenerated
 
 ### Prompt Import/Export
+
 Prompts can be exported/imported as JSON from the Prompts Manager UI:
+
 ```json
 {
-  "version": "1.0",
-  "type": "prompts",
-  "prompts": [/* array of prompt objects */]
+    "version": "1.0",
+    "type": "prompts",
+    "prompts": [
+        /* array of prompt objects */
+    ]
 }
 ```
+
 - Only non-system prompts are exported
 - System prompts are preserved on import (never overwritten)
 - Imported prompts get unique names with `(Imported)` suffix if name collision
@@ -299,27 +338,35 @@ Prompts can be exported/imported as JSON from the Prompts Manager UI:
 ## Key Implementation Notes
 
 ### Database Operations
+
 All database operations handled server-side via Drizzle ORM. Cascading deletes configured in schema via foreign key constraints (`onDelete: 'cascade'`). Frontend uses API client (`src/services/api/client.ts`) with TanStack Query for all data operations.
 
 ### AI Streaming
+
 All AI generation uses streaming responses. The `AIService` provides:
+
 - `generateWithLocalModel()`, `generateWithOpenAI()`, `generateWithOpenRouter()` - Return Response objects
 - `processStreamedResponse()` - Unified stream processor with token callback, completion, and error handlers
 - `abortStream()` - Abort ongoing generation
 
 ### Lexical Editor State
+
 Chapter content is stored as Lexical editor state JSON in the `chapters.content` field. The `SaveChapterContent` plugin debounces saves to server API, while `LoadChapterContent` initializes editor state on mount from server data.
 
 ### Demo Content
+
 Entities can be marked with `isDemo: true` to identify demonstration content. This allows selective deletion or filtering of demo vs. user-created data.
 
 ### Model Selection
+
 Models are stored with provider prefix (e.g., `local/model-name`, `gpt-4`). Prompts can specify `allowedModels` to restrict which models can be used. Models are fetched from provider APIs and cached in `aiSettings.availableModels`.
 
 ### TypeScript Configuration
+
 The project uses `strict: false` but enables specific strict checks (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`) and linting rules (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`). While not fully strict, the configuration provides reasonable type safety. Prefer runtime safety checks via `@jfdi/attempt` for error handling.
 
 ### Development Server Configuration
+
 Backend runs on port 3001 in development, frontend on port 5173 with Vite proxy to backend. Production runs on single port 3000 (configurable via PORT env var). Frontend built into `dist/` and served as static files by Express in production.
 
 ## Known Issues & Temporary Workarounds
