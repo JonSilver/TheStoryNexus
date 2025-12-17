@@ -1,9 +1,10 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { Edit, FolderUp, Trash2 } from "lucide-react";
-import { type MouseEvent, useState } from "react";
-import { Button } from "@/components/ui/button";
+import type { MouseEvent } from "react";
+import { useState } from "react";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreateSeriesDialog } from "@/features/series/components/CreateSeriesDialog";
 import { EditSeriesDialog } from "@/features/series/components/EditSeriesDialog";
 import { useDeleteSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
@@ -23,12 +24,11 @@ function SeriesCard({
     onExport: (series: Series) => void;
 }) {
     const deleteSeriesMutation = useDeleteSeriesMutation();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const handleDelete = async (e: MouseEvent) => {
+    const handleDeleteClick = (e: MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm(`Delete series "${series.name}" and all its stories?`)) 
-            deleteSeriesMutation.mutate(series.id);
-        
+        setDeleteDialogOpen(true);
     };
 
     const handleEdit = (e: MouseEvent) => {
@@ -42,52 +42,25 @@ function SeriesCard({
     };
 
     return (
-        <Card className="w-full border-2 border-gray-300 dark:border-gray-700 shadow-sm">
-            <CardHeader>
-                <CardTitle>{series.name}</CardTitle>
-                {series.description && <CardDescription>{series.description}</CardDescription>}
-            </CardHeader>
-            <CardFooter className="flex justify-end gap-2">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleEdit}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Edit series</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleExport}>
-                                <FolderUp className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Export series</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleDelete}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Delete series</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </CardFooter>
-        </Card>
+        <>
+            <Card className="w-full border-2 border-gray-300 dark:border-gray-700 shadow-sm">
+                <CardHeader>
+                    <CardTitle>{series.name}</CardTitle>
+                    {series.description && <CardDescription>{series.description}</CardDescription>}
+                </CardHeader>
+                <CardFooter className="flex justify-end gap-2">
+                    <ActionButton icon={Edit} tooltip="Edit series" onClick={handleEdit} />
+                    <ActionButton icon={FolderUp} tooltip="Export series" onClick={handleExport} />
+                    <ActionButton icon={Trash2} tooltip="Delete series" onClick={handleDeleteClick} />
+                </CardFooter>
+            </Card>
+            <ConfirmDeleteDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                description={`Delete series "${series.name}" and all its stories? This action cannot be undone.`}
+                onConfirm={() => deleteSeriesMutation.mutate(series.id)}
+            />
+        </>
     );
 }
 

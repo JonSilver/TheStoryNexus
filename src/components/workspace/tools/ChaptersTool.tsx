@@ -9,10 +9,9 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { attemptPromise } from "@jfdi/attempt";
-import { Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChapterCard } from "@/features/chapters/components/ChapterCard";
 import {
@@ -145,15 +144,11 @@ export const ChaptersTool = () => {
 
                 <ScrollArea className="h-[calc(100vh-10rem)]">
                     {chapters.length === 0 ? (
-                        <div className="h-[200px] flex flex-col items-center justify-center text-center p-6">
-                            <p className="text-muted-foreground mb-4">
-                                No chapters yet. Start writing your story by creating a new chapter.
-                            </p>
-                            <Button onClick={() => setIsCreateDialogOpen(true)}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create First Chapter
-                            </Button>
-                        </div>
+                        <EmptyState
+                            message="No chapters yet. Start writing your story by creating a new chapter."
+                            actionLabel="Create First Chapter"
+                            onAction={() => setIsCreateDialogOpen(true)}
+                        />
                     ) : (
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                             <SortableContext

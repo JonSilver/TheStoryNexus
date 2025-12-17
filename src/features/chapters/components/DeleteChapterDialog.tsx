@@ -1,13 +1,4 @@
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 
 interface DeleteChapterDialogProps {
     open: boolean;
@@ -24,18 +15,10 @@ export const DeleteChapterDialog = ({
     chapterTitle,
     onDelete
 }: DeleteChapterDialogProps) => (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will permanently delete Chapter {chapterOrder}: {chapterTitle}. This action cannot be undone.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDeleteDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        description={`This will permanently delete Chapter ${chapterOrder}: ${chapterTitle}. This action cannot be undone.`}
+        onConfirm={onDelete}
+    />
 );
