@@ -6,6 +6,15 @@
  *
  */
 
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { $isListNode, ListNode } from "@lexical/list";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $isHeadingNode } from "@lexical/rich-text";
@@ -46,15 +55,6 @@ import {
 import type { JSX } from "react";
 import { type Dispatch, useCallback, useEffect, useState } from "react";
 import { IS_APPLE } from "shared/environment";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { blockTypeToBlockName, useToolbarState } from "../../context/ToolbarContext";
 import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { getSelectedNode } from "../../utils/getSelectedNode";
@@ -627,229 +627,244 @@ export default function ToolbarPlugin({
                     <Divider />
                 </>
             )}
-
-            <FontDropDown
-                disabled={!isEditable}
-                style={"font-family"}
-                value={toolbarState.fontFamily}
-                editor={activeEditor}
-            />
-            <Divider />
-            <FontSize
-                selectionFontSize={toolbarState.fontSize.slice(0, -2)}
-                editor={activeEditor}
-                disabled={!isEditable}
-            />
-            <Divider />
-            <Button
-                disabled={!isEditable}
-                onClick={() => {
-                    activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
-                }}
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 hover:bg-accent/50 transition-colors ${toolbarState.isBold ? "bg-accent/50" : ""}`}
-                title={`Bold (${SHORTCUTS.BOLD})`}
-                aria-label={`Format text as bold. Shortcut: ${SHORTCUTS.BOLD}`}
-            >
-                <Bold className="h-4 w-4" />
-            </Button>
-            <Button
-                disabled={!isEditable}
-                onClick={() => {
-                    activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
-                }}
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 hover:bg-accent/50 transition-colors ${toolbarState.isItalic ? "bg-accent/50" : ""}`}
-                title={`Italic (${SHORTCUTS.ITALIC})`}
-                aria-label={`Format text as italics. Shortcut: ${SHORTCUTS.ITALIC}`}
-            >
-                <Italic className="h-4 w-4" />
-            </Button>
-            <Button
-                disabled={!isEditable}
-                onClick={() => {
-                    activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
-                }}
-                variant="ghost"
-                size="icon"
-                className={
-                    "h-8 w-8 hover:bg-accent/50 transition-colors " + (toolbarState.isUnderline ? "bg-accent/50" : "")
-                }
-                title={`Underline (${SHORTCUTS.UNDERLINE})`}
-                aria-label={`Format text to underlined. Shortcut: ${SHORTCUTS.UNDERLINE}`}
-            >
-                <Underline className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
+            <>
+                {/* Font controls - hidden on mobile */}
+                <div className="hidden md:flex items-center">
+                    <FontDropDown
                         disabled={!isEditable}
-                        className="h-8 w-8 hover:bg-accent/50 transition-colors"
-                        aria-label="Formatting options for additional text styles"
-                    >
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[180px]">
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "lowercase");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon lowercase" />
-                            <span className="text">Lowercase</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.LOWERCASE}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "uppercase");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon uppercase" />
-                            <span className="text">Uppercase</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.UPPERCASE}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "capitalize");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon capitalize" />
-                            <span className="text">Capitalize</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.CAPITALIZE}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <Strikethrough className="h-4 w-4" />
-                            <span className="text">Strikethrough</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.STRIKETHROUGH}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon subscript" />
-                            <span className="text">Subscript</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.SUBSCRIPT}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript");
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon superscript" />
-                            <span className="text">Superscript</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.SUPERSCRIPT}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        className="hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => clearFormatting(activeEditor)}
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="icon clear" />
-                            <span className="text">Clear Formatting</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.CLEAR_FORMATTING}</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-            {canViewerSeeInsertDropdown && (
-                <>
-                    <div className="w-[1px] h-6 bg-border mx-1" />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={!isEditable}
-                                className="h-8 gap-1 font-normal hover:bg-accent/50 transition-colors"
-                            >
-                                Insert
-                                <ChevronDown className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="min-w-[180px]">
-                            <DropdownMenuItem
-                                className="hover:bg-accent/50 transition-colors cursor-pointer"
-                                onClick={() => {
-                                    activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
-                                }}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Minus className="h-4 w-4" />
-                                    <span className="text">Horizontal Rule</span>
-                                </div>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                className="hover:bg-accent/50 transition-colors cursor-pointer"
-                                onClick={() => {
-                                    activeEditor.dispatchCommand(INSERT_PAGE_BREAK, undefined);
-                                }}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <i className="icon page-break" />
-                                    <span className="text">Page Break</span>
-                                </div>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                className="hover:bg-accent/50 transition-colors cursor-pointer"
-                                onClick={() => {
-                                    editor.update(() => {
-                                        const selection = $getSelection();
-                                        if (selection) {
-                                            const beatNode = $createSceneBeatNode();
-                                            const paragraphNode = $createParagraphNode();
-                                            selection.insertNodes([beatNode, paragraphNode]);
-                                        }
-                                    });
-                                }}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Bot className="h-4 w-4" />
-                                    <span className="text">Scene Beat</span>
-                                </div>
-                                <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.SCENE_BEAT}</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
-            )}
-
-            <Divider />
-            <ElementFormatDropdown
-                disabled={!isEditable}
-                value={toolbarState.elementFormat}
-                editor={activeEditor}
-                isRTL={toolbarState.isRTL}
-            />
+                        style={"font-family"}
+                        value={toolbarState.fontFamily}
+                        editor={activeEditor}
+                    />
+                    <Divider />
+                    <FontSize
+                        selectionFontSize={toolbarState.fontSize.slice(0, -2)}
+                        editor={activeEditor}
+                        disabled={!isEditable}
+                    />
+                    <Divider />
+                </div>
+                <Button
+                    disabled={!isEditable}
+                    onClick={() => {
+                        activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
+                    }}
+                    variant="ghost"
+                    size="icon"
+                    className={
+                        "h-8 w-8 hover:bg-accent/50 transition-colors " + (toolbarState.isBold ? "bg-accent/50" : "")
+                    }
+                    title={`Bold (${SHORTCUTS.BOLD})`}
+                    aria-label={`Format text as bold. Shortcut: ${SHORTCUTS.BOLD}`}
+                >
+                    <Bold className="h-4 w-4" />
+                </Button>
+                <Button
+                    disabled={!isEditable}
+                    onClick={() => {
+                        activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
+                    }}
+                    variant="ghost"
+                    size="icon"
+                    className={
+                        "h-8 w-8 hover:bg-accent/50 transition-colors " + (toolbarState.isItalic ? "bg-accent/50" : "")
+                    }
+                    title={`Italic (${SHORTCUTS.ITALIC})`}
+                    aria-label={`Format text as italics. Shortcut: ${SHORTCUTS.ITALIC}`}
+                >
+                    <Italic className="h-4 w-4" />
+                </Button>
+                <Button
+                    disabled={!isEditable}
+                    onClick={() => {
+                        activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
+                    }}
+                    variant="ghost"
+                    size="icon"
+                    className={
+                        "h-8 w-8 hover:bg-accent/50 transition-colors " +
+                        (toolbarState.isUnderline ? "bg-accent/50" : "")
+                    }
+                    title={`Underline (${SHORTCUTS.UNDERLINE})`}
+                    aria-label={`Format text to underlined. Shortcut: ${SHORTCUTS.UNDERLINE}`}
+                >
+                    <Underline className="h-4 w-4" />
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={!isEditable}
+                            className="h-8 w-8 hover:bg-accent/50 transition-colors"
+                            aria-label="Formatting options for additional text styles"
+                        >
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "lowercase");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon lowercase" />
+                                <span className="text">Lowercase</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.LOWERCASE}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "uppercase");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon uppercase" />
+                                <span className="text">Uppercase</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.UPPERCASE}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "capitalize");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon capitalize" />
+                                <span className="text">Capitalize</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.CAPITALIZE}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Strikethrough className="h-4 w-4" />
+                                <span className="text">Strikethrough</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.STRIKETHROUGH}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon subscript" />
+                                <span className="text">Subscript</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.SUBSCRIPT}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript");
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon superscript" />
+                                <span className="text">Superscript</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.SUPERSCRIPT}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="hover:bg-accent/50 transition-colors cursor-pointer"
+                            onClick={() => clearFormatting(activeEditor)}
+                        >
+                            <div className="flex items-center gap-2">
+                                <i className="icon clear" />
+                                <span className="text">Clear Formatting</span>
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.CLEAR_FORMATTING}</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                {canViewerSeeInsertDropdown && (
+                    <>
+                        <div className="w-[1px] h-6 bg-border mx-1" />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={!isEditable}
+                                    className="h-8 gap-1 font-normal hover:bg-accent/50 transition-colors"
+                                >
+                                    Insert
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="min-w-[180px]">
+                                <DropdownMenuItem
+                                    className="hover:bg-accent/50 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Minus className="h-4 w-4" />
+                                        <span className="text">Horizontal Rule</span>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="hover:bg-accent/50 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        activeEditor.dispatchCommand(INSERT_PAGE_BREAK, undefined);
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <i className="icon page-break" />
+                                        <span className="text">Page Break</span>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="hover:bg-accent/50 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        editor.update(() => {
+                                            const selection = $getSelection();
+                                            if (selection) {
+                                                const beatNode = $createSceneBeatNode();
+                                                const paragraphNode = $createParagraphNode();
+                                                selection.insertNodes([beatNode, paragraphNode]);
+                                            }
+                                        });
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Bot className="h-4 w-4" />
+                                        <span className="text">Scene Beat</span>
+                                    </div>
+                                    <span className="ml-auto text-xs text-muted-foreground">
+                                        {SHORTCUTS.SCENE_BEAT}
+                                    </span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </>
+                )}
+            </>
+            {/* Alignment - hidden on mobile */}
+            <div className="hidden md:flex items-center">
+                <Divider />
+                <ElementFormatDropdown
+                    disabled={!isEditable}
+                    value={toolbarState.elementFormat}
+                    editor={activeEditor}
+                    isRTL={toolbarState.isRTL}
+                />
+            </div>
             <div className="ml-auto flex items-center gap-1">
-                <span className="text-xs text-muted-foreground px-2">Words: {toolbarState.wordCount}</span>
+                <span className="hidden sm:inline text-xs text-muted-foreground px-2">
+                    Words: {toolbarState.wordCount}
+                </span>
                 <Button
                     variant="ghost"
                     size="icon"

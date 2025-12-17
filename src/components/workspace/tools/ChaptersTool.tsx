@@ -186,9 +186,9 @@ export const ChaptersTool = () => {
 
     return (
         <LorebookProvider storyId={currentStoryId}>
-            <div className="container mx-auto max-w-4xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold">Chapters</h1>
+            <div className="container mx-auto max-w-4xl px-3 sm:px-6 py-4 sm:py-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-bold">Chapters</h1>
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogTrigger asChild>
                             <Button>

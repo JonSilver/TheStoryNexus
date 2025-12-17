@@ -5,8 +5,9 @@ import { type ChangeEvent, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LorebookEntry } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { CreateEntryDialog } from "../components/CreateEntryDialog";
@@ -105,80 +106,103 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
-                    <p className="text-muted-foreground mt-1">
-                        {seriesId
-                            ? "View and manage entries for this series (shared across all stories in series)"
-                            : "View and manage entries for this story (includes global and series entries)"}
+        <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Header - horizontal with buttons alongside title */}
+            <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl sm:text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-base truncate">
+                        {seriesId ? "Shared across series" : "Story, global & series entries"}
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2 shrink-0">
                     <Button
                         variant="outline"
+                        size="icon"
                         onClick={handleExport}
-                        className="border-2 border-gray-300 dark:border-gray-700"
+                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                        title="Export"
                     >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline ml-2">Export</span>
                     </Button>
                     <label htmlFor="import-lorebook">
-                        <Button variant="outline" asChild className="border-2 border-gray-300 dark:border-gray-700">
-                            <div>
-                                <Upload className="w-4 h-4 mr-2" />
-                                Import
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            asChild
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                        >
+                            <div title="Import">
+                                <Upload className="w-4 h-4" />
+                                <span className="hidden sm:inline ml-2">Import</span>
                             </div>
                         </Button>
                     </label>
                     <input id="import-lorebook" type="file" accept=".json" className="hidden" onChange={handleImport} />
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Entry
+                    <Button size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsCreateDialogOpen(true)} title="New Entry">
+                        <Plus className="w-4 h-4" />
+                        <span className="hidden sm:inline ml-2">New Entry</span>
                     </Button>
                 </div>
             </div>
 
             <Separator className="bg-gray-300 dark:bg-gray-700" />
 
-            {/* Category tabs and entry list */}
+            {/* Mobile: dropdown selector */}
+            <div className="sm:hidden">
+                <Select value={selectedCategory} onValueChange={v => setSelectedCategory(v as LorebookCategory)}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue>
+                            {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} ({categoryCounts[selectedCategory] || 0})
+                        </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        {CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>
+                                {cat.charAt(0).toUpperCase() + cat.slice(1)} ({categoryCounts[cat] || 0})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Desktop: tabs */}
             <Tabs
                 value={selectedCategory}
                 onValueChange={v => setSelectedCategory(v as LorebookCategory)}
-                className="w-full"
+                className="w-full hidden sm:block"
             >
-                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700 flex-wrap">
+                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700">
                     {CATEGORIES.map(cat => (
                         <TabsTrigger
                             key={cat}
                             value={cat}
-                            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                            className="text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
                         >
                             {cat.charAt(0).toUpperCase() + cat.slice(1)} ({categoryCounts[cat] || 0})
                         </TabsTrigger>
                     ))}
                 </TabsList>
-
-                {CATEGORIES.map(cat => (
-                    <TabsContent key={cat} value={cat} className="mt-6">
-                        {isLoading ? (
-                            <div className="flex justify-center p-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                            </div>
-                        ) : entriesByCategory.length > 0 ? (
-                            <LorebookEntryList
-                                entries={entriesByCategory}
-                                editable={true}
-                                showLevel={true}
-                                contextStoryId={storyId}
-                            />
-                        ) : (
-                            <div className="text-center text-muted-foreground py-12">No {cat} entries yet</div>
-                        )}
-                    </TabsContent>
-                ))}
             </Tabs>
+
+            {/* Entry list - shared between mobile and desktop */}
+            <div className="mt-4 sm:mt-6">
+                {isLoading ? (
+                    <div className="flex justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                ) : entriesByCategory.length > 0 ? (
+                    <LorebookEntryList
+                        entries={entriesByCategory}
+                        editable={true}
+                        showLevel={true}
+                        contextStoryId={storyId}
+                    />
+                ) : (
+                    <div className="text-center text-muted-foreground py-12">No {selectedCategory} entries yet</div>
+                )}
+            </div>
 
             {/* Create dialog */}
             <CreateEntryDialog

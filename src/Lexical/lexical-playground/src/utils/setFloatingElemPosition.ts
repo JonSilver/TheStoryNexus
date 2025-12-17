@@ -40,6 +40,11 @@ export function setFloatingElemPosition(
         left = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
     }
 
+    // Ensure toolbar doesn't go off-screen on the left
+    if (left < editorScrollerRect.left) {
+        left = editorScrollerRect.left + horizontalOffset;
+    }
+
     top -= anchorElementRect.top;
     left -= anchorElementRect.left;
 

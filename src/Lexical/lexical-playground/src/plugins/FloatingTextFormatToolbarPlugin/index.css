@@ -11,18 +11,13 @@
   top: 0;
   left: 0;
   z-index: 10;
-  opacity: 0;
+  opacity: 1;
   will-change: transform;
-  transition: opacity 0.5s;
-  max-width: 700px;
-  min-width: 500px;
+  max-width: min(700px, calc(100vw - 16px));
+  min-width: 0;
   width: auto;
   font-size: 14px;
   @apply bg-background border border-border shadow-md rounded-md;
-}
-
-.floating-text-format-popup.active {
-  opacity: 1;
 }
 
 .floating-text-format-popup .toolbar-container {
@@ -31,6 +26,23 @@
 
 .floating-text-format-popup .toolbar-buttons {
   @apply flex flex-row items-center gap-1 p-1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile adjustments for floating toolbar */
+@media (max-width: 640px) {
+  .floating-text-format-popup .toolbar-buttons {
+    @apply gap-0.5 p-0.5;
+  }
+
+  .floating-text-format-popup .toolbar-buttons button {
+    @apply px-1.5 py-1 text-xs;
+  }
+
+  .floating-text-format-popup .toolbar-buttons button span {
+    @apply hidden;
+  }
 }
 
 .floating-text-format-popup button.popup-item {
