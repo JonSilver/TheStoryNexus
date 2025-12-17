@@ -32,6 +32,7 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
         const groups: ModelsByProvider = {
             "Most Used": [],
             Local: [],
+            Gemini: [],
             xAI: [],
             Anthropic: [],
             OpenAI: [],
@@ -44,17 +45,18 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
 
         availableModels.forEach(model => {
             if (model.provider === "local") groups.Local.push(model);
+            else if (model.provider === "gemini") groups.Gemini.push(model);
             else if (MOST_USED_MODELS.some(name => model.name === name)) groups["Most Used"].push(model);
             else if (model.name.toLowerCase().includes("(free)")) groups.Free.push(model);
             else if (model.provider === "openai") groups.OpenAI.push(model);
-            else if (model.provider === "openrouter") 
+            else if (model.provider === "openrouter")
                 if (model.name.includes("Anthropic")) groups.Anthropic.push(model);
                 else if (model.name.includes("DeepSeek")) groups.DeepSeek.push(model);
                 else if (model.name.includes("Mistral")) groups.Mistral.push(model);
                 else if (model.name.includes("NVIDIA")) groups.NVIDIA.push(model);
                 else if (model.name.includes("xAI")) groups.xAI.push(model);
                 else groups.Other.push(model);
-            
+
         });
 
         return Object.fromEntries(Object.entries(groups).filter(([_, models]) => models.length > 0));
@@ -99,39 +101,50 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
         }
 
         const defaultModels: AllowedModel[] = [];
-        const { defaultLocalModel, defaultOpenAIModel, defaultOpenRouterModel } = settings;
+        const { defaultLocalModel, defaultOpenAIModel, defaultOpenRouterModel, defaultGeminiModel } = settings;
 
         if (defaultLocalModel) {
             const localModel = availableModels.find(m => m.id === defaultLocalModel);
-            if (localModel) 
+            if (localModel)
                 defaultModels.push({
                     id: localModel.id,
                     name: localModel.name,
                     provider: localModel.provider
                 });
-            
+
         }
 
         if (defaultOpenAIModel) {
             const openaiModel = availableModels.find(m => m.id === defaultOpenAIModel);
-            if (openaiModel) 
+            if (openaiModel)
                 defaultModels.push({
                     id: openaiModel.id,
                     name: openaiModel.name,
                     provider: openaiModel.provider
                 });
-            
+
         }
 
         if (defaultOpenRouterModel) {
             const openrouterModel = availableModels.find(m => m.id === defaultOpenRouterModel);
-            if (openrouterModel) 
+            if (openrouterModel)
                 defaultModels.push({
                     id: openrouterModel.id,
                     name: openrouterModel.name,
                     provider: openrouterModel.provider
                 });
-            
+
+        }
+
+        if (defaultGeminiModel) {
+            const geminiModel = availableModels.find(m => m.id === defaultGeminiModel);
+            if (geminiModel)
+                defaultModels.push({
+                    id: geminiModel.id,
+                    name: geminiModel.name,
+                    provider: geminiModel.provider
+                });
+
         }
 
         if (defaultModels.length === 0) {
