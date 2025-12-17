@@ -100,52 +100,17 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
             return;
         }
 
-        const defaultModels: AllowedModel[] = [];
-        const { defaultLocalModel, defaultOpenAIModel, defaultOpenRouterModel, defaultGeminiModel } = settings;
+        const defaultModelIds = [
+            settings.defaultLocalModel,
+            settings.defaultOpenAIModel,
+            settings.defaultOpenRouterModel,
+            settings.defaultGeminiModel
+        ].filter(Boolean) as string[];
 
-        if (defaultLocalModel) {
-            const localModel = availableModels.find(m => m.id === defaultLocalModel);
-            if (localModel)
-                defaultModels.push({
-                    id: localModel.id,
-                    name: localModel.name,
-                    provider: localModel.provider
-                });
-
-        }
-
-        if (defaultOpenAIModel) {
-            const openaiModel = availableModels.find(m => m.id === defaultOpenAIModel);
-            if (openaiModel)
-                defaultModels.push({
-                    id: openaiModel.id,
-                    name: openaiModel.name,
-                    provider: openaiModel.provider
-                });
-
-        }
-
-        if (defaultOpenRouterModel) {
-            const openrouterModel = availableModels.find(m => m.id === defaultOpenRouterModel);
-            if (openrouterModel)
-                defaultModels.push({
-                    id: openrouterModel.id,
-                    name: openrouterModel.name,
-                    provider: openrouterModel.provider
-                });
-
-        }
-
-        if (defaultGeminiModel) {
-            const geminiModel = availableModels.find(m => m.id === defaultGeminiModel);
-            if (geminiModel)
-                defaultModels.push({
-                    id: geminiModel.id,
-                    name: geminiModel.name,
-                    provider: geminiModel.provider
-                });
-
-        }
+        const defaultModels = defaultModelIds
+            .map(id => availableModels.find(m => m.id === id))
+            .filter((m): m is AIModel => !!m)
+            .map(({ id, name, provider }) => ({ id, name, provider }));
 
         if (defaultModels.length === 0) {
             toast.error("No default models configured. Please set default models in AI Settings.");
