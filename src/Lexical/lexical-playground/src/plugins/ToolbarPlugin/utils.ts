@@ -186,16 +186,16 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
             let selection = $getSelection();
 
             if (selection !== null) 
-                if (selection.isCollapsed()) {
+                if (selection.isCollapsed()) 
                     $setBlocksType(selection, () => $createCodeNode());
-                } else {
+                 else {
                     const textContent = selection.getTextContent();
                     const codeNode = $createCodeNode();
                     selection.insertNodes([codeNode]);
                     selection = $getSelection();
-                    if ($isRangeSelection(selection)) {
+                    if ($isRangeSelection(selection)) 
                         selection.insertRawText(textContent);
-                    }
+                    
                 }
             
         });
