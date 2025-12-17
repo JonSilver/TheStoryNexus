@@ -7,31 +7,13 @@ import {
     useSensor,
     useSensors
 } from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { attemptPromise } from "@jfdi/attempt";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChapterCard } from "@/features/chapters/components/ChapterCard";
 import {
     useChaptersByStoryQuery,
@@ -43,14 +25,7 @@ import { useLorebookByStoryQuery } from "@/features/lorebook/hooks/useLorebookQu
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import type { Chapter } from "@/types/story";
 import { logger } from "@/utils/logger";
-
-type POVType = "First Person" | "Third Person Limited" | "Third Person Omniscient";
-
-interface CreateChapterForm {
-    title: string;
-    povCharacter?: string;
-    povType?: POVType;
-}
+import { CreateChapterDialog, type CreateChapterForm } from "./CreateChapterDialog";
 
 export const ChaptersTool = () => {
     const { currentStoryId, setCurrentChapterId, setCurrentTool } = useStoryContext();
@@ -63,15 +38,8 @@ export const ChaptersTool = () => {
     const createChapterMutation = useCreateChapterMutation();
     const updateChapterMutation = useUpdateChapterMutation();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const form = useForm<CreateChapterForm>({
-        defaultValues: {
-            povType: "Third Person Omniscient"
-        }
-    });
 
     const error = queryError?.message || null;
-
-    const povType = form.watch("povType");
     const characterEntries = lorebookEntries.filter(entry => entry.category === "character");
 
     const sensors = useSensors(
@@ -81,20 +49,10 @@ export const ChaptersTool = () => {
         })
     );
 
-    const handlePovTypeChange = (value: string) => {
-        form.setValue("povType", value as POVType);
-        // Clear POV character when switching to omniscient
-        if (value === "Third Person Omniscient") 
-            form.setValue("povCharacter", undefined);
-        
-    };
-
     const handleCreateChapter = (data: CreateChapterForm) => {
         if (!currentStoryId) return;
 
         const nextOrder = chapters.length === 0 ? 1 : Math.max(...chapters.map(chapter => chapter.order ?? 0)) + 1;
-
-        // Only include povCharacter if not omniscient
         const povCharacter = data.povType !== "Third Person Omniscient" ? data.povCharacter : undefined;
 
         createChapterMutation.mutate(
@@ -110,21 +68,13 @@ export const ChaptersTool = () => {
                 wordCount: 0
             },
             {
-                onSuccess: () => {
-                    setIsCreateDialogOpen(false);
-                    form.reset({
-                        title: "",
-                        povType: "Third Person Omniscient",
-                        povCharacter: undefined
-                    });
-                }
+                onSuccess: () => setIsCreateDialogOpen(false)
             }
         );
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
-
         const activeId = active.id.toString();
         const overId = over?.id.toString();
 
@@ -137,8 +87,7 @@ export const ChaptersTool = () => {
 
         const updatedChapters = arrayMove(chapters, oldIndex, newIndex);
 
-        // Update all chapters with new order
-        const [error] = await attemptPromise(async () => {
+        const [reorderError] = await attemptPromise(async () => {
             await Promise.all(
                 updatedChapters.map((chapter: Chapter, index) =>
                     updateChapterMutation.mutateAsync({
@@ -149,8 +98,8 @@ export const ChaptersTool = () => {
             );
         });
 
-        if (error) {
-            logger.error("Failed to update chapter order:", error);
+        if (reorderError) {
+            logger.error("Failed to update chapter order:", reorderError);
             toast.error("Failed to update chapter order");
         }
     };
@@ -160,109 +109,38 @@ export const ChaptersTool = () => {
         setCurrentTool("editor");
     };
 
-    if (!currentStoryId) 
+    if (!currentStoryId)
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">No story selected</p>
             </div>
         );
-    
 
-    if (loading) 
+    if (loading)
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">Loading chapters...</p>
             </div>
         );
-    
 
-    if (error) 
+    if (error)
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-destructive">{error}</p>
             </div>
         );
-    
 
     return (
         <LorebookProvider storyId={currentStoryId}>
             <div className="container mx-auto max-w-4xl px-3 sm:px-6 py-4 sm:py-6">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h1 className="text-2xl sm:text-3xl font-bold">Chapters</h1>
-                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                New Chapter
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <form onSubmit={form.handleSubmit(handleCreateChapter)}>
-                                <DialogHeader>
-                                    <DialogTitle>Create New Chapter</DialogTitle>
-                                    <DialogDescription>
-                                        Add a new chapter to your story. You can edit the content after creating it.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="title">Title</Label>
-                                        <Input
-                                            id="title"
-                                            placeholder="Enter chapter title"
-                                            {...form.register("title", { required: true })}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="povType">POV Type</Label>
-                                        <Select
-                                            defaultValue="Third Person Omniscient"
-                                            onValueChange={handlePovTypeChange}
-                                        >
-                                            <SelectTrigger id="povType">
-                                                <SelectValue placeholder="Select POV type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="First Person">First Person</SelectItem>
-                                                <SelectItem value="Third Person Limited">
-                                                    Third Person Limited
-                                                </SelectItem>
-                                                <SelectItem value="Third Person Omniscient">
-                                                    Third Person Omniscient
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    {povType && povType !== "Third Person Omniscient" && (
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="povCharacter">POV Character</Label>
-                                            <Select onValueChange={value => form.setValue("povCharacter", value)}>
-                                                <SelectTrigger id="povCharacter">
-                                                    <SelectValue placeholder="Select character" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {characterEntries.length === 0 ? (
-                                                        <SelectItem value="none" disabled>
-                                                            No characters available
-                                                        </SelectItem>
-                                                    ) : (
-                                                        characterEntries.map(character => (
-                                                            <SelectItem key={character.id} value={character.name}>
-                                                                {character.name}
-                                                            </SelectItem>
-                                                        ))
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-                                </div>
-                                <DialogFooter>
-                                    <Button type="submit">Create Chapter</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    <CreateChapterDialog
+                        open={isCreateDialogOpen}
+                        onOpenChange={setIsCreateDialogOpen}
+                        characterEntries={characterEntries}
+                        onSubmit={handleCreateChapter}
+                    />
                 </div>
 
                 <ScrollArea className="h-[calc(100vh-10rem)]">

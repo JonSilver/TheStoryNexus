@@ -1,174 +1,20 @@
-import { attemptPromise } from "@jfdi/attempt";
-import { useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Download, Edit, FolderUp, MoreHorizontal, Trash2, Upload } from "lucide-react";
-import type { MouseEvent } from "react";
-import { type ChangeEvent, useRef, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
-import { DownloadMenu } from "@/components/ui/DownloadMenu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ROUTES } from "@/constants/urls";
-import { useSeriesQuery, useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import { CreateStoryDialog } from "@/features/stories/components/CreateStoryDialog";
+import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { EditStoryDialog } from "@/features/stories/components/EditStoryDialog";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { useDeleteStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { adminApi } from "@/services/api/client";
+import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { storyExportService } from "@/services/storyExportService";
 import type { Story } from "@/types/story";
-import { logger } from "@/utils/logger";
-
-// Story Card for workspace - clicks story to load it in workspace
-function WorkspaceStoryCard({
-    story,
-    onEdit,
-    onExport
-}: {
-    story: Story;
-    onEdit: (story: Story) => void;
-    onExport: (story: Story) => void;
-}) {
-    const deleteStoryMutation = useDeleteStoryMutation();
-    const { setCurrentStoryId } = useStoryContext();
-    const { data: series } = useSingleSeriesQuery(story.seriesId);
-    const navigate = useNavigate();
-
-    const handleDelete = async (e: MouseEvent) => {
-        e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this story?")) 
-            deleteStoryMutation.mutate(story.id);
-        
-    };
-
-    const handleEdit = (e: MouseEvent) => {
-        e.stopPropagation();
-        onEdit(story);
-    };
-
-    const handleExport = (e: MouseEvent) => {
-        e.stopPropagation();
-        onExport(story);
-    };
-
-    const handleRead = (e: MouseEvent) => {
-        e.stopPropagation();
-        navigate(ROUTES.STORY_READER(story.id));
-    };
-
-    const handleCardClick = () => {
-        // Set story in context, which will switch to editor tool
-        setCurrentStoryId(story.id);
-    };
-
-    return (
-        <Card
-            className="w-full cursor-pointer border-2 border-gray-300 dark:border-gray-700 hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm"
-            onClick={handleCardClick}
-        >
-            <CardHeader>
-                <CardTitle>{story.title}</CardTitle>
-                <CardDescription>
-                    {series && (
-                        <Badge variant="secondary" className="mb-2">
-                            Series: {series.name}
-                        </Badge>
-                    )}
-                    <div>By {story.author}</div>
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {story.synopsis && <p className="text-sm text-muted-foreground">{story.synopsis}</p>}
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleRead}>
-                                <BookOpen className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Read story</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div>
-                                <DownloadMenu type="story" id={story.id} />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Download options</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleEdit}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Edit story details</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleExport}>
-                                <FolderUp className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Export story as JSON</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleDelete}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Delete story</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </CardFooter>
-        </Card>
-    );
-}
+import { StoriesToolHeader } from "./StoriesToolHeader";
+import { WorkspaceStoryCard } from "./WorkspaceStoryCard";
 
 export const StoriesTool = () => {
-    const queryClient = useQueryClient();
     const { data: stories = [], refetch: fetchStories } = useStoriesQuery();
     const { data: seriesList = [] } = useSeriesQuery();
     const [editingStory, setEditingStory] = useState<Story | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [selectedSeriesFilter, setSelectedSeriesFilter] = useState<string>("all");
-    const [isImportingDemo, setIsImportingDemo] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleEditStory = (story: Story) => {
         setEditingStory(story);
@@ -177,42 +23,6 @@ export const StoriesTool = () => {
 
     const handleExportStory = (story: Story) => {
         storyExportService.exportStory(story.id);
-    };
-
-    const handleImportClick = () => {
-        if (fileInputRef.current) fileInputRef.current.click();
-    };
-
-    const handleImportStory = async (event: ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files || event.target.files.length === 0) return;
-
-        const file = event.target.files[0];
-
-        const [error] = await attemptPromise(async () => {
-            await storyExportService.importStory(file);
-            await fetchStories();
-        });
-
-        if (error) logger.error("Import failed:", error);
-
-        event.target.value = "";
-    };
-
-    const handleImportDemoStory = async () => {
-        setIsImportingDemo(true);
-        const [error] = await attemptPromise(async () => {
-            await adminApi.importDemoData();
-            await queryClient.invalidateQueries();
-        });
-
-        if (error) {
-            logger.error("Demo import failed:", error);
-            toast.error("Failed to import demo story");
-        } else 
-            toast.success("Demo story imported successfully");
-        
-
-        setIsImportingDemo(false);
     };
 
     const filteredStories = stories.filter(story => {
@@ -224,52 +34,7 @@ export const StoriesTool = () => {
     return (
         <div className="p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-12">
-                {/* Header - horizontal with buttons alongside title */}
-                <div className="flex justify-between items-start gap-2">
-                    <h1 className="text-xl sm:text-2xl font-bold">Your Stories</h1>
-                    <div className="flex gap-1 sm:gap-2 shrink-0">
-                        <CreateStoryDialog />
-                        {/* Desktop: separate buttons */}
-                        <Button variant="outline" onClick={handleImportClick} className="hidden sm:flex">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Import Story
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            onClick={handleImportDemoStory}
-                            disabled={isImportingDemo}
-                            className="hidden sm:flex"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            {isImportingDemo ? "Importing..." : "Import Demo"}
-                        </Button>
-                        {/* Mobile: dropdown menu */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-8 w-8 sm:hidden">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleImportClick}>
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Import Story
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleImportDemoStory} disabled={isImportingDemo}>
-                                    <Download className="w-4 h-4 mr-2" />
-                                    {isImportingDemo ? "Importing..." : "Import Demo Story"}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".json"
-                            className="hidden"
-                            onChange={handleImportStory}
-                        />
-                    </div>
-                </div>
+                <StoriesToolHeader onStoriesChange={fetchStories} />
 
                 {stories.length > 0 && (
                     <div className="flex justify-center">
