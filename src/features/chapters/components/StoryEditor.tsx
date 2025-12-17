@@ -47,9 +47,9 @@ export function StoryEditor() {
     const toggleDrawer = (drawer: DrawerType) => setOpenDrawer(drawer === openDrawer ? null : drawer);
 
     return (
-        <div className="h-full flex relative">
-            <div className={cn("flex-1 flex justify-center", !isMaximised && "px-4")}>
-                <div className={cn("h-full flex flex-col", isMaximised ? "w-full" : "max-w-[1024px] w-full")}>
+        <div className="h-full flex relative overflow-hidden">
+            <div className={cn("flex-1 flex justify-center overflow-x-hidden min-w-0", !isMaximised && "px-4")}>
+                <div className={cn("h-full flex flex-col min-w-0", isMaximised ? "w-full" : "max-w-[1024px] w-full")}>
                     <EmbeddedPlayground />
                 </div>
             </div>

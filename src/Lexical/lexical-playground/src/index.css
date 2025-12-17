@@ -39,6 +39,8 @@ header h1 {
   @apply bg-background text-foreground border border-border relative flex flex-col h-full;
   line-height: 1.7;
   font-weight: 400;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .editor-shell .editor-container {
