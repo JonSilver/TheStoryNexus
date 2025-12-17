@@ -87,26 +87,22 @@ function TextFormatFloatingToolbar({
     const [previewError, setPreviewError] = useState<string | null>(null);
 
     const mouseMoveListener = useCallback((e: MouseEvent) => {
-        if (popupCharStylesEditorRef?.current && (e.buttons === 1 || e.buttons === 3)) 
+        if (popupCharStylesEditorRef?.current && (e.buttons === 1 || e.buttons === 3))
             if (popupCharStylesEditorRef.current.style.pointerEvents !== "none") {
                 const x = e.clientX;
                 const y = e.clientY;
                 const elementUnderMouse = document.elementFromPoint(x, y);
 
-                if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) 
+                if (!popupCharStylesEditorRef.current.contains(elementUnderMouse))
                     // Mouse is not over the target element => not a normal click, but probably a drag
                     popupCharStylesEditorRef.current.style.pointerEvents = "none";
-                
             }
-        
     }, []);
 
     const mouseUpListener = useCallback((_e: MouseEvent) => {
-        if (popupCharStylesEditorRef?.current) 
-            if (popupCharStylesEditorRef.current.style.pointerEvents !== "auto") 
+        if (popupCharStylesEditorRef?.current)
+            if (popupCharStylesEditorRef.current.style.pointerEvents !== "auto")
                 popupCharStylesEditorRef.current.style.pointerEvents = "auto";
-            
-        
     }, []);
 
     useEffect(() => {
@@ -128,9 +124,7 @@ function TextFormatFloatingToolbar({
         const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
         const nativeSelection = getDOMSelection(editor._window);
 
-        if (popupCharStylesEditorElem === null) 
-            return;
-        
+        if (popupCharStylesEditorElem === null) return;
 
         const rootElement = editor.getRootElement();
         if (
@@ -156,15 +150,11 @@ function TextFormatFloatingToolbar({
         };
 
         window.addEventListener("resize", update);
-        if (scrollerElem) 
-            scrollerElem.addEventListener("scroll", update);
-        
+        if (scrollerElem) scrollerElem.addEventListener("scroll", update);
 
         return () => {
             window.removeEventListener("resize", update);
-            if (scrollerElem) 
-                scrollerElem.removeEventListener("scroll", update);
-            
+            if (scrollerElem) scrollerElem.removeEventListener("scroll", update);
         };
     }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
@@ -199,9 +189,7 @@ function TextFormatFloatingToolbar({
     };
 
     const createPromptConfig = (prompt: Prompt): PromptParserConfig => {
-        if (!currentStoryId || !currentChapterId) 
-            throw new Error("No story or chapter context found");
-        
+        if (!currentStoryId || !currentChapterId) throw new Error("No story or chapter context found");
 
         let selectedText = "";
         let previousWords = "";
@@ -231,21 +219,16 @@ function TextFormatFloatingToolbar({
                 // Function to traverse the editor content in document order
                 const traverseNodes = (node: LexicalNode): boolean => {
                     // If we've already reached the selection start node, stop traversal
-                    if (reachedStartNode) 
-                        return true;
-                    
+                    if (reachedStartNode) return true;
 
                     // Skip SceneBeatNodes entirely
-                    if ($isSceneBeatNode(node)) 
-                        return false;
-                    
+                    if ($isSceneBeatNode(node)) return false;
 
                     // Check if this is the selection start node
                     if (node.is(startNode)) {
                         // If this is a text node, add text up to the selection start point
-                        if ($isTextNode(node)) 
-                            textParts.push(node.getTextContent().substring(0, startOffset));
-                        
+                        if ($isTextNode(node)) textParts.push(node.getTextContent().substring(0, startOffset));
+
                         reachedStartNode = true;
                         return true;
                     }
@@ -259,11 +242,7 @@ function TextFormatFloatingToolbar({
                     // Traverse children
                     if (!$isTextNode(node) && $isElementNode(node)) {
                         const children = node.getChildren();
-                        for (const child of children) 
-                            if (traverseNodes(child)) 
-                                return true;
-                            
-                        
+                        for (const child of children) if (traverseNodes(child)) return true;
                     }
 
                     return false;
@@ -271,9 +250,7 @@ function TextFormatFloatingToolbar({
 
                 // Start traversal from the root node
                 const rootNode = editor.getEditorState()._nodeMap.get("root");
-                if (rootNode) 
-                    traverseNodes(rootNode);
-                
+                if (rootNode) traverseNodes(rootNode);
 
                 // Join all collected text
                 previousWords = textParts.join("");
@@ -304,9 +281,7 @@ function TextFormatFloatingToolbar({
 
         editor.getEditorState().read(() => {
             const sel = $getSelection();
-            if ($isRangeSelection(sel)) 
-                selectedText = sel.getTextContent();
-            
+            if ($isRangeSelection(sel)) selectedText = sel.getTextContent();
         });
 
         if (!selectedText) {
@@ -329,7 +304,7 @@ function TextFormatFloatingToolbar({
                 },
                 () => {
                     if (!fullText.trim()) {
-                        toast.error("No text returned from AI - selection preserved");
+                        toast.warning("No text returned from AI - selection preserved");
                         return;
                     }
                     editor.update(() => {
@@ -370,11 +345,9 @@ function TextFormatFloatingToolbar({
         if (error) {
             logger.error("Error previewing prompt:", error);
             setPreviewError(is.error(error) ? error.message : "Failed to preview prompt");
-        } else if (result.error) 
-            setPreviewError(result.error);
-         else 
-            setPreviewMessages(result.messages);
-        
+        } else if (result.error) setPreviewError(result.error);
+        else setPreviewMessages(result.messages);
+
         setPreviewLoading(false);
         setShowPreviewDialog(true);
     };
@@ -497,9 +470,8 @@ function useFloatingTextFormatToolbar(editor: LexicalEditor, anchorElem: HTMLEle
     const updatePopup = useCallback(() => {
         editor.getEditorState().read(() => {
             // Should not to pop up the floating toolbar when using IME input
-            if (editor.isComposing()) 
-                return;
-            
+            if (editor.isComposing()) return;
+
             const selection = $getSelection();
             const nativeSelection = getDOMSelection(editor._window);
             const rootElement = editor.getRootElement();
@@ -514,9 +486,7 @@ function useFloatingTextFormatToolbar(editor: LexicalEditor, anchorElem: HTMLEle
                 return;
             }
 
-            if (!$isRangeSelection(selection)) 
-                return;
-            
+            if (!$isRangeSelection(selection)) return;
 
             const node = getSelectedNode(selection);
 
@@ -526,11 +496,8 @@ function useFloatingTextFormatToolbar(editor: LexicalEditor, anchorElem: HTMLEle
             setIsUnderline(selection.hasFormat("underline"));
 
             // Simplified condition - show text formatting toolbar if there's selected text
-            if (selection.getTextContent() !== "") 
-                setIsText($isTextNode(node) || $isParagraphNode(node));
-             else 
-                setIsText(false);
-            
+            if (selection.getTextContent() !== "") setIsText($isTextNode(node) || $isParagraphNode(node));
+            else setIsText(false);
 
             const rawTextContent = selection.getTextContent().replace(/\n/g, "");
             if (!selection.isCollapsed() && rawTextContent === "") {
@@ -563,17 +530,13 @@ function useFloatingTextFormatToolbar(editor: LexicalEditor, anchorElem: HTMLEle
                     updatePopup();
                 }),
                 editor.registerRootListener(() => {
-                    if (editor.getRootElement() === null) 
-                        setIsText(false);
-                    
+                    if (editor.getRootElement() === null) setIsText(false);
                 })
             ),
         [editor, updatePopup]
     );
 
-    if (!isText) 
-        return null;
-    
+    if (!isText) return null;
 
     return createPortal(
         <TextFormatFloatingToolbar
