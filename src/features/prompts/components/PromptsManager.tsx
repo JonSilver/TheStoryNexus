@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronsUpDown, FileText, Plus, Upload } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, Copy, FileText, Plus, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { Prompt } from "@/types/story";
 import { downloadJSONDataURI, generateExportFilename } from "@/utils/jsonExportUtils";
 import { toastCRUD } from "@/utils/toastUtils";
-import { usePromptsQuery } from "../hooks/usePromptsQuery";
+import { useClonePromptMutation, useDeletePromptMutation, usePromptsQuery } from "../hooks/usePromptsQuery";
 import { PromptForm } from "./PromptForm";
 import { PromptsList } from "./PromptList";
 
@@ -18,6 +18,8 @@ export function PromptsManager() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const { data: allPrompts = [] } = usePromptsQuery({ includeSystem: true });
+    const deletePromptMutation = useDeletePromptMutation();
+    const clonePromptMutation = useClonePromptMutation();
 
     const handleNewPrompt = () => {
         setSelectedPrompt(undefined);
@@ -39,7 +41,26 @@ export function PromptsManager() {
         if (selectedPrompt?.id === promptId) {
             setSelectedPrompt(undefined);
             setIsCreating(false);
+            setShowMobileForm(false);
         }
+    };
+
+    const handleMobileDelete = () => {
+        if (!selectedPrompt || selectedPrompt.isSystem) return;
+        deletePromptMutation.mutate(selectedPrompt.id, {
+            onSuccess: () => {
+                handlePromptDelete(selectedPrompt.id);
+            }
+        });
+    };
+
+    const handleMobileClone = () => {
+        if (!selectedPrompt) return;
+        clonePromptMutation.mutate(selectedPrompt.id, {
+            onSuccess: newPrompt => {
+                setSelectedPrompt(newPrompt);
+            }
+        });
     };
 
     const handleExportPrompts = () => {
@@ -115,13 +136,37 @@ export function PromptsManager() {
                 </Button>
             </div>
 
-            {/* Mobile: Back button when editing */}
+            {/* Mobile: Back button + actions when editing */}
             {showMobileForm && (
-                <div className="md:hidden p-2 border-b">
+                <div className="md:hidden p-2 border-b flex justify-between items-center">
                     <Button variant="ghost" size="sm" onClick={handleMobileBack}>
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to list
+                        Back
                     </Button>
+                    {selectedPrompt && !isCreating && (
+                        <div className="flex gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleMobileClone}
+                                title="Clone prompt"
+                                className="h-8 w-8"
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                            {!selectedPrompt.isSystem && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleMobileDelete}
+                                    title="Delete prompt"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 
