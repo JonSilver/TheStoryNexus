@@ -107,60 +107,42 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
 
     return (
         <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-            {/* Header - stacks on mobile */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
-                    <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-                        {seriesId
-                            ? "Entries shared across all stories in series"
-                            : "Story entries (includes global and series)"}
+            {/* Header - horizontal with buttons alongside title */}
+            <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl sm:text-3xl font-bold">{seriesId ? "Series Lorebook" : "Story Lorebook"}</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-base truncate">
+                        {seriesId ? "Shared across series" : "Story, global & series entries"}
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    {/* Import/Export icons only on mobile */}
+                <div className="flex gap-1 sm:gap-2 shrink-0">
                     <Button
                         variant="outline"
                         size="icon"
                         onClick={handleExport}
-                        className="sm:hidden border-2 border-gray-300 dark:border-gray-700"
+                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
                         title="Export"
                     >
                         <Download className="w-4 h-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="hidden sm:flex border-2 border-gray-300 dark:border-gray-700"
-                    >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
+                        <span className="hidden sm:inline ml-2">Export</span>
                     </Button>
                     <label htmlFor="import-lorebook">
                         <Button
                             variant="outline"
                             size="icon"
                             asChild
-                            className="sm:hidden border-2 border-gray-300 dark:border-gray-700"
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
                         >
                             <div title="Import">
                                 <Upload className="w-4 h-4" />
-                            </div>
-                        </Button>
-                        <Button variant="outline" asChild className="hidden sm:flex border-2 border-gray-300 dark:border-gray-700">
-                            <div>
-                                <Upload className="w-4 h-4 mr-2" />
-                                Import
+                                <span className="hidden sm:inline ml-2">Import</span>
                             </div>
                         </Button>
                     </label>
                     <input id="import-lorebook" type="file" accept=".json" className="hidden" onChange={handleImport} />
-                    <Button size="icon" className="sm:hidden" onClick={() => setIsCreateDialogOpen(true)} title="New Entry">
+                    <Button size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3" onClick={() => setIsCreateDialogOpen(true)} title="New Entry">
                         <Plus className="w-4 h-4" />
-                    </Button>
-                    <Button className="hidden sm:flex" onClick={() => setIsCreateDialogOpen(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Entry
+                        <span className="hidden sm:inline ml-2">New Entry</span>
                     </Button>
                 </div>
             </div>
