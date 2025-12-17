@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
@@ -97,6 +98,7 @@ export default function SettingsPage() {
     const navigate = useNavigate();
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
     const [localApiUrlInput, setLocalApiUrlInput] = useState("");
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const { data: settings, isLoading: isLoadingSettings } = useAISettingsQuery();
 
@@ -108,17 +110,6 @@ export default function SettingsPage() {
 
     const toggleSection = (section: string) => {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
-
-    const handleDeleteDemoData = () => {
-        if (
-            !confirm(
-                "Are you sure you want to delete all demo data? This will remove the demo story, chapters, and lorebook entries. This action cannot be undone."
-            )
-        ) 
-            return;
-        
-        deleteDemoMutation.mutate();
     };
 
     if (isLoadingSettings) 
@@ -309,7 +300,7 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label>Delete Demo Content</Label>
                                 <Button
-                                    onClick={handleDeleteDemoData}
+                                    onClick={() => setShowDeleteDialog(true)}
                                     disabled={deleteDemoMutation.isPending}
                                     className="w-full"
                                     variant="destructive"
@@ -329,6 +320,15 @@ export default function SettingsPage() {
                     </Card>
                 </div>
             </div>
+
+            <ConfirmDeleteDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                title="Delete Demo Data"
+                description="This will permanently delete all demo content including stories, chapters, and lorebook entries. This action cannot be undone."
+                onConfirm={() => deleteDemoMutation.mutate()}
+                confirmLabel="Delete All"
+            />
         </div>
     );
 }
