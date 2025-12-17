@@ -6,11 +6,12 @@
  *
  */
 
-import type { JSX } from "react";
 import is from "@sindresorhus/is";
+import type { JSX } from "react";
 
 import "./index.css";
 
+import { attemptPromise } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
 import {
@@ -22,34 +23,32 @@ import {
     COMMAND_PRIORITY_LOW,
     FORMAT_TEXT_COMMAND,
     getDOMSelection,
-    LexicalEditor,
-    LexicalNode,
+    type LexicalEditor,
+    type LexicalNode,
     SELECTION_CHANGE_COMMAND
 } from "lexical";
+import { Bold, Italic, Loader2, Underline, Wand2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Underline, Wand2, Loader2 } from "lucide-react";
-
+import { PromptPreviewDialog } from "@/components/ui/prompt-preview-dialog";
+import { PromptSelectMenu } from "@/components/ui/prompt-select-menu";
+import { Separator } from "@/components/ui/separator";
+import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
+import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
+import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
+import { usePromptParser } from "@/features/prompts/hooks/usePromptParser";
+import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
+import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { aiService } from "@/services/ai/AIService";
+import type { AllowedModel, Prompt, PromptMessage, PromptParserConfig } from "@/types/story";
+import { logger } from "@/utils/logger";
+import { $isSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { getDOMRangeRect } from "../../utils/getDOMRangeRect";
 import { getSelectedNode } from "../../utils/getSelectedNode";
 import { setFloatingElemPosition } from "../../utils/setFloatingElemPosition";
-import { useLastUsedPrompt } from "@/features/prompts/hooks/useLastUsedPrompt";
-import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
-import { aiService } from "@/services/ai/AIService";
-import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
-import { usePromptParser } from "@/features/prompts/hooks/usePromptParser";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { toast } from "react-toastify";
-import { Prompt, AllowedModel, PromptParserConfig, PromptMessage } from "@/types/story";
-import { PromptSelectMenu } from "@/components/ui/prompt-select-menu";
-import { Separator } from "@/components/ui/separator";
-import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { PromptPreviewDialog } from "@/components/ui/prompt-preview-dialog";
-import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
-import { $isSceneBeatNode } from "../../nodes/SceneBeatNode";
-import { attemptPromise } from "@jfdi/attempt";
-import { logger } from "@/utils/logger";
 
 function TextFormatFloatingToolbar({
     editor,
@@ -123,7 +122,7 @@ function TextFormatFloatingToolbar({
             };
         }
         return undefined;
-    }, [popupCharStylesEditorRef]);
+    }, [mouseMoveListener, mouseUpListener]);
 
     const $updateTextFormatFloatingToolbar = useCallback(() => {
         const selection = $getSelection();

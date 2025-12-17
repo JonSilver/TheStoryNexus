@@ -1,11 +1,11 @@
-import { useEffect, useMemo } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import debounce from "lodash/debounce";
 import { $getRoot } from "lexical";
-import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching";
+import debounce from "lodash/debounce";
+import { useEffect, useMemo } from "react";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
+import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching";
 import { buildTagMap } from "@/features/lorebook/utils/lorebookFilters";
-import { LorebookEntry } from "@/types/story";
+import type { LorebookEntry } from "@/types/story";
 
 export default function LorebookTagPlugin(): null {
     const [editor] = useLexicalComposerContext();

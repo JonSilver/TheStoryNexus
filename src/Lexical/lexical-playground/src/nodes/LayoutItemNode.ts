@@ -6,10 +6,9 @@
  *
  */
 
-import type { DOMConversionMap, DOMConversionOutput, EditorConfig, LexicalNode, SerializedElementNode } from "lexical";
-import is from "@sindresorhus/is";
-
 import { addClassNamesToElement } from "@lexical/utils";
+import is from "@sindresorhus/is";
+import type { DOMConversionMap, DOMConversionOutput, EditorConfig, LexicalNode, SerializedElementNode } from "lexical";
 import { ElementNode } from "lexical";
 
 export type SerializedLayoutItemNode = SerializedElementNode;

@@ -1,9 +1,9 @@
+import { Check, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { User, Check } from "lucide-react";
 import type { LorebookEntry } from "@/types/story";
 
 export type POVType = "First Person" | "Third Person Limited" | "Third Person Omniscient";

@@ -1,8 +1,8 @@
-import { aiService } from "@/services/ai/AIService";
-import { logger } from "@/utils/logger";
 import { attemptPromise } from "@jfdi/attempt";
 import { useCallback, useState } from "react";
 import { toast } from "react-toastify";
+import { aiService } from "@/services/ai/AIService";
+import { logger } from "@/utils/logger";
 
 type StreamingState = {
     isStreaming: boolean;

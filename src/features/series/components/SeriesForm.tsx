@@ -1,9 +1,9 @@
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Series } from "@/types/story";
-import { useForm } from "react-hook-form";
 import { useCreateSeriesMutation, useUpdateSeriesMutation } from "../hooks/useSeriesQuery";
 
 interface SeriesFormProps {

@@ -1,7 +1,7 @@
+import { BookOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Series } from "@/types/story";
-import { BookOpen, Trash2 } from "lucide-react";
 
 interface SeriesCardProps {
     series: Series;

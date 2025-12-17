@@ -1,9 +1,9 @@
+import { AlertCircle } from "lucide-react";
+import type { ReactNode } from "react";
+import { type FallbackProps, ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/utils/logger";
-import { AlertCircle } from "lucide-react";
-import type { ReactNode } from "react";
-import { ErrorBoundary as ReactErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 const DefaultErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
     <div className="flex items-center justify-center min-h-[400px] p-4">

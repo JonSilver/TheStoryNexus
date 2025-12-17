@@ -1,5 +1,5 @@
-import { LorebookEntry, PromptContext } from "@/types/story";
-import { ILorebookFormatter, IVariableResolver } from "./types";
+import type { LorebookEntry, PromptContext } from "@/types/story";
+import type { ILorebookFormatter, IVariableResolver } from "./types";
 
 const getFilteredEntries = (entries: LorebookEntry[], includeDisabled = false): LorebookEntry[] =>
     includeDisabled ? entries : entries.filter(entry => !entry.isDisabled);

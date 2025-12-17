@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { debounce } from "lodash";
+import { useEffect, useRef } from "react";
 import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { debounce } from "lodash";
 import { logger } from "@/utils/logger";
 
 export function SaveChapterContentPlugin(): null {

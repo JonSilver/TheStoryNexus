@@ -1,5 +1,5 @@
-import { LorebookEntry } from "@/types/story";
-import { ILorebookFormatter } from "./types";
+import type { LorebookEntry } from "@/types/story";
+import type { ILorebookFormatter } from "./types";
 
 export class LorebookFormatter implements ILorebookFormatter {
     formatEntries(entries: LorebookEntry[]): string {
@@ -11,7 +11,7 @@ Type: ${metadata?.type || "Unknown"}
 Description: ${entry.description}
 ${
     metadata?.relationships?.length
-        ? "\nRelationships:\n" + metadata.relationships.map(r => `- ${r.type}: ${r.description}`).join("\n")
+        ? `\nRelationships:\n${metadata.relationships.map(r => `- ${r.type}: ${r.description}`).join("\n")}`
         : ""
 }`;
             })

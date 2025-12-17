@@ -1,20 +1,20 @@
 import {
-    Library,
-    Layers,
-    FileEdit,
-    List,
     BookOpen,
-    MessageSquare,
-    FileText,
-    StickyNote,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    FileEdit,
+    FileText,
+    Layers,
+    Library,
+    List,
+    MessageSquare,
+    StickyNote
 } from "lucide-react";
-import { useStoryContext, WorkspaceTool } from "@/features/stories/context/StoryContext";
 import { Button } from "@/components/ui/button";
+import { useStoryContext, type WorkspaceTool } from "@/features/stories/context/StoryContext";
 import { cn } from "@/lib/utils";
-import { useWorkspace } from "./context/WorkspaceContext";
 import { version } from "../../../package.json";
+import { useWorkspace } from "./context/WorkspaceContext";
 
 const tools = [
     { id: "stories" as WorkspaceTool, label: "Stories", icon: Library, requiresStory: false },

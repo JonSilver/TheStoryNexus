@@ -1,6 +1,6 @@
-import type { Chapter } from "@/types/story";
 import { Save } from "lucide-react";
 import { useState } from "react";
+import type { Chapter } from "@/types/story";
 import { Button } from "../../../components/ui/button";
 import { Textarea } from "../../../components/ui/textarea";
 import { useUpdateChapterMutation } from "../hooks/useChaptersQuery";

@@ -1,8 +1,8 @@
-import { AIModel, AIProvider, PromptMessage } from "@/types/story";
-import { IAIProvider } from "./IAIProvider";
 import { attemptPromise } from "@jfdi/attempt";
 import { API_URLS } from "@/constants/urls";
+import type { AIModel, AIProvider, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
+import type { IAIProvider } from "./IAIProvider";
 
 export class LocalAIProvider implements IAIProvider {
     private apiUrl: string;

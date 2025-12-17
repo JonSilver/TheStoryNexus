@@ -1,7 +1,7 @@
-import { PromptContext } from "@/types/story";
-import { logger } from "@/utils/logger";
 import { attemptPromise } from "@jfdi/attempt";
-import { IVariableResolver, IVariableResolverRegistry } from "./types";
+import type { PromptContext } from "@/types/story";
+import { logger } from "@/utils/logger";
+import type { IVariableResolver, IVariableResolverRegistry } from "./types";
 
 export class VariableResolverRegistry implements IVariableResolverRegistry {
     private resolvers = new Map<string, IVariableResolver>();

@@ -1,4 +1,4 @@
-import { AIModel, PromptMessage } from "@/types/story";
+import type { AIModel, PromptMessage } from "@/types/story";
 
 export interface IAIProvider {
     initialize(apiKey?: string): void;

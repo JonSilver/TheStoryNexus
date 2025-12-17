@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { TopBar } from "./TopBar";
-import { Sidebar } from "./Sidebar";
-import { MainContent } from "./MainContent";
 import { CommandPalette } from "./CommandPalette";
-import { useWorkspaceShortcuts } from "./hooks/useWorkspaceShortcuts";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
+import { useWorkspaceShortcuts } from "./hooks/useWorkspaceShortcuts";
+import { MainContent } from "./MainContent";
+import { Sidebar } from "./Sidebar";
+import { TopBar } from "./TopBar";
 
 const WorkspaceContent = () => {
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);

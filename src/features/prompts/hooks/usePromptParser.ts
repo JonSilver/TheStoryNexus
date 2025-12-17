@@ -1,6 +1,6 @@
+import { useCallback } from "react";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
 import type { ParsedPrompt, PromptParserConfig } from "@/types/story";
-import { useCallback } from "react";
 import { createPromptParser } from "../services/promptParser";
 
 /**

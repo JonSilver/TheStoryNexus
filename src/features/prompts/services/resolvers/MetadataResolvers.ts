@@ -1,5 +1,5 @@
-import { PromptContext } from "@/types/story";
-import { IVariableResolver } from "./types";
+import type { PromptContext } from "@/types/story";
+import type { IVariableResolver } from "./types";
 
 export class PoVResolver implements IVariableResolver {
     async resolve(context: PromptContext): Promise<string> {

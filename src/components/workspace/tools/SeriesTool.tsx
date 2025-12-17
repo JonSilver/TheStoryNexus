@@ -1,16 +1,15 @@
+import { attemptPromise } from "@jfdi/attempt";
+import { Edit, FolderUp, Trash2 } from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreateSeriesDialog } from "@/features/series/components/CreateSeriesDialog";
 import { EditSeriesDialog } from "@/features/series/components/EditSeriesDialog";
-import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import { useDeleteSeriesMutation } from "@/features/series/hooks/useSeriesQuery";
+import { useDeleteSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { SeriesExportService } from "@/services/export/SeriesExportService";
 import type { Series } from "@/types/story";
 import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
-import { Edit, FolderUp, Trash2 } from "lucide-react";
-import { useState, type MouseEvent } from "react";
 
 const seriesExportService = new SeriesExportService();
 

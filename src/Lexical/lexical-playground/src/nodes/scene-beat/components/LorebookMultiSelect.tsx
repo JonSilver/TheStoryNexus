@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import type { LorebookEntry } from "@/types/story";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { LorebookEntry } from "@/types/story";
 import { EntryBadgeList } from "./EntryBadgeList";
 
 interface LorebookMultiSelectProps {

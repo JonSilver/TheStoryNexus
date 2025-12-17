@@ -1,8 +1,8 @@
-import { useStoryContext } from "@/features/stories/context/StoryContext";
+import { useState } from "react";
 import NoteEditor from "@/features/notes/components/NoteEditor";
 import NoteList from "@/features/notes/components/NoteList";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
 import type { Note } from "@/types/story";
-import { useState } from "react";
 
 export const NotesTool = () => {
     const { currentStoryId } = useStoryContext();

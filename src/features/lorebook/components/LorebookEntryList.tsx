@@ -1,3 +1,6 @@
+import { attemptPromise } from "@jfdi/attempt";
+import { Edit, Eye, EyeOff, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,9 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import type { LorebookEntry } from "@/types/story";
 import { logger } from "@/utils/logger";
-import { attemptPromise } from "@jfdi/attempt";
-import { Edit, Eye, EyeOff, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
 import { useDeleteLorebookMutation, useUpdateLorebookMutation } from "../hooks/useLorebookQuery";
 import { CreateEntryDialog } from "./CreateEntryDialog";
 import { LevelBadge } from "./LevelBadge";
@@ -205,16 +205,15 @@ export function LorebookEntryList({
                                     )}
                                 </div>
                                 <div className="flex flex-wrap gap-1 mb-2">
-                                    {entry.tags &&
-                                        entry.tags.map(tag => (
-                                            <Badge
-                                                key={tag}
-                                                variant="secondary"
-                                                className="bg-primary/10 text-xs px-2 py-0.5"
-                                            >
-                                                {tag}
-                                            </Badge>
-                                        ))}
+                                    {entry.tags?.map(tag => (
+                                        <Badge
+                                            key={tag}
+                                            variant="secondary"
+                                            className="bg-primary/10 text-xs px-2 py-0.5"
+                                        >
+                                            {tag}
+                                        </Badge>
+                                    ))}
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-3">{entry.description}</p>
                             </CardContent>

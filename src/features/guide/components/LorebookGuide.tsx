@@ -1,26 +1,26 @@
 import {
     BookOpen,
-    Tag,
-    Users,
-    MapPin,
-    Package,
     Calendar,
-    StickyNote,
-    FileText,
-    PlayCircle,
     Clock,
-    Search,
-    Filter,
+    Edit,
     Eye,
     EyeOff,
+    FileText,
+    Filter,
+    MapPin,
+    Package,
+    PlayCircle,
     Plus,
-    Edit,
-    Trash2
+    Search,
+    StickyNote,
+    Tag,
+    Trash2,
+    Users
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function LorebookGuide() {
     return (

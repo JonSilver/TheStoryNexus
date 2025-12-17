@@ -1,3 +1,23 @@
+import {
+    closestCenter,
+    DndContext,
+    type DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { attemptPromise } from "@jfdi/attempt";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -18,31 +38,11 @@ import {
     useCreateChapterMutation,
     useUpdateChapterMutation
 } from "@/features/chapters/hooks/useChaptersQuery";
-import { useLorebookByStoryQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { LorebookProvider } from "@/features/lorebook/context/LorebookContext";
+import { useLorebookByStoryQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { Chapter } from "@/types/story";
+import type { Chapter } from "@/types/story";
 import { logger } from "@/utils/logger";
-import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors
-} from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy
-} from "@dnd-kit/sortable";
-import { attemptPromise } from "@jfdi/attempt";
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
 
 type POVType = "First Person" | "Third Person Limited" | "Third Person Omniscient";
 

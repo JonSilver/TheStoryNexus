@@ -1,5 +1,5 @@
-import type { Prompt } from "@/types/story";
 import { useState } from "react";
+import type { Prompt } from "@/types/story";
 
 type PromptType = Prompt["promptType"];
 

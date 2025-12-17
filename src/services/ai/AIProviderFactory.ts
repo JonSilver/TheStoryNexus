@@ -1,6 +1,6 @@
-import { AIProvider } from "@/types/story";
-import { IAIProvider, LocalAIProvider, OpenAIProvider, OpenRouterProvider } from "./providers";
 import { API_URLS } from "@/constants/urls";
+import type { AIProvider } from "@/types/story";
+import { type IAIProvider, LocalAIProvider, OpenAIProvider, OpenRouterProvider } from "./providers";
 
 export class AIProviderFactory {
     private providers: Map<AIProvider, IAIProvider> = new Map();

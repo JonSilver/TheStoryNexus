@@ -1,9 +1,9 @@
-import OpenAI from "openai";
-import { AIModel, AIProvider, PromptMessage } from "@/types/story";
-import { IAIProvider } from "./IAIProvider";
 import { attemptPromise } from "@jfdi/attempt";
-import { wrapOpenAIStream } from "../streamUtils";
+import OpenAI from "openai";
+import type { AIModel, AIProvider, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
+import { wrapOpenAIStream } from "../streamUtils";
+import type { IAIProvider } from "./IAIProvider";
 
 export class OpenAIProvider implements IAIProvider {
     private client: OpenAI | null = null;

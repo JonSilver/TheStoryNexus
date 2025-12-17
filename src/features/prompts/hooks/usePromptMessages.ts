@@ -1,7 +1,7 @@
-import type { PromptMessage } from "@/types/story";
-import { randomUUID } from "@/utils/crypto";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import type { PromptMessage } from "@/types/story";
+import { randomUUID } from "@/utils/crypto";
 
 type MessageWithId = PromptMessage & { _id: string };
 

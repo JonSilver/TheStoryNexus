@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Edit, Loader2 } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import type { ChatMessage } from "@/types/story";
 import MarkdownRenderer from "./MarkdownRenderer";
-import { ChatMessage } from "@/types/story";
 
 interface ChatMessageListProps {
     messages: ChatMessage[];
@@ -31,9 +32,14 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [/* effect dep */ messages]);
+    useEffect(
+        () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        },
+        [
+            /* effect dep */
+        ]
+    );
 
     useEffect(() => {
         const ta = editingTextareaRef.current;
@@ -42,7 +48,7 @@ export function ChatMessageList({
             ta.style.height = "auto";
             ta.style.height = `${contentHeight}px`;
         }
-    }, [/* effect dep */ editingContent, editingMessageId, editingTextareaRef]);
+    }, [/* effect dep */ editingMessageId, editingTextareaRef]);
 
     return (
         <ScrollArea className="flex-1 px-4">

@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { Position } from "../../nodes/InlineImageNode/InlineImageNode";
-import type { JSX } from "react";
+
 import is from "@sindresorhus/is";
+import type { JSX } from "react";
+import type { Position } from "../../nodes/InlineImageNode/InlineImageNode";
 
 import "../../nodes/InlineImageNode/InlineImageNode.css";
 
@@ -30,17 +31,17 @@ import {
     DROP_COMMAND,
     getDOMSelectionFromTarget,
     isHTMLElement,
-    LexicalCommand,
-    LexicalEditor
+    type LexicalCommand,
+    type LexicalEditor
 } from "lexical";
-import * as React from "react";
+import type * as React from "react";
 import { useEffect, useRef, useState } from "react";
 
 import {
     $createInlineImageNode,
     $isInlineImageNode,
     InlineImageNode,
-    InlineImagePayload
+    type InlineImagePayload
 } from "../../nodes/InlineImageNode/InlineImageNode";
 import Button from "../../ui/Button";
 import { DialogActions } from "../../ui/Dialog";
@@ -79,7 +80,7 @@ export function InsertInlineImageDialog({
 
     const loadImage = (files: FileList | null) => {
         const reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = () => {
             if (is.string(reader.result)) {
                 setSrc(reader.result);
             }
@@ -90,16 +91,21 @@ export function InsertInlineImageDialog({
         }
     };
 
-    useEffect(() => {
-        hasModifier.current = false;
-        const handler = (e: KeyboardEvent) => {
-            hasModifier.current = e.altKey;
-        };
-        document.addEventListener("keydown", handler);
-        return () => {
-            document.removeEventListener("keydown", handler);
-        };
-    }, [/* effect dep */ activeEditor]);
+    useEffect(
+        () => {
+            hasModifier.current = false;
+            const handler = (e: KeyboardEvent) => {
+                hasModifier.current = e.altKey;
+            };
+            document.addEventListener("keydown", handler);
+            return () => {
+                document.removeEventListener("keydown", handler);
+            };
+        },
+        [
+            /* effect dep */
+        ]
+    );
 
     const handleOnClick = () => {
         const payload = { altText, position, showCaption, src };

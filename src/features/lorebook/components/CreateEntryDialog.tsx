@@ -1,3 +1,7 @@
+import { attemptPromise } from "@jfdi/attempt";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -11,10 +15,6 @@ import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import { attemptPromise } from "@jfdi/attempt";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "../hooks/useLorebookQuery";
 import { LevelBadge } from "./LevelBadge";
 

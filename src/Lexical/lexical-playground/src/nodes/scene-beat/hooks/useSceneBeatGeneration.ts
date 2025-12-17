@@ -1,12 +1,11 @@
-import { useState, useCallback } from "react";
-import type { AllowedModel, PromptMessage } from "@/types/story";
+import { attemptPromise } from "@jfdi/attempt";
 import is from "@sindresorhus/is";
+import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
 import { useGenerateWithPrompt } from "@/features/ai/hooks/useGenerateWithPrompt";
 import { useStreamingGeneration } from "@/features/ai/hooks/useStreamingGeneration";
 import { usePromptParser } from "@/features/prompts/hooks/usePromptParser";
-import { toast } from "react-toastify";
-import type { PromptParserConfig } from "@/types/story";
-import { attemptPromise } from "@jfdi/attempt";
+import type { AllowedModel, PromptMessage, PromptParserConfig } from "@/types/story";
 
 interface UseSceneBeatGenerationResult {
     streaming: boolean;

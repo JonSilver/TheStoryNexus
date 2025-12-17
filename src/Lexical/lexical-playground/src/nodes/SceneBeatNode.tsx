@@ -1,5 +1,10 @@
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import type { LexicalNode, NodeKey, SerializedLexicalNode, Spread } from "lexical";
-
+import { $applyNodeReplacement, DecoratorNode } from "lexical";
+import { ChevronRight, Eye, Trash2 } from "lucide-react";
+import type { JSX } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { PromptPreviewDialog } from "@/components/ui/prompt-preview-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,14 +18,9 @@ import { useDeleteSceneBeatMutation } from "@/features/scenebeats/hooks/useScene
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { cn } from "@/lib/utils";
 import type { AllowedModel, LorebookEntry, Prompt } from "@/types/story";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $applyNodeReplacement, DecoratorNode } from "lexical";
-import { ChevronRight, Eye, Trash2 } from "lucide-react";
-import type { JSX } from "react";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "react-toastify";
+// Extracted services
+import { logger } from "@/utils/logger";
 import { SceneBeatMatchedEntries } from "./SceneBeatMatchedEntries";
-
 // Extracted components
 import { ContextToggles } from "./scene-beat/components/ContextToggles";
 import { GenerationControls } from "./scene-beat/components/GenerationControls";
@@ -28,16 +28,12 @@ import { LorebookMultiSelect } from "./scene-beat/components/LorebookMultiSelect
 import { MatchedEntriesPanel } from "./scene-beat/components/MatchedEntriesPanel";
 import type { POVType } from "./scene-beat/components/POVSettingsPopover";
 import { POVSettingsPopover } from "./scene-beat/components/POVSettingsPopover";
-
 // Extracted hooks
 import { useCommandHistory } from "./scene-beat/hooks/useCommandHistory";
 import { useLorebookMatching } from "./scene-beat/hooks/useLorebookMatching";
 import { useSceneBeatData } from "./scene-beat/hooks/useSceneBeatData";
 import { useSceneBeatGeneration } from "./scene-beat/hooks/useSceneBeatGeneration";
 import { useSceneBeatSync } from "./scene-beat/hooks/useSceneBeatSync";
-
-// Extracted services
-import { logger } from "@/utils/logger";
 import { insertTextAfterNode } from "./scene-beat/services/lexicalEditorUtils";
 import { createPromptConfig } from "./scene-beat/services/sceneBeatPromptService";
 

@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { LexicalEditor } from "lexical";
+import type { LexicalEditor } from "lexical";
+import { Minus, Plus } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus } from "lucide-react";
 
 import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
@@ -44,7 +44,7 @@ export default function FontSize({
         if (e.key === "Tab") {
             return;
         }
-        if (["e", "E", "+", "-"].includes(e.key) || isNaN(inputValueNumber)) {
+        if (["e", "E", "+", "-"].includes(e.key) || Number.isNaN(inputValueNumber)) {
             e.preventDefault();
             setInputValue("");
             return;
@@ -72,7 +72,7 @@ export default function FontSize({
         }
 
         setInputValue(String(updatedFontSize));
-        updateFontSizeInSelection(editor, String(updatedFontSize) + "px", null);
+        updateFontSizeInSelection(editor, `${String(updatedFontSize)}px`, null);
         setInputChangeFlag(false);
     };
 

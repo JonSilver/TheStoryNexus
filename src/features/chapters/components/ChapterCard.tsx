@@ -1,3 +1,12 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { attemptPromise } from "@jfdi/attempt";
+import { ChevronDown, ChevronUp, GripVertical, Pencil, PenLine, Trash2 } from "lucide-react";
+import { type MouseEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
+import { toast } from "react-toastify";
+import { z } from "zod";
 import { AIGenerateMenu } from "@/components/ui/ai-generate-menu";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
 import { ROUTES } from "@/constants/urls";
@@ -10,18 +19,9 @@ import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { parseLocalStorage } from "@/schemas/entities";
 import { aiService } from "@/services/ai/AIService";
 import { chaptersApi } from "@/services/api/client";
-import { PromptParserConfig } from "@/types/story";
+import type { PromptParserConfig } from "@/types/story";
 import { extractPlainTextFromLexical } from "@/utils/lexicalUtils";
 import { logger } from "@/utils/logger";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { attemptPromise } from "@jfdi/attempt";
-import { ChevronDown, ChevronUp, GripVertical, Pencil, PenLine, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
-import { z } from "zod";
 import {
     AlertDialog,
     AlertDialogAction,

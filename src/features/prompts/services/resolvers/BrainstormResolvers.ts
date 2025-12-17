@@ -1,11 +1,11 @@
-import { fetchAllChapterSummaries, fetchChapterSummary } from "@/features/chapters/hooks/useChapterSummariesQuery";
-import { chaptersApi } from "@/services/api/client";
-import { LorebookEntry, PromptContext } from "@/types/story";
-import { extractPlainTextFromLexical } from "@/utils/lexicalUtils";
-import { logger } from "@/utils/logger";
 import { attemptPromise } from "@jfdi/attempt";
 import is from "@sindresorhus/is";
-import { ILorebookFormatter, IVariableResolver } from "./types";
+import { fetchAllChapterSummaries, fetchChapterSummary } from "@/features/chapters/hooks/useChapterSummariesQuery";
+import { chaptersApi } from "@/services/api/client";
+import type { LorebookEntry, PromptContext } from "@/types/story";
+import { extractPlainTextFromLexical } from "@/utils/lexicalUtils";
+import { logger } from "@/utils/logger";
+import type { ILorebookFormatter, IVariableResolver } from "./types";
 
 export class ChatHistoryResolver implements IVariableResolver {
     async resolve(context: PromptContext): Promise<string> {
@@ -126,7 +126,7 @@ export class BrainstormContextResolver implements IVariableResolver {
         }
 
         const contentText = contents.filter(Boolean).join("\n\n");
-        logger.info(`DEBUG: Final chapter content text:`, contentText.substring(0, 100) + "...");
+        logger.info(`DEBUG: Final chapter content text:`, `${contentText.substring(0, 100)}...`);
 
         if (contentText) logger.info("DEBUG: Added chapter content to result");
         else logger.info("DEBUG: No chapter content was added (empty content)");

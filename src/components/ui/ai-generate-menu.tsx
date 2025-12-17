@@ -1,5 +1,6 @@
+import { ChevronDown, History, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { AIModel, Prompt, AllowedModel } from "@/types/story";
+import type { AIModel, AllowedModel, Prompt } from "@/types/story";
 import {
     Menubar,
     MenubarContent,
@@ -11,7 +12,6 @@ import {
     MenubarSubTrigger,
     MenubarTrigger
 } from "./menubar";
-import { Loader2, ChevronDown, History } from "lucide-react";
 import { PromptConfigDialog } from "./prompt-config-dialog";
 
 interface LastUsedSelection {

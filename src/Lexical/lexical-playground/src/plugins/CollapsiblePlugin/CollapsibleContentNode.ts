@@ -7,14 +7,14 @@
  */
 
 import {
-    DOMConversionMap,
-    DOMConversionOutput,
-    DOMExportOutput,
-    EditorConfig,
+    type DOMConversionMap,
+    type DOMConversionOutput,
+    type DOMExportOutput,
+    type EditorConfig,
     ElementNode,
-    LexicalEditor,
-    LexicalNode,
-    SerializedElementNode
+    type LexicalEditor,
+    type LexicalNode,
+    type SerializedElementNode
 } from "lexical";
 import { IS_CHROME } from "shared/environment";
 import invariant from "shared/invariant";

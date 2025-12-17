@@ -8,7 +8,7 @@
 
 import type { JSX } from "react";
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import FlashMessage from "../ui/FlashMessage";
 

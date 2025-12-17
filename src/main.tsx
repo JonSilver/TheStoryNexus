@@ -1,9 +1,9 @@
-import { StoryProvider } from "@/features/stories/context/StoryContext";
-import { QueryProvider } from "@/providers/QueryProvider";
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
+import { StoryProvider } from "@/features/stories/context/StoryContext";
+import { QueryProvider } from "@/providers/QueryProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Workspace } from "./components/workspace/Workspace";
 import { ThemeProvider } from "./lib/theme-provider";

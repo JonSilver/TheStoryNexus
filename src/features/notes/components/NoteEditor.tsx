@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Save } from "lucide-react";
 import { useState } from "react";
 import Editor from "react-simple-wysiwyg";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useNoteQuery, useUpdateNoteMutation } from "../hooks/useNotesQuery";
 
 interface NoteEditorProps {

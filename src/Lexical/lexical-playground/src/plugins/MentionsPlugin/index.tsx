@@ -6,16 +6,15 @@
  *
  */
 
-import type { JSX } from "react";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     LexicalTypeaheadMenuPlugin,
     MenuOption,
-    MenuTextMatch,
+    type MenuTextMatch,
     useBasicTypeaheadTriggerMatch
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { TextNode } from "lexical";
+import type { TextNode } from "lexical";
+import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import * as ReactDOM from "react-dom";
@@ -23,7 +22,7 @@ import * as ReactDOM from "react-dom";
 import { $createMentionNode } from "../../nodes/MentionNode";
 
 const PUNCTUATION = "\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%'\"~=<>_:;";
-const NAME = "\\b[A-Z][^\\s" + PUNCTUATION + "]";
+const NAME = `\\b[A-Z][^\\s${PUNCTUATION}]`;
 
 const DocumentMentionsRegex = {
     NAME,
@@ -35,7 +34,7 @@ const PUNC = DocumentMentionsRegex.PUNCTUATION;
 const TRIGGERS = ["@"].join("");
 
 // Chars we expect to see in a mention (non-space, non-punctuation).
-const VALID_CHARS = "[^" + TRIGGERS + PUNC + "\\s]";
+const VALID_CHARS = `[^${TRIGGERS}${PUNC}\\s]`;
 
 // Non-standard series of chars. Each series must be preceded and followed by
 // a valid char.
@@ -51,7 +50,7 @@ const VALID_JOINS =
 const LENGTH_LIMIT = 75;
 
 const AtSignMentionsRegex = new RegExp(
-    "(^|\\s|\\()(" + "[" + TRIGGERS + "]" + "((?:" + VALID_CHARS + VALID_JOINS + "){0," + LENGTH_LIMIT + "})" + ")$"
+    `(^|\\s|\\()([${TRIGGERS}]((?:${VALID_CHARS}${VALID_JOINS}){0,${LENGTH_LIMIT}}))$`
 );
 
 // 50 is the longest alias length limit.
@@ -59,7 +58,7 @@ const ALIAS_LENGTH_LIMIT = 50;
 
 // Regex used to match alias.
 const AtSignMentionsRegexAliasRegex = new RegExp(
-    "(^|\\s|\\()(" + "[" + TRIGGERS + "]" + "((?:" + VALID_CHARS + "){0," + ALIAS_LENGTH_LIMIT + "})" + ")$"
+    `(^|\\s|\\()([${TRIGGERS}]((?:${VALID_CHARS}){0,${ALIAS_LENGTH_LIMIT}}))$`
 );
 
 // At most, 5 suggestions are shown in the popup.
@@ -573,7 +572,7 @@ function MentionsTypeaheadMenuItem({
             ref={option.setRefElement}
             role="option"
             aria-selected={isSelected}
-            id={"typeahead-item-" + index}
+            id={`typeahead-item-${index}`}
             onMouseEnter={onMouseEnter}
             onClick={onClick}
         >

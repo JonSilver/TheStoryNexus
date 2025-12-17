@@ -1,12 +1,11 @@
 import { attemptPromise } from "@jfdi/attempt";
+import type { InferSelectModel } from "drizzle-orm";
 import { and, eq } from "drizzle-orm";
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import multer from "multer";
 import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
 import { aiChats, chapters, lorebookEntries, sceneBeats, series, stories } from "../db/schema.js";
-
-import type { InferSelectModel } from "drizzle-orm";
 
 type ImportedChapter = InferSelectModel<typeof chapters>;
 type ImportedLorebookEntry = InferSelectModel<typeof lorebookEntries>;

@@ -1,5 +1,5 @@
-import type { LorebookEntry, Prompt, PromptParserConfig } from "@/types/story";
 import type { LexicalEditor, NodeKey } from "lexical";
+import type { LorebookEntry, Prompt, PromptParserConfig } from "@/types/story";
 import { extractPreviousText } from "./lexicalEditorUtils";
 
 export interface SceneBeatContext {
