@@ -1,6 +1,6 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Download, Edit, FolderUp, Trash2, Upload } from "lucide-react";
+import { BookOpen, Download, Edit, FolderUp, MoreHorizontal, Trash2, Upload } from "lucide-react";
 import type { MouseEvent } from "react";
 import { type ChangeEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -9,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -216,20 +222,44 @@ export const StoriesTool = () => {
     });
 
     return (
-        <div className="p-8">
-            <div className="max-w-7xl mx-auto space-y-12">
-                <div className="flex items-center justify-center gap-6 mb-8">
-                    <h1 className="text-2xl font-bold">Your Stories</h1>
-                    <div className="flex gap-4">
+        <div className="p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mb-4 sm:mb-8">
+                    <h1 className="text-xl sm:text-2xl font-bold">Your Stories</h1>
+                    <div className="flex gap-2 sm:gap-4">
                         <CreateStoryDialog />
-                        <Button variant="outline" onClick={handleImportClick}>
+                        {/* Desktop: separate buttons */}
+                        <Button variant="outline" onClick={handleImportClick} className="hidden sm:flex">
                             <Upload className="w-4 h-4 mr-2" />
                             Import Story
                         </Button>
-                        <Button variant="ghost" onClick={handleImportDemoStory} disabled={isImportingDemo}>
+                        <Button
+                            variant="ghost"
+                            onClick={handleImportDemoStory}
+                            disabled={isImportingDemo}
+                            className="hidden sm:flex"
+                        >
                             <Download className="w-4 h-4 mr-2" />
                             {isImportingDemo ? "Importing..." : "Import Demo Story"}
                         </Button>
+                        {/* Mobile: dropdown menu */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="sm:hidden">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleImportClick}>
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Import Story
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleImportDemoStory} disabled={isImportingDemo}>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    {isImportingDemo ? "Importing..." : "Import Demo Story"}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <input
                             ref={fileInputRef}
                             type="file"

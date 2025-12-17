@@ -5,8 +5,9 @@ import { type ChangeEvent, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LorebookEntry } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { CreateEntryDialog } from "../components/CreateEntryDialog";
@@ -166,43 +167,60 @@ export default function LorebookPage({ storyId: propStoryId, seriesId: propSerie
 
             <Separator className="bg-gray-300 dark:bg-gray-700" />
 
-            {/* Category tabs - horizontal scroll on mobile */}
+            {/* Mobile: dropdown selector */}
+            <div className="sm:hidden">
+                <Select value={selectedCategory} onValueChange={v => setSelectedCategory(v as LorebookCategory)}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue>
+                            {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} ({categoryCounts[selectedCategory] || 0})
+                        </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        {CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>
+                                {cat.charAt(0).toUpperCase() + cat.slice(1)} ({categoryCounts[cat] || 0})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Desktop: tabs */}
             <Tabs
                 value={selectedCategory}
                 onValueChange={v => setSelectedCategory(v as LorebookCategory)}
-                className="w-full"
+                className="w-full hidden sm:block"
             >
-                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700 overflow-x-auto flex-nowrap">
+                <TabsList className="w-full justify-start bg-gray-100 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700">
                     {CATEGORIES.map(cat => (
                         <TabsTrigger
                             key={cat}
                             value={cat}
-                            className="whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                            className="text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-primary"
                         >
                             {cat.charAt(0).toUpperCase() + cat.slice(1)} ({categoryCounts[cat] || 0})
                         </TabsTrigger>
                     ))}
                 </TabsList>
-
-                {CATEGORIES.map(cat => (
-                    <TabsContent key={cat} value={cat} className="mt-6">
-                        {isLoading ? (
-                            <div className="flex justify-center p-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                            </div>
-                        ) : entriesByCategory.length > 0 ? (
-                            <LorebookEntryList
-                                entries={entriesByCategory}
-                                editable={true}
-                                showLevel={true}
-                                contextStoryId={storyId}
-                            />
-                        ) : (
-                            <div className="text-center text-muted-foreground py-12">No {cat} entries yet</div>
-                        )}
-                    </TabsContent>
-                ))}
             </Tabs>
+
+            {/* Entry list - shared between mobile and desktop */}
+            <div className="mt-4 sm:mt-6">
+                {isLoading ? (
+                    <div className="flex justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                ) : entriesByCategory.length > 0 ? (
+                    <LorebookEntryList
+                        entries={entriesByCategory}
+                        editable={true}
+                        showLevel={true}
+                        contextStoryId={storyId}
+                    />
+                ) : (
+                    <div className="text-center text-muted-foreground py-12">No {selectedCategory} entries yet</div>
+                )}
+            </div>
 
             {/* Create dialog */}
             <CreateEntryDialog

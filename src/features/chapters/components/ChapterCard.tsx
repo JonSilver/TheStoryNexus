@@ -235,42 +235,40 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     return (
         <div ref={setNodeRef} style={style}>
             <Card className="w-full">
-                <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex-1 flex items-center gap-2">
+                <CardHeader className="p-3 sm:p-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 flex items-center gap-1 sm:gap-2 min-w-0">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="cursor-grab active:cursor-grabbing"
+                                className="cursor-grab active:cursor-grabbing shrink-0 h-8 w-8 p-0"
                                 {...attributes}
                                 {...listeners}
                             >
                                 <GripVertical className="h-4 w-4" />
                             </Button>
-                            <h3 className="text-lg font-semibold">
-                                {chapter.order}: {chapter.title}
-                            </h3>
-                            {chapter.povCharacter && (
-                                <span className="text-xs text-muted-foreground">
-                                    POV: {chapter.povCharacter} ({chapter.povType})
-                                </span>
-                            )}
-                            {!chapter.povCharacter && chapter.povType && (
-                                <span className="text-xs text-muted-foreground">POV: {chapter.povType}</span>
-                            )}
+                            <div className="min-w-0">
+                                <h3 className="text-base sm:text-lg font-semibold truncate">
+                                    {chapter.order}: {chapter.title}
+                                </h3>
+                                {(chapter.povCharacter || chapter.povType) && (
+                                    <span className="text-xs text-muted-foreground block truncate">
+                                        POV: {chapter.povCharacter ? `${chapter.povCharacter} (${chapter.povType})` : chapter.povType}
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={openEditDialog}>
+                        <div className="flex gap-1 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={openEditDialog}>
                                 <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={handleWriteClick}>
-                                <PenLine className="h-4 w-4 mr-2" />
-                                Write
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleWriteClick}>
+                                <PenLine className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowDeleteDialog(true)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={toggleExpanded}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleExpanded}>
                                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </Button>
                         </div>
