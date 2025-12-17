@@ -185,7 +185,7 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         editor.update(() => {
             let selection = $getSelection();
 
-            if (selection !== null) {
+            if (selection !== null) 
                 if (selection.isCollapsed()) {
                     $setBlocksType(selection, () => $createCodeNode());
                 } else {
@@ -197,7 +197,7 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
                         selection.insertRawText(textContent);
                     }
                 }
-            }
+            
         });
     
 };

@@ -39,9 +39,9 @@ function PageBreakComponent({ nodeKey }: { nodeKey: NodeKey }) {
             const deleteSelection = $getSelection();
             if (isSelected && $isNodeSelection(deleteSelection)) 
                 deleteSelection.getNodes().forEach(node => {
-                    if ($isPageBreakNode(node)) {
+                    if ($isPageBreakNode(node)) 
                         node.remove();
-                    }
+                    
                 });
             
             return false;

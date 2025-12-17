@@ -93,19 +93,19 @@ function TextFormatFloatingToolbar({
                 const y = e.clientY;
                 const elementUnderMouse = document.elementFromPoint(x, y);
 
-                if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
+                if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) 
                     // Mouse is not over the target element => not a normal click, but probably a drag
                     popupCharStylesEditorRef.current.style.pointerEvents = "none";
-                }
+                
             }
         
     }, []);
 
     const mouseUpListener = useCallback((_e: MouseEvent) => {
         if (popupCharStylesEditorRef?.current) 
-            if (popupCharStylesEditorRef.current.style.pointerEvents !== "auto") {
+            if (popupCharStylesEditorRef.current.style.pointerEvents !== "auto") 
                 popupCharStylesEditorRef.current.style.pointerEvents = "auto";
-            }
+            
         
     }, []);
 
@@ -260,9 +260,9 @@ function TextFormatFloatingToolbar({
                     if (!$isTextNode(node) && $isElementNode(node)) {
                         const children = node.getChildren();
                         for (const child of children) 
-                            if (traverseNodes(child)) {
+                            if (traverseNodes(child)) 
                                 return true;
-                            }
+                            
                         
                     }
 

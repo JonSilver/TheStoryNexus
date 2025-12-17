@@ -41,9 +41,9 @@ export function LoadChapterContentPlugin(): null {
                         );
                         setHasLoaded(true);
                     });
-                    if (recoveryError) {
+                    if (recoveryError) 
                         logger.error("LoadChapterContent - Recovery failed:", recoveryError);
-                    }
+                    
                 }
             });
         

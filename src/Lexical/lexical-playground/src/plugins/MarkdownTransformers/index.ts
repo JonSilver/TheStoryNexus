@@ -106,9 +106,9 @@ export const TABLE: ElementTransformer = {
                     rowOutput.push(
                         $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell).replace(/\n/g, "\\n").trim()
                     );
-                    if (cell.__headerState === TableCellHeaderStates.ROW) {
+                    if (cell.__headerState === TableCellHeaderStates.ROW) 
                         isHeaderRow = true;
-                    }
+                    
                 }
             
 

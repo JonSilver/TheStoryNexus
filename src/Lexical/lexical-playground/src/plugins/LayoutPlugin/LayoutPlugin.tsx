@@ -58,11 +58,11 @@ export function LayoutPlugin(): null {
                         : container.getLastDescendant<LexicalNode>()?.getKey();
 
                     if (parent !== null && child === container && selection.anchor.key === descendant) 
-                        if (before) {
+                        if (before) 
                             container.insertBefore($createParagraphNode());
-                        } else {
+                         else 
                             container.insertAfter($createParagraphNode());
-                        }
+                        
                     
                 }
             }
@@ -136,16 +136,16 @@ export function LayoutPlugin(): null {
 
                         // Add or remove extra columns if new template does not match existing one
                         if (itemsCount > prevItemsCount) 
-                            for (let i = prevItemsCount; i < itemsCount; i++) {
+                            for (let i = prevItemsCount; i < itemsCount; i++) 
                                 container.append($createLayoutItemNode().append($createParagraphNode()));
-                            }
+                            
                          else if (itemsCount < prevItemsCount) 
                             for (let i = prevItemsCount - 1; i >= itemsCount; i--) {
                                 const layoutItem = container.getChildAtIndex<LexicalNode>(i);
 
-                                if ($isLayoutItemNode(layoutItem)) {
+                                if ($isLayoutItemNode(layoutItem)) 
                                     layoutItem.remove();
-                                }
+                                
                             }
                         
 

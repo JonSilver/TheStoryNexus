@@ -80,11 +80,11 @@ function SpeechToTextPlugin(): null {
         }
 
         if (recognition.current) 
-            if (isEnabled) {
+            if (isEnabled) 
                 recognition.current.start();
-            } else {
+             else 
                 recognition.current.stop();
-            }
+            
         
 
         return () => {

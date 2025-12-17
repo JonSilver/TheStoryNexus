@@ -200,9 +200,9 @@ export default function InlineImageComponent({
                 event.preventDefault();
                 if (isSelected && $isNodeSelection(deleteSelection)) 
                     deleteSelection.getNodes().forEach(node => {
-                        if ($isInlineImageNode(node)) {
+                        if ($isInlineImageNode(node)) 
                             node.remove();
-                        }
+                        
                     });
                 
             }

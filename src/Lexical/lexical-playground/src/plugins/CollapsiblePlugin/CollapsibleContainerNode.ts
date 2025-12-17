@@ -89,9 +89,9 @@ export class CollapsibleContainerNode extends ElementNode {
                     dom.removeAttribute("open");
                     setDomHiddenUntilFound(contentDom);
                 }
-            } else {
+            } else 
                 dom.open = this.__open;
-            }
+            
         
 
         return false;

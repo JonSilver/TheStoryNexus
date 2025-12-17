@@ -494,9 +494,9 @@ export default function ToolbarPlugin({
                     updateToolbarState("blockType", type);
                 } else {
                     const type = $isHeadingNode(element) ? element.getTag() : element.getType();
-                    if (type in blockTypeToBlockName) {
+                    if (type in blockTypeToBlockName) 
                         updateToolbarState("blockType", type as keyof typeof blockTypeToBlockName);
-                    }
+                    
                 }
             
             // Handle buttons

@@ -170,11 +170,11 @@ export class AIService {
                 });
 
                 if (error) 
-                    if ((error as Error).name === "AbortError") {
+                    if ((error as Error).name === "AbortError") 
                         controller.close();
-                    } else {
+                     else 
                         controller.error(error);
-                    }
+                    
                  else 
                     controller.close();
                 
@@ -308,9 +308,9 @@ export class AIService {
                         const [parseError, json] = await attemptPromise(() => Promise.resolve(JSON.parse(data)));
                         if (!parseError && json) {
                             const text = json.choices[0]?.delta?.content || "";
-                            if (text) {
+                            if (text) 
                                 onToken(text);
-                            }
+                            
                         }
                     }
                 
@@ -321,9 +321,9 @@ export class AIService {
             if ((error as Error).name === "AbortError") {
                 logger.info("Stream reading aborted.");
                 onComplete();
-            } else {
+            } else 
                 onError(error as Error);
-            }
+            
         
 
         this.abortController = null;
