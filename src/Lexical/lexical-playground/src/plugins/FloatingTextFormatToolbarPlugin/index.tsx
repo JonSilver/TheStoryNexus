@@ -387,10 +387,7 @@ function TextFormatFloatingToolbar({
     };
 
     return (
-        <div
-            ref={popupCharStylesEditorRef}
-            className={`floating-text-format-popup ${showPreviewDialog ? "active" : ""}`}
-        >
+        <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">
             {showPreviewDialog && previewMessages && (
                 <PromptPreviewDialog
                     messages={previewMessages}
