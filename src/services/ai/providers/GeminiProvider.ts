@@ -37,6 +37,11 @@ export class GeminiProvider implements IAIProvider {
                 if (!model.name || !model.supportedActions?.includes("generateContent")) continue;
 
                 const modelId = model.name.replace("models/", "");
+
+                // Only include official Gemini models - third-party models (gemma, learnlm, etc.)
+                // don't support system instructions which our prompts require
+                if (!modelId.startsWith("gemini-")) continue;
+
                 models.push({
                     id: modelId,
                     name: model.displayName || modelId,
