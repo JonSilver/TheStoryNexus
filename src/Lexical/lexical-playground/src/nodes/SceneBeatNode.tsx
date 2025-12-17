@@ -299,8 +299,8 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
     return (
         <div className="relative my-4 rounded-lg border border-border bg-card">
             {/* Collapsible Header */}
-            <div className="flex items-center justify-between p-2">
-                <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between p-2 gap-1">
+                <div className="flex items-center gap-2 min-w-0">
                     <button
                         onClick={() => {
                             const newCollapsed = !collapsed;
@@ -308,16 +308,16 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
                             setLocalCollapsed(newCollapsed);
                             if (sceneBeatId && isLoaded) saveCollapsed(newCollapsed);
                         }}
-                        className="flex items-center justify-center hover:bg-accent/50 rounded-md w-6 h-6"
+                        className="flex items-center justify-center hover:bg-accent/50 rounded-md w-6 h-6 shrink-0"
                         aria-label={collapsed ? "Expand scene beat" : "Collapse scene beat"}
                     >
                         <ChevronRight className={cn("h-4 w-4 transition-transform", !collapsed && "rotate-90")} />
                     </button>
-                    <span className="font-medium">Scene Beat</span>
+                    <span className="font-medium text-sm sm:text-base">Scene Beat</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 shrink-0">
                     {streaming && (
-                        <Button variant="default" size="sm" onClick={stopGeneration} className="h-8">
+                        <Button variant="default" size="sm" onClick={stopGeneration} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm">
                             Stop
                         </Button>
                     )}
@@ -331,18 +331,18 @@ function SceneBeatComponent({ nodeKey }: { nodeKey: NodeKey }): JSX.Element {
 
                     <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8"
+                        size="icon"
+                        className="h-7 w-7 sm:h-8 sm:w-8"
                         onClick={() => setShowMatchedEntries(!showMatchedEntries)}
+                        title="Matched Tags"
                     >
-                        <Eye className="h-4 w-4 mr-2" />
-                        <span>Scenebeat Matched Tags</span>
+                        <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleDelete}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive"
                         aria-label="Delete scene beat"
                     >
                         <Trash2 className="h-4 w-4" />
