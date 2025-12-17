@@ -328,13 +328,10 @@ function TextFormatFloatingToolbar({
                     fullText += token;
                 },
                 () => {
-                    // When streaming is complete, replace the selected text
-                    console.log(
-                        "[handleGenerateWithPrompt] onComplete called, fullText length:",
-                        fullText.length,
-                        "fullText:",
-                        fullText.substring(0, 100)
-                    );
+                    if (!fullText.trim()) {
+                        toast.error("No text returned from AI - selection preserved");
+                        return;
+                    }
                     editor.update(() => {
                         const currentSelection = $getSelection();
                         if ($isRangeSelection(currentSelection)) {
@@ -342,8 +339,6 @@ function TextFormatFloatingToolbar({
                             currentSelection.insertText(fullText);
                         }
                     });
-
-                    // Reset state
                     toast.success("Text generated and inserted");
                 },
                 error => {
