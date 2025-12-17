@@ -188,7 +188,7 @@ export const storyExportSchema = z.object({
 });
 
 // AI Model schema
-const aiProviderSchema = z.enum(["openai", "openrouter", "local"]);
+const aiProviderSchema = z.enum(["openai", "openrouter", "local", "gemini"]);
 
 const aiModelSchema = z.object({
     id: z.string(),
@@ -200,10 +200,12 @@ const aiModelSchema = z.object({
 export const aiSettingsSchema = baseEntitySchema.extend({
     openaiKey: z.string().optional(),
     openrouterKey: z.string().optional(),
+    geminiKey: z.string().optional(),
     availableModels: z.array(aiModelSchema),
     lastModelsFetch: z.coerce.date().optional(),
     localApiUrl: z.string().optional(),
     defaultLocalModel: z.string().optional(),
     defaultOpenAIModel: z.string().optional(),
-    defaultOpenRouterModel: z.string().optional()
+    defaultOpenRouterModel: z.string().optional(),
+    defaultGeminiModel: z.string().optional()
 });

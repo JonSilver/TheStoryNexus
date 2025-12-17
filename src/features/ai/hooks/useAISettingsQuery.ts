@@ -134,7 +134,8 @@ const providerName = (provider: AIProvider): string => {
     const names: Record<AIProvider, string> = {
         openai: "OpenAI",
         openrouter: "OpenRouter",
-        local: "Local"
+        local: "Local",
+        gemini: "Gemini"
     };
     return names[provider];
 };

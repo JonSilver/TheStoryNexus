@@ -115,12 +115,14 @@ export const aiSettings = sqliteTable("aiSettings", {
     id: text("id").primaryKey(),
     openaiKey: text("openaiKey"),
     openrouterKey: text("openrouterKey"),
+    geminiKey: text("geminiKey"),
     availableModels: text("availableModels", { mode: "json" }).notNull(), // JSON: AIModel[]
     lastModelsFetch: integer("lastModelsFetch", { mode: "timestamp" }),
     localApiUrl: text("localApiUrl"),
     defaultLocalModel: text("defaultLocalModel"),
     defaultOpenAIModel: text("defaultOpenAIModel"),
     defaultOpenRouterModel: text("defaultOpenRouterModel"),
+    defaultGeminiModel: text("defaultGeminiModel"),
     createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
 });
 

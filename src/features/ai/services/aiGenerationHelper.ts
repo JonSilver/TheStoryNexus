@@ -45,6 +45,8 @@ export const generateWithProvider = (
                 repetition_penalty,
                 min_p
             );
+        case "gemini":
+            return aiService.generateWithGemini(messages, modelId, temperature, maxTokens);
         default:
             throw new Error(`Unknown provider: ${provider}`);
     }

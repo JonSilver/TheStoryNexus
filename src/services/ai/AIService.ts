@@ -38,13 +38,16 @@ export class AIService {
         this.settings = settings;
 
         // Initialize providers with stored keys
-        if (this.settings.openaiKey) 
+        if (this.settings.openaiKey)
             this.providerFactory.initializeProvider("openai", this.settings.openaiKey);
-        
-        if (this.settings.openrouterKey) 
+
+        if (this.settings.openrouterKey)
             this.providerFactory.initializeProvider("openrouter", this.settings.openrouterKey);
-        
-        if (this.settings.localApiUrl) 
+
+        if (this.settings.geminiKey)
+            this.providerFactory.initializeProvider("gemini", this.settings.geminiKey);
+
+        if (this.settings.localApiUrl)
             this.providerFactory.updateLocalApiUrl(this.settings.localApiUrl);
         
     }
@@ -56,7 +59,8 @@ export class AIService {
 
         const update: Partial<AISettings> = {
             ...(provider === "openai" && { openaiKey: key }),
-            ...(provider === "openrouter" && { openrouterKey: key })
+            ...(provider === "openrouter" && { openrouterKey: key }),
+            ...(provider === "gemini" && { geminiKey: key })
         };
 
         const result = aiSettingsSchema.partial().safeParse(update);
@@ -246,6 +250,26 @@ export class AIService {
         return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
     }
 
+    async generateWithGemini(
+        messages: PromptMessage[],
+        modelId: string,
+        temperature: number = 1.0,
+        maxTokens: number = 2048,
+        _top_p?: number,
+        _top_k?: number,
+        _repetition_penalty?: number,
+        _min_p?: number
+    ): Promise<Response> {
+        if (!this.settings?.geminiKey)
+            throw new Error("Gemini API key not set");
+
+        const provider = this.providerFactory.getProvider("gemini");
+        if (!provider.isInitialized())
+            this.providerFactory.initializeProvider("gemini", this.settings.geminiKey);
+
+        return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
+    }
+
     private async generateWithSSEFormatting(
         provider: IAIProvider,
         messages: PromptMessage[],
@@ -354,19 +378,29 @@ export class AIService {
         return this.settings?.defaultOpenRouterModel;
     }
 
+    getGeminiKey(): string | undefined {
+        return this.settings?.geminiKey;
+    }
+
+    getDefaultGeminiModel(): string | undefined {
+        return this.settings?.defaultGeminiModel;
+    }
+
     async updateDefaultModel(provider: AIProvider, modelId: string | undefined): Promise<void> {
         if (!this.settings) 
             throw new Error("AI settings not initialized");
         
 
         let updateData: Partial<AISettings>;
-        if (provider === "local") 
+        if (provider === "local")
             updateData = { defaultLocalModel: modelId };
-         else if (provider === "openai") 
+        else if (provider === "openai")
             updateData = { defaultOpenAIModel: modelId };
-         else if (provider === "openrouter") 
+        else if (provider === "openrouter")
             updateData = { defaultOpenRouterModel: modelId };
-         else 
+        else if (provider === "gemini")
+            updateData = { defaultGeminiModel: modelId };
+        else
             return;
         
 

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
@@ -97,6 +98,7 @@ export default function SettingsPage() {
     const navigate = useNavigate();
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
     const [localApiUrlInput, setLocalApiUrlInput] = useState("");
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const { data: settings, isLoading: isLoadingSettings } = useAISettingsQuery();
 
@@ -110,17 +112,6 @@ export default function SettingsPage() {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    const handleDeleteDemoData = () => {
-        if (
-            !confirm(
-                "Are you sure you want to delete all demo data? This will remove the demo story, chapters, and lorebook entries. This action cannot be undone."
-            )
-        ) 
-            return;
-        
-        deleteDemoMutation.mutate();
-    };
-
     if (isLoadingSettings) 
         return (
             <div className="p-8 flex justify-center">
@@ -132,6 +123,7 @@ export default function SettingsPage() {
     const allModels = settings?.availableModels || [];
     const openaiModels = allModels.filter(m => m.provider === "openai");
     const openrouterModels = allModels.filter(m => m.provider === "openrouter");
+    const geminiModels = allModels.filter(m => m.provider === "gemini");
     const localModels = allModels.filter(m => m.provider === "local");
 
     const currentLocalUrl = localApiUrlInput || settings?.localApiUrl || "";
@@ -179,6 +171,23 @@ export default function SettingsPage() {
                         onRefresh={() => refreshModelsMutation.mutate("openrouter")}
                         onDefaultModelChange={modelId =>
                             updateDefaultModelMutation.mutate({ provider: "openrouter", modelId })
+                        }
+                    />
+
+                    <ProviderCard
+                        provider="gemini"
+                        title="Google Gemini Configuration"
+                        keyLabel="Gemini API Key"
+                        keyPlaceholder="Enter your Gemini API key"
+                        storedKey={settings?.geminiKey}
+                        models={geminiModels}
+                        defaultModel={settings?.defaultGeminiModel}
+                        isKeyMutating={updateKeyMutation.isPending}
+                        isRefreshing={refreshModelsMutation.isPending}
+                        onSaveKey={key => updateKeyMutation.mutate({ provider: "gemini", key })}
+                        onRefresh={() => refreshModelsMutation.mutate("gemini")}
+                        onDefaultModelChange={modelId =>
+                            updateDefaultModelMutation.mutate({ provider: "gemini", modelId })
                         }
                     />
 
@@ -291,7 +300,7 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label>Delete Demo Content</Label>
                                 <Button
-                                    onClick={handleDeleteDemoData}
+                                    onClick={() => setShowDeleteDialog(true)}
                                     disabled={deleteDemoMutation.isPending}
                                     className="w-full"
                                     variant="destructive"
@@ -311,6 +320,15 @@ export default function SettingsPage() {
                     </Card>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                title="Delete Demo Data"
+                description="This will permanently delete all demo content including stories, chapters, and lorebook entries. This action cannot be undone."
+                onConfirm={() => deleteDemoMutation.mutate()}
+                confirmLabel="Delete All"
+            />
         </div>
     );
 }
