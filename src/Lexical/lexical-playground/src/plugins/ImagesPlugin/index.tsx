@@ -193,7 +193,11 @@ export function InsertImageDialog({
     );
 }
 
-export default function ImagesPlugin({ captionsEnabled: _captionsEnabled }: { captionsEnabled?: boolean }): JSX.Element | null {
+export default function ImagesPlugin({
+    captionsEnabled: _captionsEnabled
+}: {
+    captionsEnabled?: boolean;
+}): JSX.Element | null {
     const [editor] = useLexicalComposerContext();
 
     useEffect(() => {

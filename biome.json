@@ -20,7 +20,8 @@
             "quoteStyle": "double",
             "trailingCommas": "none",
             "semicolons": "always",
-            "arrowParentheses": "asNeeded"
+            "arrowParentheses": "asNeeded",
+            "bracketSpacing": true
         },
         "globals": ["React", "JSX", "RequestInit"]
     },
