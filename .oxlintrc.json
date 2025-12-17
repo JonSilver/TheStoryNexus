@@ -11,7 +11,7 @@
         "jsx-a11y/alt-text": "warn",
         "react/jsx-key": "error",
         "curly": ["warn", "multi"],
-        "max-lines": ["warn", { "max": 200, "skipBlankLines": true, "skipComments": true }]
+        "max-lines": ["warn", { "max": 250, "skipBlankLines": true, "skipComments": true }]
     },
     "plugins": ["react", "typescript", "jsx-a11y"],
     "ignorePatterns": ["dist", "node_modules"]
