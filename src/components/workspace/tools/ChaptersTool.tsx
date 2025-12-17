@@ -265,7 +265,7 @@ export const ChaptersTool = () => {
                     </Dialog>
                 </div>
 
-                <ScrollArea className="h-[calc(100vh-15rem)] md:h-[calc(100vh-10rem)]">
+                <ScrollArea className="h-[calc(100vh-10rem)]">
                     {chapters.length === 0 ? (
                         <div className="h-[200px] flex flex-col items-center justify-center text-center p-6">
                             <p className="text-muted-foreground mb-4">
