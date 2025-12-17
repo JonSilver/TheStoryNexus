@@ -54,9 +54,9 @@ export const StoriesToolHeader = ({ onStoriesChange }: StoriesToolHeaderProps) =
         if (error) {
             logger.error("Demo import failed:", error);
             toast.error("Failed to import demo story");
-        } else {
+        } else 
             toast.success("Demo story imported successfully");
-        }
+        
 
         setIsImportingDemo(false);
     };
