@@ -63,9 +63,10 @@ export function CreateStoryDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="lg" className="w-64">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create New Story
+                <Button size="sm" className="sm:size-default">
+                    <PlusCircle className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Create New Story</span>
+                    <span className="sm:hidden">New</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
