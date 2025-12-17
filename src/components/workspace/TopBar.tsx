@@ -1,3 +1,5 @@
+import { HelpCircle, Search, Settings } from "lucide-react";
+import { useNavigate } from "react-router";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +11,6 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { HelpCircle, Search, Settings } from "lucide-react";
-import { useNavigate } from "react-router";
 import { ChapterSwitcher } from "./ChapterSwitcher";
 
 interface TopBarProps {

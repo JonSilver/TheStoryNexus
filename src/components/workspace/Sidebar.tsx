@@ -1,6 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { useStoryContext, type WorkspaceTool } from "@/features/stories/context/StoryContext";
-import { cn } from "@/lib/utils";
 import {
     BookOpen,
     ChevronLeft,
@@ -13,6 +10,9 @@ import {
     MessageSquare,
     StickyNote
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useStoryContext, type WorkspaceTool } from "@/features/stories/context/StoryContext";
+import { cn } from "@/lib/utils";
 import { version } from "../../../package.json";
 import { useWorkspace } from "./context/WorkspaceContext";
 

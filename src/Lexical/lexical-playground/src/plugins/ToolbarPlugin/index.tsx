@@ -6,15 +6,6 @@
  *
  */
 
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { $isListNode, ListNode } from "@lexical/list";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $isHeadingNode } from "@lexical/rich-text";
@@ -55,6 +46,15 @@ import {
 import type { JSX } from "react";
 import { type Dispatch, useCallback, useEffect, useState } from "react";
 import { IS_APPLE } from "shared/environment";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { blockTypeToBlockName, useToolbarState } from "../../context/ToolbarContext";
 import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { getSelectedNode } from "../../utils/getSelectedNode";

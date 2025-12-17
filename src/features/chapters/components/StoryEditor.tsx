@@ -1,3 +1,5 @@
+import { BookOpen, ChevronLeft, ChevronRight, type LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadMenu } from "@/components/ui/DownloadMenu";
 import {
@@ -24,8 +26,6 @@ import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import EmbeddedPlayground from "@/Lexical/lexical-playground/src/EmbeddedPlayground";
 import { cn } from "@/lib/utils";
-import { BookOpen, ChevronLeft, ChevronRight, type LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
-import { useState } from "react";
 import { ChapterOutline } from "./ChapterOutline";
 
 type DrawerType = "matchedTags" | "chapterOutline" | "chapterPOV" | "chapterNotes" | null;
