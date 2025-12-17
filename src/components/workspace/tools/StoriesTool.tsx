@@ -223,10 +223,11 @@ export const StoriesTool = () => {
 
     return (
         <div className="p-4 sm:p-8">
-            <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mb-4 sm:mb-8">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-12">
+                {/* Header - horizontal with buttons alongside title */}
+                <div className="flex justify-between items-start gap-2">
                     <h1 className="text-xl sm:text-2xl font-bold">Your Stories</h1>
-                    <div className="flex gap-2 sm:gap-4">
+                    <div className="flex gap-1 sm:gap-2 shrink-0">
                         <CreateStoryDialog />
                         {/* Desktop: separate buttons */}
                         <Button variant="outline" onClick={handleImportClick} className="hidden sm:flex">
@@ -240,12 +241,12 @@ export const StoriesTool = () => {
                             className="hidden sm:flex"
                         >
                             <Download className="w-4 h-4 mr-2" />
-                            {isImportingDemo ? "Importing..." : "Import Demo Story"}
+                            {isImportingDemo ? "Importing..." : "Import Demo"}
                         </Button>
                         {/* Mobile: dropdown menu */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="sm:hidden">
+                                <Button variant="outline" size="icon" className="h-8 w-8 sm:hidden">
                                     <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
