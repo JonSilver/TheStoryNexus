@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { Position } from "./InlineImageNode";
+
 import type { BaseSelection, LexicalEditor, NodeKey } from "lexical";
 import type { JSX } from "react";
+import type { Position } from "./InlineImageNode";
 
 import "./InlineImageNode.css";
 
@@ -33,7 +34,7 @@ import {
     KEY_ESCAPE_COMMAND,
     SELECTION_CHANGE_COMMAND
 } from "lexical";
-import * as React from "react";
+import type * as React from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import useModal from "../../hooks/useModal";
@@ -43,7 +44,7 @@ import ContentEditable from "../../ui/ContentEditable";
 import { DialogActions } from "../../ui/Dialog";
 import Select from "../../ui/Select";
 import TextInput from "../../ui/TextInput";
-import { $isInlineImageNode, InlineImageNode } from "./InlineImageNode";
+import { $isInlineImageNode, type InlineImageNode } from "./InlineImageNode";
 
 const imageCache = new Set();
 
@@ -310,60 +311,55 @@ export default function InlineImageComponent({
             isMounted = false;
             unregister();
         };
-    }, [clearSelection, editor, isSelected, /* effect dep */ nodeKey, $onDelete, $onEnter, $onEscape, setSelected]);
+    }, [clearSelection, editor, isSelected, $onDelete, $onEnter, $onEscape, setSelected]);
 
     const draggable = isSelected && $isNodeSelection(selection);
     const isFocused = isSelected && isEditable;
     return (
         <Suspense fallback={null}>
-            <>
-                <span draggable={draggable}>
-                    {isEditable && (
-                        <button
-                            className="image-edit-button"
-                            ref={buttonRef}
-                            onClick={() => {
-                                showModal("Update Inline Image", onClose => (
-                                    <UpdateInlineImageDialog
-                                        activeEditor={editor}
-                                        nodeKey={nodeKey}
-                                        onClose={onClose}
-                                    />
-                                ));
-                            }}
-                        >
-                            Edit
-                        </button>
-                    )}
-                    <LazyImage
-                        className={isFocused ? `focused ${$isNodeSelection(selection) ? "draggable" : ""}` : null}
-                        src={src}
-                        altText={altText}
-                        imageRef={imageRef}
-                        width={width}
-                        height={height}
-                        position={position}
-                    />
-                </span>
-                {showCaption && (
-                    <span className="image-caption-container">
-                        <LexicalNestedComposer initialEditor={caption}>
-                            <AutoFocusPlugin />
-                            <LinkPlugin />
-                            <RichTextPlugin
-                                contentEditable={
-                                    <ContentEditable
-                                        placeholder="Enter a caption..."
-                                        placeholderClassName="InlineImageNode__placeholder"
-                                        className="InlineImageNode__contentEditable"
-                                    />
-                                }
-                                ErrorBoundary={LexicalErrorBoundary}
-                            />
-                        </LexicalNestedComposer>
-                    </span>
+            <span draggable={draggable}>
+                {isEditable && (
+                    <button
+                        className="image-edit-button"
+                        ref={buttonRef}
+                        onClick={() => {
+                            showModal("Update Inline Image", onClose => (
+                                <UpdateInlineImageDialog activeEditor={editor} nodeKey={nodeKey} onClose={onClose} />
+                            ));
+                        }}
+                    >
+                        Edit
+                    </button>
                 )}
-            </>
+                <LazyImage
+                    className={isFocused ? `focused ${$isNodeSelection(selection) ? "draggable" : ""}` : null}
+                    src={src}
+                    altText={altText}
+                    imageRef={imageRef}
+                    width={width}
+                    height={height}
+                    position={position}
+                />
+            </span>
+            {showCaption && (
+                <span className="image-caption-container">
+                    <LexicalNestedComposer initialEditor={caption}>
+                        <AutoFocusPlugin />
+                        <LinkPlugin />
+                        <RichTextPlugin
+                            contentEditable={
+                                <ContentEditable
+                                    placeholder="Enter a caption..."
+                                    placeholderClassName="InlineImageNode__placeholder"
+                                    className="InlineImageNode__contentEditable"
+                                />
+                            }
+                            ErrorBoundary={LexicalErrorBoundary}
+                        />
+                    </LexicalNestedComposer>
+                </span>
+            )}
+
             {modal}
         </Suspense>
     );

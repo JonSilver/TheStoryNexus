@@ -1,7 +1,7 @@
-import { db, schema } from "./client.js";
 import { eq } from "drizzle-orm";
 import systemPrompts from "../../src/data/systemPrompts.js";
 import type { Prompt } from "../../src/types/story.js";
+import { db, schema } from "./client.js";
 
 export const seedSystemPrompts = async () => {
     try {

@@ -6,6 +6,8 @@
  *
  */
 
+import { addClassNamesToElement } from "@lexical/utils";
+import is from "@sindresorhus/is";
 import type {
     DOMConversionMap,
     DOMConversionOutput,
@@ -17,9 +19,6 @@ import type {
     SerializedElementNode,
     Spread
 } from "lexical";
-import is from "@sindresorhus/is";
-
-import { addClassNamesToElement } from "@lexical/utils";
 import { ElementNode } from "lexical";
 
 export type SerializedLayoutContainerNode = Spread<

@@ -1,8 +1,8 @@
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PromptPreviewDialog } from "@/components/ui/prompt-preview-dialog";
 import { PromptSelectMenu } from "@/components/ui/prompt-select-menu";
-import { AllowedModel, Prompt, PromptMessage } from "@/types/story";
-import { Eye } from "lucide-react";
+import type { AllowedModel, Prompt, PromptMessage } from "@/types/story";
 
 interface PromptControlsProps {
     prompts: Prompt[];

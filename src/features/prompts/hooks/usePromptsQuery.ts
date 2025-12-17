@@ -1,7 +1,7 @@
-import { promptsApi } from "@/services/api/client";
-import type { Prompt } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { promptsApi } from "@/services/api/client";
+import type { Prompt } from "@/types/story";
 
 // Query keys (internal use only)
 const promptsKeys = {

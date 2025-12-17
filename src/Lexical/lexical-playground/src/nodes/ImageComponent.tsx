@@ -304,19 +304,7 @@ export default function ImageComponent({
             unregister();
             rootElement?.removeEventListener("contextmenu", onRightClick);
         };
-    }, [
-        /* effect dep */ clearSelection,
-        editor,
-        /* effect dep */ isResizing,
-        /* effect dep */ isSelected,
-        /* effect dep */ nodeKey,
-        $onDelete,
-        $onEnter,
-        $onEscape,
-        onClick,
-        onRightClick,
-        /* effect dep */ setSelected
-    ]);
+    }, [editor, $onDelete, $onEnter, $onEscape, onClick, onRightClick]);
 
     const setShowCaption = () => {
         editor.update(() => {
@@ -354,71 +342,69 @@ export default function ImageComponent({
     const isFocused = (isSelected || isResizing) && isEditable;
     return (
         <Suspense fallback={null}>
-            <>
-                <div draggable={draggable}>
-                    {isLoadError ? (
-                        <BrokenImage />
-                    ) : (
-                        <LazyImage
-                            className={isFocused ? `focused ${$isNodeSelection(selection) ? "draggable" : ""}` : null}
-                            src={src}
-                            altText={altText}
-                            imageRef={imageRef}
-                            width={width}
-                            height={height}
-                            maxWidth={maxWidth}
-                            onError={() => setIsLoadError(true)}
-                        />
-                    )}
-                </div>
-
-                {showCaption && (
-                    <div className="image-caption-container">
-                        <LexicalNestedComposer
-                            initialEditor={caption}
-                            initialNodes={[RootNode, TextNode, LineBreakNode, ParagraphNode, LinkNode, HashtagNode]}
-                        >
-                            <AutoFocusPlugin />
-                            <MentionsPlugin />
-                            <LinkPlugin />
-                            <HashtagPlugin />
-                            {isCollabActive ? (
-                                <CollaborationPlugin
-                                    id={caption.getKey()}
-                                    providerFactory={createWebsocketProvider}
-                                    shouldBootstrap={true}
-                                />
-                            ) : (
-                                <HistoryPlugin externalHistoryState={historyState} />
-                            )}
-                            <RichTextPlugin
-                                contentEditable={
-                                    <ContentEditable
-                                        placeholder="Enter a caption..."
-                                        placeholderClassName="ImageNode__placeholder"
-                                        className="ImageNode__contentEditable"
-                                    />
-                                }
-                                ErrorBoundary={LexicalErrorBoundary}
-                            />
-                            {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
-                        </LexicalNestedComposer>
-                    </div>
-                )}
-                {resizable && $isNodeSelection(selection) && isFocused && (
-                    <ImageResizer
-                        showCaption={showCaption}
-                        setShowCaption={setShowCaption}
-                        editor={editor}
-                        buttonRef={buttonRef}
+            <div draggable={draggable}>
+                {isLoadError ? (
+                    <BrokenImage />
+                ) : (
+                    <LazyImage
+                        className={isFocused ? `focused ${$isNodeSelection(selection) ? "draggable" : ""}` : null}
+                        src={src}
+                        altText={altText}
                         imageRef={imageRef}
+                        width={width}
+                        height={height}
                         maxWidth={maxWidth}
-                        onResizeStart={onResizeStart}
-                        onResizeEnd={onResizeEnd}
-                        captionsEnabled={!isLoadError && captionsEnabled}
+                        onError={() => setIsLoadError(true)}
                     />
                 )}
-            </>
+            </div>
+
+            {showCaption && (
+                <div className="image-caption-container">
+                    <LexicalNestedComposer
+                        initialEditor={caption}
+                        initialNodes={[RootNode, TextNode, LineBreakNode, ParagraphNode, LinkNode, HashtagNode]}
+                    >
+                        <AutoFocusPlugin />
+                        <MentionsPlugin />
+                        <LinkPlugin />
+                        <HashtagPlugin />
+                        {isCollabActive ? (
+                            <CollaborationPlugin
+                                id={caption.getKey()}
+                                providerFactory={createWebsocketProvider}
+                                shouldBootstrap={true}
+                            />
+                        ) : (
+                            <HistoryPlugin externalHistoryState={historyState} />
+                        )}
+                        <RichTextPlugin
+                            contentEditable={
+                                <ContentEditable
+                                    placeholder="Enter a caption..."
+                                    placeholderClassName="ImageNode__placeholder"
+                                    className="ImageNode__contentEditable"
+                                />
+                            }
+                            ErrorBoundary={LexicalErrorBoundary}
+                        />
+                        {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
+                    </LexicalNestedComposer>
+                </div>
+            )}
+            {resizable && $isNodeSelection(selection) && isFocused && (
+                <ImageResizer
+                    showCaption={showCaption}
+                    setShowCaption={setShowCaption}
+                    editor={editor}
+                    buttonRef={buttonRef}
+                    imageRef={imageRef}
+                    maxWidth={maxWidth}
+                    onResizeStart={onResizeStart}
+                    onResizeEnd={onResizeEnd}
+                    captionsEnabled={!isLoadError && captionsEnabled}
+                />
+            )}
         </Suspense>
     );
 }

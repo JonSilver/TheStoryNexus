@@ -1,11 +1,11 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight, Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CreateEntryDialog } from "@/features/lorebook/components/CreateEntryDialog";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { LorebookEntry } from "@/types/story";
+import type { LorebookEntry } from "@/types/story";
 
 interface SceneBeatMatchedEntriesProps {
     open: boolean;

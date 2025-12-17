@@ -17,13 +17,13 @@ import {
     COMMAND_PRIORITY_LOW,
     createCommand,
     DELETE_CHARACTER_COMMAND,
-    ElementNode,
+    type ElementNode,
     INSERT_PARAGRAPH_COMMAND,
     KEY_ARROW_DOWN_COMMAND,
     KEY_ARROW_LEFT_COMMAND,
     KEY_ARROW_RIGHT_COMMAND,
     KEY_ARROW_UP_COMMAND,
-    LexicalNode
+    type LexicalNode
 } from "lexical";
 import { useEffect } from "react";
 

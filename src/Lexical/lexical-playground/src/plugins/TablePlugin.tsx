@@ -6,11 +6,10 @@
  *
  */
 
-import type { JSX } from "react";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { INSERT_TABLE_COMMAND, TableCellNode, TableNode, TableRowNode } from "@lexical/table";
-import { EditorThemeClasses, Klass, LexicalEditor, LexicalNode } from "lexical";
+import type { EditorThemeClasses, Klass, LexicalEditor, LexicalNode } from "lexical";
+import type { JSX } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import invariant from "shared/invariant";
 

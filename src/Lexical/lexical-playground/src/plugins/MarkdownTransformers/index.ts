@@ -11,12 +11,12 @@ import {
     $convertToMarkdownString,
     CHECK_LIST,
     ELEMENT_TRANSFORMERS,
-    ElementTransformer,
+    type ElementTransformer,
     MULTILINE_ELEMENT_TRANSFORMERS,
     TEXT_FORMAT_TRANSFORMERS,
     TEXT_MATCH_TRANSFORMERS,
-    TextMatchTransformer,
-    Transformer
+    type TextMatchTransformer,
+    type Transformer
 } from "@lexical/markdown";
 import {
     $createHorizontalRuleNode,
@@ -35,7 +35,7 @@ import {
     TableNode,
     TableRowNode
 } from "@lexical/table";
-import { $isParagraphNode, $isTextNode, LexicalNode } from "lexical";
+import { $isParagraphNode, $isTextNode, type LexicalNode } from "lexical";
 
 import { $createImageNode, $isImageNode, ImageNode } from "../../nodes/ImageNode";
 

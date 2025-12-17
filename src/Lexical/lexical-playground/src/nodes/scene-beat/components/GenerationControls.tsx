@@ -1,8 +1,8 @@
-import type { JSX } from "react";
-import type { AllowedModel, Prompt } from "@/types/story";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import type { JSX } from "react";
+import { Button } from "@/components/ui/button";
 import { PromptSelectMenu } from "@/components/ui/prompt-select-menu";
+import type { AllowedModel, Prompt } from "@/types/story";
 
 interface LastUsedSelection {
     prompt: Prompt;

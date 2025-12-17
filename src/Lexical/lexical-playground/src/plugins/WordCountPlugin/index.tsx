@@ -1,9 +1,9 @@
-import { useEffect, useCallback } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { debounce } from "lodash";
-import { useToolbarState } from "../../context/ToolbarContext";
 import { $isElementNode, type LexicalNode } from "lexical";
+import { debounce } from "lodash";
+import { useCallback, useEffect } from "react";
 import { countWords } from "@/utils/textUtils";
+import { useToolbarState } from "../../context/ToolbarContext";
 
 export function WordCountPlugin() {
     const [editor] = useLexicalComposerContext();
@@ -21,12 +21,12 @@ export function WordCountPlugin() {
                                 const children = node.getChildren();
                                 if (children.length === 0 && node.getTextContent) {
                                     // Element node with no children, treat as leaf
-                                    text += node.getTextContent() + " ";
+                                    text += `${node.getTextContent()} `;
                                 } else {
                                     children.forEach(traverse);
                                 }
                             } else if (node.getTextContent) {
-                                text += node.getTextContent() + " ";
+                                text += `${node.getTextContent()} `;
                             }
                         }
                         root.getChildren().forEach(traverse);

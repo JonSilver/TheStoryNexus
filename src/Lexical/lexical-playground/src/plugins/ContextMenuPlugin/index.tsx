@@ -6,8 +6,6 @@
  *
  */
 
-import type { JSX } from "react";
-
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalContextMenuPlugin, MenuOption } from "@lexical/react/LexicalContextMenuPlugin";
@@ -22,8 +20,9 @@ import {
     type LexicalNode,
     PASTE_COMMAND
 } from "lexical";
-import { useCallback, useMemo } from "react";
+import type { JSX } from "react";
 import * as React from "react";
+import { useCallback, useMemo } from "react";
 import * as ReactDOM from "react-dom";
 
 function ContextMenuItem({
@@ -51,7 +50,7 @@ function ContextMenuItem({
             ref={option.setRefElement}
             role="option"
             aria-selected={isSelected}
-            id={"typeahead-item-" + index}
+            id={`typeahead-item-${index}`}
             onMouseEnter={onMouseEnter}
             onClick={onClick}
         >
@@ -121,7 +120,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             }),
             new ContextMenuOption(`Paste`, {
                 onSelect: _node => {
-                    navigator.clipboard.read().then(async function () {
+                    navigator.clipboard.read().then(async () => {
                         const data = new DataTransfer();
 
                         const items = await navigator.clipboard.read();
@@ -151,7 +150,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             }),
             new ContextMenuOption(`Paste as Plain Text`, {
                 onSelect: _node => {
-                    navigator.clipboard.read().then(async function () {
+                    navigator.clipboard.read().then(async () => {
                         const permission = await navigator.permissions.query({
                             // @ts-expect-error These types are incorrect.
                             name: "clipboard-read"

@@ -2,16 +2,16 @@
  * SceneBeatShortcutPlugin - Adds keyboard shortcut support for inserting Scene Beat nodes
  */
 
-import { useEffect } from "react";
 import {
+    $createParagraphNode,
+    $getSelection,
     COMMAND_PRIORITY_NORMAL,
     KEY_MODIFIER_COMMAND,
-    LexicalEditor,
-    $getSelection,
-    $createParagraphNode
+    type LexicalEditor
 } from "lexical";
-import { isInsertSceneBeat } from "../ShortcutsPlugin/shortcuts";
+import { useEffect } from "react";
 import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
+import { isInsertSceneBeat } from "../ShortcutsPlugin/shortcuts";
 
 export default function SceneBeatShortcutPlugin({ editor }: { editor: LexicalEditor }): null {
     useEffect(() => {

@@ -1,7 +1,7 @@
-import { seriesApi } from "@/services/api/client";
-import type { Series } from "@/types/story";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { seriesApi } from "@/services/api/client";
+import type { Series } from "@/types/story";
 
 // Query keys factory (internal use only)
 const seriesKeys = {

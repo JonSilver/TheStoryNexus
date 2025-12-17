@@ -27,8 +27,9 @@ npm run dev:client   # Frontend only (Vite)
 
 ### Linting & Formatting
 ```bash
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint and issues
+npm run lint         # Run Biome check (linting + formatting)
+npm run lint:fix     # Fix linting and formatting issues
+npm run format       # Format all files
 ```
 
 ### Production
@@ -49,7 +50,7 @@ docker-compose up --build  # Run app in container, access on port 3000
 ```
 
 ### Code Quality
-The project uses ESLint for linting and formatting. TypeScript has `strict: false` but enables specific strict checks (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters`).
+The project uses Biome for linting and formatting (replacing ESLint + Prettier). TypeScript has `strict: false` but enables specific strict checks (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters`).
 
 Knip (`npm run knip`) identifies unused files, dependencies, and exports. Run periodically to prevent accumulation of dead code. After significant refactoring, check Knip output and remove genuinely unused code to maintain codebase hygiene.
 
@@ -137,7 +138,7 @@ All other services should use functional patterns if practical.
 
 **Development**:
 - tsx + concurrently - Backend watch mode + parallel dev servers
-- ESLint - Linting and formatting
+- Biome - Linting and formatting
 - Drizzle Kit - Database migrations
 - cross-env - Environment variable management
 

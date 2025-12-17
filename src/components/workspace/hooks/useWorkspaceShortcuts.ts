@@ -1,6 +1,6 @@
 import { useHotkeys } from "react-hotkeys-hook";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
 
 interface UseWorkspaceShortcutsProps {
     onOpenCommandPalette: () => void;

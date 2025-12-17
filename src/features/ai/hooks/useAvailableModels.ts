@@ -1,6 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { aiService } from "@/services/ai/AIService";
 import type { AIModel } from "@/types/story";
-import { useQuery } from "@tanstack/react-query";
 import { aiSettingsKeys } from "./useAISettingsQuery";
 
 export const useAvailableModels = () =>

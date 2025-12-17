@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Send, Square } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import type { Prompt } from "@/types/story";
 
 interface MessageInputAreaProps {

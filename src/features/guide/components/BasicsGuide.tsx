@@ -1,7 +1,7 @@
+import { BookOpen, Bot, ExternalLink, PenLine, Sparkles } from "lucide-react";
 import { Link } from "react-router";
-import { ExternalLink, Bot, BookOpen, PenLine, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { API_URLS } from "@/constants/urls";
 
 export default function BasicsGuide() {

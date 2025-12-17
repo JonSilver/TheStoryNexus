@@ -1,9 +1,9 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { eq, type InferSelectModel } from "drizzle-orm";
-import { Request, Response, Router } from "express";
-import { db } from "../db/client.js";
 import type { Table } from "drizzle-orm";
+import { eq, type InferSelectModel } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { type Request, type Response, Router } from "express";
+import { db } from "../db/client.js";
 
 type TableWithId = Table & { id: SQLiteColumn };
 

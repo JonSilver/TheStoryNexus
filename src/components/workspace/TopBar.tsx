@@ -1,9 +1,5 @@
-import { HelpCircle, Search, Settings } from "lucide-react";
-import { useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,6 +7,10 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useStoryContext } from "@/features/stories/context/StoryContext";
+import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { HelpCircle, Search, Settings } from "lucide-react";
+import { useNavigate } from "react-router";
 import { ChapterSwitcher } from "./ChapterSwitcher";
 
 interface TopBarProps {
@@ -28,7 +28,9 @@ export const TopBar = ({ onOpenCommandPalette }: TopBarProps) => {
         <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40">
             <div className="flex h-14 items-center px-2 sm:px-4 gap-2 sm:gap-4">
                 {/* App Title - hidden on mobile */}
-                <div className="hidden sm:flex items-center gap-2 font-semibold text-lg whitespace-nowrap">Story Nexus</div>
+                <div className="hidden sm:flex items-center gap-2 font-semibold text-lg whitespace-nowrap">
+                    Story Nexus
+                </div>
 
                 {/* Story Selector */}
                 {currentStory && (

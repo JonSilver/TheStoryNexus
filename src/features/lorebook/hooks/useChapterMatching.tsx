@@ -1,5 +1,5 @@
+import { createContext, type ReactNode, useContext, useState } from "react";
 import type { LorebookEntry } from "@/types/story";
-import { createContext, ReactNode, useContext, useState } from "react";
 
 interface ChapterMatchingContextValue {
     chapterMatchedEntries: Map<string, LorebookEntry>;

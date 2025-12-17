@@ -1,13 +1,13 @@
 import {
-    BookOpen,
-    Link as LinkIcon,
-    Layers,
-    FolderTree,
-    CheckCircle,
     AlertCircle,
-    GripVertical,
-    Pencil,
+    BookOpen,
+    CheckCircle,
     ChevronDown,
+    FolderTree,
+    GripVertical,
+    Layers,
+    Link as LinkIcon,
+    Pencil,
     Trash2
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

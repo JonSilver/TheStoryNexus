@@ -6,7 +6,15 @@
  *
  */
 
-import type { JSX } from "react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { $isListNode, ListNode } from "@lexical/list";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $isHeadingNode } from "@lexical/rich-text";
@@ -22,22 +30,34 @@ import {
     CAN_REDO_COMMAND,
     CAN_UNDO_COMMAND,
     COMMAND_PRIORITY_CRITICAL,
-    ElementFormatType,
+    type ElementFormatType,
     FORMAT_ELEMENT_COMMAND,
     FORMAT_TEXT_COMMAND,
     INDENT_CONTENT_COMMAND,
-    LexicalEditor,
+    type LexicalEditor,
     OUTDENT_CONTENT_COMMAND,
     REDO_COMMAND,
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
-import { Dispatch, useCallback, useEffect, useState } from "react";
+import {
+    Bold,
+    Bot,
+    ChevronDown,
+    Italic,
+    Maximize,
+    Minimize,
+    Minus,
+    MoreHorizontal,
+    Strikethrough,
+    Underline
+} from "lucide-react";
+import type { JSX } from "react";
+import { type Dispatch, useCallback, useEffect, useState } from "react";
 import { IS_APPLE } from "shared/environment";
-
 import { blockTypeToBlockName, useToolbarState } from "../../context/ToolbarContext";
+import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { getSelectedNode } from "../../utils/getSelectedNode";
-
 import { INSERT_PAGE_BREAK } from "../PageBreakPlugin";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import FontSize from "./fontSize";
@@ -50,28 +70,6 @@ import {
     formatParagraph,
     formatQuote
 } from "./utils";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import {
-    ChevronDown,
-    MoreHorizontal,
-    Bold,
-    Italic,
-    Underline,
-    Minus,
-    Strikethrough,
-    Bot,
-    Maximize,
-    Minimize
-} from "lucide-react";
-import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
-import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
     ["Arial", "Arial"],
@@ -410,7 +408,7 @@ function ElementFormatDropdown({
                     }}
                 >
                     <div className="flex items-center gap-2">
-                        <i className={"icon " + (isRTL ? "indent" : "outdent")} />
+                        <i className={`icon ${isRTL ? "indent" : "outdent"}`} />
                         <span className="text">Outdent</span>
                     </div>
                     <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.OUTDENT}</span>
@@ -422,7 +420,7 @@ function ElementFormatDropdown({
                     }}
                 >
                     <div className="flex items-center gap-2">
-                        <i className={"icon " + (isRTL ? "outdent" : "indent")} />
+                        <i className={`icon ${isRTL ? "outdent" : "indent"}`} />
                         <span className="text">Indent</span>
                     </div>
                     <span className="ml-auto text-xs text-muted-foreground">{SHORTCUTS.INDENT}</span>

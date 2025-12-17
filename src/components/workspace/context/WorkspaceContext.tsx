@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY_PREFIX = "storyNexus.sidebar";
 const STORAGE_KEY_LEFT = `${STORAGE_KEY_PREFIX}.left.collapsed`;

@@ -1,10 +1,10 @@
 import { attemptPromise } from "@jfdi/attempt";
+import type { InferSelectModel } from "drizzle-orm";
 import { and, eq } from "drizzle-orm";
 import multer from "multer";
 import { db, schema } from "../db/client.js";
 import { createCrudRouter } from "../lib/crud.js";
 import { generateEpub } from "../services/epubGenerator.js";
-import type { InferSelectModel } from "drizzle-orm";
 
 type ImportedChapter = InferSelectModel<typeof schema.chapters>;
 type ImportedLorebookEntry = InferSelectModel<typeof schema.lorebookEntries>;
@@ -28,7 +28,7 @@ export default createCrudRouter({
                     if (!story) throw new Error("Story not found");
 
                     // Fetch series if story belongs to one
-                    let seriesData = undefined;
+                    let seriesData;
                     if (story.seriesId) {
                         const [seriesResult] = await db
                             .select()

@@ -1,7 +1,7 @@
-import { PromptMessage } from "@/types/story";
 import { encode } from "gpt-tokenizer";
 import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
+import type { PromptMessage } from "@/types/story";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { ScrollArea } from "./scroll-area";
 

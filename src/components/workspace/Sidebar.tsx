@@ -1,20 +1,20 @@
-import {
-    Library,
-    Layers,
-    FileEdit,
-    List,
-    BookOpen,
-    MessageSquare,
-    FileText,
-    StickyNote,
-    ChevronLeft,
-    ChevronRight
-} from "lucide-react";
-import { useStoryContext, WorkspaceTool } from "@/features/stories/context/StoryContext";
 import { Button } from "@/components/ui/button";
+import { useStoryContext, type WorkspaceTool } from "@/features/stories/context/StoryContext";
 import { cn } from "@/lib/utils";
-import { useWorkspace } from "./context/WorkspaceContext";
+import {
+    BookOpen,
+    ChevronLeft,
+    ChevronRight,
+    FileEdit,
+    FileText,
+    Layers,
+    Library,
+    List,
+    MessageSquare,
+    StickyNote
+} from "lucide-react";
 import { version } from "../../../package.json";
+import { useWorkspace } from "./context/WorkspaceContext";
 
 const tools = [
     { id: "stories" as WorkspaceTool, label: "Stories", icon: Library, requiresStory: false },
@@ -109,7 +109,9 @@ export const Sidebar = () => {
                                 disabled={isDisabled}
                             >
                                 <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                <span className="text-[10px] sm:text-xs truncate max-w-[40px] sm:max-w-none">{tool.label}</span>
+                                <span className="text-[10px] sm:text-xs truncate max-w-[40px] sm:max-w-none">
+                                    {tool.label}
+                                </span>
                             </Button>
                         );
                     })}

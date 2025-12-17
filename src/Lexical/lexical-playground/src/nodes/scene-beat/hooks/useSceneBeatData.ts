@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import is from "@sindresorhus/is";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey } from "lexical";
-import is from "@sindresorhus/is";
-import { useSceneBeatQuery, useCreateSceneBeatMutation } from "@/features/scenebeats/hooks/useSceneBeatQuery";
-import type { POVType } from "../components/POVSettingsPopover";
-import { logger } from "@/utils/logger";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useCreateSceneBeatMutation, useSceneBeatQuery } from "@/features/scenebeats/hooks/useSceneBeatQuery";
 import { randomUUID } from "@/utils/crypto";
+import { logger } from "@/utils/logger";
+import type { POVType } from "../components/POVSettingsPopover";
 
 interface SceneBeatNodeType {
     getSceneBeatId(): string;

@@ -1,11 +1,11 @@
+import { ChevronRight, Edit } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CreateEntryDialog } from "@/features/lorebook/components/CreateEntryDialog";
 import { useChapterMatching } from "@/features/lorebook/hooks/useChapterMatching";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
-import { LorebookEntry } from "@/types/story";
-import { ChevronRight, Edit } from "lucide-react";
-import { useState } from "react";
+import type { LorebookEntry } from "@/types/story";
 
 export function MatchedTagEntries() {
     const { chapterMatchedEntries } = useChapterMatching();

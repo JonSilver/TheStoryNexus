@@ -9,6 +9,12 @@ import {
     DrawerHeader,
     DrawerTitle
 } from "@/components/ui/drawer";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useWorkspace } from "@/components/workspace/context/WorkspaceContext";
 import { ChapterNotesEditor } from "@/features/chapters/components/ChapterNotesEditor";
@@ -18,13 +24,7 @@ import { useChapterQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryContext } from "@/features/stories/context/StoryContext";
 import EmbeddedPlayground from "@/Lexical/lexical-playground/src/EmbeddedPlayground";
 import { cn } from "@/lib/utils";
-import { BookOpen, ChevronLeft, ChevronRight, LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { BookOpen, ChevronLeft, ChevronRight, type LucideIcon, Menu, StickyNote, Tags, User } from "lucide-react";
 import { useState } from "react";
 import { ChapterOutline } from "./ChapterOutline";
 
@@ -180,7 +180,10 @@ export function StoryEditor() {
 
             {/* Replace the Chapter Notes Drawer with this Sheet */}
             <Sheet open={openDrawer === "chapterNotes"} onOpenChange={open => !open && setOpenDrawer(null)}>
-                <SheetContent side="right" className="h-[100vh] w-full sm:w-[540px] md:w-[700px] lg:w-[800px] sm:max-w-full">
+                <SheetContent
+                    side="right"
+                    className="h-[100vh] w-full sm:w-[540px] md:w-[700px] lg:w-[800px] sm:max-w-full"
+                >
                     <SheetHeader>
                         <SheetTitle>Scribble</SheetTitle>
                     </SheetHeader>

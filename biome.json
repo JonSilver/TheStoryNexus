@@ -1,0 +1,85 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.3.9/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "!old-export.json"]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 120
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "trailingCommas": "none",
+            "semicolons": "always",
+            "arrowParentheses": "asNeeded",
+            "bracketSpacing": true
+        },
+        "globals": ["React", "JSX", "RequestInit"]
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "complexity": {
+                "noUselessEscapeInRegex": "warn"
+            },
+            "correctness": {
+                "noUnusedVariables": {
+                    "level": "warn",
+                    "options": {
+                        "ignoreRestSiblings": true
+                    }
+                },
+                "useExhaustiveDependencies": {
+                    "level": "warn",
+                    "options": {
+                        "hooks": [
+                            { "name": "useQuery", "stableResult": [1] },
+                            { "name": "useMutation", "stableResult": [1] },
+                            { "name": "useQueryClient", "stableResult": true },
+                            { "name": "useNavigate", "stableResult": true }
+                        ]
+                    }
+                },
+                "useHookAtTopLevel": "error"
+            },
+            "style": {
+                "noNonNullAssertion": "warn",
+                "useBlockStatements": "off"
+            },
+            "suspicious": {
+                "noExplicitAny": "error",
+                "noTemplateCurlyInString": "off",
+                "noImplicitAnyLet": "off",
+                "noArrayIndexKey": "off",
+                "useIterableCallbackReturn": "off"
+            },
+            "a11y": {
+                "useButtonType": "warn",
+                "useKeyWithClickEvents": "off",
+                "noNoninteractiveElementToInteractiveRole": "off",
+                "noStaticElementInteractions": "off",
+                "noLabelWithoutControl": "off",
+                "useAltText": "warn",
+                "noSvgWithoutTitle": "off"
+            }
+        }
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    }
+}

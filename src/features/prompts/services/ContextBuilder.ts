@@ -1,9 +1,7 @@
-import { PromptParserConfig, PromptContext } from "@/types/story";
 import { chaptersApi } from "@/services/api/client";
+import type { PromptContext, PromptParserConfig } from "@/types/story";
 
 export class ContextBuilder {
-    constructor() {}
-
     async buildContext(config: PromptParserConfig): Promise<PromptContext> {
         const [chapters, currentChapter] = await Promise.all([
             chaptersApi.getByStory(config.storyId),

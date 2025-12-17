@@ -1,12 +1,12 @@
-import { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
-import { aiApi } from "../api/client";
-import { AIProviderFactory } from "./AIProviderFactory";
-import { IAIProvider } from "./providers/IAIProvider";
 import { attemptPromise } from "@jfdi/attempt";
 import { formatSSEChunk, formatSSEDone } from "@/constants/aiConstants";
 import { API_URLS } from "@/constants/urls";
 import { aiSettingsSchema } from "@/schemas/entities";
+import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
+import { aiApi } from "../api/client";
+import { AIProviderFactory } from "./AIProviderFactory";
+import type { IAIProvider } from "./providers/IAIProvider";
 
 export class AIService {
     private static instance: AIService;

@@ -1,7 +1,7 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { scenebeatsApi } from "@/services/api/client";
 import type { SceneBeat } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const sceneBeatKeys = {
     all: ["scenebeats"] as const,

@@ -1,5 +1,5 @@
-import type { AllowedModel, Prompt } from "@/types/story";
 import { useCallback, useRef, useState } from "react";
+import type { AllowedModel, Prompt } from "@/types/story";
 import { useUpdateBrainstormMutation } from "./useBrainstormQuery";
 
 interface UsePromptSelectionReturn {

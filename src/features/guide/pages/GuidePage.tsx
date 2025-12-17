@@ -1,14 +1,14 @@
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import BasicsGuide from "../components/BasicsGuide";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdvancedGuide from "../components/AdvancedGuide";
+import BasicsGuide from "../components/BasicsGuide";
+import BrainstormGuide from "../components/BrainstormGuide";
 import LorebookGuide from "../components/LorebookGuide";
 import PromptGuide from "../components/PromptGuide";
-import BrainstormGuide from "../components/BrainstormGuide";
 
 export default function GuidePage() {
     const navigate = useNavigate();

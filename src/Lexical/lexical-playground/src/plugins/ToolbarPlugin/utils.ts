@@ -8,11 +8,17 @@
 import { $createCodeNode } from "@lexical/code";
 import { INSERT_CHECK_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { $isDecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";
-import { $createHeadingNode, $createQuoteNode, $isHeadingNode, $isQuoteNode, HeadingTagType } from "@lexical/rich-text";
+import {
+    $createHeadingNode,
+    $createQuoteNode,
+    $isHeadingNode,
+    $isQuoteNode,
+    type HeadingTagType
+} from "@lexical/rich-text";
 import { $patchStyleText, $setBlocksType } from "@lexical/selection";
 import { $isTableSelection } from "@lexical/table";
 import { $getNearestBlockElementAncestorOrThrow } from "@lexical/utils";
-import { $createParagraphNode, $getSelection, $isRangeSelection, $isTextNode, LexicalEditor } from "lexical";
+import { $createParagraphNode, $getSelection, $isRangeSelection, $isTextNode, type LexicalEditor } from "lexical";
 
 import { DEFAULT_FONT_SIZE, MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 
@@ -118,7 +124,7 @@ export const updateFontSizeInSelection = (
 export const updateFontSize = (editor: LexicalEditor, updateType: UpdateFontSizeType, inputValue: string) => {
     if (inputValue !== "") {
         const nextFontSize = calculateNextFontSize(Number(inputValue), updateType);
-        updateFontSizeInSelection(editor, String(nextFontSize) + "px", null);
+        updateFontSizeInSelection(editor, `${String(nextFontSize)}px`, null);
     } else {
         updateFontSizeInSelection(editor, null, updateType);
     }

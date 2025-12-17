@@ -1,7 +1,7 @@
+import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme-provider";
 import { cn } from "@/lib/utils";
-import { Monitor, Moon, Sun } from "lucide-react";
 
 interface ThemeToggleProps {
     isExpanded?: boolean;

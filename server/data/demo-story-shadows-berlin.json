@@ -1,592 +1,611 @@
 {
-  "version": "1.0",
-  "type": "story",
-  "exportDate": "2025-01-15T00:00:00.000Z",
-  "story": {
-    "id": "demo-story-shadows-berlin",
-    "title": "Shadows Over Berlin",
-    "author": "Demo Author",
-    "language": "English",
-    "synopsis": "When MI6 operative Elena Cross uncovers evidence of a double agent within Western intelligence, she must navigate a web of deception spanning Berlin, Prague, and Moscow. With time running out and loyalties uncertain, Elena races to prevent a catastrophic intelligence breach that could reshape the balance of power in post-Cold War Europe.",
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "isDemo": true
-  },
-  "chapters": [
-    {
-      "id": "demo-chapter-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "The Drop",
-      "summary": "Elena Cross receives an encrypted package at a dead drop in Berlin, containing evidence of a mole within Western intelligence. She barely escapes surveillance.",
-      "order": 1,
-      "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The rain came down in sheets, turning Unter den Linden into a river of neon reflections. Elena Cross kept her pace steady, neither hurried nor leisurely, just another tourist braving the Berlin weather. Her umbrella—black, unremarkable—concealed her face from the CCTV cameras she'd mapped three days prior.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The dead drop was behind the third bench in the Tiergarten, exactly where her contact had specified. A hollowed-out brick, unremarkable among thousands. Elena's fingers found it without looking, muscle memory from a hundred similar operations. The package inside was smaller than expected—a microSD card wrapped in waterproof film.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She pocketed it and turned to leave, but something was wrong. The jogger who'd passed twice. The couple arguing near the fountain—too theatrical, too loud. And there, by the east entrance, a Mercedes with diplomatic plates that hadn't been there when she'd arrived.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena's training kicked in. She walked toward the S-Bahn station, varying her pace, using reflective surfaces to check her six. The jogger was following. So was a woman with a red scarf she hadn't noticed before.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"They knew. Somehow, they knew.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena descended into the station, her mind racing through extraction protocols. The train was pulling in. She waited until the doors were closing before slipping through, leaving the jogger stranded on the platform. His face—young, Slavic features, poorly concealed earpiece—told her everything she needed to know.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Russian intelligence. They were watching the drop. Which meant her contact was either captured or dead.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Back at her hotel, Elena locked the door and wedged a chair under the handle. The microSD card felt heavier than it should. She plugged it into her encrypted laptop, fingers trembling slightly as the decryption software loaded.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"What she found made her blood run cold. Bank transfers. Meeting transcripts. Photographs of classified documents. All pointing to one impossible conclusion: there was a mole in Western intelligence, and they'd been active for at least five years.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The codename jumped out at her: NIGHTINGALE.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena's secure phone buzzed. A message from London, from her handler Marcus Webb: \\\"Abort. Return immediately. Do not make contact.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She stared at the message. Marcus had been her handler for three years. She trusted him with her life.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"But NIGHTINGALE's last known communication, according to the files, had been sent through a handler in MI6's Berlin station.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Marcus Webb's station.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
-      "wordCount": 342,
-      "povCharacter": "Elena Cross",
-      "povType": "Third Person Limited",
-      "outline": {
-        "content": "- Elena retrieves package from dead drop in Berlin\n- Discovers Russian surveillance team\n- Evades pursuers on S-Bahn\n- Reviews evidence of mole NIGHTINGALE\n- Receives abort order from handler Marcus Webb\n- Realizes Marcus's connection to the mole",
-        "lastUpdated": "2025-01-02T00:00:00.000Z"
-      },
-      "notes": {
-        "content": "Key chapter establishing the central conflict. Elena's suspicion of Marcus sets up the trust issues that will drive the plot. The Berlin setting allows for Cold War atmosphere even in modern era.",
-        "lastUpdated": "2025-01-02T00:00:00.000Z"
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
+    "version": "1.0",
+    "type": "story",
+    "exportDate": "2025-01-15T00:00:00.000Z",
+    "story": {
+        "id": "demo-story-shadows-berlin",
+        "title": "Shadows Over Berlin",
+        "author": "Demo Author",
+        "language": "English",
+        "synopsis": "When MI6 operative Elena Cross uncovers evidence of a double agent within Western intelligence, she must navigate a web of deception spanning Berlin, Prague, and Moscow. With time running out and loyalties uncertain, Elena races to prevent a catastrophic intelligence breach that could reshape the balance of power in post-Cold War Europe.",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "isDemo": true
     },
-    {
-      "id": "demo-chapter-2",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Prague Protocol",
-      "summary": "Elena goes off-grid and travels to Prague to meet with her former mentor, Dmitri Volkov. She learns NIGHTINGALE has compromised multiple operations and must decide whom to trust.",
-      "order": 2,
-      "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena crossed the Czech border on a bus full of tourists, her passport identifying her as Sarah Mitchell, freelance photographer from Manchester. The identity was clean—one of three she maintained outside official channels, insurance against moments exactly like this.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Prague's Old Town Square bustled with afternoon crowds. She'd chosen the meeting spot carefully—the Astronomical Clock, where tourists gathered every hour to watch the mechanical apostles parade. Easy to blend in, hard to set up an ambush.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Dmitri Volkov appeared exactly on time, looking older than she remembered. Her former mentor had retired from the SVR five years ago, supposedly to write his memoirs in peaceful exile. In reality, he traded information to the highest bidder, playing all sides with the skill of a chess grandmaster.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Elena Sergeevna,\\\" he greeted her in Russian, a slight smile on his weathered face. \\\"I wondered when you would come.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"They walked along the Vltava River, maintaining the careful dance of two professionals who trusted each other just enough. Elena laid out what she'd found on the microSD card. Dmitri listened without interruption, his expression giving nothing away.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"NIGHTINGALE,\\\" he said finally. \\\"Yes, I know this name. Three operations compromised in the last two years. Good people dead. Your people and mine.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Then help me stop them.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Dmitri stopped walking, turning to face her. \\\"The problem, Elena, is that NIGHTINGALE is not one person. It is an organization. Chinese intelligence has been running an operation for years, recruiting sources across Western agencies. NIGHTINGALE is their most valuable asset, but there are others.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The revelation hit her like a physical blow. Not Russian intelligence. Chinese. The geopolitical implications were staggering.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Who can I trust?\\\" she asked.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"No one,\\\" Dmitri replied. \\\"But there is someone you must talk to. A woman named Natasha Kozlov, former MSS officer who defected last year. She knows the network, knows the names. But she will only meet in Moscow.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Moscow? That's suicide.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Perhaps. But it is the only way.\\\" He handed her a folded piece of paper. \\\"The contact protocol. And Elena—your handler, Marcus Webb. Be very careful. I have heard his name in connection with all of this.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"That night, in her hotel room overlooking the Vltava, Elena made her decision. She would go to Moscow. She would find Natasha Kozlov. And she would uncover the truth about NIGHTINGALE, no matter the cost.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Her phone buzzed. Another message from Marcus: \\\"We know where you are. Come in now or face consequences.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She removed the battery and SIM card, dropping them into the river from her window. There was no going back now.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
-      "wordCount": 389,
-      "povCharacter": "Elena Cross",
-      "povType": "Third Person Limited",
-      "outline": {
-        "content": "- Elena travels to Prague under false identity\n- Meets with Dmitri Volkov at Astronomical Clock\n- Learns NIGHTINGALE is Chinese intelligence operation\n- Gets contact info for Natasha Kozlov in Moscow\n- Dmitri confirms Marcus Webb's suspicious connections\n- Elena commits to Moscow mission despite danger\n- Destroys her phone to avoid tracking",
-        "lastUpdated": "2025-01-03T00:00:00.000Z"
-      },
-      "notes": {
-        "content": "This chapter expands the scope - it's not just Russian intelligence but a Chinese operation. Dmitri serves as both information source and warning system. The Prague setting provides a neutral meeting ground.",
-        "lastUpdated": "2025-01-03T00:00:00.000Z"
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-chapter-3",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Moscow Rules",
-      "summary": "Elena infiltrates Moscow and meets Natasha Kozlov, who reveals NIGHTINGALE's identity. A confrontation in Red Square forces Elena to choose between duty and survival.",
-      "order": 3,
-      "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Moscow in winter was a city of iron and ice. Elena entered on a Polish passport, one of Dmitri's creations, good enough to pass automated systems but unlikely to survive human scrutiny. She had forty-eight hours, maybe less.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The meet was set for Gorky Park, near the old Buran shuttle exhibit. Natasha Kozlov was easy to spot—exactly as Dmitri had described, tall and elegant with silver-streaked dark hair, feeding pigeons like a grandmother enjoying her retirement.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"You look like your mother,\\\" Natasha said in English, not looking up from the pigeons. \\\"I knew her, you know. Before she defected.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena sat down beside her, the casual intimacy of the gesture hiding the tension coiled in her muscles. \\\"Tell me about NIGHTINGALE.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"NIGHTINGALE is not Marcus Webb,\\\" Natasha said. \\\"Though he is compromised, yes. No, NIGHTINGALE is someone much higher. Someone with access to NATO intelligence, to Five Eyes communications, to everything.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She scattered more seed, and Elena noticed her hands were shaking. Fear. Real fear.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Who?\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Sir Geoffrey Hastings. Deputy Director of MI6. He has been working for Beijing since before the Hong Kong handover.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The world tilted. Sir Geoffrey Hastings was a legend, a man who'd served Queen and country for forty years. He'd personally recruited Elena to MI6 after spotting her potential at Cambridge. He was her hero.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"I don't believe you.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"I have proof.\\\" Natasha produced a USB drive, pressing it into Elena's hand. \\\"Bank accounts, meeting records, everything. But you must move fast. They know I'm talking to you. They know you're here.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"A black SUV screeched to a halt on the path behind them. Men in dark coats emerged, moving with military precision.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Run,\\\" Natasha whispered. \\\"Get that to your Prime Minister. No one else. Not even your own service. Trust no one.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena ran. Behind her, she heard the distinctive crack of suppressed gunfire. She didn't look back.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The extraction was chaos. Elena used every trick she knew, every safe house and escape route the SVR didn't know about. By the time she crossed into Finland twenty hours later, she'd been awake for three days straight and had a bullet graze across her ribs.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"But she had the proof. Natasha's USB drive contained everything—encrypted communications between Hastings and his MSS handlers, records of intelligence passed, payments received through a web of shell companies.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"And one more thing: a list of other assets. Marcus Webb was on it. So were four other high-ranking intelligence officials across NATO countries.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"As the train carried her toward Helsinki, Elena composed an encrypted message. Not to MI6. Not to Marcus. But to the one person in the British government she knew was beyond reproach.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She hit send, then leaned back in her seat, watching the Russian landscape disappear into the distance. Natasha Kozlov was dead. Her contact in Berlin was dead. But their sacrifice would not be in vain.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"NIGHTINGALE was about to be exposed. And the intelligence world would never be the same.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
-      "wordCount": 468,
-      "povCharacter": "Elena Cross",
-      "povType": "Third Person Limited",
-      "outline": {
-        "content": "- Elena arrives in Moscow on false passport\n- Meets Natasha Kozlov in Gorky Park\n- Learns NIGHTINGALE is Sir Geoffrey Hastings, Deputy Director MI6\n- Receives USB drive with proof\n- Russian agents attack, Natasha killed\n- Elena escapes to Finland\n- Reviews evidence showing entire network of moles\n- Sends encrypted message directly to Prime Minister\n- Prepares to expose NIGHTINGALE",
-        "lastUpdated": "2025-01-04T00:00:00.000Z"
-      },
-      "notes": {
-        "content": "Climactic chapter that reveals the conspiracy's true scope. Hastings as NIGHTINGALE is a betrayal at the highest level. Natasha's death raises the stakes. Elena's decision to bypass MI6 entirely shows her growing isolation and determination.",
-        "lastUpdated": "2025-01-04T00:00:00.000Z"
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    }
-  ],
-  "lorebookEntries": [
-    {
-      "id": "lore-elena-cross",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Elena Cross",
-      "description": "Elena Cross, 34, is an MI6 field operative specializing in Eastern European operations. Born to a Russian defector mother and British father, she speaks fluent Russian, Czech, and German. Recruited to MI6 at Cambridge by Sir Geoffrey Hastings, she's known for her analytical mind and ability to operate independently. Her mixed heritage gives her unique insight into Russian intelligence methods but also makes her suspect in some circles. Highly skilled in tradecraft, firearms, and hand-to-hand combat. Has trust issues stemming from her mother's defection and subsequent paranoia.",
-      "category": "character",
-      "tags": ["Elena Cross", "protagonist", "MI6", "operative", "British", "Russian heritage"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "age": 34,
-          "nationality": "British",
-          "occupation": "MI6 Field Operative",
-          "skills": ["Tradecraft", "Russian language", "Czech language", "German language", "Firearms", "Hand-to-hand combat", "Analysis"]
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-marcus-webb",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Marcus Webb",
-      "description": "Marcus Webb, 52, is Elena's MI6 handler and head of Berlin station. A career intelligence officer with 30 years of service, he's considered reliable and professional. Married with two teenage children. Secretly compromised by Chinese intelligence five years ago after gambling debts made him vulnerable. Serves as a secondary asset to NIGHTINGALE, providing operational intelligence and running interference when needed. Struggles with guilt but fears exposure more than conscience.",
-      "category": "character",
-      "tags": ["Marcus Webb", "MI6", "handler", "compromised", "antagonist", "Berlin"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "relationships": [
-          {
-            "targetId": "lore-elena-cross",
-            "type": "handler",
-            "description": "Elena's MI6 handler for three years"
-          },
-          {
-            "targetId": "lore-hastings",
-            "type": "subordinate",
-            "description": "Reports to Sir Geoffrey Hastings"
-          }
-        ],
-        "customFields": {
-          "age": 52,
-          "nationality": "British",
-          "occupation": "MI6 Berlin Station Chief",
-          "compromised": true,
-          "family": "Wife and two children"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-hastings",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Sir Geoffrey Hastings",
-      "description": "Sir Geoffrey Hastings, 67, is Deputy Director of MI6 and a legendary figure in British intelligence. Career spans Hong Kong handover, fall of Soviet Union, and War on Terror. Recruited by Chinese MSS in 1995, motivated by ideology rather than money—believes Western decline is inevitable and Chinese century is coming. Has operated as NIGHTINGALE for nearly 30 years, providing invaluable intelligence to Beijing. Personally recruited Elena Cross, seeing her as both talented operative and potential asset. Maintains perfect cover through genuine operational successes and careful misdirection.",
-      "category": "character",
-      "tags": ["Sir Geoffrey Hastings", "NIGHTINGALE", "MI6", "mole", "antagonist", "Chinese intelligence"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "relationships": [
-          {
-            "targetId": "lore-elena-cross",
-            "type": "recruiter",
-            "description": "Recruited Elena to MI6"
-          },
-          {
-            "targetId": "lore-marcus-webb",
-            "type": "superior",
-            "description": "Marcus's superior in MI6"
-          }
-        ],
-        "customFields": {
-          "age": 67,
-          "nationality": "British",
-          "occupation": "Deputy Director, MI6",
-          "codename": "NIGHTINGALE",
-          "yearsAsDouble": 30
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-dmitri-volkov",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Dmitri Volkov",
-      "description": "Dmitri Volkov, 61, is Elena's former mentor during her early career. Retired SVR colonel who now operates as freelance intelligence broker in Prague. Trained Elena in Russian intelligence methods before her mother's defection complicated their relationship. Maintains contacts across multiple intelligence services. Cynical but honorable by spy world standards—won't betray a confidence unless the price is right, but also won't work against former proteges. Knows about NIGHTINGALE through his network. Lives comfortably in Prague's Old Town, ostensibly writing intelligence memoirs that will never be published.",
-      "category": "character",
-      "tags": ["Dmitri Volkov", "SVR", "retired", "mentor", "Prague", "intelligence broker"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "relationships": [
-          {
-            "targetId": "lore-elena-cross",
-            "type": "mentor",
-            "description": "Former mentor and trainer"
-          }
-        ],
-        "customFields": {
-          "age": 61,
-          "nationality": "Russian",
-          "formerOccupation": "SVR Colonel",
-          "currentOccupation": "Intelligence Broker",
-          "location": "Prague"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-natasha-kozlov",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Natasha Kozlov",
-      "description": "Natasha Kozlov, 58, is a former Chinese MSS officer who defected one year ago. She knew Elena's mother before her defection and maintained that connection. Worked in MSS counterintelligence before becoming disillusioned with Beijing's increasingly aggressive operations. Provided critical intelligence on NIGHTINGALE network before being killed by Russian agents working with Chinese intelligence. Her death in Moscow catalyzes Elena's final push to expose the conspiracy.",
-      "category": "character",
-      "tags": ["Natasha Kozlov", "MSS", "defector", "informant", "Moscow", "deceased"],
-      "metadata": {
-        "importance": "major",
-        "status": "inactive",
-        "relationships": [
-          {
-            "targetId": "lore-elena-cross",
-            "type": "informant",
-            "description": "Provided crucial intelligence about NIGHTINGALE"
-          }
-        ],
-        "customFields": {
-          "age": 58,
-          "nationality": "Russian",
-          "formerOccupation": "MSS Counterintelligence Officer",
-          "status": "Deceased",
-          "causeOfDeath": "Killed by Russian agents in Moscow"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-berlin",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Berlin",
-      "description": "Berlin serves as the primary operational theater and home to MI6's largest continental European station. The city's Cold War legacy provides rich atmosphere—dead drops in Tiergarten, safe houses in former East Berlin, surveillance games on the U-Bahn. Marcus Webb runs the station from a cover office near Potsdamer Platz. The city's mix of tourists, international businesspeople, and lingering spy-craft traditions makes it ideal for clandestine operations.",
-      "category": "location",
-      "tags": ["Berlin", "Germany", "MI6 station", "operations", "Cold War"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "country": "Germany",
-          "significance": "Primary operational theater, MI6 Berlin station location",
-          "keyLocations": ["Tiergarten", "Unter den Linden", "Potsdamer Platz", "S-Bahn stations"]
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-prague",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Prague",
-      "description": "Prague serves as neutral ground for Elena's meeting with Dmitri Volkov. The Czech capital's Old Town, particularly the Astronomical Clock area, provides public spaces ideal for clandestine meets—tourist crowds offer cover, multiple exit routes, and the historic architecture includes countless surveillance points. The city straddles East and West, making it a traditional espionage crossroads where intelligence officers from all sides maintain informal presence.",
-      "category": "location",
-      "tags": ["Prague", "Czech Republic", "neutral ground", "Old Town", "Astronomical Clock"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "country": "Czech Republic",
-          "significance": "Neutral meeting location, intelligence crossroads",
-          "keyLocations": ["Old Town Square", "Astronomical Clock", "Vltava River"]
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-moscow",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Moscow",
-      "description": "Moscow represents maximum danger for Western intelligence operatives. FSB surveillance is comprehensive, and foreign agents operate under constant risk of detention. Elena's infiltration on false documents is extremely high-risk. Gorky Park, site of her meeting with Natasha, ironically represents one of the safer public spaces due to tourist traffic. The city's winter atmosphere—iron-gray skies, bitter cold—mirrors the harsh reality of the intelligence war being fought in its shadows.",
-      "category": "location",
-      "tags": ["Moscow", "Russia", "FSB", "hostile territory", "Gorky Park"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "country": "Russia",
-          "significance": "Hostile territory, maximum risk environment",
-          "keyLocations": ["Gorky Park", "Buran shuttle exhibit"],
-          "threatLevel": "Extreme"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-microsd-card",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Berlin Dead Drop Package",
-      "description": "The microSD card retrieved from the Tiergarten dead drop contains initial evidence of the NIGHTINGALE operation. Includes encrypted files showing bank transfers, meeting transcripts, and photographs of classified documents spanning five years. This evidence first reveals the existence of the mole and points to Marcus Webb's involvement, but doesn't yet identify the primary asset. The package was left by Elena's contact, who was subsequently captured or killed by Russian surveillance.",
-      "category": "item",
-      "tags": ["microSD card", "evidence", "dead drop", "NIGHTINGALE", "classified"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "type": "Intelligence package",
-          "location": "Retrieved from Tiergarten, Berlin",
-          "contents": "Bank transfers, meeting transcripts, classified document photos",
-          "timespan": "Five years of evidence"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-natasha-usb",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Natasha's USB Drive",
-      "description": "The USB drive provided by Natasha Kozlov in Gorky Park contains comprehensive proof of the NIGHTINGALE network. Includes encrypted communications between Sir Geoffrey Hastings and MSS handlers, detailed payment records through shell companies, and a complete list of other compromised assets including Marcus Webb and four NATO intelligence officials. This evidence is sufficient to expose the entire Chinese intelligence operation within Western agencies. Natasha died protecting this information.",
-      "category": "item",
-      "tags": ["USB drive", "evidence", "NIGHTINGALE", "proof", "MSS", "Hastings"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "type": "Intelligence evidence",
-          "source": "Natasha Kozlov",
-          "contents": "MSS communications, payment records, asset list",
-          "keyEvidence": "Identifies Sir Geoffrey Hastings as NIGHTINGALE"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-operation-nightingale",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Operation NIGHTINGALE",
-      "description": "NIGHTINGALE is the codename for Chinese MSS's most successful long-term penetration of Western intelligence. Running for nearly 30 years, the operation has provided Beijing with access to NATO intelligence, Five Eyes communications, and classified operations across multiple agencies. Sir Geoffrey Hastings serves as the primary asset, with Marcus Webb and others as supporting sources. The operation has compromised at least three major intelligence operations, resulting in multiple deaths. Discovery of NIGHTINGALE represents a catastrophic security breach for Western intelligence.",
-      "category": "event",
-      "tags": ["NIGHTINGALE", "Chinese intelligence", "MSS", "mole hunt", "espionage"],
-      "metadata": {
-        "importance": "major",
-        "status": "active",
-        "customFields": {
-          "type": "Intelligence operation",
-          "operator": "Chinese MSS",
-          "duration": "30 years",
-          "primaryAsset": "Sir Geoffrey Hastings",
-          "impact": "Multiple compromised operations, intelligence deaths"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-berlin-surveillance",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Berlin Dead Drop Surveillance",
-      "description": "Russian intelligence maintained surveillance on Elena's Berlin dead drop, indicating prior knowledge of the operation. The surveillance team included at least three operatives—a jogger, a couple near the fountain, and a Mercedes with diplomatic plates. Their presence suggests either Elena's contact was compromised before the drop, or Russian intelligence was monitoring on behalf of Chinese MSS as part of intelligence sharing arrangement. Elena successfully evaded the team using S-Bahn evasion techniques.",
-      "category": "event",
-      "tags": ["surveillance", "Russian intelligence", "Berlin", "dead drop", "evasion"],
-      "metadata": {
-        "importance": "minor",
-        "status": "historical",
-        "customFields": {
-          "location": "Tiergarten, Berlin",
-          "operators": "Russian intelligence, possibly MSS liaison",
-          "outcome": "Elena successfully evaded",
-          "significance": "Revealed compromise of contact"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-gorky-park-attack",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Gorky Park Attack",
-      "description": "The attack on Elena and Natasha Kozlov in Gorky Park represents a joint Russian-Chinese operation to silence the defector and prevent intelligence from reaching Western agencies. Black SUV with Russian agents arrived within minutes of the meet beginning, suggesting real-time surveillance or prior knowledge. Natasha was killed immediately, but Elena escaped using Moscow extraction protocols. The speed and precision of the attack indicates high-level coordination between FSB and MSS.",
-      "category": "event",
-      "tags": ["attack", "Gorky Park", "Moscow", "Natasha Kozlov", "FSB", "MSS"],
-      "metadata": {
-        "importance": "major",
-        "status": "historical",
-        "customFields": {
-          "location": "Gorky Park, Moscow",
-          "operators": "Russian agents (FSB/MSS liaison)",
-          "casualties": "Natasha Kozlov killed",
-          "outcome": "Elena escaped with evidence",
-          "significance": "Confirmed Russian-Chinese intelligence cooperation"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-synopsis",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Story Synopsis",
-      "description": "Elena Cross, an MI6 operative, uncovers evidence of NIGHTINGALE—a decades-long Chinese intelligence operation that has compromised Western agencies at the highest levels. When her handler Marcus Webb shows signs of being compromised, Elena goes rogue, traveling from Berlin to Prague to Moscow to uncover the truth. With the help of her former Russian mentor Dmitri Volkov and defector Natasha Kozlov, she discovers that NIGHTINGALE is Sir Geoffrey Hastings, the Deputy Director of MI6 who personally recruited her. After Natasha is killed and Elena barely escapes Moscow with proof of the conspiracy, she must find a way to expose the mole network while trusting no one in her own service.",
-      "category": "synopsis",
-      "tags": ["synopsis", "plot summary", "NIGHTINGALE", "espionage", "betrayal"],
-      "metadata": {
-        "customFields": {
-          "genre": "Spy thriller",
-          "setting": "Post-Cold War Europe",
-          "themes": "Betrayal, loyalty, institutional corruption",
-          "protagonist": "Elena Cross"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-timeline",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Story Timeline",
-      "description": "Day 1: Elena retrieves evidence from Berlin dead drop, evades Russian surveillance, discovers initial evidence of NIGHTINGALE. Day 2: Elena travels to Prague, meets Dmitri Volkov, learns of Chinese MSS involvement. Day 3-4: Elena infiltrates Moscow on false passport, meets Natasha Kozlov in Gorky Park. Day 5: Gorky Park attack, Natasha killed, Elena begins extraction. Day 6-7: Elena escapes across Russian-Finnish border with bullet wound, reaches Helsinki. Day 8: Elena reviews complete evidence, sends encrypted message to Prime Minister, prepares to expose network.",
-      "category": "timeline",
-      "tags": ["timeline", "chronology", "plot structure", "events"],
-      "metadata": {
-        "customFields": {
-          "duration": "8 days",
-          "locations": "Berlin → Prague → Moscow → Finland → Helsinki",
-          "keyEvents": ["Dead drop", "Prague meeting", "Moscow infiltration", "Gorky Park attack", "Escape", "Evidence delivery"]
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-mi6",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "MI6 (Secret Intelligence Service)",
-      "description": "The British Secret Intelligence Service, known as MI6, is responsible for foreign intelligence gathering. In this story, MI6 has been compromised at the highest levels by Chinese intelligence through Operation NIGHTINGALE. Sir Geoffrey Hastings, the Deputy Director, has been a Chinese asset for 30 years, while Berlin station chief Marcus Webb was compromised more recently. The compromise has resulted in blown operations, agent deaths, and catastrophic intelligence losses. Elena Cross's discovery threatens to expose the full extent of the penetration.",
-      "category": "note",
-      "tags": ["MI6", "British intelligence", "compromised", "institutional"],
-      "metadata": {
-        "customFields": {
-          "type": "Intelligence agency",
-          "country": "United Kingdom",
-          "compromiseLevel": "Critical",
-          "keyPersonnel": ["Sir Geoffrey Hastings (compromised)", "Marcus Webb (compromised)", "Elena Cross (loyal)"]
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "lore-false-identities",
-      "level": "story",
-      "scopeId": "demo-story-shadows-berlin",
-      "name": "Elena's False Identities",
-      "description": "Elena maintains three false identities outside official MI6 channels: Sarah Mitchell (British photographer), used for Prague travel; Katarina Novak (Polish businesswoman), used for Moscow infiltration; and one additional identity kept in reserve. These identities include full documentation, established legends, and banking facilities. They represent Elena's insurance policy against exactly the kind of institutional compromise she encounters. The identities were created during her training with Dmitri Volkov and represent her deep understanding that in intelligence work, you must always have an exit strategy.",
-      "category": "note",
-      "tags": ["false identities", "tradecraft", "Elena Cross", "operational security"],
-      "metadata": {
-        "customFields": {
-          "type": "Operational tradecraft",
-          "identities": ["Sarah Mitchell (British)", "Katarina Novak (Polish)", "One reserved"],
-          "purpose": "Emergency extraction and off-book operations",
-          "source": "Created with Dmitri Volkov's assistance"
-        }
-      },
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "isDemo": true
-    }
-  ],
-  "sceneBeats": [],
-  "notes": [
-    {
-      "id": "demo-note-research-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "MI6 Tradecraft Research",
-      "content": "Dead drops: typically use innocuous containers (hollowed books, magnetic key boxes, fake rocks). Berlin's Tiergarten historically used during Cold War.\n\nSurveillance detection routes (SDRs): operatives use public transport, reflective surfaces, varied pace to identify tails.\n\nMoscow Rules: informal set of guidelines for operating in hostile territory. Key principles: assume you're under surveillance, vary routines, trust no one.\n\nSources: official MI6 recruitment pages mention language skills, analytical ability. Former officer memoirs (redacted) available from British Library.",
-      "type": "research",
-      "createdAt": "2024-12-27T09:00:00.000Z",
-      "updatedAt": "2024-12-28T15:30:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-note-research-2",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Chinese Intelligence (MSS) Background",
-      "content": "Ministry of State Security (MSS) - China's primary intelligence agency. Known for long-term cultivation of sources rather than quick recruitment.\n\nHistorical precedent: multiple cases of Western officials compromised over decades (research Katrina Leung case, Peter Lee).\n\nMSS tends to recruit based on ideology or business ties rather than blackmail. Hastings's motivation (believing in Chinese century) fits this pattern.\n\nRussian-Chinese intelligence cooperation: historically competitive but increasing collaboration post-2014.",
-      "type": "research",
-      "createdAt": "2024-12-27T11:00:00.000Z",
-      "updatedAt": "2024-12-28T10:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-note-idea-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Sequel Possibilities",
-      "content": "If this works, potential sequel angles:\n\n1. Elena now persona non grata with MI6, works as freelance intelligence consultant. Gets pulled back in when Hastings escapes custody.\n\n2. The other four NATO moles from Natasha's list - each could be a separate story. Different countries, different agencies, different extraction challenges.\n\n3. Elena's mother's backstory - what really happened during her defection? Was she also MSS? Would add tragic dimension.\n\n4. Marcus Webb's perspective - could be interesting to tell parallel story of how a good man gets compromised.",
-      "type": "idea",
-      "createdAt": "2025-01-05T16:00:00.000Z",
-      "updatedAt": "2025-01-05T16:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-note-idea-2",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Thematic Elements to Strengthen",
-      "content": "Core theme: Trust vs. survival. Elena has to trust people to complete mission, but trust has literally got people killed.\n\nMirror relationships:\n- Hastings recruited Elena → he saw her potential, but for what?\n- Dmitri trained Elena → defector's daughter learning from defector's enemy\n- Elena's mother defected TO the West → Elena may need to defect FROM it\n\nConsider: What if Hastings genuinely cares about Elena? Makes his betrayal more complex. He's not moustache-twirling villain but true believer who thinks he's on the right side of history.",
-      "type": "idea",
-      "createdAt": "2024-12-30T08:00:00.000Z",
-      "updatedAt": "2025-01-02T14:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-note-todo-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Revision Checklist",
-      "content": "Before final draft:\n\n[ ] Add more sensory details to Moscow chapter - cold, grey skies, industrial atmosphere\n[ ] Check Elena's emotional arc - does each chapter show escalating stakes AND cost?\n[ ] Verify timeline consistency - 8 days from Berlin to Helsinki needs to work geographically\n[ ] Research Finnish border crossing procedures\n[ ] Add one more personal moment for Elena - maybe a memory of her mother?\n[ ] Review dialogue - Dmitri should feel more Russian in speech patterns\n[ ] Consider: does the PM ending feel too convenient? Alternative delivery methods?",
-      "type": "todo",
-      "createdAt": "2025-01-06T10:00:00.000Z",
-      "updatedAt": "2025-01-06T10:00:00.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-note-other-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Cover Art Concepts",
-      "content": "Visual motifs to suggest to cover designer:\n\n- Berlin's Brandenburg Gate with shadowy figure\n- Cracked mirror/reflection (trust/betrayal theme)\n- Chess pieces - queen isolated from others\n- Red and gold colour palette (Chinese flag colours, but subtle)\n- Nightingale silhouette incorporated somewhere\n\nTitle typography: clean, modern - not retro Cold War styling. This is contemporary thriller.",
-      "type": "other",
-      "createdAt": "2025-01-07T12:00:00.000Z",
-      "updatedAt": "2025-01-07T12:00:00.000Z",
-      "isDemo": true
-    }
-  ],
-  "aiChats": [
-    {
-      "id": "demo-chat-1",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Initial Story Development",
-      "messages": [
+    "chapters": [
         {
-          "id": "msg-1",
-          "role": "user",
-          "content": "I want to write a spy thriller set in modern Europe. The protagonist should be a female MI6 operative who uncovers a mole in Western intelligence. Any suggestions for making this feel fresh?",
-          "timestamp": "2024-12-28T10:00:00.000Z"
+            "id": "demo-chapter-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "The Drop",
+            "summary": "Elena Cross receives an encrypted package at a dead drop in Berlin, containing evidence of a mole within Western intelligence. She barely escapes surveillance.",
+            "order": 1,
+            "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The rain came down in sheets, turning Unter den Linden into a river of neon reflections. Elena Cross kept her pace steady, neither hurried nor leisurely, just another tourist braving the Berlin weather. Her umbrella—black, unremarkable—concealed her face from the CCTV cameras she'd mapped three days prior.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The dead drop was behind the third bench in the Tiergarten, exactly where her contact had specified. A hollowed-out brick, unremarkable among thousands. Elena's fingers found it without looking, muscle memory from a hundred similar operations. The package inside was smaller than expected—a microSD card wrapped in waterproof film.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She pocketed it and turned to leave, but something was wrong. The jogger who'd passed twice. The couple arguing near the fountain—too theatrical, too loud. And there, by the east entrance, a Mercedes with diplomatic plates that hadn't been there when she'd arrived.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena's training kicked in. She walked toward the S-Bahn station, varying her pace, using reflective surfaces to check her six. The jogger was following. So was a woman with a red scarf she hadn't noticed before.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"They knew. Somehow, they knew.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena descended into the station, her mind racing through extraction protocols. The train was pulling in. She waited until the doors were closing before slipping through, leaving the jogger stranded on the platform. His face—young, Slavic features, poorly concealed earpiece—told her everything she needed to know.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Russian intelligence. They were watching the drop. Which meant her contact was either captured or dead.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Back at her hotel, Elena locked the door and wedged a chair under the handle. The microSD card felt heavier than it should. She plugged it into her encrypted laptop, fingers trembling slightly as the decryption software loaded.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"What she found made her blood run cold. Bank transfers. Meeting transcripts. Photographs of classified documents. All pointing to one impossible conclusion: there was a mole in Western intelligence, and they'd been active for at least five years.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The codename jumped out at her: NIGHTINGALE.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena's secure phone buzzed. A message from London, from her handler Marcus Webb: \\\"Abort. Return immediately. Do not make contact.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She stared at the message. Marcus had been her handler for three years. She trusted him with her life.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"But NIGHTINGALE's last known communication, according to the files, had been sent through a handler in MI6's Berlin station.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Marcus Webb's station.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
+            "wordCount": 342,
+            "povCharacter": "Elena Cross",
+            "povType": "Third Person Limited",
+            "outline": {
+                "content": "- Elena retrieves package from dead drop in Berlin\n- Discovers Russian surveillance team\n- Evades pursuers on S-Bahn\n- Reviews evidence of mole NIGHTINGALE\n- Receives abort order from handler Marcus Webb\n- Realizes Marcus's connection to the mole",
+                "lastUpdated": "2025-01-02T00:00:00.000Z"
+            },
+            "notes": {
+                "content": "Key chapter establishing the central conflict. Elena's suspicion of Marcus sets up the trust issues that will drive the plot. The Berlin setting allows for Cold War atmosphere even in modern era.",
+                "lastUpdated": "2025-01-02T00:00:00.000Z"
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
         },
         {
-          "id": "msg-2",
-          "role": "assistant",
-          "content": "Great concept! Here are some ways to make it feel fresh:\n\n1. **Make it Chinese intelligence, not Russian**: Most spy thrillers default to Russia as the adversary. A Chinese MSS operation would be more contemporary and less expected.\n\n2. **The mole is at the very top**: Instead of mid-level bureaucrat, what if it's someone like the Deputy Director? Someone who recruited your protagonist?\n\n3. **Post-Cold War setting with Cold War ghosts**: Use Berlin, Prague, Moscow—places with espionage history but modern complications.\n\n4. **Give your protagonist mixed heritage**: British-Russian background could provide both skills and complications.\n\n5. **Make trust the central theme**: If the institution is compromised from the top, who can she trust? Going rogue becomes not rebellion but necessity.\n\nWould you like to develop any of these elements further?",
-          "timestamp": "2024-12-28T10:01:30.000Z"
+            "id": "demo-chapter-2",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Prague Protocol",
+            "summary": "Elena goes off-grid and travels to Prague to meet with her former mentor, Dmitri Volkov. She learns NIGHTINGALE has compromised multiple operations and must decide whom to trust.",
+            "order": 2,
+            "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena crossed the Czech border on a bus full of tourists, her passport identifying her as Sarah Mitchell, freelance photographer from Manchester. The identity was clean—one of three she maintained outside official channels, insurance against moments exactly like this.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Prague's Old Town Square bustled with afternoon crowds. She'd chosen the meeting spot carefully—the Astronomical Clock, where tourists gathered every hour to watch the mechanical apostles parade. Easy to blend in, hard to set up an ambush.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Dmitri Volkov appeared exactly on time, looking older than she remembered. Her former mentor had retired from the SVR five years ago, supposedly to write his memoirs in peaceful exile. In reality, he traded information to the highest bidder, playing all sides with the skill of a chess grandmaster.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Elena Sergeevna,\\\" he greeted her in Russian, a slight smile on his weathered face. \\\"I wondered when you would come.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"They walked along the Vltava River, maintaining the careful dance of two professionals who trusted each other just enough. Elena laid out what she'd found on the microSD card. Dmitri listened without interruption, his expression giving nothing away.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"NIGHTINGALE,\\\" he said finally. \\\"Yes, I know this name. Three operations compromised in the last two years. Good people dead. Your people and mine.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Then help me stop them.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Dmitri stopped walking, turning to face her. \\\"The problem, Elena, is that NIGHTINGALE is not one person. It is an organization. Chinese intelligence has been running an operation for years, recruiting sources across Western agencies. NIGHTINGALE is their most valuable asset, but there are others.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The revelation hit her like a physical blow. Not Russian intelligence. Chinese. The geopolitical implications were staggering.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Who can I trust?\\\" she asked.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"No one,\\\" Dmitri replied. \\\"But there is someone you must talk to. A woman named Natasha Kozlov, former MSS officer who defected last year. She knows the network, knows the names. But she will only meet in Moscow.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Moscow? That's suicide.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Perhaps. But it is the only way.\\\" He handed her a folded piece of paper. \\\"The contact protocol. And Elena—your handler, Marcus Webb. Be very careful. I have heard his name in connection with all of this.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"That night, in her hotel room overlooking the Vltava, Elena made her decision. She would go to Moscow. She would find Natasha Kozlov. And she would uncover the truth about NIGHTINGALE, no matter the cost.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Her phone buzzed. Another message from Marcus: \\\"We know where you are. Come in now or face consequences.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She removed the battery and SIM card, dropping them into the river from her window. There was no going back now.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
+            "wordCount": 389,
+            "povCharacter": "Elena Cross",
+            "povType": "Third Person Limited",
+            "outline": {
+                "content": "- Elena travels to Prague under false identity\n- Meets with Dmitri Volkov at Astronomical Clock\n- Learns NIGHTINGALE is Chinese intelligence operation\n- Gets contact info for Natasha Kozlov in Moscow\n- Dmitri confirms Marcus Webb's suspicious connections\n- Elena commits to Moscow mission despite danger\n- Destroys her phone to avoid tracking",
+                "lastUpdated": "2025-01-03T00:00:00.000Z"
+            },
+            "notes": {
+                "content": "This chapter expands the scope - it's not just Russian intelligence but a Chinese operation. Dmitri serves as both information source and warning system. The Prague setting provides a neutral meeting ground.",
+                "lastUpdated": "2025-01-03T00:00:00.000Z"
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
         },
         {
-          "id": "msg-3",
-          "role": "user",
-          "content": "I love the Chinese angle and the high-level mole. How can I make the discovery feel earned rather than convenient?",
-          "timestamp": "2024-12-28T10:05:00.000Z"
-        },
-        {
-          "id": "msg-4",
-          "role": "assistant",
-          "content": "Make it a breadcrumb trail where each revelation comes at a cost:\n\n**Act 1 - Berlin**: She retrieves evidence from a dead drop, but the contact is compromised. Initial evidence points to her handler—someone she trusts—which makes her question everything.\n\n**Act 2 - Prague**: She goes off-grid to consult a former mentor (perhaps from the other side, retired Russian intelligence). He reveals it's bigger than she thought—not just her handler, but someone higher. He gives her one name: a defector in Moscow who knows the full picture.\n\n**Act 3 - Moscow**: Extreme risk. The defector reveals the shocking truth (the Deputy Director), but gets killed for it. Now she has the information but no way to safely deliver it through her own compromised agency.\n\nEach piece of information costs something—a contact dies, she burns her career, she risks her life. Nothing comes easy, and the stakes escalate with each revelation.",
-          "timestamp": "2024-12-28T10:07:15.000Z"
+            "id": "demo-chapter-3",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Moscow Rules",
+            "summary": "Elena infiltrates Moscow and meets Natasha Kozlov, who reveals NIGHTINGALE's identity. A confrontation in Red Square forces Elena to choose between duty and survival.",
+            "order": 3,
+            "content": "{\"root\":{\"children\":[{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Moscow in winter was a city of iron and ice. Elena entered on a Polish passport, one of Dmitri's creations, good enough to pass automated systems but unlikely to survive human scrutiny. She had forty-eight hours, maybe less.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The meet was set for Gorky Park, near the old Buran shuttle exhibit. Natasha Kozlov was easy to spot—exactly as Dmitri had described, tall and elegant with silver-streaked dark hair, feeding pigeons like a grandmother enjoying her retirement.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"You look like your mother,\\\" Natasha said in English, not looking up from the pigeons. \\\"I knew her, you know. Before she defected.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena sat down beside her, the casual intimacy of the gesture hiding the tension coiled in her muscles. \\\"Tell me about NIGHTINGALE.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"NIGHTINGALE is not Marcus Webb,\\\" Natasha said. \\\"Though he is compromised, yes. No, NIGHTINGALE is someone much higher. Someone with access to NATO intelligence, to Five Eyes communications, to everything.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She scattered more seed, and Elena noticed her hands were shaking. Fear. Real fear.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Who?\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Sir Geoffrey Hastings. Deputy Director of MI6. He has been working for Beijing since before the Hong Kong handover.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The world tilted. Sir Geoffrey Hastings was a legend, a man who'd served Queen and country for forty years. He'd personally recruited Elena to MI6 after spotting her potential at Cambridge. He was her hero.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"I don't believe you.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"I have proof.\\\" Natasha produced a USB drive, pressing it into Elena's hand. \\\"Bank accounts, meeting records, everything. But you must move fast. They know I'm talking to you. They know you're here.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"A black SUV screeched to a halt on the path behind them. Men in dark coats emerged, moving with military precision.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"\\\"Run,\\\" Natasha whispered. \\\"Get that to your Prime Minister. No one else. Not even your own service. Trust no one.\\\"\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"Elena ran. Behind her, she heard the distinctive crack of suppressed gunfire. She didn't look back.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"The extraction was chaos. Elena used every trick she knew, every safe house and escape route the SVR didn't know about. By the time she crossed into Finland twenty hours later, she'd been awake for three days straight and had a bullet graze across her ribs.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"But she had the proof. Natasha's USB drive contained everything—encrypted communications between Hastings and his MSS handlers, records of intelligence passed, payments received through a web of shell companies.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"And one more thing: a list of other assets. Marcus Webb was on it. So were four other high-ranking intelligence officials across NATO countries.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"As the train carried her toward Helsinki, Elena composed an encrypted message. Not to MI6. Not to Marcus. But to the one person in the British government she knew was beyond reproach.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"She hit send, then leaned back in her seat, watching the Russian landscape disappear into the distance. Natasha Kozlov was dead. Her contact in Berlin was dead. But their sacrifice would not be in vain.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1},{\"children\":[{\"detail\":0,\"format\":0,\"mode\":\"normal\",\"style\":\"\",\"text\":\"NIGHTINGALE was about to be exposed. And the intelligence world would never be the same.\",\"type\":\"text\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"paragraph\",\"version\":1}],\"direction\":\"ltr\",\"format\":\"\",\"indent\":0,\"type\":\"root\",\"version\":1}}",
+            "wordCount": 468,
+            "povCharacter": "Elena Cross",
+            "povType": "Third Person Limited",
+            "outline": {
+                "content": "- Elena arrives in Moscow on false passport\n- Meets Natasha Kozlov in Gorky Park\n- Learns NIGHTINGALE is Sir Geoffrey Hastings, Deputy Director MI6\n- Receives USB drive with proof\n- Russian agents attack, Natasha killed\n- Elena escapes to Finland\n- Reviews evidence showing entire network of moles\n- Sends encrypted message directly to Prime Minister\n- Prepares to expose NIGHTINGALE",
+                "lastUpdated": "2025-01-04T00:00:00.000Z"
+            },
+            "notes": {
+                "content": "Climactic chapter that reveals the conspiracy's true scope. Hastings as NIGHTINGALE is a betrayal at the highest level. Natasha's death raises the stakes. Elena's decision to bypass MI6 entirely shows her growing isolation and determination.",
+                "lastUpdated": "2025-01-04T00:00:00.000Z"
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
         }
-      ],
-      "createdAt": "2024-12-28T10:00:00.000Z",
-      "updatedAt": "2024-12-28T10:07:15.000Z",
-      "isDemo": true
-    },
-    {
-      "id": "demo-chat-2",
-      "storyId": "demo-story-shadows-berlin",
-      "title": "Character Development - Elena Cross",
-      "messages": [
+    ],
+    "lorebookEntries": [
         {
-          "id": "msg-5",
-          "role": "user",
-          "content": "Help me develop Elena's background. I want her to feel real, not like a superhero. What should her character flaws be?",
-          "timestamp": "2024-12-29T14:00:00.000Z"
+            "id": "lore-elena-cross",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Elena Cross",
+            "description": "Elena Cross, 34, is an MI6 field operative specializing in Eastern European operations. Born to a Russian defector mother and British father, she speaks fluent Russian, Czech, and German. Recruited to MI6 at Cambridge by Sir Geoffrey Hastings, she's known for her analytical mind and ability to operate independently. Her mixed heritage gives her unique insight into Russian intelligence methods but also makes her suspect in some circles. Highly skilled in tradecraft, firearms, and hand-to-hand combat. Has trust issues stemming from her mother's defection and subsequent paranoia.",
+            "category": "character",
+            "tags": ["Elena Cross", "protagonist", "MI6", "operative", "British", "Russian heritage"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "age": 34,
+                    "nationality": "British",
+                    "occupation": "MI6 Field Operative",
+                    "skills": [
+                        "Tradecraft",
+                        "Russian language",
+                        "Czech language",
+                        "German language",
+                        "Firearms",
+                        "Hand-to-hand combat",
+                        "Analysis"
+                    ]
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
         },
         {
-          "id": "msg-6",
-          "role": "assistant",
-          "content": "For a realistic spy character, consider these dimensions:\n\n**Background that shapes her**:\n- Mother was Russian defector → Elena grew up watching paranoia destroy her mother's life\n- This creates Elena's central flaw: **trust issues**. She keeps people at arm's length, maintains secret identities even her own service doesn't know about\n- But there's an irony: she trusted the wrong person (Hastings, who recruited her)\n\n**Professional competence with personal cost**:\n- She's excellent at tradecraft, languages, analysis\n- But she's terrible at relationships—no partner, few friends\n- Her career is her life, which makes the institutional betrayal even more devastating\n\n**Physical vs. emotional**:\n- She can handle surveillance, gunfights, border crossings\n- But watching people die for her (her contact in Berlin, Natasha in Moscow) takes a real toll\n- Show her competence, but also show the cost—the sleepless nights, the bullet wound she treats herself, the shaking hands after escaping Moscow\n\nMake her skilled but scarred, competent but not invincible.",
-          "timestamp": "2024-12-29T14:02:45.000Z"
+            "id": "lore-marcus-webb",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Marcus Webb",
+            "description": "Marcus Webb, 52, is Elena's MI6 handler and head of Berlin station. A career intelligence officer with 30 years of service, he's considered reliable and professional. Married with two teenage children. Secretly compromised by Chinese intelligence five years ago after gambling debts made him vulnerable. Serves as a secondary asset to NIGHTINGALE, providing operational intelligence and running interference when needed. Struggles with guilt but fears exposure more than conscience.",
+            "category": "character",
+            "tags": ["Marcus Webb", "MI6", "handler", "compromised", "antagonist", "Berlin"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "relationships": [
+                    {
+                        "targetId": "lore-elena-cross",
+                        "type": "handler",
+                        "description": "Elena's MI6 handler for three years"
+                    },
+                    {
+                        "targetId": "lore-hastings",
+                        "type": "subordinate",
+                        "description": "Reports to Sir Geoffrey Hastings"
+                    }
+                ],
+                "customFields": {
+                    "age": 52,
+                    "nationality": "British",
+                    "occupation": "MI6 Berlin Station Chief",
+                    "compromised": true,
+                    "family": "Wife and two children"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-hastings",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Sir Geoffrey Hastings",
+            "description": "Sir Geoffrey Hastings, 67, is Deputy Director of MI6 and a legendary figure in British intelligence. Career spans Hong Kong handover, fall of Soviet Union, and War on Terror. Recruited by Chinese MSS in 1995, motivated by ideology rather than money—believes Western decline is inevitable and Chinese century is coming. Has operated as NIGHTINGALE for nearly 30 years, providing invaluable intelligence to Beijing. Personally recruited Elena Cross, seeing her as both talented operative and potential asset. Maintains perfect cover through genuine operational successes and careful misdirection.",
+            "category": "character",
+            "tags": ["Sir Geoffrey Hastings", "NIGHTINGALE", "MI6", "mole", "antagonist", "Chinese intelligence"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "relationships": [
+                    {
+                        "targetId": "lore-elena-cross",
+                        "type": "recruiter",
+                        "description": "Recruited Elena to MI6"
+                    },
+                    {
+                        "targetId": "lore-marcus-webb",
+                        "type": "superior",
+                        "description": "Marcus's superior in MI6"
+                    }
+                ],
+                "customFields": {
+                    "age": 67,
+                    "nationality": "British",
+                    "occupation": "Deputy Director, MI6",
+                    "codename": "NIGHTINGALE",
+                    "yearsAsDouble": 30
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-dmitri-volkov",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Dmitri Volkov",
+            "description": "Dmitri Volkov, 61, is Elena's former mentor during her early career. Retired SVR colonel who now operates as freelance intelligence broker in Prague. Trained Elena in Russian intelligence methods before her mother's defection complicated their relationship. Maintains contacts across multiple intelligence services. Cynical but honorable by spy world standards—won't betray a confidence unless the price is right, but also won't work against former proteges. Knows about NIGHTINGALE through his network. Lives comfortably in Prague's Old Town, ostensibly writing intelligence memoirs that will never be published.",
+            "category": "character",
+            "tags": ["Dmitri Volkov", "SVR", "retired", "mentor", "Prague", "intelligence broker"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "relationships": [
+                    {
+                        "targetId": "lore-elena-cross",
+                        "type": "mentor",
+                        "description": "Former mentor and trainer"
+                    }
+                ],
+                "customFields": {
+                    "age": 61,
+                    "nationality": "Russian",
+                    "formerOccupation": "SVR Colonel",
+                    "currentOccupation": "Intelligence Broker",
+                    "location": "Prague"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-natasha-kozlov",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Natasha Kozlov",
+            "description": "Natasha Kozlov, 58, is a former Chinese MSS officer who defected one year ago. She knew Elena's mother before her defection and maintained that connection. Worked in MSS counterintelligence before becoming disillusioned with Beijing's increasingly aggressive operations. Provided critical intelligence on NIGHTINGALE network before being killed by Russian agents working with Chinese intelligence. Her death in Moscow catalyzes Elena's final push to expose the conspiracy.",
+            "category": "character",
+            "tags": ["Natasha Kozlov", "MSS", "defector", "informant", "Moscow", "deceased"],
+            "metadata": {
+                "importance": "major",
+                "status": "inactive",
+                "relationships": [
+                    {
+                        "targetId": "lore-elena-cross",
+                        "type": "informant",
+                        "description": "Provided crucial intelligence about NIGHTINGALE"
+                    }
+                ],
+                "customFields": {
+                    "age": 58,
+                    "nationality": "Russian",
+                    "formerOccupation": "MSS Counterintelligence Officer",
+                    "status": "Deceased",
+                    "causeOfDeath": "Killed by Russian agents in Moscow"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-berlin",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Berlin",
+            "description": "Berlin serves as the primary operational theater and home to MI6's largest continental European station. The city's Cold War legacy provides rich atmosphere—dead drops in Tiergarten, safe houses in former East Berlin, surveillance games on the U-Bahn. Marcus Webb runs the station from a cover office near Potsdamer Platz. The city's mix of tourists, international businesspeople, and lingering spy-craft traditions makes it ideal for clandestine operations.",
+            "category": "location",
+            "tags": ["Berlin", "Germany", "MI6 station", "operations", "Cold War"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "country": "Germany",
+                    "significance": "Primary operational theater, MI6 Berlin station location",
+                    "keyLocations": ["Tiergarten", "Unter den Linden", "Potsdamer Platz", "S-Bahn stations"]
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-prague",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Prague",
+            "description": "Prague serves as neutral ground for Elena's meeting with Dmitri Volkov. The Czech capital's Old Town, particularly the Astronomical Clock area, provides public spaces ideal for clandestine meets—tourist crowds offer cover, multiple exit routes, and the historic architecture includes countless surveillance points. The city straddles East and West, making it a traditional espionage crossroads where intelligence officers from all sides maintain informal presence.",
+            "category": "location",
+            "tags": ["Prague", "Czech Republic", "neutral ground", "Old Town", "Astronomical Clock"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "country": "Czech Republic",
+                    "significance": "Neutral meeting location, intelligence crossroads",
+                    "keyLocations": ["Old Town Square", "Astronomical Clock", "Vltava River"]
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-moscow",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Moscow",
+            "description": "Moscow represents maximum danger for Western intelligence operatives. FSB surveillance is comprehensive, and foreign agents operate under constant risk of detention. Elena's infiltration on false documents is extremely high-risk. Gorky Park, site of her meeting with Natasha, ironically represents one of the safer public spaces due to tourist traffic. The city's winter atmosphere—iron-gray skies, bitter cold—mirrors the harsh reality of the intelligence war being fought in its shadows.",
+            "category": "location",
+            "tags": ["Moscow", "Russia", "FSB", "hostile territory", "Gorky Park"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "country": "Russia",
+                    "significance": "Hostile territory, maximum risk environment",
+                    "keyLocations": ["Gorky Park", "Buran shuttle exhibit"],
+                    "threatLevel": "Extreme"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-microsd-card",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Berlin Dead Drop Package",
+            "description": "The microSD card retrieved from the Tiergarten dead drop contains initial evidence of the NIGHTINGALE operation. Includes encrypted files showing bank transfers, meeting transcripts, and photographs of classified documents spanning five years. This evidence first reveals the existence of the mole and points to Marcus Webb's involvement, but doesn't yet identify the primary asset. The package was left by Elena's contact, who was subsequently captured or killed by Russian surveillance.",
+            "category": "item",
+            "tags": ["microSD card", "evidence", "dead drop", "NIGHTINGALE", "classified"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "type": "Intelligence package",
+                    "location": "Retrieved from Tiergarten, Berlin",
+                    "contents": "Bank transfers, meeting transcripts, classified document photos",
+                    "timespan": "Five years of evidence"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-natasha-usb",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Natasha's USB Drive",
+            "description": "The USB drive provided by Natasha Kozlov in Gorky Park contains comprehensive proof of the NIGHTINGALE network. Includes encrypted communications between Sir Geoffrey Hastings and MSS handlers, detailed payment records through shell companies, and a complete list of other compromised assets including Marcus Webb and four NATO intelligence officials. This evidence is sufficient to expose the entire Chinese intelligence operation within Western agencies. Natasha died protecting this information.",
+            "category": "item",
+            "tags": ["USB drive", "evidence", "NIGHTINGALE", "proof", "MSS", "Hastings"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "type": "Intelligence evidence",
+                    "source": "Natasha Kozlov",
+                    "contents": "MSS communications, payment records, asset list",
+                    "keyEvidence": "Identifies Sir Geoffrey Hastings as NIGHTINGALE"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-operation-nightingale",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Operation NIGHTINGALE",
+            "description": "NIGHTINGALE is the codename for Chinese MSS's most successful long-term penetration of Western intelligence. Running for nearly 30 years, the operation has provided Beijing with access to NATO intelligence, Five Eyes communications, and classified operations across multiple agencies. Sir Geoffrey Hastings serves as the primary asset, with Marcus Webb and others as supporting sources. The operation has compromised at least three major intelligence operations, resulting in multiple deaths. Discovery of NIGHTINGALE represents a catastrophic security breach for Western intelligence.",
+            "category": "event",
+            "tags": ["NIGHTINGALE", "Chinese intelligence", "MSS", "mole hunt", "espionage"],
+            "metadata": {
+                "importance": "major",
+                "status": "active",
+                "customFields": {
+                    "type": "Intelligence operation",
+                    "operator": "Chinese MSS",
+                    "duration": "30 years",
+                    "primaryAsset": "Sir Geoffrey Hastings",
+                    "impact": "Multiple compromised operations, intelligence deaths"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-berlin-surveillance",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Berlin Dead Drop Surveillance",
+            "description": "Russian intelligence maintained surveillance on Elena's Berlin dead drop, indicating prior knowledge of the operation. The surveillance team included at least three operatives—a jogger, a couple near the fountain, and a Mercedes with diplomatic plates. Their presence suggests either Elena's contact was compromised before the drop, or Russian intelligence was monitoring on behalf of Chinese MSS as part of intelligence sharing arrangement. Elena successfully evaded the team using S-Bahn evasion techniques.",
+            "category": "event",
+            "tags": ["surveillance", "Russian intelligence", "Berlin", "dead drop", "evasion"],
+            "metadata": {
+                "importance": "minor",
+                "status": "historical",
+                "customFields": {
+                    "location": "Tiergarten, Berlin",
+                    "operators": "Russian intelligence, possibly MSS liaison",
+                    "outcome": "Elena successfully evaded",
+                    "significance": "Revealed compromise of contact"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-gorky-park-attack",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Gorky Park Attack",
+            "description": "The attack on Elena and Natasha Kozlov in Gorky Park represents a joint Russian-Chinese operation to silence the defector and prevent intelligence from reaching Western agencies. Black SUV with Russian agents arrived within minutes of the meet beginning, suggesting real-time surveillance or prior knowledge. Natasha was killed immediately, but Elena escaped using Moscow extraction protocols. The speed and precision of the attack indicates high-level coordination between FSB and MSS.",
+            "category": "event",
+            "tags": ["attack", "Gorky Park", "Moscow", "Natasha Kozlov", "FSB", "MSS"],
+            "metadata": {
+                "importance": "major",
+                "status": "historical",
+                "customFields": {
+                    "location": "Gorky Park, Moscow",
+                    "operators": "Russian agents (FSB/MSS liaison)",
+                    "casualties": "Natasha Kozlov killed",
+                    "outcome": "Elena escaped with evidence",
+                    "significance": "Confirmed Russian-Chinese intelligence cooperation"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-synopsis",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Story Synopsis",
+            "description": "Elena Cross, an MI6 operative, uncovers evidence of NIGHTINGALE—a decades-long Chinese intelligence operation that has compromised Western agencies at the highest levels. When her handler Marcus Webb shows signs of being compromised, Elena goes rogue, traveling from Berlin to Prague to Moscow to uncover the truth. With the help of her former Russian mentor Dmitri Volkov and defector Natasha Kozlov, she discovers that NIGHTINGALE is Sir Geoffrey Hastings, the Deputy Director of MI6 who personally recruited her. After Natasha is killed and Elena barely escapes Moscow with proof of the conspiracy, she must find a way to expose the mole network while trusting no one in her own service.",
+            "category": "synopsis",
+            "tags": ["synopsis", "plot summary", "NIGHTINGALE", "espionage", "betrayal"],
+            "metadata": {
+                "customFields": {
+                    "genre": "Spy thriller",
+                    "setting": "Post-Cold War Europe",
+                    "themes": "Betrayal, loyalty, institutional corruption",
+                    "protagonist": "Elena Cross"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-timeline",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Story Timeline",
+            "description": "Day 1: Elena retrieves evidence from Berlin dead drop, evades Russian surveillance, discovers initial evidence of NIGHTINGALE. Day 2: Elena travels to Prague, meets Dmitri Volkov, learns of Chinese MSS involvement. Day 3-4: Elena infiltrates Moscow on false passport, meets Natasha Kozlov in Gorky Park. Day 5: Gorky Park attack, Natasha killed, Elena begins extraction. Day 6-7: Elena escapes across Russian-Finnish border with bullet wound, reaches Helsinki. Day 8: Elena reviews complete evidence, sends encrypted message to Prime Minister, prepares to expose network.",
+            "category": "timeline",
+            "tags": ["timeline", "chronology", "plot structure", "events"],
+            "metadata": {
+                "customFields": {
+                    "duration": "8 days",
+                    "locations": "Berlin → Prague → Moscow → Finland → Helsinki",
+                    "keyEvents": [
+                        "Dead drop",
+                        "Prague meeting",
+                        "Moscow infiltration",
+                        "Gorky Park attack",
+                        "Escape",
+                        "Evidence delivery"
+                    ]
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-mi6",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "MI6 (Secret Intelligence Service)",
+            "description": "The British Secret Intelligence Service, known as MI6, is responsible for foreign intelligence gathering. In this story, MI6 has been compromised at the highest levels by Chinese intelligence through Operation NIGHTINGALE. Sir Geoffrey Hastings, the Deputy Director, has been a Chinese asset for 30 years, while Berlin station chief Marcus Webb was compromised more recently. The compromise has resulted in blown operations, agent deaths, and catastrophic intelligence losses. Elena Cross's discovery threatens to expose the full extent of the penetration.",
+            "category": "note",
+            "tags": ["MI6", "British intelligence", "compromised", "institutional"],
+            "metadata": {
+                "customFields": {
+                    "type": "Intelligence agency",
+                    "country": "United Kingdom",
+                    "compromiseLevel": "Critical",
+                    "keyPersonnel": [
+                        "Sir Geoffrey Hastings (compromised)",
+                        "Marcus Webb (compromised)",
+                        "Elena Cross (loyal)"
+                    ]
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "lore-false-identities",
+            "level": "story",
+            "scopeId": "demo-story-shadows-berlin",
+            "name": "Elena's False Identities",
+            "description": "Elena maintains three false identities outside official MI6 channels: Sarah Mitchell (British photographer), used for Prague travel; Katarina Novak (Polish businesswoman), used for Moscow infiltration; and one additional identity kept in reserve. These identities include full documentation, established legends, and banking facilities. They represent Elena's insurance policy against exactly the kind of institutional compromise she encounters. The identities were created during her training with Dmitri Volkov and represent her deep understanding that in intelligence work, you must always have an exit strategy.",
+            "category": "note",
+            "tags": ["false identities", "tradecraft", "Elena Cross", "operational security"],
+            "metadata": {
+                "customFields": {
+                    "type": "Operational tradecraft",
+                    "identities": ["Sarah Mitchell (British)", "Katarina Novak (Polish)", "One reserved"],
+                    "purpose": "Emergency extraction and off-book operations",
+                    "source": "Created with Dmitri Volkov's assistance"
+                }
+            },
+            "createdAt": "2025-01-01T00:00:00.000Z",
+            "isDemo": true
         }
-      ],
-      "createdAt": "2024-12-29T14:00:00.000Z",
-      "updatedAt": "2024-12-29T14:02:45.000Z",
-      "isDemo": true
-    }
-  ]
+    ],
+    "sceneBeats": [],
+    "notes": [
+        {
+            "id": "demo-note-research-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "MI6 Tradecraft Research",
+            "content": "Dead drops: typically use innocuous containers (hollowed books, magnetic key boxes, fake rocks). Berlin's Tiergarten historically used during Cold War.\n\nSurveillance detection routes (SDRs): operatives use public transport, reflective surfaces, varied pace to identify tails.\n\nMoscow Rules: informal set of guidelines for operating in hostile territory. Key principles: assume you're under surveillance, vary routines, trust no one.\n\nSources: official MI6 recruitment pages mention language skills, analytical ability. Former officer memoirs (redacted) available from British Library.",
+            "type": "research",
+            "createdAt": "2024-12-27T09:00:00.000Z",
+            "updatedAt": "2024-12-28T15:30:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-note-research-2",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Chinese Intelligence (MSS) Background",
+            "content": "Ministry of State Security (MSS) - China's primary intelligence agency. Known for long-term cultivation of sources rather than quick recruitment.\n\nHistorical precedent: multiple cases of Western officials compromised over decades (research Katrina Leung case, Peter Lee).\n\nMSS tends to recruit based on ideology or business ties rather than blackmail. Hastings's motivation (believing in Chinese century) fits this pattern.\n\nRussian-Chinese intelligence cooperation: historically competitive but increasing collaboration post-2014.",
+            "type": "research",
+            "createdAt": "2024-12-27T11:00:00.000Z",
+            "updatedAt": "2024-12-28T10:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-note-idea-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Sequel Possibilities",
+            "content": "If this works, potential sequel angles:\n\n1. Elena now persona non grata with MI6, works as freelance intelligence consultant. Gets pulled back in when Hastings escapes custody.\n\n2. The other four NATO moles from Natasha's list - each could be a separate story. Different countries, different agencies, different extraction challenges.\n\n3. Elena's mother's backstory - what really happened during her defection? Was she also MSS? Would add tragic dimension.\n\n4. Marcus Webb's perspective - could be interesting to tell parallel story of how a good man gets compromised.",
+            "type": "idea",
+            "createdAt": "2025-01-05T16:00:00.000Z",
+            "updatedAt": "2025-01-05T16:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-note-idea-2",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Thematic Elements to Strengthen",
+            "content": "Core theme: Trust vs. survival. Elena has to trust people to complete mission, but trust has literally got people killed.\n\nMirror relationships:\n- Hastings recruited Elena → he saw her potential, but for what?\n- Dmitri trained Elena → defector's daughter learning from defector's enemy\n- Elena's mother defected TO the West → Elena may need to defect FROM it\n\nConsider: What if Hastings genuinely cares about Elena? Makes his betrayal more complex. He's not moustache-twirling villain but true believer who thinks he's on the right side of history.",
+            "type": "idea",
+            "createdAt": "2024-12-30T08:00:00.000Z",
+            "updatedAt": "2025-01-02T14:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-note-todo-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Revision Checklist",
+            "content": "Before final draft:\n\n[ ] Add more sensory details to Moscow chapter - cold, grey skies, industrial atmosphere\n[ ] Check Elena's emotional arc - does each chapter show escalating stakes AND cost?\n[ ] Verify timeline consistency - 8 days from Berlin to Helsinki needs to work geographically\n[ ] Research Finnish border crossing procedures\n[ ] Add one more personal moment for Elena - maybe a memory of her mother?\n[ ] Review dialogue - Dmitri should feel more Russian in speech patterns\n[ ] Consider: does the PM ending feel too convenient? Alternative delivery methods?",
+            "type": "todo",
+            "createdAt": "2025-01-06T10:00:00.000Z",
+            "updatedAt": "2025-01-06T10:00:00.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-note-other-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Cover Art Concepts",
+            "content": "Visual motifs to suggest to cover designer:\n\n- Berlin's Brandenburg Gate with shadowy figure\n- Cracked mirror/reflection (trust/betrayal theme)\n- Chess pieces - queen isolated from others\n- Red and gold colour palette (Chinese flag colours, but subtle)\n- Nightingale silhouette incorporated somewhere\n\nTitle typography: clean, modern - not retro Cold War styling. This is contemporary thriller.",
+            "type": "other",
+            "createdAt": "2025-01-07T12:00:00.000Z",
+            "updatedAt": "2025-01-07T12:00:00.000Z",
+            "isDemo": true
+        }
+    ],
+    "aiChats": [
+        {
+            "id": "demo-chat-1",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Initial Story Development",
+            "messages": [
+                {
+                    "id": "msg-1",
+                    "role": "user",
+                    "content": "I want to write a spy thriller set in modern Europe. The protagonist should be a female MI6 operative who uncovers a mole in Western intelligence. Any suggestions for making this feel fresh?",
+                    "timestamp": "2024-12-28T10:00:00.000Z"
+                },
+                {
+                    "id": "msg-2",
+                    "role": "assistant",
+                    "content": "Great concept! Here are some ways to make it feel fresh:\n\n1. **Make it Chinese intelligence, not Russian**: Most spy thrillers default to Russia as the adversary. A Chinese MSS operation would be more contemporary and less expected.\n\n2. **The mole is at the very top**: Instead of mid-level bureaucrat, what if it's someone like the Deputy Director? Someone who recruited your protagonist?\n\n3. **Post-Cold War setting with Cold War ghosts**: Use Berlin, Prague, Moscow—places with espionage history but modern complications.\n\n4. **Give your protagonist mixed heritage**: British-Russian background could provide both skills and complications.\n\n5. **Make trust the central theme**: If the institution is compromised from the top, who can she trust? Going rogue becomes not rebellion but necessity.\n\nWould you like to develop any of these elements further?",
+                    "timestamp": "2024-12-28T10:01:30.000Z"
+                },
+                {
+                    "id": "msg-3",
+                    "role": "user",
+                    "content": "I love the Chinese angle and the high-level mole. How can I make the discovery feel earned rather than convenient?",
+                    "timestamp": "2024-12-28T10:05:00.000Z"
+                },
+                {
+                    "id": "msg-4",
+                    "role": "assistant",
+                    "content": "Make it a breadcrumb trail where each revelation comes at a cost:\n\n**Act 1 - Berlin**: She retrieves evidence from a dead drop, but the contact is compromised. Initial evidence points to her handler—someone she trusts—which makes her question everything.\n\n**Act 2 - Prague**: She goes off-grid to consult a former mentor (perhaps from the other side, retired Russian intelligence). He reveals it's bigger than she thought—not just her handler, but someone higher. He gives her one name: a defector in Moscow who knows the full picture.\n\n**Act 3 - Moscow**: Extreme risk. The defector reveals the shocking truth (the Deputy Director), but gets killed for it. Now she has the information but no way to safely deliver it through her own compromised agency.\n\nEach piece of information costs something—a contact dies, she burns her career, she risks her life. Nothing comes easy, and the stakes escalate with each revelation.",
+                    "timestamp": "2024-12-28T10:07:15.000Z"
+                }
+            ],
+            "createdAt": "2024-12-28T10:00:00.000Z",
+            "updatedAt": "2024-12-28T10:07:15.000Z",
+            "isDemo": true
+        },
+        {
+            "id": "demo-chat-2",
+            "storyId": "demo-story-shadows-berlin",
+            "title": "Character Development - Elena Cross",
+            "messages": [
+                {
+                    "id": "msg-5",
+                    "role": "user",
+                    "content": "Help me develop Elena's background. I want her to feel real, not like a superhero. What should her character flaws be?",
+                    "timestamp": "2024-12-29T14:00:00.000Z"
+                },
+                {
+                    "id": "msg-6",
+                    "role": "assistant",
+                    "content": "For a realistic spy character, consider these dimensions:\n\n**Background that shapes her**:\n- Mother was Russian defector → Elena grew up watching paranoia destroy her mother's life\n- This creates Elena's central flaw: **trust issues**. She keeps people at arm's length, maintains secret identities even her own service doesn't know about\n- But there's an irony: she trusted the wrong person (Hastings, who recruited her)\n\n**Professional competence with personal cost**:\n- She's excellent at tradecraft, languages, analysis\n- But she's terrible at relationships—no partner, few friends\n- Her career is her life, which makes the institutional betrayal even more devastating\n\n**Physical vs. emotional**:\n- She can handle surveillance, gunfights, border crossings\n- But watching people die for her (her contact in Berlin, Natasha in Moscow) takes a real toll\n- Show her competence, but also show the cost—the sleepless nights, the bullet wound she treats herself, the shaking hands after escaping Moscow\n\nMake her skilled but scarred, competent but not invincible.",
+                    "timestamp": "2024-12-29T14:02:45.000Z"
+                }
+            ],
+            "createdAt": "2024-12-29T14:00:00.000Z",
+            "updatedAt": "2024-12-29T14:02:45.000Z",
+            "isDemo": true
+        }
+    ]
 }

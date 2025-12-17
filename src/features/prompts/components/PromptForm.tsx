@@ -1,3 +1,7 @@
+import { attemptPromise } from "@jfdi/attempt";
+import { ArrowDown, ArrowUp, Plus, Trash2, Wand2, X } from "lucide-react";
+import type { FormEvent } from "react";
+import { toast } from "react-toastify";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import type { Prompt } from "@/types/story";
-import { attemptPromise } from "@jfdi/attempt";
-import { ArrowDown, ArrowUp, Plus, Trash2, Wand2, X } from "lucide-react";
-import type { FormEvent } from "react";
-import { toast } from "react-toastify";
 import { useModelSelection } from "../hooks/useModelSelection";
 import { usePromptFormState } from "../hooks/usePromptFormState";
 import { usePromptMessages } from "../hooks/usePromptMessages";
@@ -303,7 +303,8 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                 value={formState.temperature.toFixed(1)}
                                 onChange={e => {
                                     const value = parseFloat(e.target.value);
-                                    if (!isNaN(value) && value >= 0 && value <= 2) formState.setTemperature(value);
+                                    if (!Number.isNaN(value) && value >= 0 && value <= 2)
+                                        formState.setTemperature(value);
                                 }}
                                 className="w-20 text-center"
                             />
@@ -331,8 +332,9 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                 onChange={e => {
                                     if (e.target.value === "") return;
 
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 1 && value <= 16384) formState.setMaxTokens(value);
+                                    const value = parseInt(e.target.value, 10);
+                                    if (!Number.isNaN(value) && value >= 1 && value <= 16384)
+                                        formState.setMaxTokens(value);
                                 }}
                                 className="w-20 text-center"
                             />
@@ -364,7 +366,7 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                     if (e.target.value === "") return;
 
                                     const value = parseFloat(e.target.value);
-                                    if (!isNaN(value) && value >= 0 && value <= 1) formState.setTopP(value);
+                                    if (!Number.isNaN(value) && value >= 0 && value <= 1) formState.setTopP(value);
                                 }}
                                 className="w-20 text-center"
                             />
@@ -403,8 +405,8 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                 onChange={e => {
                                     if (e.target.value === "") return;
 
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 0 && value <= 100) formState.setTopK(value);
+                                    const value = parseInt(e.target.value, 10);
+                                    if (!Number.isNaN(value) && value >= 0 && value <= 100) formState.setTopK(value);
                                 }}
                                 className="w-20 text-center"
                             />
@@ -448,7 +450,7 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                     if (e.target.value === "") return;
 
                                     const value = parseFloat(e.target.value);
-                                    if (!isNaN(value) && value >= 0 && value <= 2)
+                                    if (!Number.isNaN(value) && value >= 0 && value <= 2)
                                         formState.setRepetitionPenalty(value);
                                 }}
                                 className="w-20 text-center"
@@ -491,7 +493,7 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                                     if (e.target.value === "") return;
 
                                     const value = parseFloat(e.target.value);
-                                    if (!isNaN(value) && value >= 0 && value <= 1) formState.setMinP(value);
+                                    if (!Number.isNaN(value) && value >= 0 && value <= 1) formState.setMinP(value);
                                 }}
                                 className="w-20 text-center"
                             />

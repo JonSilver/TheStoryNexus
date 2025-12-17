@@ -1,21 +1,21 @@
 import {
-    MessageSquare,
     BookOpen,
-    Zap,
-    Sparkles,
     CheckCircle,
-    XCircle,
-    Settings,
-    FileText,
     Code,
-    Table,
-    Sliders,
+    FileText,
+    Layers,
+    MessageSquare,
     PenTool,
-    Layers
+    Settings,
+    Sliders,
+    Sparkles,
+    Table,
+    XCircle,
+    Zap
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PromptGuide() {
     return (

@@ -6,11 +6,9 @@
  *
  */
 
-import type { JSX } from "react";
-import is from "@sindresorhus/is";
-
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $wrapNodeInElement, mergeRegister } from "@lexical/utils";
+import is from "@sindresorhus/is";
 import {
     $createParagraphNode,
     $createRangeSelection,
@@ -28,14 +26,15 @@ import {
     DROP_COMMAND,
     getDOMSelectionFromTarget,
     isHTMLElement,
-    LexicalCommand,
-    LexicalEditor
+    type LexicalCommand,
+    type LexicalEditor
 } from "lexical";
+import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import landscapeImage from "../../images/landscape.jpg";
 import yellowFlowerImage from "../../images/yellow-flower.jpg";
-import { $createImageNode, $isImageNode, ImageNode, ImagePayload } from "../../nodes/ImageNode";
+import { $createImageNode, $isImageNode, ImageNode, type ImagePayload } from "../../nodes/ImageNode";
 import Button from "../../ui/Button";
 import { DialogActions, DialogButtonsList } from "../../ui/Dialog";
 import FileInput from "../../ui/FileInput";
@@ -88,7 +87,7 @@ export function InsertImageUploadedDialogBody({ onClick }: { onClick: (payload: 
 
     const loadImage = (files: FileList | null) => {
         const reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = () => {
             if (is.string(reader.result)) {
                 setSrc(reader.result);
             }
@@ -137,16 +136,21 @@ export function InsertImageDialog({
     const [mode, setMode] = useState<null | "url" | "file">(null);
     const hasModifier = useRef(false);
 
-    useEffect(() => {
-        hasModifier.current = false;
-        const handler = (e: KeyboardEvent) => {
-            hasModifier.current = e.altKey;
-        };
-        document.addEventListener("keydown", handler);
-        return () => {
-            document.removeEventListener("keydown", handler);
-        };
-    }, [/* effect dep */ activeEditor]);
+    useEffect(
+        () => {
+            hasModifier.current = false;
+            const handler = (e: KeyboardEvent) => {
+                hasModifier.current = e.altKey;
+            };
+            document.addEventListener("keydown", handler);
+            return () => {
+                document.removeEventListener("keydown", handler);
+            };
+        },
+        [
+            /* effect dep */
+        ]
+    );
 
     const onClick = (payload: InsertImagePayload) => {
         activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
@@ -189,7 +193,11 @@ export function InsertImageDialog({
     );
 }
 
-export default function ImagesPlugin({ captionsEnabled }: { captionsEnabled?: boolean }): JSX.Element | null {
+export default function ImagesPlugin({
+    captionsEnabled: _captionsEnabled
+}: {
+    captionsEnabled?: boolean;
+}): JSX.Element | null {
     const [editor] = useLexicalComposerContext();
 
     useEffect(() => {
@@ -215,7 +223,7 @@ export default function ImagesPlugin({ captionsEnabled }: { captionsEnabled?: bo
             editor.registerCommand<DragEvent>(DRAGOVER_COMMAND, event => $onDragover(event), COMMAND_PRIORITY_LOW),
             editor.registerCommand<DragEvent>(DROP_COMMAND, event => $onDrop(event, editor), COMMAND_PRIORITY_HIGH)
         );
-    }, [/* effect dep */ captionsEnabled, editor]);
+    }, [/* effect dep */ editor]);
 
     return null;
 }
