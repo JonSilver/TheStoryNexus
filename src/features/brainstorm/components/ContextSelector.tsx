@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RemovableBadge } from "@/components/ui/RemovableBadge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -113,16 +114,9 @@ export function ContextSelector({
                                         {selectedChapterContent.map(chapterId => {
                                             const chapter = chapters.find(ch => ch.id === chapterId);
                                             return (
-                                                <Badge key={chapterId} variant="secondary">
+                                                <RemovableBadge key={chapterId} onRemove={() => onRemoveChapterContent(chapterId)}>
                                                     Chapter {chapter?.order}: {chapter?.title}
-                                                    <button
-                                                        type="button"
-                                                        className="ml-2"
-                                                        onClick={() => onRemoveChapterContent(chapterId)}
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
-                                                </Badge>
+                                                </RemovableBadge>
                                             );
                                         })}
                                     </div>
@@ -151,16 +145,9 @@ export function ContextSelector({
                                 {selectedItems.length > 0 && (
                                     <div className="flex flex-wrap gap-2">
                                         {selectedItems.map(item => (
-                                            <Badge key={item.id} variant="secondary">
+                                            <RemovableBadge key={item.id} onRemove={() => onRemoveItem(item.id)}>
                                                 {item.category}: {item.name}
-                                                <button
-                                                    type="button"
-                                                    className="ml-2"
-                                                    onClick={() => onRemoveItem(item.id)}
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </button>
-                                            </Badge>
+                                            </RemovableBadge>
                                         ))}
                                     </div>
                                 )}

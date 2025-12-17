@@ -1,27 +1,28 @@
 {
-    "permissions": {
-        "allow": [
-            "Bash(npm run build:*)",
-            "Bash(mkdir:*)",
-            "Bash(npm run db:generate:*)",
-            "Bash(git ls-tree:*)",
-            "Bash(git log:*)",
-            "Bash(node:*)",
-            "Bash(npm run lint)",
-            "Bash(npm run knip:*)",
-            "Bash(npm run lint:fix:*)",
-            "Bash(npm run lint:*)",
-            "Bash(npm update:*)",
-            "Bash(git add:*)",
-            "Bash(git commit:*)",
-            "Bash(npm install:*)",
-            "Bash(gh issue view:*)",
-            "Bash(gh repo view:*)",
-            "Bash(git remote:*)",
-            "Bash(npm run format:*)",
-            "Bash(npm run lint:server:*)"
-        ],
-        "deny": [],
-        "ask": []
-    }
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git log:*)",
+      "Bash(node:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run knip:*)",
+      "Bash(npm run lint:fix:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm update:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git remote:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run lint:server:*)",
+      "Bash(npm run build:client:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
 }

@@ -1,5 +1,5 @@
-import { Wand2, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Wand2 } from "lucide-react";
+import { RemovableBadge } from "@/components/ui/RemovableBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,12 +30,9 @@ export const ModelSelector = ({ modelSelection }: ModelSelectorProps) => {
 
             <div className="flex flex-wrap gap-2 mb-4">
                 {selectedModels.map(model => (
-                    <Badge key={model.id} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                    <RemovableBadge key={model.id} onRemove={() => removeModel(model.id)}>
                         {model.name}
-                        <button type="button" onClick={() => removeModel(model.id)} className="ml-1 hover:text-destructive">
-                            <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
+                    </RemovableBadge>
                 ))}
             </div>
 
