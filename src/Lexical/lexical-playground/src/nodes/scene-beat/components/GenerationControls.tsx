@@ -43,8 +43,8 @@ export const GenerationControls = ({
     onReject,
     lastUsed
 }: GenerationControlsProps): JSX.Element => (
-    <div className="flex justify-between items-center border-t border-border p-2">
-        <div className="flex gap-2 items-center">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-t border-border p-2">
+        <div className="flex flex-wrap gap-2 items-center">
             <PromptSelectMenu
                 isLoading={isLoading}
                 error={error}
@@ -56,28 +56,33 @@ export const GenerationControls = ({
                 lastUsed={lastUsed}
             />
             {selectedPrompt && (
-                <Button variant="outline" size="sm" onClick={onPreview}>
-                    Preview Prompt
+                <Button variant="outline" size="sm" onClick={onPreview} className="text-xs sm:text-sm">
+                    Preview
                 </Button>
             )}
-            <Button onClick={onGenerate} disabled={streaming || !selectedPrompt || !selectedModel}>
+            <Button
+                onClick={onGenerate}
+                disabled={streaming || !selectedPrompt || !selectedModel}
+                size="sm"
+                className="text-xs sm:text-sm"
+            >
                 {streaming ? (
                     <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Generating...
+                        <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                        <span className="hidden sm:inline">Generating...</span>
                     </>
                 ) : (
-                    "Generate Prose"
+                    "Generate"
                 )}
             </Button>
         </div>
 
         {streamComplete && (
             <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={onAccept}>
+                <Button size="sm" variant="outline" onClick={onAccept} className="text-xs sm:text-sm">
                     Accept
                 </Button>
-                <Button size="sm" variant="outline" onClick={onReject}>
+                <Button size="sm" variant="outline" onClick={onReject} className="text-xs sm:text-sm">
                     Reject
                 </Button>
             </div>
