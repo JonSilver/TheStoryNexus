@@ -132,6 +132,7 @@ export default function SettingsPage() {
     const allModels = settings?.availableModels || [];
     const openaiModels = allModels.filter(m => m.provider === "openai");
     const openrouterModels = allModels.filter(m => m.provider === "openrouter");
+    const geminiModels = allModels.filter(m => m.provider === "gemini");
     const localModels = allModels.filter(m => m.provider === "local");
 
     const currentLocalUrl = localApiUrlInput || settings?.localApiUrl || "";
@@ -179,6 +180,23 @@ export default function SettingsPage() {
                         onRefresh={() => refreshModelsMutation.mutate("openrouter")}
                         onDefaultModelChange={modelId =>
                             updateDefaultModelMutation.mutate({ provider: "openrouter", modelId })
+                        }
+                    />
+
+                    <ProviderCard
+                        provider="gemini"
+                        title="Google Gemini Configuration"
+                        keyLabel="Gemini API Key"
+                        keyPlaceholder="Enter your Gemini API key"
+                        storedKey={settings?.geminiKey}
+                        models={geminiModels}
+                        defaultModel={settings?.defaultGeminiModel}
+                        isKeyMutating={updateKeyMutation.isPending}
+                        isRefreshing={refreshModelsMutation.isPending}
+                        onSaveKey={key => updateKeyMutation.mutate({ provider: "gemini", key })}
+                        onRefresh={() => refreshModelsMutation.mutate("gemini")}
+                        onDefaultModelChange={modelId =>
+                            updateDefaultModelMutation.mutate({ provider: "gemini", modelId })
                         }
                     />
 
