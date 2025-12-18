@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { SearchFilter } from "@/components/ui/SearchFilter";
 import { CreateSeriesDialog } from "@/features/series/components/CreateSeriesDialog";
 import { EditSeriesDialog } from "@/features/series/components/EditSeriesDialog";
 import { useDeleteSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
@@ -13,6 +14,9 @@ import type { Series } from "@/types/story";
 import { logger } from "@/utils/logger";
 
 const seriesExportService = new SeriesExportService();
+
+const seriesMatchesSearch = (series: Series, term: string) =>
+    Boolean(series.name?.toLowerCase().includes(term) || series.description?.toLowerCase().includes(term));
 
 function SeriesCard({
     series,
@@ -98,16 +102,33 @@ export const SeriesTool = () => {
                         No series yet. Create your first series to organise related stories!
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 place-items-center">
-                        {seriesList.map(series => (
-                            <SeriesCard
-                                key={series.id}
-                                series={series}
-                                onEdit={handleEditSeries}
-                                onExport={handleExportSeries}
-                            />
-                        ))}
-                    </div>
+                    <SearchFilter
+                        items={seriesList}
+                        predicate={seriesMatchesSearch}
+                        placeholder="Search series..."
+                    >
+                        {({ filteredItems, searchInput }) => (
+                            <>
+                                <div className="flex justify-center">{searchInput}</div>
+                                {filteredItems.length === 0 ? (
+                                    <div className="text-center text-muted-foreground">
+                                        No series match your search.
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 place-items-center">
+                                        {filteredItems.map(series => (
+                                            <SeriesCard
+                                                key={series.id}
+                                                series={series}
+                                                onEdit={handleEditSeries}
+                                                onExport={handleExportSeries}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </SearchFilter>
                 )}
 
                 <EditSeriesDialog

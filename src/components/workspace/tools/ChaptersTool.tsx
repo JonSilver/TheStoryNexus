@@ -13,6 +13,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SearchFilter } from "@/components/ui/SearchFilter";
 import { ChapterCard } from "@/features/chapters/components/ChapterCard";
 import {
     useChaptersByStoryQuery,
@@ -25,6 +26,9 @@ import { useStoryContext } from "@/features/stories/context/StoryContext";
 import type { Chapter } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { CreateChapterDialog, type CreateChapterForm } from "./CreateChapterDialog";
+
+const chapterMatchesSearch = (chapter: Chapter, term: string) =>
+    Boolean(chapter.title?.toLowerCase().includes(term) || chapter.povCharacter?.toLowerCase().includes(term));
 
 export const ChaptersTool = () => {
     const { currentStoryId, setCurrentChapterId, setCurrentTool } = useStoryContext();
@@ -142,7 +146,7 @@ export const ChaptersTool = () => {
                     />
                 </div>
 
-                <ScrollArea className="h-[calc(100vh-10rem)]">
+                <ScrollArea className="h-[calc(100vh-12rem)]">
                     {chapters.length === 0 ? (
                         <EmptyState
                             message="No chapters yet. Start writing your story by creating a new chapter."
@@ -150,25 +154,47 @@ export const ChaptersTool = () => {
                             onAction={() => setIsCreateDialogOpen(true)}
                         />
                     ) : (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext
-                                items={chapters.map(chapter => chapter.id)}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                <div className="space-y-2">
-                                    {chapters
-                                        .sort((a, b) => a.order - b.order)
-                                        .map(chapter => (
-                                            <ChapterCard
-                                                key={chapter.id}
-                                                chapter={chapter}
-                                                storyId={currentStoryId}
-                                                onWriteClick={() => handleWriteClick(chapter.id)}
-                                            />
-                                        ))}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
+                        <SearchFilter
+                            items={chapters}
+                            predicate={chapterMatchesSearch}
+                            placeholder="Search chapters..."
+                            inputClassName="mb-4"
+                        >
+                            {({ filteredItems, searchInput }) => (
+                                <>
+                                    {searchInput}
+                                    {filteredItems.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            No chapters match your search.
+                                        </div>
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={filteredItems.map(chapter => chapter.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-2">
+                                                    {filteredItems
+                                                        .sort((a, b) => a.order - b.order)
+                                                        .map(chapter => (
+                                                            <ChapterCard
+                                                                key={chapter.id}
+                                                                chapter={chapter}
+                                                                storyId={currentStoryId}
+                                                                onWriteClick={() => handleWriteClick(chapter.id)}
+                                                            />
+                                                        ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </>
+                            )}
+                        </SearchFilter>
                     )}
                 </ScrollArea>
             </div>
