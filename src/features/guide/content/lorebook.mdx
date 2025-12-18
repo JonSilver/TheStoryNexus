@@ -1,0 +1,401 @@
+import {
+    BookOpen, Calendar, Clock, Edit, Eye, EyeOff, FileText, Filter,
+    MapPin, Package, PlayCircle, Plus, Search, StickyNote, Tag, Trash2, Users
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Step, Tip, Warning, Important, InfoCard, CardGrid, FeatureCard, FeatureGrid, Summary, SubStep, CodeExample } from "../components/mdx";
+
+# Lorebook Guide
+
+Learn how to use the Lorebook feature to organize and manage your story's world, characters, and other elements.
+
+<Tabs defaultValue="overview" className="w-full">
+    <TabsList className="grid grid-cols-4 mb-8">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="creating">Creating Entries</TabsTrigger>
+        <TabsTrigger value="managing">Managing Entries</TabsTrigger>
+        <TabsTrigger value="integration">Integration with Writing</TabsTrigger>
+    </TabsList>
+
+    <TabsContent value="overview" className="space-y-6">
+        ## Understanding Lorebook Levels
+
+        The Story Nexus uses a hierarchical lorebook system with three levels, allowing you to share world-building across multiple stories or keep it specific to individual projects.
+
+        <FeatureGrid cols={3}>
+            <InfoCard icon={BookOpen} title="Global Lorebook">
+                Accessible across all series and stories. Use for universal world-building elements, writing style references, or frequently used concepts.
+
+                *Example: Magic system rules, world geography, universal lore*
+            </InfoCard>
+
+            <InfoCard icon={BookOpen} title="Series Lorebook">
+                Shared by all stories within a series. Perfect for recurring characters, locations, and plot elements that span multiple stories.
+
+                *Example: Main characters, key locations, series timeline*
+            </InfoCard>
+
+            <InfoCard icon={BookOpen} title="Story Lorebook">
+                Specific to one story only. Use for story-unique characters, plot-specific locations, and elements that don't appear elsewhere.
+
+                *Example: Story-exclusive characters, unique items, specific events*
+            </InfoCard>
+        </FeatureGrid>
+
+        <Tip title="How Inheritance Works">
+            When working on a story, you have access to all three levels: story-specific entries, series entries (if part of a series), and global entries. The AI automatically uses context from all accessible levels when generating content.
+        </Tip>
+
+        ## What is a Lorebook?
+
+        A Lorebook is a powerful organisational tool that helps you keep track of all the important elements in your story's world. It serves as a central repository for characters, locations, items, events, and other story elements.
+
+        The Lorebook in The Story Nexus is designed to not only help you organise your story elements but also to integrate them seamlessly with the AI writing process.
+
+        <CardGrid>
+            <InfoCard icon={BookOpen} title="Key Benefits">
+                - Organize all your story elements in one place
+                - Maintain consistency throughout your story
+                - Automatically provide context to the AI
+                - Track relationships between story elements
+                - Filter and search for specific information
+            </InfoCard>
+
+            <InfoCard icon={Tag} title="Tag-Based System">
+                The Lorebook uses a tag-based system to connect your writing with your Lorebook entries. When you write text that contains tags matching your Lorebook entries, those entries are automatically identified and can be used to provide context to the AI.
+
+                *For example, if you have a character named "Harry Potter" and you mention "Harry" in your text, the system will recognize and match this entry.*
+            </InfoCard>
+        </CardGrid>
+
+        ## Entry Categories
+
+        The Lorebook supports various categories of entries to help you organize different types of story elements:
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <FeatureCard icon={Users} title="Characters">
+                People, beings, or entities with agency in your story
+            </FeatureCard>
+            <FeatureCard icon={MapPin} title="Locations">
+                Places, settings, or environments where your story takes place
+            </FeatureCard>
+            <FeatureCard icon={Package} title="Items">
+                Objects, artifacts, or possessions of significance
+            </FeatureCard>
+            <FeatureCard icon={Calendar} title="Events">
+                Occurrences, happenings, or incidents in your story
+            </FeatureCard>
+            <FeatureCard icon={StickyNote} title="Notes">
+                General information, ideas, or concepts
+            </FeatureCard>
+            <FeatureCard icon={FileText} title="Synopsis">
+                Summary or overview of your story or chapters
+            </FeatureCard>
+            <FeatureCard icon={PlayCircle} title="Starting Scenario">
+                Initial situation or setup for your story
+            </FeatureCard>
+            <FeatureCard icon={Clock} title="Timeline">
+                Chronological sequence of events or history
+            </FeatureCard>
+        </div>
+
+        <Tip title="Accessing the Lorebook">
+            Navigate to your story or series dashboard and click the "Lorebook" tab in the navigation menu to access your lorebook entries.
+        </Tip>
+    </TabsContent>
+
+    <TabsContent value="creating" className="space-y-6">
+        ## Creating Lorebook Entries
+
+        Creating detailed Lorebook entries is essential for building a rich story world and providing the AI with the context it needs to generate appropriate content.
+
+        <SubStep title="Step 1: Access the Lorebook">
+            You can access the lorebook from multiple locations depending on what level you want to create entries at:
+
+            <div className="space-y-2 ml-4">
+                <div className="flex items-start gap-2">
+                    <BookOpen className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                        <p className="text-sm font-medium">From Story Dashboard</p>
+                        <p className="text-xs text-muted-foreground">Dashboard → [Your Story] → Lorebook (access to global, series, and story levels)</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-2">
+                    <BookOpen className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                        <p className="text-sm font-medium">From Series Dashboard</p>
+                        <p className="text-xs text-muted-foreground">Series → [Your Series] → Lorebook (access to global and series levels)</p>
+                    </div>
+                </div>
+            </div>
+        </SubStep>
+
+        <SubStep title="Step 2: Create a New Entry">
+            Click the "New Entry" button in the top-right corner of the Lorebook page.
+
+            <div className="flex items-center gap-2 my-2">
+                <Plus className="h-5 w-5 text-primary" />
+                <span className="text-sm text-muted-foreground">This will open the Create Entry dialog</span>
+            </div>
+        </SubStep>
+
+        <SubStep title="Step 3: Fill in the Basic Information">
+            Complete the following fields in the dialog:
+
+            - **Level:** Choose the scope for this entry
+              *Global (accessible everywhere), Series (shared within series), or Story (specific to one story)*
+            - **Series/Story:** If Level is Series or Story, select which series or story
+              *When creating from a story/series context, this is pre-filled automatically*
+            - **Name:** The name of your entry (e.g., "Harry Potter")
+              *This will automatically be used as a tag for matching in your text*
+            - **Category:** Select the appropriate category for your entry
+              *Choose from character, location, item, event, note, synopsis, starting scenario, or timeline*
+            - **Importance:** Set the importance level of this entry
+              *Options include major, minor, or background*
+            - **Tags:** Add additional tags for this entry
+              *Enter tags separated by commas (e.g., "The Boy Who Lived, Gryffindor, Wizard")*
+            - **Description:** Write a detailed description of this entry
+              *This is the main content that will be provided to the AI when this entry is matched*
+        </SubStep>
+
+        <SubStep title="Step 4: Advanced Settings (Optional)">
+            Click on "Advanced Settings" to access additional options:
+
+            - **Type:** Specify a more specific type within the category
+              *Examples: "Protagonist", "Villain", "Capital City", "Magical Artifact". This is for your organization—the AI doesn't specifically use this field differently, but it's included in the entry context.*
+            - **Status:** Set the narrative status of this entry
+              *Options: **active** (currently relevant to your story), **inactive** (temporarily not in play), **historical** (past events/deceased characters). This is descriptive metadata for your reference and is included in the entry description sent to the AI.*
+            - **Disable Entry:** Toggle to disable this entry
+              *Disabled entries won't be matched in text or included in AI context*
+        </SubStep>
+
+        <SubStep title="Step 5: Save Your Entry">
+            Click the "Create" button to save your new Lorebook entry.
+
+            <Important title="Pro Tip">
+                Create entries for all major characters, locations, and important story elements before you start writing. This will ensure the AI has a good understanding of your story world from the beginning.
+            </Important>
+        </SubStep>
+    </TabsContent>
+
+    <TabsContent value="managing" className="space-y-6">
+        ## Managing Your Lorebook
+
+        The Lorebook provides powerful tools for organizing, filtering, and managing your story elements.
+
+        ### Filtering and Sorting
+
+        <CardGrid>
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-primary" />
+                    <h5 className="font-medium">Category Filters</h5>
+                </div>
+                <p className="text-sm">Use the tabs at the top of the Lorebook page to filter entries by category:</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline">All</Badge>
+                    <Badge variant="outline">Characters</Badge>
+                    <Badge variant="outline">Locations</Badge>
+                    <Badge variant="outline">Items</Badge>
+                    <Badge variant="outline">Events</Badge>
+                    <Badge variant="outline">Notes</Badge>
+                    <Badge variant="outline">Synopsis</Badge>
+                    <Badge variant="outline">Starting Scenario</Badge>
+                    <Badge variant="outline">Timeline</Badge>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Search className="h-5 w-5 text-primary" />
+                    <h5 className="font-medium">Search and Sort</h5>
+                </div>
+                <p className="text-sm">Use the search bar to find specific entries by name, description, or tags.</p>
+                <p className="text-sm mt-2">Sort your entries by:</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline">Name</Badge>
+                    <Badge variant="outline">Category</Badge>
+                    <Badge variant="outline">Importance</Badge>
+                    <Badge variant="outline">Created Date</Badge>
+                </div>
+            </div>
+        </CardGrid>
+
+        ### Editing and Deleting Entries
+
+        <CardGrid>
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Edit className="h-5 w-5 text-primary" />
+                    <h5 className="font-medium">Editing Entries</h5>
+                </div>
+                <p className="text-sm">To edit an entry, click the edit icon on the entry card. This will open the same dialog used for creation, but with the current values pre-filled.</p>
+                <p className="text-sm mt-2">Make your changes and click "Update" to save them.</p>
+            </div>
+
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Trash2 className="h-5 w-5 text-primary" />
+                    <h5 className="font-medium">Deleting Entries</h5>
+                </div>
+                <p className="text-sm">To delete an entry, click the trash icon on the entry card. You will be asked to confirm the deletion.</p>
+                <Warning>Deletion is permanent and cannot be undone.</Warning>
+            </div>
+        </CardGrid>
+
+        ### Understanding Level Badges
+
+        Each lorebook entry displays a badge indicating its level (Global, Series, or Story). These badges help you quickly identify which scope an entry belongs to.
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+            <div className="border rounded-lg p-3 bg-card">
+                <Badge variant="outline" className="mb-2">Global</Badge>
+                <p className="text-xs text-muted-foreground">Available everywhere</p>
+            </div>
+            <div className="border rounded-lg p-3 bg-card">
+                <Badge variant="outline" className="mb-2">Series</Badge>
+                <p className="text-xs text-muted-foreground">Shared within series</p>
+            </div>
+            <div className="border rounded-lg p-3 bg-card">
+                <Badge variant="outline" className="mb-2">Story</Badge>
+                <p className="text-xs text-muted-foreground">Story-specific only</p>
+            </div>
+        </div>
+
+        <Tip title="Viewing Inherited Entries">
+            When viewing a story's lorebook, you'll see entries from all accessible levels (global, series if applicable, and story). Each entry's badge shows its origin level.
+        </Tip>
+
+        ### Enabling and Disabling Entries
+
+        <div className="flex items-center gap-2">
+            <Eye className="h-5 w-5 text-primary" />
+            <EyeOff className="h-5 w-5 text-muted-foreground" />
+            <h5 className="font-medium">Toggle Visibility</h5>
+        </div>
+
+        Instead of deleting entries, you can disable them temporarily. This is useful when you want to exclude certain entries from being matched or included in AI context without losing the information.
+
+        - Click the eye icon on an entry card to toggle its enabled/disabled state
+        - Disabled entries appear faded and have a "Disabled" badge
+        - Use the "Show Disabled" toggle to view or hide disabled entries in the list
+
+        ### Import & Export Lorebook Entries
+
+        Share lorebook entries between stories or back them up using import/export functionality.
+
+        <CardGrid>
+            <InfoCard title="Exporting Entries">
+                1. Navigate to the Lorebook page
+                2. Look for the Export button in the toolbar
+                3. Select which entries to export (by level, category, or all)
+                4. A JSON file downloads with your entries
+
+                *Exported files include all entry data: names, descriptions, tags, categories, metadata, and level information.*
+            </InfoCard>
+
+            <InfoCard title="Importing Entries">
+                1. Navigate to the Lorebook page
+                2. Click the Import button
+                3. Select a JSON file exported from another story
+                4. Review the entries to be imported
+                5. Confirm to add them to your lorebook
+
+                *Name collisions are handled automatically with unique suffixes. Level assignments are preserved or can be reassigned during import.*
+            </InfoCard>
+        </CardGrid>
+
+        <Tip title="Import/Export Use Cases">
+            - **Backup:** Export all lorebook entries as a backup before making major changes
+            - **Reuse:** Export character/location entries from one story to use in another
+            - **Collaboration:** Share lorebook entries with co-authors or beta readers
+            - **Templates:** Create template lorebook sets for recurring story types
+        </Tip>
+
+        <Tip title="Best Practices">
+            - Regularly review and update your Lorebook entries as your story evolves
+            - Use consistent naming conventions for related entries
+            - Keep descriptions concise but informative
+            - Use tags strategically to ensure proper matching
+            - Disable entries temporarily rather than deleting them if you're unsure
+        </Tip>
+    </TabsContent>
+
+    <TabsContent value="integration" className="space-y-6">
+        ## Integration with Writing
+
+        The true power of the Lorebook comes from how it integrates with your writing process and the AI generation.
+
+        ### Automatic Tag Matching
+
+        As you write, The Story Nexus automatically scans your text for matches with your Lorebook entries' tags.
+
+        <CodeExample title="How Tag Matching Works:">
+            1. Each Lorebook entry has tags (including its name)
+               *Example: A character named "Harry Potter" might have tags like "Harry Potter", "The Boy Who Lived", "Gryffindor Seeker"*
+
+            2. When you write text that contains any of these tags, the system identifies a match
+               *Example: Writing "Harry walked into the room" would match the "Harry Potter" entry*
+
+            3. Matched entries are collected and can be viewed in the editor sidebar
+               *Click on "Matched Tags" in the editor to see which Lorebook entries have been matched in your current chapter*
+        </CodeExample>
+
+        ### AI Context Integration
+
+        When you use AI generation features like Scene Beats, matched Lorebook entries provide context to the AI.
+
+        <CodeExample title="How AI Integration Works:">
+            1. When you create a Scene Beat, the system identifies which Lorebook entries are relevant
+               *This includes entries matched in your current chapter and potentially in your Scene Beat command*
+
+            2. The system searches across all accessible levels (global, series if applicable, and story)
+               *Hierarchical matching ensures the AI has access to all relevant world-building from every scope*
+
+            3. The descriptions from these entries are included in the context sent to the AI
+               *This helps the AI understand your characters, locations, and other story elements*
+
+            4. The AI uses this context to generate more accurate and consistent content
+               *For example, it will know character personalities, location details, and important story facts*
+        </CodeExample>
+
+        <Important title="Hierarchical Context">
+            The AI automatically uses context from all lorebook levels you have access to. This means series-wide characters and world-building are always available alongside story-specific details, ensuring consistency across your interconnected narratives.
+        </Important>
+
+        ### Viewing Matched Entries in the Editor
+
+        While writing, you can view which Lorebook entries are actively matched in your current chapter.
+
+        <CodeExample title="How to View Matched Entries:">
+            1. In the chapter editor, look for the "Matched Tags" button in the right sidebar or toolbar
+            2. Click it to open a drawer showing all lorebook entries that match text in your current chapter
+            3. The drawer displays:
+               - Entry name and category
+               - Which tags triggered the match
+               - Entry level badge (global/series/story)
+               - A preview of the entry description
+            4. Review matches to ensure the right context will be provided to the AI
+            5. If important entries are missing, mention them by their exact name or tags in your text
+        </CodeExample>
+
+        <Tip title="Matching is Dynamic">
+            Lorebook matching updates as you type. As soon as you mention a character name or location tag, the corresponding entry becomes matched and available to the AI.
+        </Tip>
+
+        <Summary title="Advanced Lorebook Strategies">
+            **Strategic Tagging**
+            Create tags that are likely to appear naturally in your writing. Include variations, nicknames, and common references.
+
+            **Hierarchical Organization**
+            Use the importance levels (major, minor, background) to create a hierarchy of entries. This helps prioritize which information is most critical for the AI.
+
+            **Consistent Descriptions**
+            Write descriptions in a consistent style and format across entries. Focus on information that's relevant for the AI to know when generating content.
+
+            **Regular Maintenance**
+            As your story evolves, regularly update your Lorebook entries to reflect character development, changing relationships, and new story elements.
+        </Summary>
+    </TabsContent>
+</Tabs>
