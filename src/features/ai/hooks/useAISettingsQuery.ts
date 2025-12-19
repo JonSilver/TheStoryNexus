@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { aiService } from "@/services/ai/AIService";
 import { adminApi } from "@/services/api/client";
-import type { AIModel, AIProvider, AISettings } from "@/types/story";
+import type { AIProvider, AISettings } from "@/types/story";
 
 export const aiSettingsKeys = {
     all: ["ai"] as const,
@@ -19,16 +19,6 @@ export const useAISettingsQuery = () =>
             const settings = aiService.getSettings();
             if (!settings) throw new Error("Failed to load AI settings");
             return settings;
-        },
-        staleTime: 5 * 60 * 1000
-    });
-
-export const useAvailableModelsQuery = (provider?: AIProvider) =>
-    useQuery<AIModel[]>({
-        queryKey: provider ? aiSettingsKeys.modelsByProvider(provider) : aiSettingsKeys.models(),
-        queryFn: async () => {
-            await aiService.initialize();
-            return aiService.getAvailableModels(provider, false);
         },
         staleTime: 5 * 60 * 1000
     });

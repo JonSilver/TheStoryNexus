@@ -1,4 +1,3 @@
-import { parseJSON, storyExportSchema } from "@/schemas/entities";
 import type { Story, StoryExport } from "@/types/story";
 
 export const downloadStoryExport = (exportData: StoryExport, story: Story): void => {
@@ -10,12 +9,4 @@ export const downloadStoryExport = (exportData: StoryExport, story: Story): void
     linkElement.setAttribute("href", dataUri);
     linkElement.setAttribute("download", exportName);
     linkElement.click();
-};
-
-export const parseImportFile = (jsonData: string): StoryExport => {
-    const result = parseJSON(storyExportSchema, jsonData);
-    if (!result.success) 
-        throw new Error(`Invalid story export data: ${result.error.message}`);
-    
-    return result.data;
 };

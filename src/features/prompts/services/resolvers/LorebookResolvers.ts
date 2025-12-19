@@ -1,8 +1,6 @@
+import { getFilteredEntries } from "@/features/lorebook/utils/lorebookFilters";
 import type { LorebookEntry, PromptContext } from "@/types/story";
 import type { ILorebookFormatter, IVariableResolver } from "./types";
-
-const getFilteredEntries = (entries: LorebookEntry[], includeDisabled = false): LorebookEntry[] =>
-    includeDisabled ? entries : entries.filter(entry => !entry.isDisabled);
 
 const getEntriesByCategory = (entries: LorebookEntry[], category: LorebookEntry["category"]): LorebookEntry[] =>
     entries.filter(entry => entry.category === category && !entry.isDisabled);

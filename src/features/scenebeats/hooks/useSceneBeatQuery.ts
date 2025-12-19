@@ -3,7 +3,7 @@ import { scenebeatsApi } from "@/services/api/client";
 import type { SceneBeat } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 
-export const sceneBeatKeys = {
+const sceneBeatKeys = {
     all: ["scenebeats"] as const,
     byId: (id: string) => [...sceneBeatKeys.all, id] as const,
     byChapter: (chapterId: string) => [...sceneBeatKeys.all, "chapter", chapterId] as const
@@ -16,13 +16,6 @@ export const useSceneBeatQuery = (id: string, options?: { enabled?: boolean }) =
         enabled: options?.enabled ?? !!id,
         staleTime: 60 * 1000,
         retry: false
-    });
-
-export const useSceneBeatsByChapterQuery = (chapterId: string) =>
-    useQuery({
-        queryKey: sceneBeatKeys.byChapter(chapterId),
-        queryFn: () => scenebeatsApi.getByChapter(chapterId),
-        enabled: !!chapterId
     });
 
 type CreateSceneBeatData = Omit<SceneBeat, "createdAt"> & { id?: string };
