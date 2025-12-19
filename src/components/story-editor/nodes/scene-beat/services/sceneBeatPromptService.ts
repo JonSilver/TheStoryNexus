@@ -2,7 +2,7 @@ import type { LexicalEditor, NodeKey } from "lexical";
 import type { LorebookEntry, Prompt, PromptParserConfig } from "@/types/story";
 import { extractPreviousText } from "./lexicalEditorUtils";
 
-export interface SceneBeatContext {
+interface SceneBeatContext {
     useMatchedChapter: boolean;
     useMatchedSceneBeat: boolean;
     useCustomContext: boolean;

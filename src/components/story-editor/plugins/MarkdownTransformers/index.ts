@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import {
     $convertFromMarkdownString,
     $convertToMarkdownString,
@@ -37,7 +30,7 @@ import {
 import { $isParagraphNode, $isTextNode, type LexicalNode } from "lexical";
 import { $createImageNode, $isImageNode, ImageNode } from "../../nodes/ImageNode";
 
-export const HR: ElementTransformer = {
+const HR: ElementTransformer = {
     dependencies: [HorizontalRuleNode],
     export: (node: LexicalNode) => ($isHorizontalRuleNode(node) ? "***" : null),
     regExp: /^(---|\*\*\*|___)\s?$/,
@@ -53,7 +46,7 @@ export const HR: ElementTransformer = {
     type: "element"
 };
 
-export const IMAGE: TextMatchTransformer = {
+const IMAGE: TextMatchTransformer = {
     dependencies: [ImageNode],
     export: node => {
         if (!$isImageNode(node)) return null;
@@ -79,7 +72,7 @@ export const IMAGE: TextMatchTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
-export const TABLE: ElementTransformer = {
+const TABLE: ElementTransformer = {
     dependencies: [TableNode, TableRowNode, TableCellNode],
     export: (node: LexicalNode) => {
         if (!$isTableNode(node)) return null;

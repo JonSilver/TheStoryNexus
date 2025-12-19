@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
@@ -27,7 +20,7 @@ import type { JSX } from "react";
 import { useCallback, useEffect } from "react";
 import "./index.css";
 
-export type SerializedPageBreakNode = SerializedLexicalNode;
+type SerializedPageBreakNode = SerializedLexicalNode;
 
 function PageBreakComponent({ nodeKey }: { nodeKey: NodeKey }) {
     const [editor] = useLexicalComposerContext();
@@ -146,6 +139,6 @@ export function $createPageBreakNode(): PageBreakNode {
     return new PageBreakNode();
 }
 
-export function $isPageBreakNode(node: LexicalNode | null | undefined): node is PageBreakNode {
+function $isPageBreakNode(node: LexicalNode | null | undefined): node is PageBreakNode {
     return node instanceof PageBreakNode;
 }

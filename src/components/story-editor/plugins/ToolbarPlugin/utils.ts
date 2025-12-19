@@ -1,11 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-import { $createCodeNode } from "@lexical/code";
 import { INSERT_CHECK_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { $isDecoratorBlockNode } from "@lexical/react/LexicalDecoratorBlockNode";
 import {
@@ -21,7 +13,7 @@ import { $getNearestBlockElementAncestorOrThrow } from "@lexical/utils";
 import { $createParagraphNode, $getSelection, $isRangeSelection, $isTextNode, type LexicalEditor } from "lexical";
 import { DEFAULT_FONT_SIZE, MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 
-export enum UpdateFontSizeType {
+enum UpdateFontSizeType {
     increment = 1,
     decrement
 }
@@ -32,7 +24,7 @@ export enum UpdateFontSizeType {
  * @param updateType - The type of change, either increment or decrement
  * @returns the next font size
  */
-export const calculateNextFontSize = (currentFontSize: number, updateType: UpdateFontSizeType | null) => {
+const calculateNextFontSize = (currentFontSize: number, updateType: UpdateFontSizeType | null) => {
     if (!updateType) return currentFontSize;
 
     let updatedFontSize: number = currentFontSize;
@@ -116,13 +108,6 @@ export const updateFontSizeInSelection = (
     });
 };
 
-export const updateFontSize = (editor: LexicalEditor, updateType: UpdateFontSizeType, inputValue: string) => {
-    if (inputValue !== "") {
-        const nextFontSize = calculateNextFontSize(Number(inputValue), updateType);
-        updateFontSizeInSelection(editor, `${String(nextFontSize)}px`, null);
-    } else updateFontSizeInSelection(editor, null, updateType);
-};
-
 export const formatParagraph = (editor: LexicalEditor) => {
     editor.update(() => {
         const selection = $getSelection();
@@ -158,23 +143,6 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
         editor.update(() => {
             const selection = $getSelection();
             $setBlocksType(selection, () => $createQuoteNode());
-        });
-};
-
-export const formatCode = (editor: LexicalEditor, blockType: string) => {
-    if (blockType !== "code")
-        editor.update(() => {
-            let selection = $getSelection();
-
-            if (selection !== null)
-                if (selection.isCollapsed()) $setBlocksType(selection, () => $createCodeNode());
-                else {
-                    const textContent = selection.getTextContent();
-                    const codeNode = $createCodeNode();
-                    selection.insertNodes([codeNode]);
-                    selection = $getSelection();
-                    if ($isRangeSelection(selection)) selection.insertRawText(textContent);
-                }
         });
 };
 

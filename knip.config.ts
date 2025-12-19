@@ -7,7 +7,10 @@ const config: KnipConfig = {
     ],
     ignoreDependencies: [
         // Transitive deps of @lexical/react - see CLAUDE.md "Lexical Dependencies"
-        "@lexical/mark"
+        "@lexical/mark",
+        "@lexical/utils",
+        "@lexical/selection",
+        "@lexical/yjs"
     ]
 };
 

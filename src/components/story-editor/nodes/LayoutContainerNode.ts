@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { addClassNamesToElement } from "@lexical/utils";
 import is from "@sindresorhus/is";
 import type {
@@ -20,7 +13,7 @@ import type {
 } from "lexical";
 import { ElementNode } from "lexical";
 
-export type SerializedLayoutContainerNode = Spread<
+type SerializedLayoutContainerNode = Spread<
     {
         templateColumns: string;
     },

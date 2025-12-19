@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import {
     $createParagraphNode,
     $isElementNode,
@@ -24,7 +17,7 @@ import { $isCollapsibleContentNode } from "./CollapsibleContentNode";
 
 type SerializedCollapsibleTitleNode = SerializedElementNode;
 
-export function $convertSummaryElement(_domNode: HTMLElement): DOMConversionOutput | null {
+function $convertSummaryElement(_domNode: HTMLElement): DOMConversionOutput | null {
     const node = $createCollapsibleTitleNode();
     return {
         node

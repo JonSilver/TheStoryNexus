@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent, $insertNodeToNearestRoot, mergeRegister } from "@lexical/utils";
 import type { ElementNode, LexicalCommand, LexicalNode, NodeKey } from "lexical";
@@ -30,9 +23,9 @@ import {
 } from "../../nodes/LayoutContainerNode";
 import { $createLayoutItemNode, $isLayoutItemNode, LayoutItemNode } from "../../nodes/LayoutItemNode";
 
-export const INSERT_LAYOUT_COMMAND: LexicalCommand<string> = createCommand<string>();
+const INSERT_LAYOUT_COMMAND: LexicalCommand<string> = createCommand<string>();
 
-export const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
+const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
     template: string;
     nodeKey: NodeKey;
 }> = createCommand<{ template: string; nodeKey: NodeKey }>();

@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import type {
     DOMConversionMap,
     DOMConversionOutput,
@@ -38,7 +31,7 @@ export interface InlineImagePayload {
     position?: Position;
 }
 
-export interface UpdateInlineImagePayload {
+interface UpdateInlineImagePayload {
     altText?: string;
     showCaption?: boolean;
     position?: Position;
@@ -53,7 +46,7 @@ function $convertInlineImageElement(domNode: Node): null | DOMConversionOutput {
     return null;
 }
 
-export type SerializedInlineImageNode = Spread<
+type SerializedInlineImageNode = Spread<
     {
         altText: string;
         caption: SerializedEditor;

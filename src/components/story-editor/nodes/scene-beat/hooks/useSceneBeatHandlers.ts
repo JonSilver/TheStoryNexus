@@ -165,11 +165,11 @@ export const useSceneBeatHandlers = ({
         [setSelectedPrompt, setSelectedModel, saveSelection]
     );
 
-    const createConfig = useCallback(
-        () =>
-            createPromptConfig(editor, nodeKey, selectedPrompt!, {
-                storyId: currentStoryId!,
-                chapterId: currentChapterId!,
+    const createConfig = useCallback(() => {
+        if (!selectedPrompt || !currentStoryId || !currentChapterId) return null;
+        return createPromptConfig(editor, nodeKey, selectedPrompt, {
+            storyId: currentStoryId,
+            chapterId: currentChapterId,
                 command,
                 povType,
                 povCharacter,
@@ -182,7 +182,8 @@ export const useSceneBeatHandlers = ({
                     customContextItems: selectedItems.map(item => item.id)
                 },
                 selectedItems
-            }),
+            });
+        },
         [
             editor,
             nodeKey,
@@ -202,21 +203,23 @@ export const useSceneBeatHandlers = ({
     );
 
     const handlePreviewPrompt = useCallback(async () => {
-        if (!selectedPrompt || !currentStoryId || !currentChapterId) {
+        const config = createConfig();
+        if (!config) {
             toast.error("Please select a prompt first");
             return;
         }
-        await previewPrompt(createConfig());
+        await previewPrompt(config);
         setShowPreviewDialog(true);
-    }, [selectedPrompt, currentStoryId, currentChapterId, previewPrompt, createConfig, setShowPreviewDialog]);
+    }, [previewPrompt, createConfig, setShowPreviewDialog]);
 
     const handleGenerateWithPrompt = useCallback(async () => {
-        if (!selectedPrompt || !currentStoryId || !currentChapterId) {
+        const config = createConfig();
+        if (!config) {
             toast.error("Please select a prompt first");
             return;
         }
-        await generateWithConfig(createConfig(), selectedModel);
-    }, [selectedPrompt, currentStoryId, currentChapterId, generateWithConfig, createConfig, selectedModel]);
+        await generateWithConfig(config, selectedModel);
+    }, [generateWithConfig, createConfig, selectedModel]);
 
     const handleAccept = useCallback(() => {
         flushCommand();

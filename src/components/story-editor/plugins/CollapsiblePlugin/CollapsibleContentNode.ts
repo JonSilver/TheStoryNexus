@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import {
     type DOMConversionMap,
     type DOMConversionOutput,
@@ -22,7 +15,7 @@ import { domOnBeforeMatch, setDomHiddenUntilFound } from "./CollapsibleUtils";
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
-export function $convertCollapsibleContentElement(_domNode: HTMLElement): DOMConversionOutput | null {
+function $convertCollapsibleContentElement(_domNode: HTMLElement): DOMConversionOutput | null {
     const node = $createCollapsibleContentNode();
     return {
         node

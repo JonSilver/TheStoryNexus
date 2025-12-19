@@ -80,7 +80,7 @@ export const ChapterSummarySection = ({ chapter, storyId }: ChapterSummarySectio
             let text = "";
 
             await new Promise<void>((resolve, reject) => {
-                aiService.processStreamedResponse(
+                aiService.handleStreamedResponse(
                     response,
                     token => {
                         text += token;

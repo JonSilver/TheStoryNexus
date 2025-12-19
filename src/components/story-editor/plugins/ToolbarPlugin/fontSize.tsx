@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import type { LexicalEditor } from "lexical";
 import { Minus, Plus } from "lucide-react";
 import * as React from "react";
@@ -13,15 +6,6 @@ import { Input } from "@/components/ui/input";
 import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from "../../context/ToolbarContext";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import { updateFontSizeInSelection } from "./utils";
-
-export function parseAllowedFontSize(input: string): string {
-    const match = input.match(/^(\d+(?:\.\d+)?)px$/);
-    if (match) {
-        const n = Number(match[1]);
-        if (n >= MIN_ALLOWED_FONT_SIZE && n <= MAX_ALLOWED_FONT_SIZE) return input;
-    }
-    return "";
-}
 
 export default function FontSize({
     selectionFontSize,

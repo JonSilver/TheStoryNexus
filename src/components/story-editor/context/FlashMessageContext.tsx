@@ -1,15 +1,8 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import type { JSX } from "react";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useEffect, useState } from "react";
 import FlashMessage from "../ui/FlashMessage";
 
-export type ShowFlashMessage = (message?: ReactNode, duration?: number) => void;
+type ShowFlashMessage = (message?: ReactNode, duration?: number) => void;
 
 interface FlashMessageProps {
     message?: ReactNode;
@@ -41,9 +34,3 @@ export const FlashMessageContext = ({ children }: { children: ReactNode }): JSX.
     );
 };
 
-export const useFlashMessageContext = (): ShowFlashMessage => {
-    const ctx = useContext(Context);
-    if (!ctx) throw new Error("Missing FlashMessageContext");
-
-    return ctx;
-};

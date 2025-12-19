@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { HashtagNode } from "@lexical/hashtag";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
@@ -22,7 +15,6 @@ import { ImageNode } from "./ImageNode";
 import { InlineImageNode } from "./InlineImageNode/InlineImageNode";
 import { LayoutContainerNode } from "./LayoutContainerNode";
 import { LayoutItemNode } from "./LayoutItemNode";
-import { MentionNode } from "./MentionNode";
 import { PageBreakNode } from "./PageBreakNode";
 import { SceneBeatNode } from "./SceneBeatNode";
 import { SpecialTextNode } from "./SpecialTextNode";
@@ -43,7 +35,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
     OverflowNode,
     ImageNode,
     InlineImageNode,
-    MentionNode,
     HorizontalRuleNode,
     MarkNode,
     CollapsibleContainerNode,

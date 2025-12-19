@@ -1,16 +1,9 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { addClassNamesToElement } from "@lexical/utils";
 import is from "@sindresorhus/is";
 import type { DOMConversionMap, DOMConversionOutput, EditorConfig, LexicalNode, SerializedElementNode } from "lexical";
 import { ElementNode } from "lexical";
 
-export type SerializedLayoutItemNode = SerializedElementNode;
+type SerializedLayoutItemNode = SerializedElementNode;
 
 function $convertLayoutItemElement(): DOMConversionOutput | null {
     return { node: $createLayoutItemNode() };

@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -40,7 +33,6 @@ import PageBreakPlugin from "./plugins/PageBreakPlugin";
 import { SaveChapterContentPlugin } from "./plugins/SaveChapterContent";
 import SceneBeatShortcutPlugin from "./plugins/SceneBeatShortcutPlugin";
 import SlashCommandPlugin from "./plugins/SlashCommandPlugin";
-import SpeechToTextPlugin from "./plugins/SpeechToTextPlugin";
 import TabFocusPlugin from "./plugins/TabFocusPlugin";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
 import { WordCountPlugin } from "./plugins/WordCountPlugin";
@@ -106,7 +98,6 @@ export default function Editor(): JSX.Element {
                 <AutoFocusPlugin />
                 {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
                 <HashtagPlugin />
-                <SpeechToTextPlugin />
                 <AutoLinkPlugin />
                 {isRichText ? (
                     <>

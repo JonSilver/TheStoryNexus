@@ -18,7 +18,6 @@ import { ImageNode } from "../../../components/story-editor/nodes/ImageNode";
 import { InlineImageNode } from "../../../components/story-editor/nodes/InlineImageNode/InlineImageNode";
 import { LayoutContainerNode } from "../../../components/story-editor/nodes/LayoutContainerNode";
 import { LayoutItemNode } from "../../../components/story-editor/nodes/LayoutItemNode";
-import { MentionNode } from "../../../components/story-editor/nodes/MentionNode";
 import { PageBreakNode } from "../../../components/story-editor/nodes/PageBreakNode";
 import { SpecialTextNode } from "../../../components/story-editor/nodes/SpecialTextNode";
 import { CollapsibleContainerNode } from "../../../components/story-editor/plugins/CollapsiblePlugin/CollapsibleContainerNode";
@@ -43,7 +42,6 @@ const ReaderNodes = [
     OverflowNode,
     ImageNode,
     InlineImageNode,
-    MentionNode,
     HorizontalRuleNode,
     MarkNode,
     CollapsibleContainerNode,

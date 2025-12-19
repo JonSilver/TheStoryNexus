@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import type { ElementFormatType } from "lexical";
 import type { JSX } from "react";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -13,12 +6,10 @@ export const MIN_ALLOWED_FONT_SIZE = 8;
 export const MAX_ALLOWED_FONT_SIZE = 72;
 export const DEFAULT_FONT_SIZE = 15;
 
-export const rootTypeToRootName = {
+const rootTypeToRootName = {
     root: "Root",
     table: "Table"
 } as const;
-
-export type RootTypeToRootName = typeof rootTypeToRootName;
 
 export const blockTypeToBlockName = {
     bullet: "Bulleted List",
@@ -71,9 +62,11 @@ type ToolbarState = typeof INITIAL_TOOLBAR_STATE;
 type ToolbarStateKey = keyof ToolbarState;
 type ToolbarStateValue<Key extends ToolbarStateKey> = ToolbarState[Key];
 
+export type UpdateToolbarState = <Key extends ToolbarStateKey>(key: Key, value: ToolbarStateValue<Key>) => void;
+
 type ContextShape = {
     toolbarState: ToolbarState;
-    updateToolbarState<Key extends ToolbarStateKey>(key: Key, value: ToolbarStateValue<Key>): void;
+    updateToolbarState: UpdateToolbarState;
 };
 
 const Context = createContext<ContextShape | undefined>(undefined);
