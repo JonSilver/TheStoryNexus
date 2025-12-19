@@ -44,7 +44,7 @@ export const useStreamingGeneration = (): UseStreamingGenerationReturn => {
         const [error] = await attemptPromise(
             () =>
                 new Promise<void>((resolve, reject) => {
-                    aiService.processStreamedResponse(
+                    aiService.handleStreamedResponse(
                         response,
                         token => {
                             chunks.push(token);

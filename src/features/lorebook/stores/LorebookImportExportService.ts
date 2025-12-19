@@ -3,7 +3,7 @@ import { lorebookExportSchema, parseJSON } from "@/schemas/entities";
 import { lorebookApi } from "@/services/api/client";
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import { downloadJSON } from "@/utils/jsonExportUtils";
+import { downloadJSON } from "@/utils/export/jsonExportUtils";
 import { logger } from "@/utils/logger";
 
 export const exportEntries = (entries: LorebookEntry[], storyId: string): void => {

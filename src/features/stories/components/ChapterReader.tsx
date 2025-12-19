@@ -14,17 +14,16 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import { useEffect } from "react";
 import type { Chapter } from "@/types/story";
-import { ImageNode } from "../../../Lexical/lexical-playground/src/nodes/ImageNode";
-import { InlineImageNode } from "../../../Lexical/lexical-playground/src/nodes/InlineImageNode/InlineImageNode";
-import { LayoutContainerNode } from "../../../Lexical/lexical-playground/src/nodes/LayoutContainerNode";
-import { LayoutItemNode } from "../../../Lexical/lexical-playground/src/nodes/LayoutItemNode";
-import { MentionNode } from "../../../Lexical/lexical-playground/src/nodes/MentionNode";
-import { PageBreakNode } from "../../../Lexical/lexical-playground/src/nodes/PageBreakNode";
-import { SpecialTextNode } from "../../../Lexical/lexical-playground/src/nodes/SpecialTextNode";
-import { CollapsibleContainerNode } from "../../../Lexical/lexical-playground/src/plugins/CollapsiblePlugin/CollapsibleContainerNode";
-import { CollapsibleContentNode } from "../../../Lexical/lexical-playground/src/plugins/CollapsiblePlugin/CollapsibleContentNode";
-import { CollapsibleTitleNode } from "../../../Lexical/lexical-playground/src/plugins/CollapsiblePlugin/CollapsibleTitleNode";
-import PlaygroundEditorTheme from "../../../Lexical/lexical-playground/src/themes/PlaygroundEditorTheme";
+import { ImageNode } from "../../../components/story-editor/nodes/ImageNode";
+import { InlineImageNode } from "../../../components/story-editor/nodes/InlineImageNode/InlineImageNode";
+import { LayoutContainerNode } from "../../../components/story-editor/nodes/LayoutContainerNode";
+import { LayoutItemNode } from "../../../components/story-editor/nodes/LayoutItemNode";
+import { PageBreakNode } from "../../../components/story-editor/nodes/PageBreakNode";
+import { SpecialTextNode } from "../../../components/story-editor/nodes/SpecialTextNode";
+import { CollapsibleContainerNode } from "../../../components/story-editor/plugins/CollapsiblePlugin/CollapsibleContainerNode";
+import { CollapsibleContentNode } from "../../../components/story-editor/plugins/CollapsiblePlugin/CollapsibleContentNode";
+import { CollapsibleTitleNode } from "../../../components/story-editor/plugins/CollapsiblePlugin/CollapsibleTitleNode";
+import PlaygroundEditorTheme from "../../../components/story-editor/themes/PlaygroundEditorTheme";
 
 // Read-only nodes - excludes SceneBeatNode which requires LorebookProvider
 const ReaderNodes = [
@@ -43,7 +42,6 @@ const ReaderNodes = [
     OverflowNode,
     ImageNode,
     InlineImageNode,
-    MentionNode,
     HorizontalRuleNode,
     MarkNode,
     CollapsibleContainerNode,

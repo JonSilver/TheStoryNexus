@@ -4,11 +4,12 @@ import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdvancedGuide from "../components/AdvancedGuide";
-import BasicsGuide from "../components/BasicsGuide";
-import BrainstormGuide from "../components/BrainstormGuide";
-import LorebookGuide from "../components/LorebookGuide";
-import PromptGuide from "../components/PromptGuide";
+import { GuideProvider, mdxComponents } from "../components/mdx";
+import AdvancedGuide from "../content/advanced.mdx";
+import BasicsGuide from "../content/basics.mdx";
+import BrainstormGuide from "../content/brainstorm.mdx";
+import LorebookGuide from "../content/lorebook.mdx";
+import PromptGuide from "../content/prompts.mdx";
 
 export default function GuidePage() {
     const navigate = useNavigate();
@@ -42,23 +43,33 @@ export default function GuidePage() {
                         </TabsList>
 
                         <TabsContent value="basics" className="space-y-4">
-                            <BasicsGuide />
+                            <GuideProvider>
+                                <BasicsGuide components={mdxComponents} />
+                            </GuideProvider>
                         </TabsContent>
 
                         <TabsContent value="advanced" className="space-y-4">
-                            <AdvancedGuide />
+                            <GuideProvider>
+                                <AdvancedGuide components={mdxComponents} />
+                            </GuideProvider>
                         </TabsContent>
 
                         <TabsContent value="lorebook" className="space-y-4">
-                            <LorebookGuide />
+                            <GuideProvider>
+                                <LorebookGuide components={mdxComponents} />
+                            </GuideProvider>
                         </TabsContent>
 
                         <TabsContent value="prompts" className="space-y-4">
-                            <PromptGuide />
+                            <GuideProvider>
+                                <PromptGuide components={mdxComponents} />
+                            </GuideProvider>
                         </TabsContent>
 
                         <TabsContent value="brainstorm" className="space-y-4">
-                            <BrainstormGuide />
+                            <GuideProvider>
+                                <BrainstormGuide components={mdxComponents} />
+                            </GuideProvider>
                         </TabsContent>
                     </Tabs>
                 </CardContent>

@@ -17,8 +17,8 @@ export const CATEGORIES: LorebookCategory[] = [
 export const IMPORTANCE_LEVELS = ["major", "minor", "background"] as const;
 export const STATUS_OPTIONS = ["active", "inactive", "historical"] as const;
 
-export type ImportanceLevel = (typeof IMPORTANCE_LEVELS)[number];
-export type StatusOption = (typeof STATUS_OPTIONS)[number];
+type ImportanceLevel = (typeof IMPORTANCE_LEVELS)[number];
+type StatusOption = (typeof STATUS_OPTIONS)[number];
 
 export interface CreateEntryForm {
     level: LorebookLevel;

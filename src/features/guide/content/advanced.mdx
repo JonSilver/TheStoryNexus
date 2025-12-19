@@ -1,0 +1,334 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+# Advanced Features Guide
+
+Master advanced features including series management, hierarchical lorebooks, and workflow optimisation to take your writing to the next level.
+
+<Tabs defaultValue="series" className="w-full">
+<TabsList className="grid w-full grid-cols-5 mb-8">
+    <TabsTrigger value="series">Series</TabsTrigger>
+    <TabsTrigger value="content">Content Management</TabsTrigger>
+    <TabsTrigger value="workflow">Workflow & Shortcuts</TabsTrigger>
+    <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+    <TabsTrigger value="future">Future Topics</TabsTrigger>
+</TabsList>
+
+<TabsContent value="series" className="space-y-6">
+
+## Working with Series
+
+Series provide a powerful way to organise interconnected stories that share world-building, characters, or timelines. Understanding when and how to use series effectively can significantly improve your writing workflow.
+
+### When to Use Series
+
+- Multiple books in the same universe
+- Sequels, prequels, or spin-offs
+- Shared world with different protagonists
+- Anthology stories with common elements
+- Stories spanning a connected timeline
+
+### Benefits of Series
+
+- Shared lorebook entries across all stories
+- Consistent world-building automatically
+- Organised dashboard for related works
+- Easy navigation between connected stories
+- Unified character and location management
+
+### Creating and Managing Series
+
+**1. Creating a Series**
+Navigate to the Series page from the home screen. Click "Create New Series" and provide a name and optional description. The description helps you remember what connects the stories in this series.
+
+**2. Adding Stories to a Series**
+From the series dashboard, click "Create New Story". Stories created this way automatically belong to the series. You can also assign existing standalone stories to a series by editing the story's details.
+
+**3. Accessing Series Lorebook**
+The series dashboard includes a Lorebook tab. Entries created at the series level are accessible to all stories in the series, perfect for recurring characters, shared locations, or universal world rules.
+
+### Series Lorebook Strategy
+
+Deciding what goes in the series lorebook versus individual story lorebooks is crucial for effective organisation.
+
+| Level | Use For |
+|-------|---------|
+| **Global** | Writing style guides, universal themes, cross-series concepts |
+| **Series** | Recurring characters, shared locations, series-wide timeline, common lore/magic |
+| **Story** | Story-unique characters, specific plot locations, one-off items/events, story-specific notes |
+
+### Series Best Practices
+
+- **Plan Your Hierarchy Early:** Before creating multiple stories, decide what elements should be shared. Moving entries between levels later is possible but planning prevents reorganisation work.
+- **Use Consistent Naming:** If a character appears across multiple stories, use the same tags and naming in series-level entries. This ensures the AI recognises them consistently.
+- **Update Series Entries as Stories Progress:** When characters develop or world elements evolve, update series lorebook entries to reflect the current state. This keeps AI context accurate.
+- **Consider Chronological Order:** Even if not writing in chronological order, note the timeline in series lorebook entries. This helps maintain continuity when jumping between different points in your story universe.
+
+> [!TIP]
+> **Converting Standalone Stories to Series:** If you start with a standalone story and later decide to create a series, simply create the series and edit your story to assign it. Any story-level lorebook entries remain at the story level—you can manually promote shared elements to the series level as needed.
+
+</TabsContent>
+
+<TabsContent value="content" className="space-y-6">
+
+## Managing Your Content
+
+Master the tools for managing stories, chapters, and notes to keep your writing organised and accessible.
+
+### Chapter Management
+
+Chapters can be managed from the Chapters page in your story dashboard.
+
+**Reordering Chapters**
+Drag and drop chapters by the grip handle (six dots) on the left side of each chapter card. The order updates automatically and affects chapter numbering and summary context.
+
+**Editing Chapter Details**
+Click the edit icon on a chapter card to modify:
+- **Title:** Change the chapter title
+- **POV Type:** First Person, Third Person Limited, or Third Person Omniscient
+- **POV Character:** Select from your lorebook characters (disabled for Omniscient POV)
+
+**Viewing & Editing Summaries**
+Click the expand arrow on a chapter card to view its summary. You can:
+- Edit the summary directly in the textarea
+- Generate a new summary using AI (select a "Generate Summary" prompt and model)
+- Export the chapter to various formats using the download menu
+
+**Deleting Chapters**
+Click the delete icon on a chapter card and confirm. **Deletion is permanent and cannot be undone.** All chapter content, notes, outlines, and scene beats are deleted.
+
+**Chapter Notes & Outlines**
+Access notes and outlines from within the chapter editor:
+- **Outline:** Plan your chapter structure, scene beats, and plot points before writing
+- **Notes:** Track character arcs, continuity reminders, or revision notes for this specific chapter
+- Both persist automatically and are accessible from the editor sidebar or toolbar
+
+### Story Management
+
+Manage story metadata and settings from the Stories page.
+
+**Editing Story Details**
+Click the edit icon on a story card to modify:
+- **Title:** Story title
+- **Author:** Author name
+- **Language:** Primary story language (used in AI prompts)
+- **Synopsis:** Brief story description or summary
+- **Series:** Assign to a series or change series assignment (leave blank for standalone)
+
+**Converting Standalone to Series Story**
+1. Create a series from the Series page if you haven't already
+2. Edit your standalone story details
+3. Select the series from the "Series" dropdown
+4. Save changes
+5. Your story now has access to series-level lorebook entries
+
+**Deleting Stories**
+Click the delete icon and confirm. **This permanently deletes the story and all its chapters, prompts, lorebook entries, notes, brainstorm chats, and scene beats.** Consider exporting before deletion.
+
+### Notes Feature
+
+The Notes feature provides story-level note-taking separate from chapter notes. Access it from the "Notes" tab in your story dashboard.
+
+**When to Use Notes:**
+- Story-wide ideas and brainstorming
+- Research and reference material
+- Todo lists for revision or editing
+- General notes not tied to specific chapters
+
+**Note Types:**
+- **Idea:** Plot ideas, character concepts
+- **Research:** Background research, references
+- **Todo:** Tasks, revisions, editing notes
+- **Other:** Anything else
+
+**Using Notes:**
+1. Navigate to Dashboard → [Your Story] → Notes
+2. Click "Create New Note" in the sidebar
+3. Enter a title and select a note type
+4. Write your note content in the editor
+5. Notes save automatically
+6. Click on notes in the sidebar to switch between them
+7. Delete notes using the delete button when a note is selected
+
+> [!TIP]
+> **Notes vs Chapter Notes vs Lorebook:**
+> - **Story Notes:** General story-wide information, not tied to chapters
+> - **Chapter Notes:** Specific to one chapter, accessed from chapter editor
+> - **Lorebook Notes Category:** Story elements visible to AI during generation
+
+</TabsContent>
+
+<TabsContent value="workflow" className="space-y-6">
+
+## Optimising Your Writing Workflow
+
+Effective workflow habits help you make the most of The Story Nexus's features and maintain creative momentum.
+
+### Lorebook-First Approach
+
+Before diving into writing, spend time building your lorebook. This upfront investment pays dividends when the AI has rich context from the start.
+
+**Recommended Workflow:**
+1. Create core character entries with personality, background, and goals
+2. Define key locations with atmospheric details
+3. Document your magic system, technology, or unique world rules
+4. Add timeline entries for major historical events
+5. Begin writing with confidence that the AI understands your world
+
+### Chapter Planning with Notes and Outlines
+
+Each chapter supports both notes and outlines. Use them to stay organised:
+
+| Feature | Purpose |
+|---------|---------|
+| **Chapter Outlines** | Plan scene beats, plot points, and structure before writing. Refer back as you write to stay on track. |
+| **Chapter Notes** | Track character arcs, continuity details, or revision reminders. Notes persist alongside your chapter. |
+
+### Using Brainstorming Effectively
+
+Don't wait until you're stuck to brainstorm. Proactive brainstorming prevents writer's block:
+
+- Brainstorm upcoming plot points before reaching them
+- Explore character motivations when planning scenes
+- Test "what if" scenarios to find the most compelling direction
+- Use brainstorming to work through logic issues in your plot
+
+### Summary Generation Strategy
+
+Chapter summaries help the AI maintain continuity across your story. Generate summaries after completing each chapter:
+
+1. Write your chapter to completion
+2. Use a "Generate Summary" prompt to create a concise summary
+3. Review and edit the summary to emphasise key plot points
+4. Save the summary—it automatically becomes context for future chapters
+
+### Keyboard Shortcuts Reference
+
+| Action | Shortcut |
+|--------|----------|
+| Insert Scene Beat | `Alt+S` / `Option+S` |
+| Trigger @ Autocomplete | `@` |
+| Save Chapter | Auto-save |
+
+**Navigation Tips:**
+- Use browser back/forward for navigation
+- Story dashboard tabs accessible via mouse
+- Most features keyboard-accessible via Tab key
+
+</TabsContent>
+
+<TabsContent value="troubleshooting" className="space-y-6">
+
+## Troubleshooting Common Issues
+
+Solutions to common problems you might encounter while using The Story Nexus.
+
+### AI Generation Issues
+
+**Models Don't Appear After Adding API Key**
+
+*For OpenAI/OpenRouter:*
+- Wait a few seconds—models fetch automatically after key is saved
+- Check that your API key is valid (test at provider's website)
+- Ensure you have internet connectivity
+- Try refreshing the page
+
+*For Local Models:*
+- Ensure LM Studio (or your local AI server) is running
+- Check the API URL is correct (default: `http://localhost:1234/v1`)
+- Click the "Refresh Models" button after starting your local server
+- Verify a model is loaded in LM Studio
+
+**Scene Beat Won't Generate**
+
+Check these requirements:
+- You've entered a scene beat command
+- You've selected a prompt from the dropdown
+- You've selected a model from the dropdown
+- The "Generate Prose" button should become active when all three are set
+- If using a local model, ensure your server is running
+
+**Generation Fails or Returns Error**
+
+Common causes:
+- **API Key Issues:** Invalid or expired key, insufficient credits
+- **Rate Limits:** Provider rate limits hit—wait and retry
+- **Context Too Large:** Too much lorebook context. Try "Use Custom Context" with fewer entries
+- **Local Server:** Server crashed or model unloaded—restart LM Studio
+- **Network Issues:** Check internet connection for cloud providers
+
+**Generation is Slow**
+
+Speed factors:
+- **Local Models:** Speed depends on your hardware (CPU/GPU)
+- **Cloud Models:** Network speed and provider server load affect generation
+- **Context Size:** More lorebook entries = slower generation. Use selective context
+- **Max Tokens:** Higher max tokens = longer generation time
+
+### Lorebook Issues
+
+**Entries Not Matching in Text**
+- Check that entry is not disabled (eye icon should show enabled)
+- Ensure tags include the exact text you're typing (case-insensitive match)
+- Remember the entry name is automatically a tag
+- Tags with special characters or spaces should still match
+
+**Can't See Series Lorebook Entries in Story**
+- Verify your story is assigned to a series (edit story details to check)
+- Series entries show with "Series" badge—look for the level badge on each entry
+- If you just assigned the story to a series, try refreshing the page
+
+### Data & Storage Issues
+
+**Changes Not Saving**
+- **Chapter Content:** Auto-saves as you type with debounce—wait a moment after stopping typing
+- **Other Fields:** Most save when you click Save/Update buttons or close dialogs
+- Check browser console for errors (F12 → Console tab)
+- Ensure you're not running out of disk space (SQLite database)
+
+**Where is My Data Stored?**
+
+All data is stored locally in an SQLite database on your machine:
+- Database location depends on your installation method
+- Nothing is sent to cloud (except AI API calls for generation)
+- Back up the database file regularly to preserve your work
+- Consider using export features for additional backups
+
+> [!TIP]
+> **Still Having Issues?** If you encounter persistent problems:
+> - Check the browser console (F12) for error messages
+> - Try refreshing the page or restarting the application
+> - Report issues at: [GitHub Issues](https://github.com/JonSilver/TheStoryNexus/issues)
+
+</TabsContent>
+
+<TabsContent value="future" className="space-y-6">
+
+## Future Guide Topics
+
+The following topics are planned for future guide updates:
+
+> [!TIP]
+> These topics are under development. Check back for updates as new features are documented.
+
+### Export & Archiving
+- Exporting stories in multiple formats
+- Backing up your work
+- Archiving completed projects
+
+### Advanced Editor Features
+- Custom keyboard shortcuts
+- Editor customisation options
+- Advanced formatting techniques
+
+### AI Model Optimisation
+- Choosing the right model for different tasks
+- Understanding temperature and token settings
+- Prompt engineering best practices
+
+### Collaboration & Sharing
+- Sharing prompts and lorebooks
+- Collaborative workflows (future feature)
+- Community prompt libraries
+
+</TabsContent>
+</Tabs>

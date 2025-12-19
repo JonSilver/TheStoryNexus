@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAvailableModels } from "@/features/ai/hooks/useAvailableModels";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useLorebookContext } from "@/features/lorebook/context/LorebookContext";
-import { getFilteredEntries as getFilteredLorebookEntries } from "@/features/lorebook/stores/LorebookFilterService";
+import { getFilteredEntries as getFilteredLorebookEntries } from "@/features/lorebook/utils/lorebookFilters";
 import { usePromptsQuery } from "@/features/prompts/hooks/usePromptsQuery";
 import type { AIChat, AllowedModel, Prompt, PromptParserConfig } from "@/types/story";
 import { useChatMessages } from "../hooks/useChatMessages";

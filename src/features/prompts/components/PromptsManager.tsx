@@ -5,7 +5,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Prompt } from "@/types/story";
-import { downloadJSONDataURI, generateExportFilename } from "@/utils/jsonExportUtils";
+import { downloadJSONDataURI, generateExportFilename } from "@/utils/export/jsonExportUtils";
 import { toastCRUD } from "@/utils/toastUtils";
 import { useClonePromptMutation, useDeletePromptMutation, usePromptsQuery } from "../hooks/usePromptsQuery";
 import { PromptForm } from "./PromptForm";

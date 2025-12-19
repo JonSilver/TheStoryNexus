@@ -1,12 +1,11 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { formatSSEChunk, formatSSEDone } from "@/constants/aiConstants";
 import { API_URLS } from "@/constants/urls";
 import { aiSettingsSchema } from "@/schemas/entities";
 import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { aiApi } from "../api/client";
 import { AIProviderFactory } from "./AIProviderFactory";
-import type { IAIProvider } from "./providers/IAIProvider";
+import { formatStreamAsSSE, processStreamedResponse } from "./streamUtils";
 
 export class AIService {
     private static instance: AIService;
@@ -53,36 +52,18 @@ export class AIService {
     }
 
     async updateKey(provider: AIProvider, key: string) {
-        if (!this.settings) throw new Error("AIService not initialized");
-
         logger.info(`[AIService] Updating key for provider: ${provider}`);
 
-        const update: Partial<AISettings> = {
-            ...(provider === "openai" && { openaiKey: key }),
-            ...(provider === "openrouter" && { openrouterKey: key }),
-            ...(provider === "gemini" && { geminiKey: key })
+        const keyFieldMap: Record<string, keyof AISettings> = {
+            openai: "openaiKey",
+            openrouter: "openrouterKey",
+            gemini: "geminiKey"
         };
+        const field = keyFieldMap[provider];
+        if (!field) return;
 
-        const result = aiSettingsSchema.partial().safeParse(update);
-        if (!result.success) 
-            throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        
-
-        // Update via API
-        if (!this.settings) throw new Error("Settings not initialized");
-        const settingsId = this.settings.id;
-        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId, update));
-        if (error) {
-            logger.error("[AIService] Failed to update settings via API", error);
-            throw error;
-        }
-
-        Object.assign(this.settings, update);
-
-        // Initialize provider with new key
+        await this.updateSettingsField({ [field]: key });
         this.providerFactory.initializeProvider(provider, key);
-
-        // Fetch available models when key is updated
         await this.fetchAvailableModels(provider);
     }
 
@@ -93,7 +74,6 @@ export class AIService {
 
         const aiProvider = this.providerFactory.getProvider(provider);
         const [error, models] = await attemptPromise(() => aiProvider.fetchModels());
-
         if (error) {
             logger.error("Error fetching models:", error);
             throw error;
@@ -101,31 +81,13 @@ export class AIService {
 
         logger.info(`[AIService] Fetched ${models.length} models for ${provider}`);
 
-        // Update only models from this provider, keep others
         const existingModels = this.settings.availableModels.filter(m => m.provider !== provider);
         const updatedModels = [...existingModels, ...models];
 
-        const updateData = {
+        await this.updateSettingsField({
             availableModels: updatedModels,
             lastModelsFetch: new Date()
-        };
-
-        const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) 
-            throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        
-
-        // Update via API
-        if (!this.settings) throw new Error("Settings not initialized");
-        const settingsId = this.settings.id;
-        const [apiError] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
-        if (apiError) {
-            logger.error("[AIService] Failed to update models via API", apiError);
-            throw apiError;
-        }
-
-        this.settings.availableModels = updatedModels;
-        this.settings.lastModelsFetch = new Date();
+        });
     }
 
     async getAvailableModels(provider?: AIProvider, forceRefresh: boolean = true): Promise<AIModel[]> {
@@ -149,207 +111,62 @@ export class AIService {
         return result;
     }
 
-    private formatStreamAsSSE(response: Response): Response {
-        const responseStream = new ReadableStream({
-            async start(controller) {
-                if (!response.body) {
-                    controller.close();
-                    return;
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-
-                const [error] = await attemptPromise(async () => {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        const content = decoder.decode(value, { stream: true });
-                        const formattedChunk = formatSSEChunk(content);
-
-                        controller.enqueue(new TextEncoder().encode(formattedChunk));
-                    }
-                    controller.enqueue(new TextEncoder().encode(formatSSEDone()));
-                });
-
-                if (error) 
-                    if ((error as Error).name === "AbortError") 
-                        controller.close();
-                     else 
-                        controller.error(error);
-                    
-                 else 
-                    controller.close();
-                
-            }
-        });
-
-        return new Response(responseStream, {
-            headers: { "Content-Type": "text/event-stream" }
-        });
-    }
-
-    async generateWithLocalModel(
+    async generate(
+        providerType: AIProvider,
         messages: PromptMessage[],
         modelId: string,
         temperature: number = 1.0,
-        maxTokens: number = 2048,
-        _top_p?: number,
-        _top_k?: number,
-        _repetition_penalty?: number,
-        _min_p?: number
-    ): Promise<Response> {
-        this.abortController = new AbortController();
-
-        const provider = this.providerFactory.getProvider("local");
-        return await provider.generate(messages, modelId, temperature, maxTokens, this.abortController.signal);
-    }
-
-    async generateWithOpenAI(
-        messages: PromptMessage[],
-        modelId: string,
-        temperature: number = 1.0,
-        maxTokens: number = 2048,
-        _top_p?: number,
-        _top_k?: number,
-        _repetition_penalty?: number,
-        _min_p?: number
-    ): Promise<Response> {
-        if (!this.settings?.openaiKey) 
-            throw new Error("OpenAI API key not set");
-        
-
-        const provider = this.providerFactory.getProvider("openai");
-        if (!provider.isInitialized()) 
-            this.providerFactory.initializeProvider("openai", this.settings.openaiKey);
-        
-
-        return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
-    }
-
-    async generateWithOpenRouter(
-        messages: PromptMessage[],
-        modelId: string,
-        temperature: number = 1.0,
-        maxTokens: number = 2048,
-        _top_p?: number,
-        _top_k?: number,
-        _repetition_penalty?: number,
-        _min_p?: number
-    ): Promise<Response> {
-        if (!this.settings?.openrouterKey) 
-            throw new Error("OpenRouter API key not set");
-        
-
-        const provider = this.providerFactory.getProvider("openrouter");
-        if (!provider.isInitialized()) 
-            this.providerFactory.initializeProvider("openrouter", this.settings.openrouterKey);
-        
-
-        return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
-    }
-
-    async generateWithGemini(
-        messages: PromptMessage[],
-        modelId: string,
-        temperature: number = 1.0,
-        maxTokens: number = 2048,
-        _top_p?: number,
-        _top_k?: number,
-        _repetition_penalty?: number,
-        _min_p?: number
-    ): Promise<Response> {
-        if (!this.settings?.geminiKey)
-            throw new Error("Gemini API key not set");
-
-        const provider = this.providerFactory.getProvider("gemini");
-        if (!provider.isInitialized())
-            this.providerFactory.initializeProvider("gemini", this.settings.geminiKey);
-
-        return await this.generateWithSSEFormatting(provider, messages, modelId, temperature, maxTokens);
-    }
-
-    private async generateWithSSEFormatting(
-        provider: IAIProvider,
-        messages: PromptMessage[],
-        modelId: string,
-        temperature: number,
-        maxTokens: number
+        maxTokens: number = 2048
     ): Promise<Response> {
         this.abortController = new AbortController();
         const signal = this.abortController.signal;
 
+        // Local provider doesn't need SSE formatting
+        if (providerType === "local") {
+            const provider = this.providerFactory.getProvider("local");
+            return provider.generate(messages, modelId, temperature, maxTokens, signal);
+        }
+
+        // Ensure provider is initialized with API key
+        this.ensureProviderInitialized(providerType);
+
+        const provider = this.providerFactory.getProvider(providerType);
         const [error, response] = await attemptPromise(() =>
             provider.generate(messages, modelId, temperature, maxTokens, signal)
         );
 
         if (error) {
-            if ((error as Error).name === "AbortError") 
+            if ((error as Error).name === "AbortError")
                 return new Response(null, { status: 204 });
-            
             throw error;
         }
 
-        if (!response) 
-            throw new Error("No response from provider");
-        
-
-        return this.formatStreamAsSSE(response);
+        if (!response) throw new Error("No response from provider");
+        return formatStreamAsSSE(response);
     }
 
-    async processStreamedResponse(
+    private ensureProviderInitialized(providerType: AIProvider): void {
+        const provider = this.providerFactory.getProvider(providerType);
+        if (provider.isInitialized()) return;
+
+        const keyMap: Record<string, string | undefined> = {
+            openai: this.settings?.openaiKey,
+            openrouter: this.settings?.openrouterKey,
+            gemini: this.settings?.geminiKey
+        };
+
+        const key = keyMap[providerType];
+        if (!key) throw new Error(`${providerType} API key not set`);
+        this.providerFactory.initializeProvider(providerType, key);
+    }
+
+    async handleStreamedResponse(
         response: Response,
         onToken: (text: string) => void,
         onComplete: () => void,
         onError: (error: Error) => void
     ) {
-        if (!response.body) 
-            return onError(new Error("Response body is null"));
-        
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        const [error] = await attemptPromise(async () => {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    onComplete();
-                    break;
-                }
-
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split("\n").filter(line => line.trim() !== "");
-
-                for (const line of lines) 
-                    if (line.startsWith("data: ")) {
-                        const data = line.substring(6);
-                        if (data === "[DONE]") {
-                            onComplete();
-                            return;
-                        }
-                        const [parseError, json] = await attemptPromise(() => Promise.resolve(JSON.parse(data)));
-                        if (!parseError && json) {
-                            const text = json.choices[0]?.delta?.content || "";
-                            if (text) 
-                                onToken(text);
-                            
-                        }
-                    }
-                
-            }
-        });
-
-        if (error) 
-            if ((error as Error).name === "AbortError") {
-                logger.info("Stream reading aborted.");
-                onComplete();
-            } else 
-                onError(error as Error);
-            
-        
-
+        await processStreamedResponse(response, onToken, onComplete, onError);
         this.abortController = null;
     }
 
@@ -387,33 +204,31 @@ export class AIService {
     }
 
     async updateDefaultModel(provider: AIProvider, modelId: string | undefined): Promise<void> {
-        if (!this.settings) 
-            throw new Error("AI settings not initialized");
-        
+        if (!this.settings) throw new Error("AI settings not initialized");
 
-        let updateData: Partial<AISettings>;
-        if (provider === "local")
-            updateData = { defaultLocalModel: modelId };
-        else if (provider === "openai")
-            updateData = { defaultOpenAIModel: modelId };
-        else if (provider === "openrouter")
-            updateData = { defaultOpenRouterModel: modelId };
-        else if (provider === "gemini")
-            updateData = { defaultGeminiModel: modelId };
-        else
-            return;
-        
+        const fieldMap: Record<AIProvider, keyof AISettings> = {
+            local: "defaultLocalModel",
+            openai: "defaultOpenAIModel",
+            openrouter: "defaultOpenRouterModel",
+            gemini: "defaultGeminiModel"
+        };
+        const field = fieldMap[provider];
+        if (!field) return;
+
+        await this.updateSettingsField({ [field]: modelId });
+    }
+
+    private async updateSettingsField(updateData: Partial<AISettings>): Promise<void> {
+        if (!this.settings) throw new Error("Settings not initialized");
 
         const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) 
+        if (!result.success)
             throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        
 
-        // Update via API
         const settingsId = this.settings.id;
         const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
         if (error) {
-            logger.error("[AIService] Failed to update default model via API", error);
+            logger.error("[AIService] Failed to update settings via API", error);
             throw error;
         }
 
@@ -421,28 +236,7 @@ export class AIService {
     }
 
     async updateLocalApiUrl(url: string): Promise<void> {
-        if (!this.settings) 
-            throw new Error("Settings not initialized");
-        
-
-        const updateData = { localApiUrl: url };
-
-        const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success) 
-            throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-        
-
-        // Update via API
-        const settingsId2 = this.settings.id;
-        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId2, updateData));
-        if (error) {
-            logger.error("[AIService] Failed to update local API URL via API", error);
-            throw error;
-        }
-
-        this.settings.localApiUrl = url;
-
-        // Update provider and re-fetch models
+        await this.updateSettingsField({ localApiUrl: url });
         this.providerFactory.updateLocalApiUrl(url);
         await this.fetchAvailableModels("local");
     }

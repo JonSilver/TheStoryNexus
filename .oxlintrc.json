@@ -14,5 +14,13 @@
         "max-lines": ["warn", { "max": 250, "skipBlankLines": true, "skipComments": true }]
     },
     "plugins": ["react", "typescript", "jsx-a11y"],
-    "ignorePatterns": ["dist", "node_modules"]
+    "ignorePatterns": ["dist", "node_modules"],
+    "overrides": [
+        {
+            "files": ["server/**/*.ts"],
+            "rules": {
+                "max-lines": ["warn", { "max": 400, "skipBlankLines": true, "skipComments": true }]
+            }
+        }
+    ]
 }

@@ -9,45 +9,14 @@ export const generateWithProvider = (
     modelId: string,
     params: GenerationParams
 ): Promise<Response> => {
-    const { temperature, maxTokens, top_p, top_k, repetition_penalty, min_p } = params;
-
     logger.info("AI Generation Request", {
         provider,
         model: modelId,
-        temperature,
-        maxTokens,
+        temperature: params.temperature,
+        maxTokens: params.maxTokens,
         messageCount: messages.length,
         promptPreview: messages[0]?.content?.substring(0, 200)
     });
 
-    switch (provider) {
-        case "local":
-            return aiService.generateWithLocalModel(
-                messages,
-                modelId,
-                temperature,
-                maxTokens,
-                top_p,
-                top_k,
-                repetition_penalty,
-                min_p
-            );
-        case "openai":
-            return aiService.generateWithOpenAI(messages, modelId, temperature, maxTokens);
-        case "openrouter":
-            return aiService.generateWithOpenRouter(
-                messages,
-                modelId,
-                temperature,
-                maxTokens,
-                top_p,
-                top_k,
-                repetition_penalty,
-                min_p
-            );
-        case "gemini":
-            return aiService.generateWithGemini(messages, modelId, temperature, maxTokens);
-        default:
-            throw new Error(`Unknown provider: ${provider}`);
-    }
+    return aiService.generate(provider, messages, modelId, params.temperature, params.maxTokens);
 };

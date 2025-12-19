@@ -40,88 +40,7 @@ const baseEntitySchema = z.object({
     isDemo: z.boolean().optional()
 });
 
-// POV Type enum
-const povTypeSchema = z.enum(["First Person", "Third Person Limited", "Third Person Omniscient"]);
-
-// Story schema (used internally for export validation)
-const storySchema = baseEntitySchema.extend({
-    title: z.string().min(1, "Title is required"),
-    author: z.string().min(1, "Author is required"),
-    language: z.string().min(1, "Language is required"),
-    synopsis: z.string().optional(),
-    seriesId: z.string().uuid().optional()
-});
-
-// Series schema
-const seriesSchema = baseEntitySchema.extend({
-    name: z.string().min(1, "Name required"),
-    description: z.string().optional()
-});
-
-// Chapter schemas
-const chapterOutlineSchema = z.object({
-    content: z.string(),
-    lastUpdated: z.coerce.date()
-});
-
-const chapterNotesSchema = z.object({
-    content: z.string(),
-    lastUpdated: z.coerce.date()
-});
-
-const chapterSchema = baseEntitySchema.extend({
-    storyId: z.string().uuid(),
-    title: z.string().min(1, "Chapter title is required"),
-    summary: z.string().optional(),
-    order: z.number().int().nonnegative(),
-    content: z.string(),
-    outline: chapterOutlineSchema.optional(),
-    wordCount: z.number().int().nonnegative(),
-    povCharacter: z.string().optional(),
-    povType: povTypeSchema.optional(),
-    notes: chapterNotesSchema.optional()
-});
-
-// SceneBeat schema (used internally for export validation)
-const sceneBeatSchema = baseEntitySchema.extend({
-    storyId: z.string().uuid(),
-    chapterId: z.string().uuid(),
-    command: z.string(),
-    povType: povTypeSchema.optional(),
-    povCharacter: z.string().optional(),
-    generatedContent: z.string().optional(),
-    accepted: z.boolean().optional(),
-    metadata: z
-        .object({
-            useMatchedChapter: z.boolean().optional(),
-            useMatchedSceneBeat: z.boolean().optional(),
-            useCustomContext: z.boolean().optional()
-        })
-        .catchall(z.unknown())
-        .optional()
-});
-
-// Chat message schema
-const chatMessageSchema = z.object({
-    id: z.string().uuid(),
-    role: z.enum(["user", "assistant"]),
-    content: z.string(),
-    timestamp: z.coerce.date(),
-    originalContent: z.string().optional(),
-    editedAt: z.string().optional(),
-    editedBy: z.string().optional(),
-    edited: z.boolean().optional()
-});
-
-// AI Chat schema (used internally for export validation)
-const aiChatSchema = baseEntitySchema.extend({
-    storyId: z.string().uuid(),
-    title: z.string().min(1, "Chat title is required"),
-    messages: z.array(chatMessageSchema),
-    updatedAt: z.coerce.date().optional()
-});
-
-// Lorebook entry schema (used internally for export validation)
+// Lorebook entry schema
 const lorebookLevelSchema = z.enum(["global", "series", "story"]);
 
 const lorebookCategorySchema = z.enum([
@@ -172,19 +91,6 @@ export const lorebookExportSchema = z.object({
     version: z.string(),
     type: z.literal("lorebook"),
     entries: z.array(lorebookEntrySchema)
-});
-
-// Story export schema
-export const storyExportSchema = z.object({
-    version: z.string(),
-    type: z.literal("story"),
-    exportDate: z.string(),
-    story: storySchema,
-    series: seriesSchema.optional(),
-    chapters: z.array(chapterSchema),
-    lorebookEntries: z.array(lorebookEntrySchema),
-    sceneBeats: z.array(sceneBeatSchema),
-    aiChats: z.array(aiChatSchema)
 });
 
 // AI Model schema

@@ -1,6 +1,9 @@
 import type { LorebookEntry } from "@/types/story";
 import { normalizeString, stringEquals } from "@/utils/stringUtils";
 
+export const getFilteredEntries = (entries: LorebookEntry[], includeDisabled = false): LorebookEntry[] =>
+    includeDisabled ? entries : entries.filter(entry => !entry.isDisabled);
+
 /**
  * Builds a tag map for efficient lorebook entry lookups.
  * Used by SceneBeatNode and LorebookTagPlugin for autocomplete functionality.

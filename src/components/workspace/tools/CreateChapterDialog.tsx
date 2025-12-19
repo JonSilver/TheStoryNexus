@@ -124,4 +124,4 @@ export const CreateChapterDialog = ({ open, onOpenChange, characterEntries, onSu
     );
 };
 
-export type { CreateChapterForm, POVType };
+export type { CreateChapterForm };
