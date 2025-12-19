@@ -1,476 +1,355 @@
-import {
-    BookOpen, CheckCircle, Code, FileText, Layers, MessageSquare,
-    PenTool, Settings, Sliders, Sparkles, Table, XCircle, Zap
-} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Step, Tip, Warning, Important, InfoCard, CardGrid, FeatureCard, FeatureGrid, Summary, SubStep, CodeExample, MessageExample } from "../components/mdx";
 
 # Prompt Guide
 
 Creating effective prompts is essential for getting the best results from AI generation in your story. This guide will help you understand how to create, customise, and use prompts effectively in The Story Nexus.
 
-<Tip title="System Prompts & Prompt Scope">
-    There are 6 system prompts automatically created for you. They cannot be deleted or edited but can be cloned. Custom prompts you create are story-specific and available only within that story. To reuse prompts across stories, export and import them via the Prompts Manager.
-</Tip>
+> [!TIP]
+> **System Prompts & Prompt Scope:** There are 6 system prompts automatically created for you. They cannot be deleted or edited but can be cloned. Custom prompts you create are story-specific and available only within that story. To reuse prompts across stories, export and import them via the Prompts Manager.
 
 <Tabs defaultValue="overview" className="w-full">
-    <TabsList className="grid grid-cols-5 mb-8">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="creating">Creating Prompts</TabsTrigger>
-        <TabsTrigger value="variables">Using Variables</TabsTrigger>
-        <TabsTrigger value="managing">Managing Prompts</TabsTrigger>
-        <TabsTrigger value="advanced">Advanced Strategies</TabsTrigger>
-    </TabsList>
-
-    <TabsContent value="overview" className="space-y-6">
-        ## What are Prompts?
-
-        Prompts are structured instructions that tell the AI how to generate content for your story. They consist of a series of messages with different roles (system, user, assistant) that provide context and direction to the AI model.
-
-        <CardGrid>
-            <InfoCard icon={CheckCircle} title="Key Benefits">
-                - Consistent Writing Style: Create prompts that maintain a consistent tone and style throughout your story
-                - Specialized Generation: Tailor prompts for specific tasks like scene beats, summaries, or brainstorming
-                - Customizable Parameters: Adjust temperature and token settings to control creativity and length
-                - Model Selection: Choose which AI models can use each prompt for optimal results
-                - Variable System: Use dynamic variables to automatically include story context
-            </InfoCard>
-
-            <InfoCard icon={MessageSquare} title="Prompt Structure">
-                Prompts consist of a series of messages with different roles:
-                - **System Messages:** Instructions that set the overall behavior of the AI
-                - **User Messages:** Represent what the user (you) is asking the AI to do
-                - **Assistant Messages:** Examples of how the AI should respond
-
-                *This structure allows for precise control over the AI's output, ensuring it matches your creative vision.*
-            </InfoCard>
-        </CardGrid>
-
-        ## Prompt Types
-
-        The Story Nexus supports various types of prompts to help you with different aspects of your writing process:
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-            <FeatureCard icon={PenTool} title="Scene Beat">
-                For generating story content based on a scene description
-            </FeatureCard>
-            <FeatureCard icon={FileText} title="Generate Summary">
-                For creating summaries of chapters or sections
-            </FeatureCard>
-            <FeatureCard icon={Code} title="Selection-Specific">
-                For working with selected text in your document
-            </FeatureCard>
-            <FeatureCard icon={Layers} title="Continue Writing">
-                For extending the current text naturally
-            </FeatureCard>
-            <FeatureCard icon={Sparkles} title="Brainstorm">
-                For idea generation and creative exploration
-            </FeatureCard>
-            <FeatureCard icon={Settings} title="Other">
-                For custom use cases and specialized needs
-            </FeatureCard>
-        </div>
-    </TabsContent>
-
-    <TabsContent value="creating" className="space-y-6">
-        ## Creating Effective Prompts
-
-        Creating well-crafted prompts is the key to getting high-quality AI-generated content that matches your vision.
-
-        <SubStep title="Step 1: Access the Prompts Section">
-            Navigate to your story dashboard and click on the "Prompts" tab in the navigation menu.
-
-            <div className="flex items-center gap-2 my-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Path: Dashboard → [Your Story] → Prompts</span>
-            </div>
-        </SubStep>
-
-        <SubStep title="Step 2: Create a New Prompt">
-            Click the "New Prompt" button to open the prompt creation form.
-        </SubStep>
-
-        <SubStep title="Step 3: Basic Information">
-            Fill in the basic information for your prompt:
-
-            - **Name:** Give your prompt a descriptive name
-              *Examples: "Descriptive Scene Beat", "Character Dialog Generator"*
-            - **Prompt Type:** Select the appropriate type for your prompt
-              *Choose from Scene Beat, Generate Summary, Selection-Specific, Continue Writing, Brainstorm, or Other*
-        </SubStep>
-
-        <SubStep title="Step 4: Create Messages">
-            Prompts consist of a series of messages with different roles:
-
-            <div className="space-y-4 mt-4">
-                <MessageExample
-                    icon={Settings}
-                    title="System Messages"
-                    description="Instructions that set the overall behavior of the AI"
-                    example="You are a skilled fantasy writer with a descriptive style. Focus on sensory details and atmosphere."
-                />
-
-                <MessageExample
-                    icon={MessageSquare}
-                    title="User Messages"
-                    description="Represent what the user (you) is asking the AI to do"
-                    example="Write a scene where x character enters y location for the first time."
-                />
-
-                <MessageExample
-                    icon={BookOpen}
-                    title="Assistant Messages"
-                    description="Examples of how the AI should respond"
-                    example="Here's a vivid description of the character entering the location, focusing on their emotional reaction and the sensory details..."
-                />
-            </div>
-
-            **Adding Messages:**
-            - Click the "System", "User", or "Assistant" buttons to add messages of each type
-            - Use the up/down arrows to change message order
-            - Use the trash icon to delete messages
-        </SubStep>
-
-        <SubStep title="Step 5: Select AI Models">
-            Choose which AI models can use this prompt:
-            - Click the model dropdown to see available models grouped by provider
-            - Select models that work well for your prompt's purpose
-            - Selected models appear as badges above the dropdown
-            - Click the X on a badge to remove a model
-        </SubStep>
-
-        <SubStep title="Step 6: Configure Advanced Settings">
-            Adjust parameters to fine-tune the AI's behavior:
-
-            <CardGrid>
-                <InfoCard icon={Sliders} title="Temperature">
-                    Controls randomness and creativity in AI output.
-
-                    **Range:** 0.0 to 2.0 (typically)
-
-                    - **0.1-0.4:** Very focused, deterministic. Good for factual or technical writing
-                    - **0.5-0.7:** Balanced (recommended default). Reliable with some variation
-                    - **0.8-1.2:** More creative. Good for fiction, dialogue, varied prose
-                    - **1.3+:** Highly creative but may lose coherence or drift off-topic
-
-                    *Tip: Start at 0.7 and adjust based on results. Different models respond differently to the same temperature.*
-                </InfoCard>
-
-                <InfoCard icon={Table} title="Max Tokens">
-                    Maximum number of tokens (roughly words) the AI can generate in response.
-
-                    - **Short (100-300 tokens):** Quick responses, dialogue, brief descriptions
-                    - **Medium (400-800 tokens):** Scene beats, substantial paragraphs
-                    - **Long (1000+ tokens):** Extended scenes, multiple paragraphs
-
-                    *Note: The AI may generate fewer tokens than the max if it reaches a natural stopping point. Higher max tokens = slower generation and higher API costs.*
-                </InfoCard>
-            </CardGrid>
-        </SubStep>
-
-        <SubStep title="Step 7: Save Your Prompt">
-            Click "Create Prompt" to save your new prompt or "Update Prompt" if editing an existing one.
-
-            <Important title="Pro Tip">
-                Start with a simple prompt and test it with different AI models. Then refine it based on the results to get exactly the style and content you want.
-            </Important>
-        </SubStep>
-    </TabsContent>
-
-    <TabsContent value="variables" className="space-y-6">
-        ## Using Variables
-
-        Variables are placeholders in your prompts that get replaced with actual content when the prompt is used. They make your prompts dynamic and context-aware.
-
-        ### Common Variables
-
-        The Story Nexus provides a variety of variables you can use in your prompts:
-
-        | Variable | Description |
-        |----------|-------------|
-        | `{{scenebeat}}` | The scene beat command you enter |
-        | `{{scenebeat_context}}` | This will dynamically generate a context based on matched lorebook entries in the chapter or custom context you provide |
-        | `{{brainstorm_context}}` | Dynamic Brainstorm Context |
-        | `{{summaries}}` | Summaries of all previous chapters. So if you have 3 chapters, it will be the summaries of the previous 2 chapters. |
-        | `{{previous_words(1000)}}` | The last 1000 words before the cursor in the editor |
-        | `{{pov}}` | The current point of view character and type |
-        | `{{chapter_content}}` | The full content of the current chapter |
-        | `{{selected_text}}` | Text currently selected in the editor |
-        | `{{story_language}}` | The language of the story |
-        | `{{all_characters}}` | All character entries from the Lorebook |
-        | `{{all_locations}}` | All location entries from the Lorebook |
-        | `{{user_input}}` | Specifically for brainstorm section, adds user_input to resolved prompt |
-        | `{{chat_history}}` | Specifically for brainstorm section, adds current chat history to resolved prompt |
-
-        ### Using Variables in Messages
-
-        Variables can be used in any message type (system, user, or assistant) to create dynamic prompts.
-
-        <CardGrid>
-            <CodeExample title="System Message Example">
-                You are a skilled writer working on a story in `{{story_language}}`. The story is written in `{{pov}}` perspective. Maintain this perspective and style in your writing.
-            </CodeExample>
-
-            <CodeExample title="User Message Example">
-                Write a scene where `{{scenebeat}}`. Use the following context from my story: `{{previous_words(500)}}`
-            </CodeExample>
-        </CardGrid>
-
-        ### Context Integration
-
-        The prompt parser automatically integrates context from your story:
-
-        <FeatureGrid cols={2}>
-            <FeatureCard icon={BookOpen} title="Lorebook Entries">
-                Characters, locations, and other elements mentioned in your text
-            </FeatureCard>
-            <FeatureCard icon={FileText} title="Chapter Content">
-                The text you've already written
-            </FeatureCard>
-            <FeatureCard icon={MessageSquare} title="Point of View">
-                Your current POV character and perspective
-            </FeatureCard>
-            <FeatureCard icon={Layers} title="Previous Chapters">
-                Summaries of what came before
-            </FeatureCard>
-        </FeatureGrid>
-
-        *This context helps the AI generate content that's consistent with your story world.*
-
-        ### Variable Edge Cases & Fallbacks
-
-        Understanding what happens when variables have no value helps you write robust prompts.
-
-        <CardGrid>
-            <InfoCard title="Empty or Undefined Variables">
-                When a variable has no value, it's replaced with an empty string:
-                - `{{pov}}` → Empty if no POV set on chapter
-                - `{{summaries}}` → Empty if no chapter summaries exist
-                - `{{selected_text}}` → Empty if no text selected
-
-                *Prompts won't fail, but empty variables may affect AI output quality.*
-            </InfoCard>
-
-            <InfoCard title="Writing Robust Prompts">
-                Handle optional variables gracefully:
-
-                `Write a scene where {{scenebeat}}. {{#if pov}}Maintain {{pov}} perspective.{{/if}}`
-
-                *Note: Conditional syntax shown is illustrative. Currently, prompts should be written to work whether variables are populated or empty.*
-            </InfoCard>
-        </CardGrid>
-
-        <Important title="Advanced Variable Usage">
-            You can create sophisticated prompts that adapt to your story context by combining variables:
-
-            `Write a scene where {{scenebeat}}. The scene involves the following characters: {{scenebeat_context}}. The scene takes place after these events: {{summaries}}. Maintain the {{pov}} perspective.`
-        </Important>
-    </TabsContent>
-
-    <TabsContent value="managing" className="space-y-6">
-        ## Managing Prompts
-
-        Effective prompt management helps you maintain a library of useful prompts for different writing scenarios.
-
-        ### Organizing Prompts
-
-        Create different prompts for different writing tasks to build a versatile toolkit:
-
-        <FeatureGrid cols={3}>
-            <FeatureCard icon={BookOpen} title="Description Prompts">
-                For vivid settings and environments
-            </FeatureCard>
-            <FeatureCard icon={MessageSquare} title="Dialogue Prompts">
-                For character conversations and speech
-            </FeatureCard>
-            <FeatureCard icon={Zap} title="Action Prompts">
-                For dynamic sequences and events
-            </FeatureCard>
-        </FeatureGrid>
-
-        - Name prompts clearly to indicate their purpose
-        - Use the prompt type field to categorize prompts by their intended use
-        - Create genre-specific prompts for different writing styles
-
-        ### Editing Prompts
-
-        To edit an existing prompt:
-        1. Select the prompt from the list in the Prompts section
-        2. Make your changes in the prompt form
-        3. Click "Update Prompt" to save your changes
-
-        *Regularly review and refine your prompts based on the results they produce.*
-
-        ### Deleting Prompts
-
-        To delete a prompt you no longer need:
-        1. Hover over the prompt in the list
-        2. Click the trash icon that appears
-        3. Confirm the deletion when prompted
-
-        <Warning>
-            Deletion is permanent and cannot be undone. Consider keeping useful prompts even if you don't use them frequently.
-        </Warning>
-
-        ### Cloning System Prompts
-
-        System prompts cannot be edited or deleted, but you can clone them to create customizable versions.
-
-        <CodeExample title="How to Clone a System Prompt:">
-            1. Navigate to the Prompts page in your story dashboard
-            2. Find the system prompt you want to clone (marked with "System" badge)
-            3. Click the clone/duplicate icon next to the prompt
-            4. A new custom prompt is created with the same content
-            5. The cloned prompt can be fully edited and customised
-            6. The cloned prompt is now story-specific and can be deleted if needed
-        </CodeExample>
-
-        <Tip title="Why Clone System Prompts?">
-            - Customise system prompts for your specific writing style
-            - Tweak temperature or token settings for a system prompt
-            - Add story-specific instructions to a proven prompt template
-            - Experiment with variations without losing the original
-        </Tip>
-
-        ### Import & Export Prompts
-
-        Share prompts between stories or back them up using import/export functionality.
-
-        <CardGrid>
-            <InfoCard title="Exporting Prompts">
-                1. Navigate to the Prompts page
-                2. Click the Export button in the toolbar
-                3. Only custom (non-system) prompts are exported
-                4. A JSON file downloads with your prompts
-
-                *Exported files include all prompt data: name, messages, settings, allowed models, and prompt type.*
-            </InfoCard>
-
-            <InfoCard title="Importing Prompts">
-                1. Navigate to the Prompts page
-                2. Click the Import button
-                3. Select a JSON file exported from another story
-                4. Review the prompts to be imported
-                5. Confirm to add them to your story
-
-                *Name collisions: If a prompt with the same name exists, the imported prompt gets an "(Imported)" suffix. System prompts are never overwritten during import.*
-            </InfoCard>
-        </CardGrid>
-
-        <Tip title="Import/Export Use Cases">
-            - **Reuse:** Move your best prompts from one story to another
-            - **Backup:** Export prompts before experimenting with changes
-            - **Collaboration:** Share effective prompts with other writers
-            - **Templates:** Build prompt libraries for different genres
-        </Tip>
-
-        ### Prompt Integration with Writing
-
-        Prompts are integrated with the writing process through the Scene Beat feature and other AI generation tools.
-
-        <SubStep title="Using Prompts with Scene Beats">
-            1. In the editor, press Alt + S (Windows) or Option + S (Mac) to insert a Scene Beat
-            2. Enter your scene beat command describing what you want the AI to write
-            3. Select one of your prompts from the dropdown menu
-            4. The system will process your prompt, replacing variables with context from your story
-            5. Click "Generate Prose" to create content based on your prompt
-        </SubStep>
-    </TabsContent>
-
-    <TabsContent value="advanced" className="space-y-6">
-        ## Advanced Prompt Strategies
-
-        Master these advanced techniques to get the most out of your AI-assisted writing.
-
-        ### Creating Specialized Prompts
-
-        Develop prompts for specific writing challenges:
-
-        <FeatureGrid cols={2}>
-            <FeatureCard icon={MessageSquare} title="Character Voice Prompts">
-                Create prompts that capture specific character voices and speech patterns
-            </FeatureCard>
-            <FeatureCard icon={BookOpen} title="Description Prompts">
-                Focus on vivid sensory details for settings and environments
-            </FeatureCard>
-            <FeatureCard icon={Zap} title="Action Prompts">
-                Emphasize clear, dynamic action sequences
-            </FeatureCard>
-            <FeatureCard icon={Sparkles} title="Emotional Prompts">
-                Highlight internal thoughts and emotional reactions
-            </FeatureCard>
-        </FeatureGrid>
-
-        ### Prompt Chaining
-
-        Use multiple prompts in sequence for complex writing tasks:
-
-        <div className="relative overflow-hidden mt-4">
-            <div className="border-l-2 border-primary absolute h-full left-4 top-0" />
-            <div className="space-y-6 ml-10">
-                <div className="relative">
-                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center absolute -left-12">1</div>
-                    <div className="border rounded-lg p-4 bg-card">
-                        <h5 className="font-medium">Brainstorming Prompt</h5>
-                        <p className="text-sm text-muted-foreground mt-1">Use a brainstorming prompt to generate ideas and possibilities</p>
-                    </div>
-                </div>
-                <div className="relative">
-                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center absolute -left-12">2</div>
-                    <div className="border rounded-lg p-4 bg-card">
-                        <h5 className="font-medium">Scene Structure Prompt</h5>
-                        <p className="text-sm text-muted-foreground mt-1">Follow with a scene structure prompt to outline the scene</p>
-                    </div>
-                </div>
-                <div className="relative">
-                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center absolute -left-12">3</div>
-                    <div className="border rounded-lg p-4 bg-card">
-                        <h5 className="font-medium">Detailed Scene Beat Prompt</h5>
-                        <p className="text-sm text-muted-foreground mt-1">Finish with a detailed scene beat prompt to write the full content</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        ### Troubleshooting Common Issues
-
-        If your prompts aren't producing the desired results:
-
-        <FeatureGrid cols={2}>
-            <FeatureCard icon={XCircle} title="Too Generic">
-                Add more specific instructions and examples
-            </FeatureCard>
-            <FeatureCard icon={XCircle} title="Inconsistent Style">
-                Include clear style guidelines in system messages
-            </FeatureCard>
-            <FeatureCard icon={XCircle} title="Missing Context">
-                Make sure you're using the right variables to include story context
-            </FeatureCard>
-            <FeatureCard icon={XCircle} title="Too Restrictive">
-                Increase temperature for more creative variations
-            </FeatureCard>
-            <FeatureCard icon={XCircle} title="Too Random">
-                Decrease temperature for more focused outputs
-            </FeatureCard>
-        </FeatureGrid>
-
-        <Summary title="Best Practices">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    - Start Simple: Begin with basic prompts and refine them as you learn what works
-                    - Test Different Models: Different AI models respond differently to the same prompt
-                    - Include Examples: Provide examples of the style and format you want in assistant messages
-                    - Be Specific: Clear, detailed instructions yield better results than vague ones
-                </div>
-                <div>
-                    - Iterate: Refine your prompts based on the results you get
-                    - Save Variations: Keep different versions of prompts for different writing needs
-                    - Balance Creativity and Control: Find the right temperature setting for your writing style
-                    - Use Variables Strategically: Include only the context that's relevant to your current task
-                </div>
-            </div>
-
-            By mastering the art of prompt creation, you'll be able to harness the full power of AI to enhance your storytelling while maintaining your unique voice and vision.
-        </Summary>
-    </TabsContent>
+<TabsList className="grid w-full grid-cols-5 mb-8">
+    <TabsTrigger value="overview">Overview</TabsTrigger>
+    <TabsTrigger value="creating">Creating Prompts</TabsTrigger>
+    <TabsTrigger value="variables">Using Variables</TabsTrigger>
+    <TabsTrigger value="managing">Managing Prompts</TabsTrigger>
+    <TabsTrigger value="advanced">Advanced Strategies</TabsTrigger>
+</TabsList>
+
+<TabsContent value="overview" className="space-y-6">
+
+## What are Prompts?
+
+Prompts are structured instructions that tell the AI how to generate content for your story. They consist of a series of messages with different roles (system, user, assistant) that provide context and direction to the AI model.
+
+### Key Benefits
+
+- **Consistent Writing Style:** Create prompts that maintain a consistent tone and style throughout your story
+- **Specialised Generation:** Tailor prompts for specific tasks like scene beats, summaries, or brainstorming
+- **Customisable Parameters:** Adjust temperature and token settings to control creativity and length
+- **Model Selection:** Choose which AI models can use each prompt for optimal results
+- **Variable System:** Use dynamic variables to automatically include story context
+
+### Prompt Structure
+
+Prompts consist of a series of messages with different roles:
+
+- **System Messages:** Instructions that set the overall behaviour of the AI
+- **User Messages:** Represent what the user (you) is asking the AI to do
+- **Assistant Messages:** Examples of how the AI should respond
+
+This structure allows for precise control over the AI's output, ensuring it matches your creative vision.
+
+## Prompt Types
+
+The Story Nexus supports various types of prompts to help you with different aspects of your writing process:
+
+| Type | Description |
+|------|-------------|
+| **Scene Beat** | For generating story content based on a scene description |
+| **Generate Summary** | For creating summaries of chapters or sections |
+| **Selection-Specific** | For working with selected text in your document |
+| **Continue Writing** | For extending the current text naturally |
+| **Brainstorm** | For idea generation and creative exploration |
+| **Other** | For custom use cases and specialised needs |
+
+</TabsContent>
+
+<TabsContent value="creating" className="space-y-6">
+
+## Creating Effective Prompts
+
+Creating well-crafted prompts is the key to getting high-quality AI-generated content that matches your vision.
+
+### Step 1: Access the Prompts Section
+
+Navigate to your story dashboard and click on the "Prompts" tab in the navigation menu.
+
+*Path: Dashboard → [Your Story] → Prompts*
+
+### Step 2: Create a New Prompt
+
+Click the "New Prompt" button to open the prompt creation form.
+
+### Step 3: Basic Information
+
+Fill in the basic information for your prompt:
+
+- **Name:** Give your prompt a descriptive name (e.g., "Descriptive Scene Beat", "Character Dialog Generator")
+- **Prompt Type:** Select the appropriate type (Scene Beat, Generate Summary, Selection-Specific, Continue Writing, Brainstorm, or Other)
+
+### Step 4: Create Messages
+
+Prompts consist of a series of messages with different roles:
+
+| Role | Purpose | Example |
+|------|---------|---------|
+| **System** | Instructions that set the overall behaviour of the AI | "You are a skilled fantasy writer with a descriptive style. Focus on sensory details and atmosphere." |
+| **User** | Represent what the user is asking the AI to do | "Write a scene where x character enters y location for the first time." |
+| **Assistant** | Examples of how the AI should respond | "Here's a vivid description of the character entering the location, focusing on their emotional reaction..." |
+
+**Adding Messages:**
+- Click the "System", "User", or "Assistant" buttons to add messages of each type
+- Use the up/down arrows to change message order
+- Use the trash icon to delete messages
+
+### Step 5: Select AI Models
+
+Choose which AI models can use this prompt:
+- Click the model dropdown to see available models grouped by provider
+- Select models that work well for your prompt's purpose
+- Selected models appear as badges above the dropdown
+- Click the X on a badge to remove a model
+
+### Step 6: Configure Advanced Settings
+
+Adjust parameters to fine-tune the AI's behaviour:
+
+**Temperature** (0.0 to 2.0)
+Controls randomness and creativity in AI output.
+
+| Range | Use Case |
+|-------|----------|
+| 0.1–0.4 | Very focused, deterministic. Good for factual or technical writing |
+| 0.5–0.7 | Balanced (recommended default). Reliable with some variation |
+| 0.8–1.2 | More creative. Good for fiction, dialogue, varied prose |
+| 1.3+ | Highly creative but may lose coherence or drift off-topic |
+
+*Tip: Start at 0.7 and adjust based on results. Different models respond differently to the same temperature.*
+
+**Max Tokens**
+Maximum number of tokens (roughly words) the AI can generate.
+
+| Range | Use Case |
+|-------|----------|
+| 100–300 | Quick responses, dialogue, brief descriptions |
+| 400–800 | Scene beats, substantial paragraphs |
+| 1000+ | Extended scenes, multiple paragraphs |
+
+*Note: The AI may generate fewer tokens than the max if it reaches a natural stopping point. Higher max tokens = slower generation and higher API costs.*
+
+### Step 7: Save Your Prompt
+
+Click "Create Prompt" to save your new prompt or "Update Prompt" if editing an existing one.
+
+> [!IMPORTANT]
+> Start with a simple prompt and test it with different AI models. Then refine it based on the results to get exactly the style and content you want.
+
+</TabsContent>
+
+<TabsContent value="variables" className="space-y-6">
+
+## Using Variables
+
+Variables are placeholders in your prompts that get replaced with actual content when the prompt is used. They make your prompts dynamic and context-aware.
+
+### Common Variables
+
+| Variable | Description |
+|----------|-------------|
+| `{{scenebeat}}` | The scene beat command you enter |
+| `{{scenebeat_context}}` | Dynamically generated context based on matched lorebook entries |
+| `{{brainstorm_context}}` | Dynamic Brainstorm Context |
+| `{{summaries}}` | Summaries of all previous chapters |
+| `{{previous_words(1000)}}` | The last 1000 words before the cursor in the editor |
+| `{{pov}}` | The current point of view character and type |
+| `{{chapter_content}}` | The full content of the current chapter |
+| `{{selected_text}}` | Text currently selected in the editor |
+| `{{story_language}}` | The language of the story |
+| `{{all_characters}}` | All character entries from the Lorebook |
+| `{{all_locations}}` | All location entries from the Lorebook |
+| `{{user_input}}` | For brainstorm section, adds user input to resolved prompt |
+| `{{chat_history}}` | For brainstorm section, adds current chat history to resolved prompt |
+
+### Using Variables in Messages
+
+Variables can be used in any message type (system, user, or assistant) to create dynamic prompts.
+
+**System Message Example:**
+```
+You are a skilled writer working on a story in {{story_language}}.
+The story is written in {{pov}} perspective.
+Maintain this perspective and style in your writing.
+```
+
+**User Message Example:**
+```
+Write a scene where {{scenebeat}}.
+Use the following context from my story: {{previous_words(500)}}
+```
+
+### Context Integration
+
+The prompt parser automatically integrates context from your story:
+
+- **Lorebook Entries:** Characters, locations, and other elements mentioned in your text
+- **Chapter Content:** The text you've already written
+- **Point of View:** Your current POV character and perspective
+- **Previous Chapters:** Summaries of what came before
+
+This context helps the AI generate content that's consistent with your story world.
+
+### Variable Edge Cases & Fallbacks
+
+When a variable has no value, it's replaced with an empty string:
+- `{{pov}}` → Empty if no POV set on chapter
+- `{{summaries}}` → Empty if no chapter summaries exist
+- `{{selected_text}}` → Empty if no text selected
+
+Prompts won't fail, but empty variables may affect AI output quality. Write prompts to work whether variables are populated or empty.
+
+> [!IMPORTANT]
+> You can create sophisticated prompts that adapt to your story context by combining variables:
+> `Write a scene where {{scenebeat}}. The scene involves the following characters: {{scenebeat_context}}. The scene takes place after these events: {{summaries}}. Maintain the {{pov}} perspective.`
+
+</TabsContent>
+
+<TabsContent value="managing" className="space-y-6">
+
+## Managing Prompts
+
+Effective prompt management helps you maintain a library of useful prompts for different writing scenarios.
+
+### Organising Prompts
+
+Create different prompts for different writing tasks:
+
+| Category | Purpose |
+|----------|---------|
+| **Description Prompts** | For vivid settings and environments |
+| **Dialogue Prompts** | For character conversations and speech |
+| **Action Prompts** | For dynamic sequences and events |
+
+- Name prompts clearly to indicate their purpose
+- Use the prompt type field to categorise prompts by their intended use
+- Create genre-specific prompts for different writing styles
+
+### Editing Prompts
+
+1. Select the prompt from the list in the Prompts section
+2. Make your changes in the prompt form
+3. Click "Update Prompt" to save your changes
+
+*Regularly review and refine your prompts based on the results they produce.*
+
+### Deleting Prompts
+
+1. Hover over the prompt in the list
+2. Click the trash icon that appears
+3. Confirm the deletion when prompted
+
+> [!WARNING]
+> Deletion is permanent and cannot be undone. Consider keeping useful prompts even if you don't use them frequently.
+
+### Cloning System Prompts
+
+System prompts cannot be edited or deleted, but you can clone them to create customisable versions.
+
+**How to Clone a System Prompt:**
+1. Navigate to the Prompts page in your story dashboard
+2. Find the system prompt you want to clone (marked with "System" badge)
+3. Click the clone/duplicate icon next to the prompt
+4. A new custom prompt is created with the same content
+5. The cloned prompt can be fully edited and customised
+6. The cloned prompt is now story-specific and can be deleted if needed
+
+> [!TIP]
+> **Why Clone System Prompts?**
+> - Customise system prompts for your specific writing style
+> - Tweak temperature or token settings for a system prompt
+> - Add story-specific instructions to a proven prompt template
+> - Experiment with variations without losing the original
+
+### Import & Export Prompts
+
+Share prompts between stories or back them up using import/export functionality.
+
+**Exporting Prompts:**
+1. Navigate to the Prompts page
+2. Click the Export button in the toolbar
+3. Only custom (non-system) prompts are exported
+4. A JSON file downloads with your prompts
+
+*Exported files include all prompt data: name, messages, settings, allowed models, and prompt type.*
+
+**Importing Prompts:**
+1. Navigate to the Prompts page
+2. Click the Import button
+3. Select a JSON file exported from another story
+4. Review the prompts to be imported
+5. Confirm to add them to your story
+
+*Name collisions: If a prompt with the same name exists, the imported prompt gets an "(Imported)" suffix. System prompts are never overwritten during import.*
+
+> [!TIP]
+> **Import/Export Use Cases:**
+> - **Reuse:** Move your best prompts from one story to another
+> - **Backup:** Export prompts before experimenting with changes
+> - **Collaboration:** Share effective prompts with other writers
+> - **Templates:** Build prompt libraries for different genres
+
+### Prompt Integration with Writing
+
+Prompts are integrated with the writing process through the Scene Beat feature and other AI generation tools.
+
+**Using Prompts with Scene Beats:**
+1. In the editor, press `Alt+S` (Windows) or `Option+S` (Mac) to insert a Scene Beat
+2. Enter your scene beat command describing what you want the AI to write
+3. Select one of your prompts from the dropdown menu
+4. The system will process your prompt, replacing variables with context from your story
+5. Click "Generate Prose" to create content based on your prompt
+
+</TabsContent>
+
+<TabsContent value="advanced" className="space-y-6">
+
+## Advanced Prompt Strategies
+
+Master these advanced techniques to get the most out of your AI-assisted writing.
+
+### Creating Specialised Prompts
+
+Develop prompts for specific writing challenges:
+
+| Type | Focus |
+|------|-------|
+| **Character Voice Prompts** | Capture specific character voices and speech patterns |
+| **Description Prompts** | Vivid sensory details for settings and environments |
+| **Action Prompts** | Clear, dynamic action sequences |
+| **Emotional Prompts** | Internal thoughts and emotional reactions |
+
+### Prompt Chaining
+
+Use multiple prompts in sequence for complex writing tasks:
+
+1. **Brainstorming Prompt** - Generate ideas and possibilities
+2. **Scene Structure Prompt** - Outline the scene
+3. **Detailed Scene Beat Prompt** - Write the full content
+
+### Troubleshooting Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| **Too Generic** | Add more specific instructions and examples |
+| **Inconsistent Style** | Include clear style guidelines in system messages |
+| **Missing Context** | Use the right variables to include story context |
+| **Too Restrictive** | Increase temperature for more creative variations |
+| **Too Random** | Decrease temperature for more focused outputs |
+
+---
+
+## Best Practices
+
+- **Start Simple:** Begin with basic prompts and refine them as you learn what works
+- **Test Different Models:** Different AI models respond differently to the same prompt
+- **Include Examples:** Provide examples of the style and format you want in assistant messages
+- **Be Specific:** Clear, detailed instructions yield better results than vague ones
+- **Iterate:** Refine your prompts based on the results you get
+- **Save Variations:** Keep different versions of prompts for different writing needs
+- **Balance Creativity and Control:** Find the right temperature setting for your writing style
+- **Use Variables Strategically:** Include only the context that's relevant to your current task
+
+By mastering the art of prompt creation, you'll be able to harness the full power of AI to enhance your storytelling while maintaining your unique voice and vision.
+
+</TabsContent>
 </Tabs>

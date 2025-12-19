@@ -1,129 +1,99 @@
-import { BookOpen, Bot, PenLine, Sparkles } from "lucide-react";
-import { Step, Tip, Important, FeatureCard, FeatureGrid, NavButton, NavButtons, Key, Summary } from "../components/mdx";
-import { API_URLS } from "@/constants/urls";
-
 # The Absolute Basics
 
 Welcome to The Story Nexus! This guide will walk you through the essential steps to get started with your AI-powered writing journey.
 
-<Important title="Quick Start (5 Minutes)">
-    1. Go to AI Settings → Add an API key (OpenAI, OpenRouter, or Local API URL)
-    2. Go to Stories → Create New Story → Enter title, author, language
-    3. Click the story card → Create New Chapter → Enter chapter title
-    4. Click "Write" button → Start typing or press Alt+S (Option+S on Mac) for AI assistance
-    5. That's it! Read the detailed guide below for advanced features.
-</Important>
+> [!IMPORTANT]
+> **Quick Start (5 Minutes)**
+> 1. Go to AI Settings → Add an API key (OpenAI, OpenRouter, or Local API URL)
+> 2. Go to Stories → Create New Story → Enter title, author, language
+> 3. Click the story card → Create New Chapter → Enter chapter title
+> 4. Click "Write" button → Start typing or press `Alt+S` (`Option+S` on Mac) for AI assistance
+> 5. That's it! Read the detailed guide below for advanced features.
 
-<Step number={1} title="Set Up Your AI Connection">
-    Before you can use AI features, you'll need to connect to an AI provider. The Story Nexus supports OpenAI, OpenRouter, or a local AI model.
+## 1. Set Up Your AI Connection
 
-    <NavButtons>
-        <Bot className="h-5 w-5 text-primary" />
-        <NavButton to="/ai-settings">Go to AI Settings</NavButton>
-    </NavButtons>
+Before you can use AI features, you'll need to connect to an AI provider. The Story Nexus supports OpenAI, OpenRouter, or a local AI model.
 
-    <FeatureGrid cols={3}>
-        <FeatureCard icon={Bot} title="OpenRouter">
-            Enter your OpenRouter API key to access a variety of models from different providers.
-        </FeatureCard>
-        <FeatureCard icon={Bot} title="OpenAI">
-            Enter your OpenAI API key to access models like GPT-4 and GPT-3.5.
-        </FeatureCard>
-        <FeatureCard icon={Bot} title="Local">
-            Connect to a locally hosted model by entering the API URL (default: {API_URLS.LOCAL_AI_DEFAULT}).
-        </FeatureCard>
-    </FeatureGrid>
+→ [Go to AI Settings](/ai-settings)
 
-    <Tip title="Important">
-        After adding your API key, available models will be automatically retrieved. For local models, you'll need to click the "Refresh Models" button.
-    </Tip>
-</Step>
+| Provider | Description |
+|----------|-------------|
+| **OpenRouter** | Enter your OpenRouter API key to access a variety of models from different providers. |
+| **OpenAI** | Enter your OpenAI API key to access models like GPT-4 and GPT-3.5. |
+| **Local** | Connect to a locally hosted model by entering the API URL (default: `http://localhost:1234/v1`). |
 
-<Step number={2} title="Understand Series vs Stories">
-    The Story Nexus supports two ways to organise your writing:
+> [!TIP]
+> After adding your API key, available models will be automatically retrieved. For local models, you'll need to click the "Refresh Models" button.
 
-    <FeatureGrid cols={2}>
-        <FeatureCard icon={BookOpen} title="Standalone Stories">
-            Individual stories that aren't connected to others. Perfect for one-off projects, short stories, or independent novels.
-        </FeatureCard>
-        <FeatureCard icon={BookOpen} title="Series">
-            Collections of related stories that share a world, characters, or timeline. Ideal for sequels, prequels, or interconnected narratives.
-        </FeatureCard>
-    </FeatureGrid>
+## 2. Understand Series vs Stories
 
-    <Tip>
-        Series are optional. You can create standalone stories directly, or group related stories into a series later. Stories in a series share lorebook entries automatically.
-    </Tip>
-</Step>
+The Story Nexus supports two ways to organise your writing:
 
-<Step number={3} title="Create Your First Story">
-    Once your AI connection is set up, you can create your first story.
+| Type | Description |
+|------|-------------|
+| **Standalone Stories** | Individual stories that aren't connected to others. Perfect for one-off projects, short stories, or independent novels. |
+| **Series** | Collections of related stories that share a world, characters, or timeline. Ideal for sequels, prequels, or interconnected narratives. |
 
-    1. From the Home page, choose either **Stories** (for standalone) or **Series** (to create a series first)
-    2. For standalone: Click **Create New Story**, enter title, author, language, and synopsis
-    3. For series: Create a series first, then add stories to it from the series dashboard
-    4. Click on the story card to access your story dashboard
+> [!TIP]
+> Series are optional. You can create standalone stories directly, or group related stories into a series later. Stories in a series share lorebook entries automatically.
 
-    <NavButtons>
-        <BookOpen className="h-5 w-5 text-primary" />
-        <NavButton to="/stories">Go to Stories</NavButton>
-        <NavButton to="/series">Go to Series</NavButton>
-    </NavButtons>
-</Step>
+## 3. Create Your First Story
 
-<Step number={4} title="Create Your First Chapter">
-    Now that you have a story, it's time to create your first chapter.
+Once your AI connection is set up, you can create your first story.
 
-    1. From your story dashboard, click **Create New Chapter**
-    2. Enter a title for your chapter
-    3. Optionally, set a POV (Point of View) character and type
-    4. Click **Create** to save your new chapter
-    5. Click the **Write** button on the chapter card to open the editor
+1. From the Home page, choose either **Stories** (for standalone) or **Series** (to create a series first)
+2. For standalone: Click **Create New Story**, enter title, author, language, and synopsis
+3. For series: Create a series first, then add stories to it from the series dashboard
+4. Click on the story card to access your story dashboard
 
-    <div className="flex items-center gap-2 my-2">
-        <PenLine className="h-5 w-5 text-primary" />
-    </div>
-</Step>
+→ [Go to Stories](/stories) | [Go to Series](/series)
 
-<Step number={5} title="Write with AI Assistance">
-    The Story Nexus editor allows you to write manually or with AI assistance through Scene Beats.
+## 4. Create Your First Chapter
 
-    <div className="bg-muted p-4 rounded-md">
-        <h4 className="font-medium mb-2">Using Scene Beats</h4>
-        <p className="mb-2">Scene Beats are commands you give to the AI to generate content based on your instructions.</p>
+Now that you have a story, it's time to create your first chapter.
 
-        1. Press <Key>Alt + S</Key> (Windows) or <Key>Option + S</Key> (Mac) to insert a Scene Beat
-           *Alternatively, click on the menu and select Insert → Scene Beat*
-        2. Enter your command describing what you want the AI to write (e.g., "A tense confrontation between the detective and suspect")
-        3. Select a prompt template from the dropdown (scene beat prompts work best)
-        4. Select an AI model from your configured providers
-        5. Choose a **context mode** (controls which lorebook entries the AI sees):
-           - **Use Matched Chapter** (default) - Includes lorebook entries that match text in your current chapter
-           - **Use Matched Scene Beat** - Includes entries that match words in your scene beat command
-           - **Use Custom Context** - Manually select which lorebook entries to include
-        6. The **Generate Prose** button becomes active once you've entered a command, selected a prompt, and selected a model
-        7. Click **Generate Prose** and wait for the AI to create content (streaming will show progress)
-        8. Review the generated content and click **Accept** to insert it into your story, or **Regenerate** to try again with the same settings
-    </div>
+1. From your story dashboard, click **Create New Chapter**
+2. Enter a title for your chapter
+3. Optionally, set a POV (Point of View) character and type
+4. Click **Create** to save your new chapter
+5. Click the **Write** button on the chapter card to open the editor
 
-    <div className="flex items-center gap-2 my-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-    </div>
+## 5. Write with AI Assistance
 
-    <Important title="Editor Tips">
-        - Be specific in Scene Beat commands: Instead of "continue the story," try "describe the character's reaction to the surprising news, showing their inner conflict"
-        - **@ Autocomplete:** Type <Key>@</Key> in the editor to trigger lorebook tag autocomplete. Select a tag to quickly reference lorebook entries
-        - **Word Count:** Real-time word count displays automatically as you write
-    </Important>
-</Step>
+The Story Nexus editor allows you to write manually or with AI assistance through Scene Beats.
 
-<Summary>
-    These are just the basics to get you started. The Story Nexus offers many more advanced features to enhance your writing experience:
+### Using Scene Beats
 
-    - Create a **Lorebook** with hierarchical levels (global, series, story) to manage characters, locations, and other story elements
-    - Customize **Prompts** to tailor the AI's writing style and behaviour
-    - Use **Brainstorming** tools to develop ideas and overcome writer's block
-    - Organise related stories into **Series** with shared world-building
+Scene Beats are commands you give to the AI to generate content based on your instructions.
 
-    Explore the other guides to learn more about these advanced features.
-</Summary>
+1. Press `Alt+S` (Windows) or `Option+S` (Mac) to insert a Scene Beat
+   - *Alternatively, click on the menu and select Insert → Scene Beat*
+2. Enter your command describing what you want the AI to write (e.g., "A tense confrontation between the detective and suspect")
+3. Select a prompt template from the dropdown (scene beat prompts work best)
+4. Select an AI model from your configured providers
+5. Choose a **context mode** (controls which lorebook entries the AI sees):
+   - **Use Matched Chapter** (default) - Includes lorebook entries that match text in your current chapter
+   - **Use Matched Scene Beat** - Includes entries that match words in your scene beat command
+   - **Use Custom Context** - Manually select which lorebook entries to include
+6. The **Generate Prose** button becomes active once you've entered a command, selected a prompt, and selected a model
+7. Click **Generate Prose** and wait for the AI to create content (streaming will show progress)
+8. Review the generated content and click **Accept** to insert it into your story, or **Regenerate** to try again with the same settings
+
+> [!IMPORTANT]
+> **Editor Tips**
+> - Be specific in Scene Beat commands: Instead of "continue the story," try "describe the character's reaction to the surprising news, showing their inner conflict"
+> - **@ Autocomplete:** Type `@` in the editor to trigger lorebook tag autocomplete. Select a tag to quickly reference lorebook entries
+> - **Word Count:** Real-time word count displays automatically as you write
+
+---
+
+## What's Next?
+
+These are just the basics to get you started. The Story Nexus offers many more advanced features to enhance your writing experience:
+
+- Create a **Lorebook** with hierarchical levels (global, series, story) to manage characters, locations, and other story elements
+- Customise **Prompts** to tailor the AI's writing style and behaviour
+- Use **Brainstorming** tools to develop ideas and overcome writer's block
+- Organise related stories into **Series** with shared world-building
+
+Explore the other guides to learn more about these advanced features.
