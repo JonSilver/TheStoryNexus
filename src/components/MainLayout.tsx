@@ -5,9 +5,9 @@ import { Button } from "./ui/button";
 
 export function MainLayout() {
     return (
-        <div className="min-h-screen flex bg-background">
+        <div className="min-h-screen flex bg-background safe-area-inset-top safe-area-inset-x">
             {/* Fixed Icon Navigation - hidden on mobile */}
-            <div className="hidden md:flex w-12 border-r bg-muted/50 flex-col items-center py-4 fixed h-screen">
+            <div className="hidden md:flex w-12 border-r bg-muted/50 flex-col items-center py-4 fixed h-screen safe-area-inset-left">
                 {/* Top Navigation Icons */}
                 <div className="flex-1 flex flex-col space-y-4">
                     <Link to="/">

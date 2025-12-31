@@ -89,7 +89,7 @@ export const Sidebar = () => {
             </aside>
 
             {/* Mobile Bottom Toolbar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 z-50 safe-area-inset-bottom">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 z-50 safe-area-inset-bottom safe-area-inset-x">
                 <div className="flex justify-around p-1 sm:p-2">
                     {tools.map(tool => {
                         const Icon = tool.icon;
