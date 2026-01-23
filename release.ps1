@@ -1,9 +1,9 @@
 # PowerShell script to create a new release
-# Usage: .\release.ps1 <patch|minor|major>
+# Usage: .\release.ps1 <patch|minor|major|none>
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('patch', 'minor', 'major')]
+    [ValidateSet('patch', 'minor', 'major', 'none')]
     [string]$BumpType
 )
 
@@ -35,13 +35,18 @@ if ($currentBranch -ne "main") {
 Write-Host "Pulling latest changes..." -ForegroundColor Cyan
 git pull
 
-# Bump version
-Write-Host "Bumping $BumpType version..." -ForegroundColor Cyan
-npm version $BumpType
+# Get current version
+$currentVersion = (Get-Content package.json | ConvertFrom-Json).version
 
-# Get the new version
-$newVersion = (Get-Content package.json | ConvertFrom-Json).version
-Write-Host "New version: $newVersion" -ForegroundColor Green
+if ($BumpType -eq 'none') {
+    Write-Host "Skipping version bump, using current version: $currentVersion" -ForegroundColor Cyan
+    $newVersion = $currentVersion
+} else {
+    Write-Host "Bumping $BumpType version..." -ForegroundColor Cyan
+    npm version $BumpType
+    $newVersion = (Get-Content package.json | ConvertFrom-Json).version
+    Write-Host "New version: $newVersion" -ForegroundColor Green
+}
 
 # Push commit and tag
 Write-Host "Pushing to GitHub..." -ForegroundColor Cyan
