@@ -9,6 +9,7 @@ import { HeadingNode } from "@lexical/rich-text";
 import { debounce } from "lodash";
 import type { Chapter } from "@/types/story";
 import { useV2Store } from "../state/useV2Store";
+import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
 import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
@@ -79,7 +80,7 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <ToolbarPlugin saveStatus={status} wordCount={wordCount} />
+            <ToolbarPlugin saveStatus={status} wordCount={wordCount} storyId={chapter.storyId} />
             {status === "conflict" && (
                 <div className="flex items-center justify-between border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
                     <span>This chapter was changed on another device. Saving is paused.</span>
@@ -119,7 +120,7 @@ export const ChapterEditor = ({ chapter }: { chapter: Chapter }) => (
             initialConfig={{
                 namespace: "story-nexus-v2",
                 theme,
-                nodes: [HeadingNode, HorizontalRuleNode, SceneBeatNode],
+                nodes: [HeadingNode, HorizontalRuleNode, SceneBeatNode, ImageNode],
                 editorState: chapter.content || undefined,
                 onError: error => {
                     throw error;

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     $createParagraphNode,
+    $getRoot,
     $getSelection,
     $isRangeSelection,
     CAN_REDO_COMMAND,
@@ -16,7 +17,10 @@ import { $createHeadingNode, $isHeadingNode, type HeadingTagType } from "@lexica
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
-import { Bold, Italic, Minus, Redo2, Sparkles, Underline, Undo2 } from "lucide-react";
+import { attemptPromise } from "@jfdi/attempt";
+import { Bold, Image as ImageIcon, Italic, Minus, Redo2, Sparkles, Underline, Undo2 } from "lucide-react";
+import { toast } from "react-toastify";
+import { $createImageNode } from "../nodes/ImageNode";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 import type { SaveStatus } from "../useChapterSaver";
 
@@ -40,7 +44,15 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
 const toolButton =
     "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground disabled:opacity-40 data-[active=true]:bg-accent data-[active=true]:text-foreground";
 
-export const ToolbarPlugin = ({ saveStatus, wordCount }: { saveStatus: SaveStatus; wordCount: number }) => {
+export const ToolbarPlugin = ({
+    saveStatus,
+    wordCount,
+    storyId
+}: {
+    saveStatus: SaveStatus;
+    wordCount: number;
+    storyId: string;
+}) => {
     const [editor] = useLexicalComposerContext();
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
@@ -106,6 +118,28 @@ export const ToolbarPlugin = ({ saveStatus, wordCount }: { saveStatus: SaveStatu
             if (!selection) return;
             selection.insertNodes([$createSceneBeatNode(), $createParagraphNode()]);
         });
+
+    const uploadAndInsertImage = async (file: File) => {
+        const body = new FormData();
+        body.append("file", file);
+        const [error, response] = await attemptPromise(() =>
+            fetch(`/api/assets/${storyId}`, { method: "POST", body })
+        );
+        if (error || !response?.ok) {
+            const detail = response ? (await response.json().catch(() => ({})))?.error : undefined;
+            toast.error(detail || "Image upload failed");
+            return;
+        }
+        const { url } = await response.json();
+        editor.update(() => {
+            // Focus moved to the file picker, so the editor selection is often
+            // gone by now — fall back to the end of the document
+            const selection = $getSelection() ?? $getRoot().selectEnd();
+            selection.insertNodes([$createImageNode(url, file.name.replace(/\.[^.]+$/, "")), $createParagraphNode()]);
+        });
+    };
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     return (
         <div className="flex items-center gap-1 overflow-x-auto border-b bg-background px-2 py-1">
@@ -177,6 +211,26 @@ export const ToolbarPlugin = ({ saveStatus, wordCount }: { saveStatus: SaveStatu
             >
                 <Minus className="h-4 w-4" />
             </button>
+            <button
+                type="button"
+                className={toolButton}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Insert image"
+            >
+                <ImageIcon className="h-4 w-4" />
+            </button>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp,image/avif"
+                className="hidden"
+                aria-hidden
+                onChange={e => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void uploadAndInsertImage(file);
+                }}
+            />
 
             <div className="ml-auto flex shrink-0 items-center gap-2 pl-2 text-xs text-muted-foreground">
                 <span>{wordCount} words</span>
