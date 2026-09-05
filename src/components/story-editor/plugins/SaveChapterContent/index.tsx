@@ -48,11 +48,19 @@ export function SaveChapterContentPlugin(): null {
         });
 
         const flushPendingSave = () => saveContent.flush();
+        // beforeunload is unreliable on iOS Safari; visibilitychange fires on app backgrounding
+        const flushWhenHidden = () => {
+            if (document.visibilityState === "hidden") saveContent.flush();
+        };
         window.addEventListener("beforeunload", flushPendingSave);
+        window.addEventListener("pagehide", flushPendingSave);
+        document.addEventListener("visibilitychange", flushWhenHidden);
 
         return () => {
             removeUpdateListener();
             window.removeEventListener("beforeunload", flushPendingSave);
+            window.removeEventListener("pagehide", flushPendingSave);
+            document.removeEventListener("visibilitychange", flushWhenHidden);
             saveContent.flush();
         };
     }, [editor, currentChapterId]);

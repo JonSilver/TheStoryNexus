@@ -13,6 +13,17 @@ interface InsertDropdownProps {
     disabled: boolean;
 }
 
+export const insertSceneBeat = (editor: LexicalEditor): void => {
+    editor.update(() => {
+        const selection = $getSelection();
+        if (selection) {
+            const beatNode = $createSceneBeatNode();
+            const paragraphNode = $createParagraphNode();
+            selection.insertNodes([beatNode, paragraphNode]);
+        }
+    });
+};
+
 export const InsertDropdown = ({ editor, activeEditor, disabled }: InsertDropdownProps) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -47,16 +58,7 @@ export const InsertDropdown = ({ editor, activeEditor, disabled }: InsertDropdow
             </DropdownMenuItem>
             <DropdownMenuItem
                 className="hover:bg-accent/50 transition-colors cursor-pointer"
-                onClick={() => {
-                    editor.update(() => {
-                        const selection = $getSelection();
-                        if (selection) {
-                            const beatNode = $createSceneBeatNode();
-                            const paragraphNode = $createParagraphNode();
-                            selection.insertNodes([beatNode, paragraphNode]);
-                        }
-                    });
-                }}
+                onClick={() => insertSceneBeat(editor)}
             >
                 <div className="flex items-center gap-2">
                     <Bot className="h-4 w-4" />

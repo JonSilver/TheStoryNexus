@@ -9,7 +9,7 @@ import {
     UNDO_COMMAND
 } from "lexical";
 import { mergeRegister } from "@lexical/utils";
-import { Bold, Italic, Maximize, Minimize, Underline } from "lucide-react";
+import { Bold, Bot, Italic, Maximize, Minimize, Underline } from "lucide-react";
 import type { JSX } from "react";
 import { type Dispatch, useEffect, useState } from "react";
 import { IS_APPLE } from "@/components/story-editor/shared/environment";
@@ -22,7 +22,7 @@ import { ElementFormatDropdown } from "./ElementFormatDropdown";
 import { FontDropDown } from "./FontDropDown";
 import FontSize from "./fontSize";
 import { FormatDropdown } from "./FormatDropdown";
-import { InsertDropdown } from "./InsertDropdown";
+import { InsertDropdown, insertSceneBeat } from "./InsertDropdown";
 import { useToolbarUpdate } from "./useToolbarUpdate";
 
 const Divider = (): JSX.Element => <div className="divider" />;
@@ -185,6 +185,17 @@ export default function ToolbarPlugin({
             {canViewerSeeInsertDropdown && (
                 <>
                     <div className="w-[1px] h-6 bg-border mx-1" />
+                    <Button
+                        disabled={!isEditable}
+                        onClick={() => insertSceneBeat(editor)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-accent/50 transition-colors"
+                        title={`Insert Scene Beat (${SHORTCUTS.SCENE_BEAT})`}
+                        aria-label={`Insert scene beat. Shortcut: ${SHORTCUTS.SCENE_BEAT}`}
+                    >
+                        <Bot className="h-4 w-4" />
+                    </Button>
                     <InsertDropdown editor={editor} activeEditor={activeEditor} disabled={!isEditable} />
                 </>
             )}
