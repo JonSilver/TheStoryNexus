@@ -230,16 +230,19 @@ export default createCrudRouter({
                 const [assetError] = await attemptPromise(() => deleteStoryAssets(storyId));
                 if (assetError) console.error(`Failed to delete assets for story ${storyId}:`, assetError);
 
-                await db.transaction(async tx => {
+                // better-sqlite3 transactions are synchronous — an async callback
+                // makes drizzle throw AFTER the statements have run, turning an
+                // atomic delete into a 500 with side effects
+                db.transaction(tx => {
                     // 1. Delete story-level lorebook entries
-                    await tx
-                        .delete(schema.lorebookEntries)
+                    tx.delete(schema.lorebookEntries)
                         .where(
                             and(eq(schema.lorebookEntries.level, "story"), eq(schema.lorebookEntries.scopeId, storyId))
-                        );
+                        )
+                        .run();
 
                     // 2. Delete story (FK cascades handle chapters, aiChats, notes, etc.)
-                    await tx.delete(schema.stories).where(eq(schema.stories.id, storyId));
+                    tx.delete(schema.stories).where(eq(schema.stories.id, storyId)).run();
                 });
 
                 res.status(204).send();
