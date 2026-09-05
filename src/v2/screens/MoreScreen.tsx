@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { BookMarked, BookOpenText, ExternalLink, Settings } from "lucide-react";
+import { BookMarked, BookOpenText, ExternalLink, Settings, SlidersHorizontal } from "lucide-react";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
 
@@ -63,7 +63,7 @@ const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     );
 };
 
-export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible") => void }) => {
+export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions") => void }) => {
     const { currentStoryId } = useV2Store();
 
     return (
@@ -79,6 +79,16 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible") => void }) => {
                 >
                     <BookOpenText className="h-5 w-5 text-muted-foreground" />
                     Story Bible (AI extraction)
+                </button>
+            )}
+            {goTo && (
+                <button
+                    type="button"
+                    onClick={() => goTo("actions")}
+                    className="flex items-center gap-3 border-t px-4 py-3 text-left"
+                >
+                    <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+                    AI Actions (advanced overrides)
                 </button>
             )}
             {currentStoryId && <StoryVoiceEditor storyId={currentStoryId} />}

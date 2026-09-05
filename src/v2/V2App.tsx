@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BookOpen, Library, MoreHorizontal, PenLine } from "lucide-react";
+import { ActionsScreen } from "./screens/ActionsScreen";
 import { BibleScreen } from "./screens/BibleScreen";
 import { ChaptersScreen } from "./screens/ChaptersScreen";
 import { MoreScreen } from "./screens/MoreScreen";
@@ -13,7 +14,7 @@ const TOOLS = [
     { id: "more", label: "More", icon: MoreHorizontal, Screen: MoreScreen }
 ] as const;
 
-export type V2Tool = (typeof TOOLS)[number]["id"] | "bible";
+export type V2Tool = (typeof TOOLS)[number]["id"] | "bible" | "actions";
 
 export default function V2App() {
     const [tool, setTool] = useState<V2Tool>("write");
@@ -22,7 +23,13 @@ export default function V2App() {
     return (
         <div className="flex h-dvh flex-col bg-background text-foreground">
             <main className="min-h-0 flex-1">
-                {tool === "bible" ? <BibleScreen goTo={setTool} /> : <active.Screen goTo={setTool} />}
+                {tool === "bible" ? (
+                    <BibleScreen goTo={setTool} />
+                ) : tool === "actions" ? (
+                    <ActionsScreen goTo={setTool} />
+                ) : (
+                    <active.Screen goTo={setTool} />
+                )}
             </main>
             <nav className="flex shrink-0 border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 {TOOLS.map(({ id, label, icon: Icon }) => (
