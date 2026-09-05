@@ -135,6 +135,39 @@ Model context limits come from provider metadata where available, else a conserv
 | `prompts` | retired in favour of registry + overrides | Phase 8 |
 | — | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format | Phase 3 |
 
-## Appendix A — editor choice & serialisation (completed after spike)
+## Appendix A — editor choice & serialisation (decided 2026-09-05)
 
-_Pending: spike results for trimmed Lexical vs TipTap against §1–§2; decision + rationale; concrete node/attr serialisation shapes._
+**Chosen: Lexical 0.50+, lean purpose-built composition.** Both spikes (see `docs/spikes/lexical-findings.md`, `docs/spikes/tiptap-findings.md`) proved every §1–§2 requirement in a real browser: in-document scene-beat state, zero-undo-entry streaming, single-undo Accept with exact restoration, state-preserving in-editor copy/paste, small Markdown serialisers from serialised JSON. Both verdicts were "suitable"; the tie broke on:
+
+- **Node ergonomics**: Lexical's NodeState API needs 76 lines and zero bespoke serialisation vs ~150–235 for TipTap attrs.
+- **Bundle**: ~75 kB gzip vs ~106 kB (TipTap v3 explicit imports).
+- **Momentum**: Lexical's 2026 mobile triage wave (all `ios-bug` issues closed, IME nearly clear, monthly releases); TipTap would force a v3 adoption (v2 is parked).
+- **Incumbency**: the codebase, its serialised content history, and its author know Lexical idiom.
+
+TipTap's genuine advantages — cross-app HTML clipboard fidelity, prosemirror-markdown's parser for ingestion — are replicable in Lexical (`exportDOM`, `@lexical/markdown`) when needed.
+
+**Mobile risk (both spikes converge)**: the unfixed platform bugs cluster on block-level non-editable nodes in the prose flow — exactly a scene beat. Binding mitigations:
+
+1. The beat's interactive chrome stays architecturally separable from the decorator (all state access via hook + `editor.update`), so controls can move to a portal/sheet outside the contenteditable if iOS misbehaves, without touching node or serialisation.
+2. Real-device testing (iOS Safari + Android Chrome) of the scene-beat interaction is an early Phase 3 gate, before the in-node textarea design hardens.
+3. Explicit insert-paragraph-above/below affordances rather than relying on caret placement around decorators.
+
+**Serialisation shape** (supersedes §2's `beatId` — the node's identity is its Lexical key at runtime; no serialised id is needed since state is self-contained and paste-clones are independent):
+
+```json
+{ "type": "scene-beat", "version": 1,
+  "command": "…", "status": "idle|generating|done",
+  "generatedText": "…", "collapsed": false,
+  "povCharacter": "…", "povType": "…" }
+```
+
+Fields are declared via `createState` with `flat: true` (project-wide decision); parse functions provide defaults, and **defaults are omitted from JSON** — readers must not assume presence.
+
+**Implementation notes carried from the spikes (all silent failure modes):**
+
+- Streaming writes go to node state per token (durable mid-stream), tagged `[HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]` — as an **array**, never a joined string.
+- A `HISTORY_PUSH_TAG` boundary transaction at generation start; Accept is one `editor.update` tagged `HISTORY_PUSH_TAG`.
+- Any `OnChangePlugin` consumer (autosave!) must set `ignoreHistoryMergeTagChange={false}` or it never sees streamed text; document mirrors need an initial-state prime on mount.
+- Interactive controls inside decorators need **native** keydown `stopPropagation` via ref (React synthetic handlers run after Lexical's root listener).
+- Export runs from serialised JSON (no live editor), data-driven serialiser tables, unknown block types fall back to inline children.
+- Behavioural verify checks (headless browser) are kept in the real project — every trap found was silent.
