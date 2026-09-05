@@ -15,6 +15,8 @@ import { ChapterContextProvider } from "./ChapterContext";
 import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
 import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
+import { SceneBeatShortcutPlugin } from "./plugins/SceneBeatShortcutPlugin";
+import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { useChapterSaver } from "./useChapterSaver";
 
@@ -119,6 +121,8 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
                         ErrorBoundary={LexicalErrorBoundary}
                     />
                 </div>
+                <SlashMenuPlugin />
+                <SceneBeatShortcutPlugin />
                 <HistoryPlugin />
                 <ChapterPersistencePlugin onDocument={onDocument} />
             </div>
