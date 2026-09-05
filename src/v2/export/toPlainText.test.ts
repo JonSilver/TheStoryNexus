@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseEditorState, parseSerialisedDocument } from "./blocks";
-import { emptyDocumentState, kitchenSinkJson, sceneBeatOnlyState } from "./fixtures";
-import { blocksToPlainText } from "./toPlainText";
+import { parseEditorState, parseSerialisedDocument } from "./blocks.js";
+import { emptyDocumentState, kitchenSinkJson, sceneBeatOnlyState } from "./fixtures.js";
+import { blocksToPlainText } from "./toPlainText.js";
 
 const plain = blocksToPlainText(parseSerialisedDocument(kitchenSinkJson));
 

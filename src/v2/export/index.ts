@@ -19,7 +19,7 @@ export {
     type OrderedListBlock,
     type ParagraphBlock,
     type SceneBeatBlock
-} from "./blocks";
-export { blocksToHtml, escapeHtmlAttribute, escapeHtmlText } from "./toHtml";
-export { blocksToMarkdown } from "./toMarkdown";
-export { blocksToPlainText } from "./toPlainText";
+} from "./blocks.js";
+export { blocksToHtml, escapeHtmlAttribute, escapeHtmlText } from "./toHtml.js";
+export { blocksToMarkdown } from "./toMarkdown.js";
+export { blocksToPlainText } from "./toPlainText.js";

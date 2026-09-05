@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Block, type EditorStateJson, type Mark, parseEditorState, parseSerialisedDocument } from "./blocks";
-import { MARK_COMBINATIONS, kitchenSinkJson, kitchenSinkState, sceneBeatOnlyState } from "./fixtures";
+import { type Block, type EditorStateJson, type Mark, parseEditorState, parseSerialisedDocument } from "./blocks.js";
+import { MARK_COMBINATIONS, kitchenSinkJson, kitchenSinkState, sceneBeatOnlyState } from "./fixtures.js";
 
 const blocks = parseSerialisedDocument(kitchenSinkJson);
 

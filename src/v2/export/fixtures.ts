@@ -3,7 +3,7 @@
  * combination, both scene-beat extremes, unknown node types and empty paragraphs.
  * Shared by the Markdown, HTML and plain-text specs so the three targets stay in step.
  */
-import type { EditorStateJson, LexicalNode } from "./blocks";
+import type { EditorStateJson, LexicalNode } from "./blocks.js";
 
 const text = (value: string, format = 0): LexicalNode => ({
     type: "text",

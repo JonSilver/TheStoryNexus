@@ -1,18 +1,33 @@
 import { attemptPromise } from "@jfdi/attempt";
+import { eq } from "drizzle-orm";
 import express from "express";
+import { countTokens } from "gpt-tokenizer";
 import { z } from "zod";
 import { db, schema } from "../db/client.js";
-import { type AIProviderId, streamCompletion } from "../services/ai/providers.js";
+import { assembleContext } from "../services/actions/context.js";
+import { ACTION_IDS } from "../services/actions/registry.js";
+import { type ActionOverrideRow, renderTemplate, resolveAction } from "../services/actions/resolve.js";
+import { type AIProviderId, type PromptMessage, streamCompletion } from "../services/ai/providers.js";
 
 const router = express.Router();
 
 const activeGenerations = new Map<string, AbortController>();
 
 const INACTIVITY_TIMEOUT_MS = 120_000;
+const BUDGET_SAFETY_MARGIN = 256;
 
-const generateRequestSchema = z.object({
+const PROVIDER_CONTEXT_DEFAULTS: Record<AIProviderId, number> = {
+    openai: 16384,
+    openrouter: 16384,
+    gemini: 32768,
+    local: 16384
+};
+
+const providerEnum = z.enum(["openai", "openrouter", "gemini", "local"]);
+
+const rawRequestSchema = z.object({
     requestId: z.string().uuid(),
-    provider: z.enum(["openai", "openrouter", "gemini", "local"]),
+    provider: providerEnum,
     modelId: z.string().min(1).max(200),
     messages: z
         .array(z.object({ role: z.enum(["system", "user", "assistant"]), content: z.string().max(500_000) }))
@@ -22,48 +37,64 @@ const generateRequestSchema = z.object({
     maxTokens: z.number().int().positive().max(65536).default(2048)
 });
 
+const actionRequestSchema = z.object({
+    requestId: z.string().uuid(),
+    actionId: z.enum(ACTION_IDS),
+    storyId: z.string().min(1),
+    chapterId: z.string().optional(),
+    editorContext: z
+        .object({
+            selection: z.string().max(200_000),
+            recentProse: z.string().max(500_000),
+            command: z.string().max(20_000),
+            povCharacter: z.string().max(200),
+            povType: z.string().max(100),
+            userMessage: z.string().max(100_000),
+            chatHistory: z.string().max(500_000)
+        })
+        .partial()
+        .default({}),
+    modelRef: z.object({ provider: providerEnum, modelId: z.string().min(1).max(200) }).optional()
+});
+
 const sendEvent = (res: express.Response, event: string, data: unknown) => {
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 };
 
-router.post("/", async (req, res) => {
-    const parsed = generateRequestSchema.safeParse(req.body);
-    if (!parsed.success) {
-        res.status(400).json({ error: "Invalid generation request", details: parsed.error.issues });
-        return;
-    }
-    const { requestId, provider, modelId, messages, temperature, maxTokens } = parsed.data;
+type Settings = typeof schema.aiSettings.$inferSelect;
 
-    if (activeGenerations.has(requestId)) {
-        res.status(409).json({ error: "requestId already in use" });
-        return;
-    }
+const loadSettings = async (): Promise<Settings | null> => {
+    const [error, rows] = await attemptPromise(() => db.select().from(schema.aiSettings));
+    return error ? null : (rows?.[0] ?? null);
+};
 
-    const abortController = new AbortController();
-    activeGenerations.set(requestId, abortController);
+const contextLimitFor = (settings: Settings, provider: AIProviderId, modelId: string): number => {
+    const models = (settings.availableModels ?? []) as Array<{ id: string; provider: string; contextLength?: number }>;
+    const model = models.find(m => m.provider === provider && m.id === modelId);
+    return model?.contextLength || PROVIDER_CONTEXT_DEFAULTS[provider];
+};
 
-    // Registered before any await so an early disconnect can't leak the entry
-    // or leave the upstream request streaming to nobody
-    res.on("close", () => {
-        abortController.abort();
-        activeGenerations.delete(requestId);
-    });
+const parseModelRef = (ref: string | null | undefined): { provider: AIProviderId; modelId: string } | null => {
+    if (!ref) return null;
+    const [provider, ...rest] = ref.split("::");
+    const modelId = rest.join("::");
+    return providerEnum.safeParse(provider).success && modelId
+        ? { provider: provider as AIProviderId, modelId }
+        : null;
+};
 
-    const cleanup = () => activeGenerations.delete(requestId);
-
-    const [settingsError, settingsRows] = await attemptPromise(() => db.select().from(schema.aiSettings));
-    if (settingsError || !settingsRows?.[0]) {
-        cleanup();
-        res.status(500).json({ error: "AI settings unavailable" });
-        return;
-    }
-    const settings = settingsRows[0];
-
-    if (abortController.signal.aborted) {
-        cleanup();
-        return;
-    }
-
+/**
+ * Shared streaming tail: abort registry entry + close handler must already
+ * exist. Streams tokens, enforces the inactivity timeout, emits the terminal
+ * frame, and cleans up.
+ */
+const streamToClient = async (
+    res: express.Response,
+    requestId: string,
+    abortController: AbortController,
+    settings: Settings,
+    request: { provider: AIProviderId; modelId: string; messages: PromptMessage[]; temperature: number; maxTokens: number }
+) => {
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -72,12 +103,7 @@ router.post("/", async (req, res) => {
     });
     res.flushHeaders();
 
-    // A provider that stops producing tokens (hung local server, stalled API)
-    // gets aborted rather than hanging the stream forever
-    const inactivity = {
-        timedOut: false,
-        timer: setTimeout(() => undefined, 0)
-    };
+    const inactivity = { timedOut: false, timer: setTimeout(() => undefined, 0) };
     const armInactivityTimer = () => {
         clearTimeout(inactivity.timer);
         inactivity.timer = setTimeout(() => {
@@ -88,17 +114,7 @@ router.post("/", async (req, res) => {
     armInactivityTimer();
 
     const [error] = await attemptPromise(async () => {
-        const stream = streamCompletion(
-            {
-                provider: provider as AIProviderId,
-                modelId,
-                messages,
-                temperature,
-                maxTokens,
-                signal: abortController.signal
-            },
-            settings
-        );
+        const stream = streamCompletion({ ...request, signal: abortController.signal }, settings);
         for await (const token of stream) {
             armInactivityTimer();
             sendEvent(res, "token", { text: token });
@@ -106,7 +122,7 @@ router.post("/", async (req, res) => {
     });
 
     clearTimeout(inactivity.timer);
-    cleanup();
+    activeGenerations.delete(requestId);
 
     if (inactivity.timedOut) sendEvent(res, "error", { message: "Generation timed out (no output from provider)" });
     else if (error)
@@ -115,6 +131,136 @@ router.post("/", async (req, res) => {
     else sendEvent(res, "finish", { reason: abortController.signal.aborted ? "aborted" : "complete" });
 
     res.end();
+};
+
+const registerGeneration = (res: express.Response, requestId: string): AbortController | null => {
+    if (activeGenerations.has(requestId)) return null;
+    const abortController = new AbortController();
+    activeGenerations.set(requestId, abortController);
+    // Registered before any await so an early disconnect can't leak the entry
+    res.on("close", () => {
+        abortController.abort();
+        activeGenerations.delete(requestId);
+    });
+    return abortController;
+};
+
+// Raw-messages mode: v1 frontend compatibility until cutover
+router.post("/", async (req, res) => {
+    const parsed = rawRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400).json({ error: "Invalid generation request", details: parsed.error.issues });
+        return;
+    }
+    const { requestId, provider, modelId, messages, temperature, maxTokens } = parsed.data;
+
+    const abortController = registerGeneration(res, requestId);
+    if (!abortController) {
+        res.status(409).json({ error: "requestId already in use" });
+        return;
+    }
+
+    const settings = await loadSettings();
+    if (!settings) {
+        activeGenerations.delete(requestId);
+        res.status(500).json({ error: "AI settings unavailable" });
+        return;
+    }
+    if (abortController.signal.aborted) {
+        activeGenerations.delete(requestId);
+        return;
+    }
+
+    await streamToClient(res, requestId, abortController, settings, {
+        provider: provider as AIProviderId,
+        modelId,
+        messages,
+        temperature,
+        maxTokens
+    });
+});
+
+// Action mode (contracts §5–§6): server owns templates, context, budgeting
+router.post("/action", async (req, res) => {
+    const parsed = actionRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400).json({ error: "Invalid action request", details: parsed.error.issues });
+        return;
+    }
+    const { requestId, actionId, storyId, chapterId, editorContext, modelRef } = parsed.data;
+
+    const abortController = registerGeneration(res, requestId);
+    if (!abortController) {
+        res.status(409).json({ error: "requestId already in use" });
+        return;
+    }
+    const cleanup = () => activeGenerations.delete(requestId);
+
+    const settings = await loadSettings();
+    if (!settings) {
+        cleanup();
+        res.status(500).json({ error: "AI settings unavailable" });
+        return;
+    }
+
+    const [overridesError, overrideRows] = await attemptPromise(() =>
+        db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.actionId, actionId))
+    );
+    if (overridesError) {
+        cleanup();
+        res.status(500).json({ error: "Failed to load action overrides" });
+        return;
+    }
+    const overrides = (overrideRows ?? []).map(row => ({
+        ...row,
+        template: row.template as PromptMessage[] | null
+    })) as ActionOverrideRow[];
+
+    const resolved = resolveAction(actionId, storyId, overrides);
+
+    const model =
+        modelRef ??
+        parseModelRef(resolved.modelRef) ??
+        (settings.defaultProvider && settings.defaultModelId
+            ? { provider: settings.defaultProvider as AIProviderId, modelId: settings.defaultModelId }
+            : null);
+    if (!model) {
+        cleanup();
+        res.status(422).json({ error: "No model configured — add a provider key in Settings" });
+        return;
+    }
+
+    const contextLimit = contextLimitFor(settings, model.provider, model.modelId);
+    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n"));
+    const tokenBudget = Math.max(contextLimit - resolved.params.maxTokens - templateSize - BUDGET_SAFETY_MARGIN, 512);
+
+    const [assemblyError, assembled] = await attemptPromise(() =>
+        assembleContext({ storyId, chapterId, editorContext, contextNeeds: resolved.def.contextNeeds, tokenBudget })
+    );
+    if (assemblyError || !assembled) {
+        cleanup();
+        res.status(422).json({ error: assemblyError?.message || "Context assembly failed" });
+        return;
+    }
+
+    if (abortController.signal.aborted) {
+        cleanup();
+        return;
+    }
+
+    const messages = renderTemplate(
+        resolved.template,
+        assembled.context,
+        resolved.def.voiceApplies ? assembled.voice : undefined
+    );
+
+    await streamToClient(res, requestId, abortController, settings, {
+        provider: model.provider,
+        modelId: model.modelId,
+        messages,
+        temperature: resolved.params.temperature,
+        maxTokens: resolved.params.maxTokens
+    });
 });
 
 router.post("/abort", (req, res) => {

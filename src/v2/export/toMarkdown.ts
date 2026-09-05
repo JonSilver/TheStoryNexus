@@ -7,7 +7,7 @@ import {
     type ListBlock,
     type Mark,
     renderWith
-} from "./blocks";
+} from "./blocks.js";
 
 /** Innermost wrapper first, so bold+italic+underline reads `***<u>x</u>***`. */
 const MARK_WRAPPERS: readonly { mark: Mark; open: string; close: string }[] = [

@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     $createParagraphNode,
-    $getRoot,
     $getSelection,
     $isRangeSelection,
     CAN_REDO_COMMAND,
@@ -17,11 +16,22 @@ import { $createHeadingNode, $isHeadingNode, type HeadingTagType } from "@lexica
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
-import { attemptPromise } from "@jfdi/attempt";
-import { Bold, Image as ImageIcon, Italic, Minus, Redo2, Sparkles, Underline, Undo2 } from "lucide-react";
-import { toast } from "react-toastify";
-import { $createImageNode } from "../nodes/ImageNode";
+import {
+    Bold,
+    FileText,
+    Italic,
+    Maximize2,
+    Minimize2,
+    Minus,
+    Redo2,
+    RefreshCw,
+    Sparkles,
+    Underline,
+    Undo2,
+    Wand2
+} from "lucide-react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
+import { ImageUploadButton } from "./ImageUploadButton";
 import type { SaveStatus } from "../useChapterSaver";
 
 const BLOCK_OPTIONS = [
@@ -44,24 +54,34 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
 const toolButton =
     "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground disabled:opacity-40 data-[active=true]:bg-accent data-[active=true]:text-foreground";
 
+export interface ToolbarActions {
+    onContinue: () => void;
+    onSummarise: () => void;
+    onSelectionAction: (actionId: "rework" | "expand" | "shorten", label: string) => void;
+}
+
 export const ToolbarPlugin = ({
     saveStatus,
     wordCount,
-    storyId
+    storyId,
+    actions
 }: {
     saveStatus: SaveStatus;
     wordCount: number;
     storyId: string;
+    actions: ToolbarActions;
 }) => {
     const [editor] = useLexicalComposerContext();
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
     const [formats, setFormats] = useState({ bold: false, italic: false, underline: false });
     const [block, setBlock] = useState<BlockValue>("paragraph");
+    const [hasSelection, setHasSelection] = useState(false);
 
     const readSelection = useCallback(() => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) return;
+        setHasSelection(!selection.isCollapsed());
         setFormats({
             bold: selection.hasFormat("bold"),
             italic: selection.hasFormat("italic"),
@@ -118,28 +138,6 @@ export const ToolbarPlugin = ({
             if (!selection) return;
             selection.insertNodes([$createSceneBeatNode(), $createParagraphNode()]);
         });
-
-    const uploadAndInsertImage = async (file: File) => {
-        const body = new FormData();
-        body.append("file", file);
-        const [error, response] = await attemptPromise(() =>
-            fetch(`/api/assets/${storyId}`, { method: "POST", body })
-        );
-        if (error || !response?.ok) {
-            const detail = response ? (await response.json().catch(() => ({})))?.error : undefined;
-            toast.error(detail || "Image upload failed");
-            return;
-        }
-        const { url } = await response.json();
-        editor.update(() => {
-            // Focus moved to the file picker, so the editor selection is often
-            // gone by now — fall back to the end of the document
-            const selection = $getSelection() ?? $getRoot().selectEnd();
-            selection.insertNodes([$createImageNode(url, file.name.replace(/\.[^.]+$/, "")), $createParagraphNode()]);
-        });
-    };
-
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     return (
         <div className="flex items-center gap-1 overflow-x-auto border-b bg-background px-2 py-1">
@@ -206,31 +204,49 @@ export const ToolbarPlugin = ({
             <button
                 type="button"
                 className={toolButton}
+                onClick={actions.onContinue}
+                aria-label="Continue writing"
+                title="Continue writing"
+            >
+                <Wand2 className="h-4 w-4" />
+            </button>
+            {hasSelection &&
+                (
+                    [
+                        ["rework", "Rework", RefreshCw],
+                        ["expand", "Expand", Maximize2],
+                        ["shorten", "Shorten", Minimize2]
+                    ] as const
+                ).map(([actionId, label, Icon]) => (
+                    <button
+                        key={actionId}
+                        type="button"
+                        className={toolButton}
+                        onClick={() => actions.onSelectionAction(actionId, label)}
+                        aria-label={`${label} selection`}
+                        title={`${label} selection`}
+                    >
+                        <Icon className="h-4 w-4" />
+                    </button>
+                ))}
+            <button
+                type="button"
+                className={toolButton}
+                onClick={actions.onSummarise}
+                aria-label="Summarise chapter"
+                title="Summarise chapter"
+            >
+                <FileText className="h-4 w-4" />
+            </button>
+            <button
+                type="button"
+                className={toolButton}
                 onClick={() => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)}
                 aria-label="Insert horizontal rule"
             >
                 <Minus className="h-4 w-4" />
             </button>
-            <button
-                type="button"
-                className={toolButton}
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Insert image"
-            >
-                <ImageIcon className="h-4 w-4" />
-            </button>
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp,image/avif"
-                className="hidden"
-                tabIndex={-1}
-                onChange={e => {
-                    const file = e.target.files?.[0];
-                    e.target.value = "";
-                    if (file) void uploadAndInsertImage(file);
-                }}
-            />
+            <ImageUploadButton storyId={storyId} className={toolButton} />
 
             <div className="ml-auto flex shrink-0 items-center gap-2 pl-2 text-xs text-muted-foreground">
                 <span>{wordCount} words</span>

@@ -8,6 +8,8 @@ import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import { HeadingNode } from "@lexical/rich-text";
 import { debounce } from "lodash";
 import type { Chapter } from "@/types/story";
+import { ActionSheet } from "../ai/ActionSheet";
+import { useEditorActions } from "../ai/useEditorActions";
 import { useV2Store } from "../state/useV2Store";
 import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
@@ -60,6 +62,7 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
     const { scrollFor, setScroll } = useV2Store();
     const scrollerRef = useRef<HTMLDivElement | null>(null);
     const persistScroll = useRef(debounce((chapterId: string, top: number) => setScroll(chapterId, top), 500)).current;
+    const actions = useEditorActions(chapter);
 
     const onDocument = useCallback(
         (serialised: string, words: number) => {
@@ -80,7 +83,13 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <ToolbarPlugin saveStatus={status} wordCount={wordCount} storyId={chapter.storyId} />
+            <ToolbarPlugin
+                saveStatus={status}
+                wordCount={wordCount}
+                storyId={chapter.storyId}
+                actions={actions.toolbarActions}
+            />
+            <ActionSheet {...actions.sheetProps} />
             {status === "conflict" && (
                 <div className="flex items-center justify-between border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
                     <span>This chapter was changed on another device. Saving is paused.</span>

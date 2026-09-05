@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseEditorState, parseSerialisedDocument } from "./blocks";
-import { emptyDocumentState, kitchenSinkJson, sceneBeatOnlyState } from "./fixtures";
-import { blocksToMarkdown } from "./toMarkdown";
+import { parseEditorState, parseSerialisedDocument } from "./blocks.js";
+import { emptyDocumentState, kitchenSinkJson, sceneBeatOnlyState } from "./fixtures.js";
+import { blocksToMarkdown } from "./toMarkdown.js";
 
 const markdown = blocksToMarkdown(parseSerialisedDocument(kitchenSinkJson));
 

@@ -3,7 +3,7 @@
  * PDF layout base. Markup, images, horizontal rules and scene beats contribute nothing;
  * list structure survives as indentation rather than markers.
  */
-import { type Block, type BlockRenderers, type Inline, type ListBlock, renderWith } from "./blocks";
+import { type Block, type BlockRenderers, type Inline, type ListBlock, renderWith } from "./blocks.js";
 
 const renderInline = (content: Inline[]) => content.map(item => (item.type === "text" ? item.text : "\n")).join("");
 

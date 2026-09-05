@@ -13,7 +13,7 @@ import {
     type ListItem,
     type Mark,
     renderWith
-} from "./blocks";
+} from "./blocks.js";
 
 const TEXT_ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
 const ATTRIBUTE_ENTITIES: Record<string, string> = { ...TEXT_ENTITIES, '"': "&quot;", "'": "&#39;" };

@@ -11,6 +11,7 @@ export interface Story extends BaseEntity {
     author: string;
     language: string;
     synopsis?: string;
+    aiInstructions?: string; // per-story voice/framing, injected into prose actions only
     seriesId?: string;
 }
 
