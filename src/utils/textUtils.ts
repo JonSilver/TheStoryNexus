@@ -1,4 +1,8 @@
-import { words } from "lodash";
+// Default import: lodash is CJS, so named imports break under native ESM
+// (the server imports this module via tsx); the default import works in both
+import lodash from "lodash";
+
+const { words } = lodash;
 
 /**
  * Count the number of words in a text string.

@@ -10,10 +10,13 @@ const epub = epubModule.default || epubModule;
 type Story = InferSelectModel<typeof schema.stories>;
 type Chapter = InferSelectModel<typeof schema.chapters>;
 
-// v2 canonical converter: correct headings/lists/marks, fully escaped output
+// v2 canonical converter: correct headings/lists/marks, fully escaped output.
+// epub-gen-memory downloads images to embed them and only accepts absolute
+// URLs, so relative asset paths are pointed back at this server.
 const convertLexicalToHtml = (jsonContent: string): string => {
     const [, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
-    return html ?? "";
+    const port = process.env.PORT || 3000;
+    return (html ?? "").replaceAll('src="/api/assets/', `src="http://127.0.0.1:${port}/api/assets/`);
 };
 
 /**

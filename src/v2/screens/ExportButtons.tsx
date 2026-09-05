@@ -48,7 +48,7 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
             <h2 className="mb-2 flex items-center gap-2 font-medium">
                 <Download className="h-4 w-4 text-muted-foreground" /> Export story
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 {FORMATS.map(({ format, label }) => (
                     <button
                         key={format}
@@ -59,6 +59,9 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
                         {label}
                     </button>
                 ))}
+                <a href={`/api/stories/${storyId}/epub`} download className="rounded-md border px-3 py-1.5 text-sm">
+                    EPUB
+                </a>
             </div>
         </section>
     );
