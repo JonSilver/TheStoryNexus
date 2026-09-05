@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { BookUp, Loader2, Plus } from "lucide-react";
 import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
+import { ImportSheet } from "./ImportSheet";
 import type { ScreenProps } from "../V2App";
 
 export const StoriesScreen = ({ goTo }: ScreenProps) => {
@@ -9,6 +10,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const { data: stories, isLoading } = useStoriesQuery();
     const createStory = useCreateStoryMutation();
     const [newTitle, setNewTitle] = useState("");
+    const [importing, setImporting] = useState(false);
 
     const create = () => {
         const title = newTitle.trim();
@@ -27,8 +29,15 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
 
     return (
         <div className="flex h-full flex-col">
-            <header className="border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <header className="flex items-center border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
                 <h1 className="text-lg font-semibold">Stories</h1>
+                <button
+                    type="button"
+                    onClick={() => setImporting(true)}
+                    className="ml-auto flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
+                >
+                    <BookUp className="h-4 w-4" /> Import
+                </button>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {isLoading ? (
@@ -79,6 +88,16 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                     <Plus className="h-4 w-4" /> Create
                 </button>
             </footer>
+            {importing && (
+                <ImportSheet
+                    onClose={() => setImporting(false)}
+                    onImported={storyId => {
+                        setImporting(false);
+                        setCurrentStory(storyId);
+                        goTo("chapters");
+                    }}
+                />
+            )}
         </div>
     );
 };
