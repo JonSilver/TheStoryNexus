@@ -113,6 +113,28 @@ cp data/storynexus.db data/storynexus.db.backup
 
 Example: `http://192.168.1.100:3000`
 
+## Local AI Models (LM Studio / OpenAI-compatible)
+
+AI generation runs on the **server**, so the local model URL configured in Settings must be reachable from wherever the Story Nexus server runs — not from your phone or browser.
+
+- **Bare-metal server + LM Studio on the same machine**: the default `http://localhost:1234/v1` works.
+- **Docker on Linux, LM Studio on the host**: `localhost` inside the container is the container itself. Add a host gateway and use it:
+
+    ```yaml
+    # docker-compose.yml
+    services:
+        app:
+            extra_hosts:
+                - "host.docker.internal:host-gateway"
+    ```
+
+    Then set the local API URL to `http://host.docker.internal:1234/v1`.
+
+- **Docker Desktop (Mac/Windows)**: `http://host.docker.internal:1234/v1` works out of the box.
+- **Model server on another LAN machine**: use that machine's LAN IP, e.g. `http://192.168.1.50:1234/v1`, and make sure the model server listens on the network, not just loopback.
+
+Saving the URL in Settings tests the connection and fetches the model list; a failure there means the server can't reach the model host.
+
 ## Troubleshooting
 
 ### Port Already in Use
