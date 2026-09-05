@@ -77,10 +77,10 @@ export const useSaveOverride = () => {
 export const useResetOverride = () => {
     const queryClient = useQueryClient();
     return async (actionId: ActionId, storyId: string | null): Promise<void> => {
-        const [error] = await attemptPromise(() =>
+        const [error, response] = await attemptPromise(() =>
             fetch(`/api/actions/overrides/${actionId}${storyId ? `?storyId=${storyId}` : ""}`, { method: "DELETE" })
         );
-        if (error) {
+        if (error || !response?.ok) {
             toast.error("Couldn't reset override");
             return;
         }

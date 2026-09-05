@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { attemptPromise } from "@jfdi/attempt";
+import { toast } from "react-toastify";
 import { ArrowLeft, Loader2, Plus, Send, Square, Trash2 } from "lucide-react";
 import {
     useBrainstormByStoryQuery,
@@ -46,7 +48,14 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         const withUser = [...chat.messages, chatMessage("user", userMessage)];
         // Sequential writes: firing the user-message update without awaiting
         // let it finish AFTER the reply update and clobber the assistant turn
-        await updateChat.mutateAsync({ id: chat.id, data: { messages: withUser } }).catch(() => undefined);
+        const [userWriteError] = await attemptPromise(() =>
+            updateChat.mutateAsync({ id: chat.id, data: { messages: withUser } })
+        );
+        if (userWriteError) {
+            setDraft(userMessage); // give the message back rather than losing it
+            toast.error("Couldn't save your message — try again");
+            return;
+        }
 
         const reply = await generation.run({
             actionId: "brainstorm",
@@ -54,10 +63,12 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
             editorContext: { chatHistory: historyText(chat.messages), userMessage }
         });
         const finalReply = reply || generation.text;
-        if (finalReply)
-            await updateChat
-                .mutateAsync({ id: chat.id, data: { messages: [...withUser, chatMessage("assistant", finalReply)] } })
-                .catch(() => undefined);
+        if (finalReply) {
+            const [replyWriteError] = await attemptPromise(() =>
+                updateChat.mutateAsync({ id: chat.id, data: { messages: [...withUser, chatMessage("assistant", finalReply)] } })
+            );
+            if (replyWriteError) toast.error("The reply couldn't be saved — it may vanish on refresh");
+        }
         generation.reset();
         requestAnimationFrame(() => scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight }));
     };

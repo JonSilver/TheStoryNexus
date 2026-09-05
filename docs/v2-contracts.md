@@ -58,7 +58,9 @@ Data-driven; built-ins defined in code, overrides in DB.
 type ActionId =
     | 'continue' | 'rework' | 'expand' | 'shorten'
     | 'summarise_chapter' | 'brainstorm' | 'scene_beat'
-    | 'extract_entries' | 'propose_updates' | 'split_chapters';
+    | 'extract_entries' | 'propose_updates';
+// Deviation log: split_chapters was dropped — ingestion splits chapters
+// rule-based server-side with a human review step; no AI action needed.
 
 type ActionDef = {
     id: ActionId;
@@ -70,7 +72,7 @@ type ActionDef = {
 };
 ```
 
-`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm. `false`: summarise_chapter, extract_entries, propose_updates, split_chapters.
+`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm. `false`: summarise_chapter, extract_entries, propose_updates.
 
 Overrides table `actionOverrides { id, actionId, storyId | null, template?, params?, modelRef? }` — `storyId: null` = global. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
 

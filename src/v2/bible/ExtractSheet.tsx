@@ -54,9 +54,18 @@ export const ExtractSheet = ({
             setUpdates(parsed);
             if (!parsed.length) toast.info("No entry updates suggested");
         } else {
-            const parsed = parseEntryProposals(text);
+            // Dedupe within the batch and against the existing bible
+            // (case-insensitive on name); existing ones start unticked
+            const existingNames = new Set(entries.map(e => e.name.toLowerCase()));
+            const seen = new Set<string>();
+            const parsed = parseEntryProposals(text).filter(proposal => {
+                const key = proposal.name.toLowerCase();
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
             setProposals(parsed);
-            setTicked(new Set(parsed.map((_, i) => i)));
+            setTicked(new Set(parsed.map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i)).filter(i => i >= 0)));
             if (!parsed.length) toast.info("Nothing extractable found");
         }
     };
@@ -148,7 +157,11 @@ export const ExtractSheet = ({
                             />
                             <span>
                                 <span className="font-medium">{proposal.name}</span>{" "}
-                                <span className="text-xs text-muted-foreground">({proposal.category})</span>
+                                <span className="text-xs text-muted-foreground">
+                                    ({proposal.category})
+                                    {entries.some(e => e.name.toLowerCase() === proposal.name.toLowerCase()) &&
+                                        " — already in bible"}
+                                </span>
                                 <br />
                                 {proposal.description}
                                 {proposal.tags.length > 0 && (

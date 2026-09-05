@@ -114,7 +114,13 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
         );
     if (needs.has("story_language")) context.story_language = story.language;
 
-    if (needs.has("chapter_content") && chapter) context.chapter_content = spend(chapterPlainText(chapter.content));
+    if (needs.has("chapter_content") && chapter) {
+        // The primary payload for summarise/extract, but still bounded: an
+        // over-long chapter must degrade to a trimmed head, not blow the
+        // window and 422 the whole action
+        const contentBudget = Math.floor(Math.max(remaining.budget, 0) * 0.85);
+        context.chapter_content = spend(trimToTokens(chapterPlainText(chapter.content), contentBudget, "head"));
+    }
 
     if (needs.has("chat_history") && editorContext.chatHistory)
         context.chat_history = spend(trimToTokens(editorContext.chatHistory, Math.floor(remaining.budget * 0.5), "tail"));

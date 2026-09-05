@@ -143,7 +143,7 @@ export const actionOverrides = sqliteTable(
         temperature: real("temperature"),
         maxTokens: integer("maxTokens"),
         topP: real("topP"),
-        modelRef: text("modelRef"), // 'provider/modelId'
+        modelRef: text("modelRef"), // "provider::modelId"
         createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
     },
     table => ({
