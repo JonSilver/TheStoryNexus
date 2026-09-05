@@ -3,6 +3,7 @@ import { aiSettingsSchema } from "@/schemas/entities";
 import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { aiApi } from "../api/client";
+import { createSSEParser } from "./sseParser";
 
 /**
  * Client-side facade over the server's AI endpoints. All provider access,
@@ -60,8 +61,8 @@ const generate = async (
 };
 
 /**
- * Parses the server's SSE stream (event: token | error | finish | aborted),
- * buffering across network chunk boundaries.
+ * Reads the server's generation SSE stream. Stream end without a terminal
+ * frame surfaces as an error — truncated output never passes as success.
  */
 const handleStreamedResponse = async (
     response: Response,
@@ -75,56 +76,25 @@ const handleStreamedResponse = async (
     }
     if (!response.ok) {
         const [, body] = await attemptPromise(() => response.json());
+        state.activeRequestId = null;
+        state.fetchController = null;
         onError(new Error(body?.error || `Generation failed (${response.status})`));
         return;
     }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const buffer = { text: "" };
-
-    const dispatchFrame = (frame: string): "continue" | "done" => {
-        const eventMatch = frame.match(/^event: (.+)$/m);
-        const dataMatch = frame.match(/^data: (.+)$/m);
-        if (!eventMatch) return "continue";
-        const [parseError, data] = dataMatch
-            ? (() => {
-                  try {
-                      return [null, JSON.parse(dataMatch[1])] as const;
-                  } catch (e) {
-                      return [e as Error, null] as const;
-                  }
-              })()
-            : ([null, {}] as const);
-        if (parseError) return "continue";
-
-        switch (eventMatch[1]) {
-            case "token":
-                if (data?.text) onToken(data.text);
-                return "continue";
-            case "error":
-                onError(new Error(data?.message || "Generation failed"));
-                return "done";
-            case "finish":
-            case "aborted":
-                onComplete();
-                return "done";
-            default:
-                return "continue";
-        }
-    };
+    const parser = createSSEParser({ onToken, onComplete, onError });
 
     const [error] = await attemptPromise(async () => {
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
-                onComplete();
+                parser.push(decoder.decode());
+                parser.end();
                 break;
             }
-            buffer.text += decoder.decode(value, { stream: true });
-            const frames = buffer.text.split("\n\n");
-            buffer.text = frames.pop() ?? "";
-            for (const frame of frames) if (dispatchFrame(frame) === "done") return;
+            parser.push(decoder.decode(value, { stream: true }));
         }
     });
 

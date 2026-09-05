@@ -1,6 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { eq } from "drizzle-orm";
 import express from "express";
+import { z } from "zod";
 import { db, schema } from "../db/client.js";
 import {
     type AIModel,
@@ -23,8 +24,6 @@ const asyncHandler =
             res.status(500).json({ error: error.message || "Server error" });
         }
     };
-
-const SECRET_FIELDS = ["openaiKey", "openrouterKey", "geminiKey"] as const;
 
 // Keys never leave the server: settings responses carry hasXxxKey booleans instead
 export const redactSettings = (settings: AISettingsRow) => {
@@ -77,23 +76,36 @@ router.get(
     })
 );
 
+const settingsUpdateSchema = z
+    .object({
+        defaultLocalModel: z.string().nullable().optional(),
+        defaultOpenAIModel: z.string().nullable().optional(),
+        defaultOpenRouterModel: z.string().nullable().optional(),
+        defaultGeminiModel: z.string().nullable().optional(),
+        defaultProvider: z.enum(["openai", "openrouter", "gemini", "local"]).nullable().optional(),
+        defaultModelId: z.string().nullable().optional()
+    })
+    .strip();
+
+// Only default-model selection is writable here; keys go via /keys/:provider,
+// the local URL via /local-url, and availableModels via /models/refresh
 router.put(
     "/settings/:id",
     asyncHandler(async (req, res) => {
-        const { id: _id, createdAt: _createdAt, lastModelsFetch, ...updates } = req.body;
-        // Secrets only enter via the write-only key endpoint
-        SECRET_FIELDS.forEach(field => delete updates[field]);
-        delete updates.hasOpenaiKey;
-        delete updates.hasOpenrouterKey;
-        delete updates.hasGeminiKey;
+        const parsed = settingsUpdateSchema.safeParse(req.body ?? {});
+        if (!parsed.success) {
+            res.status(400).json({ error: "Invalid settings update", details: parsed.error.issues });
+            return;
+        }
         const [updated] = await db
             .update(schema.aiSettings)
-            .set({
-                ...updates,
-                ...(lastModelsFetch && { lastModelsFetch: new Date(lastModelsFetch) })
-            })
+            .set(parsed.data)
             .where(eq(schema.aiSettings.id, req.params.id))
             .returning();
+        if (!updated) {
+            res.status(404).json({ error: "Settings not found" });
+            return;
+        }
         res.json(redactSettings(updated));
     })
 );

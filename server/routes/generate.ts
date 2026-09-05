@@ -8,13 +8,16 @@ const router = express.Router();
 
 const activeGenerations = new Map<string, AbortController>();
 
+const INACTIVITY_TIMEOUT_MS = 120_000;
+
 const generateRequestSchema = z.object({
-    requestId: z.string().min(1),
+    requestId: z.string().uuid(),
     provider: z.enum(["openai", "openrouter", "gemini", "local"]),
-    modelId: z.string().min(1),
+    modelId: z.string().min(1).max(200),
     messages: z
-        .array(z.object({ role: z.enum(["system", "user", "assistant"]), content: z.string() }))
-        .min(1),
+        .array(z.object({ role: z.enum(["system", "user", "assistant"]), content: z.string().max(500_000) }))
+        .min(1)
+        .max(200),
     temperature: z.number().min(0).max(2).default(1),
     maxTokens: z.number().int().positive().max(65536).default(2048)
 });
@@ -31,15 +34,35 @@ router.post("/", async (req, res) => {
     }
     const { requestId, provider, modelId, messages, temperature, maxTokens } = parsed.data;
 
+    if (activeGenerations.has(requestId)) {
+        res.status(409).json({ error: "requestId already in use" });
+        return;
+    }
+
+    const abortController = new AbortController();
+    activeGenerations.set(requestId, abortController);
+
+    // Registered before any await so an early disconnect can't leak the entry
+    // or leave the upstream request streaming to nobody
+    res.on("close", () => {
+        abortController.abort();
+        activeGenerations.delete(requestId);
+    });
+
+    const cleanup = () => activeGenerations.delete(requestId);
+
     const [settingsError, settingsRows] = await attemptPromise(() => db.select().from(schema.aiSettings));
     if (settingsError || !settingsRows?.[0]) {
+        cleanup();
         res.status(500).json({ error: "AI settings unavailable" });
         return;
     }
     const settings = settingsRows[0];
 
-    const abortController = new AbortController();
-    activeGenerations.set(requestId, abortController);
+    if (abortController.signal.aborted) {
+        cleanup();
+        return;
+    }
 
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -49,11 +72,20 @@ router.post("/", async (req, res) => {
     });
     res.flushHeaders();
 
-    // Abort upstream when the client disconnects mid-stream
-    res.on("close", () => {
-        abortController.abort();
-        activeGenerations.delete(requestId);
-    });
+    // A provider that stops producing tokens (hung local server, stalled API)
+    // gets aborted rather than hanging the stream forever
+    const inactivity = {
+        timedOut: false,
+        timer: setTimeout(() => undefined, 0)
+    };
+    const armInactivityTimer = () => {
+        clearTimeout(inactivity.timer);
+        inactivity.timer = setTimeout(() => {
+            inactivity.timedOut = true;
+            abortController.abort();
+        }, INACTIVITY_TIMEOUT_MS);
+    };
+    armInactivityTimer();
 
     const [error] = await attemptPromise(async () => {
         const stream = streamCompletion(
@@ -67,12 +99,17 @@ router.post("/", async (req, res) => {
             },
             settings
         );
-        for await (const token of stream) sendEvent(res, "token", { text: token });
+        for await (const token of stream) {
+            armInactivityTimer();
+            sendEvent(res, "token", { text: token });
+        }
     });
 
-    activeGenerations.delete(requestId);
+    clearTimeout(inactivity.timer);
+    cleanup();
 
-    if (error)
+    if (inactivity.timedOut) sendEvent(res, "error", { message: "Generation timed out (no output from provider)" });
+    else if (error)
         if ((error as Error).name === "AbortError" || abortController.signal.aborted) sendEvent(res, "aborted", {});
         else sendEvent(res, "error", { message: (error as Error).message || "Generation failed" });
     else sendEvent(res, "finish", { reason: abortController.signal.aborted ? "aborted" : "complete" });

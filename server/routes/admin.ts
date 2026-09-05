@@ -137,97 +137,89 @@ router.post("/import", upload.single("file"), async (req, res) => {
     const { tables } = jsonData;
     console.log("[Import] File parsed. Tables found:", Object.keys(tables));
 
-    const importTable = async <T, S extends (typeof schema)[keyof typeof schema]>(
-        tableName: string,
-        tableSchema: S,
-        data: T[] | undefined,
-        transform: (item: T) => S["$inferInsert"]
-    ) => {
-        if (!data || data.length === 0) {
-            console.log(`[Import] Skipping ${tableName} - no data`);
-            return 0;
-        }
+    // Whole import runs in one synchronous better-sqlite3 transaction:
+    // any failure rolls back to the pre-import database
+    const [error, counts] = await attemptPromise(async () =>
+        db.transaction(tx => {
+            const importTable = <T, S extends (typeof schema)[keyof typeof schema]>(
+                tableName: string,
+                tableSchema: S,
+                data: unknown,
+                transform: (item: T) => S["$inferInsert"]
+            ) => {
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.log(`[Import] Skipping ${tableName} - no data`);
+                    return 0;
+                }
+                for (const item of data as T[]) tx.insert(tableSchema).values(transform(item)).run();
+                console.log(`[Import] ✓ Imported ${data.length} ${tableName}`);
+                return data.length;
+            };
 
-        console.log(`[Import] Importing ${data.length} ${tableName} records...`);
-        const [error] = await attemptPromise(async () => {
-            for (const item of data) 
-                await db.insert(tableSchema).values(transform(item));
-            
-        });
+            console.log("[Import] Clearing existing data...");
+            tx.delete(schema.sceneBeats).run();
+            tx.delete(schema.notes).run();
+            tx.delete(schema.lorebookEntries).run();
+            tx.delete(schema.aiChats).run();
+            tx.delete(schema.chapters).run();
+            tx.delete(schema.prompts).run();
+            tx.delete(schema.stories).run();
+            tx.delete(schema.series).run();
+            tx.delete(schema.aiSettings).run();
 
-        if (error) {
-            console.error(`[Import] Failed to import ${tableName}:`, error);
-            throw new Error(`Failed to import ${tableName}: ${error.message}`);
-        }
-
-        console.log(`[Import] ✓ Imported ${data.length} ${tableName}`);
-        return data.length;
-    };
-
-    const [error, counts] = await attemptPromise(async () => {
-        console.log("[Import] Clearing existing data...");
-        await db.delete(schema.sceneBeats);
-        await db.delete(schema.notes);
-        await db.delete(schema.lorebookEntries);
-        await db.delete(schema.aiChats);
-        await db.delete(schema.chapters);
-        await db.delete(schema.prompts);
-        await db.delete(schema.stories);
-        await db.delete(schema.series);
-        await db.delete(schema.aiSettings);
-        console.log("[Import] ✓ Cleared existing data");
-
-        return {
-            series: await importTable("series", schema.series, tables.series, (s: ImportedSeries) => ({
-                ...s,
-                createdAt: new Date(s.createdAt)
-            })),
-            stories: await importTable("stories", schema.stories, tables.stories, (s: ImportedStory) => ({
-                ...s,
-                createdAt: new Date(s.createdAt)
-            })),
-            chapters: await importTable("chapters", schema.chapters, tables.chapters, (c: ImportedChapter) => ({
-                ...c,
-                createdAt: new Date(c.createdAt)
-            })),
-            prompts: await importTable("prompts", schema.prompts, tables.prompts, (p: ImportedPrompt) => ({
-                ...p,
-                createdAt: new Date(p.createdAt)
-            })),
-            lorebookEntries: await importTable(
-                "lorebookEntries",
-                schema.lorebookEntries,
-                tables.lorebookEntries,
-                (e: ImportedLorebookEntry) => ({ ...e, createdAt: new Date(e.createdAt) })
-            ),
-            aiChats: await importTable("aiChats", schema.aiChats, tables.aiChats, (c: ImportedAiChat) => ({
-                ...c,
-                createdAt: new Date(c.createdAt),
-                updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined
-            })),
-            sceneBeats: await importTable(
-                "sceneBeats",
-                schema.sceneBeats,
-                tables.sceneBeats,
-                (s: ImportedSceneBeat) => ({ ...s, createdAt: new Date(s.createdAt) })
-            ),
-            notes: await importTable("notes", schema.notes, tables.notes, (n: ImportedNote) => ({
-                ...n,
-                createdAt: new Date(n.createdAt),
-                updatedAt: new Date(n.updatedAt)
-            })),
-            aiSettings: await importTable(
-                "aiSettings",
-                schema.aiSettings,
-                tables.aiSettings,
-                (s: ImportedAiSetting) => ({
+            return {
+                series: importTable("series", schema.series, tables.series, (s: ImportedSeries) => ({
                     ...s,
-                    createdAt: new Date(s.createdAt),
-                    lastModelsFetch: s.lastModelsFetch ? new Date(s.lastModelsFetch) : undefined
-                })
-            )
-        };
-    });
+                    createdAt: new Date(s.createdAt)
+                })),
+                stories: importTable("stories", schema.stories, tables.stories, (s: ImportedStory) => ({
+                    ...s,
+                    createdAt: new Date(s.createdAt)
+                })),
+                chapters: importTable("chapters", schema.chapters, tables.chapters, (c: ImportedChapter) => ({
+                    ...c,
+                    createdAt: new Date(c.createdAt)
+                })),
+                prompts: importTable("prompts", schema.prompts, tables.prompts, (p: ImportedPrompt) => ({
+                    ...p,
+                    createdAt: new Date(p.createdAt)
+                })),
+                lorebookEntries: importTable(
+                    "lorebookEntries",
+                    schema.lorebookEntries,
+                    tables.lorebookEntries,
+                    (e: ImportedLorebookEntry) => ({ ...e, createdAt: new Date(e.createdAt) })
+                ),
+                aiChats: importTable("aiChats", schema.aiChats, tables.aiChats, (c: ImportedAiChat) => ({
+                    ...c,
+                    createdAt: new Date(c.createdAt),
+                    updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined
+                })),
+                sceneBeats: importTable(
+                    "sceneBeats",
+                    schema.sceneBeats,
+                    tables.sceneBeats,
+                    (s: ImportedSceneBeat) => ({ ...s, createdAt: new Date(s.createdAt) })
+                ),
+                notes: importTable("notes", schema.notes, tables.notes, (n: ImportedNote) => ({
+                    ...n,
+                    createdAt: new Date(n.createdAt),
+                    updatedAt: n.updatedAt ? new Date(n.updatedAt) : new Date(n.createdAt)
+                })),
+                aiSettings: importTable(
+                    "aiSettings",
+                    schema.aiSettings,
+                    tables.aiSettings,
+                    // Keys are stripped from exports and must not sneak back in via import
+                    ({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...s }: ImportedAiSetting) => ({
+                        ...s,
+                        createdAt: new Date(s.createdAt),
+                        lastModelsFetch: s.lastModelsFetch ? new Date(s.lastModelsFetch) : undefined
+                    })
+                )
+            };
+        })
+    );
 
     if (error) {
         console.error("[Import] Import failed:", error);
