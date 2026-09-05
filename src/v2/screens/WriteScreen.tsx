@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useChapterQuery, useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
@@ -21,9 +22,18 @@ const Spinner = () => (
 );
 
 export const WriteScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId, lastChapterFor, setLastChapter } = useV2Store();
-    const { data: story } = useStoryQuery(currentStoryId ?? "");
+    const { currentStoryId, lastChapterFor, setLastChapter, setCurrentStory } = useV2Store();
+    const { data: story, isError: storyGone } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading: chaptersLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
+
+    // A remembered story that no longer exists (deleted elsewhere) must not
+    // strand the writer on an empty surface
+    useEffect(() => {
+        if (currentStoryId && storyGone) {
+            setCurrentStory(null);
+            goTo("stories");
+        }
+    }, [currentStoryId, storyGone, setCurrentStory, goTo]);
 
     const resumeId = currentStoryId ? lastChapterFor(currentStoryId) : null;
     const orderedChapters = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
