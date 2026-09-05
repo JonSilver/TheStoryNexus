@@ -116,7 +116,7 @@ if (error) return handleError(error);
 - React Router v7 - Client-side routing
 - TanStack Query v5 - Server state management
 - React Hook Form - Form handling
-- Lexical v0.24.0 - Rich text editor (custom implementation in `src/Lexical/`)
+- Lexical v0.39 - Rich text editor (custom implementation in `src/components/story-editor/`)
 
 **UI Libraries**:
 
@@ -147,7 +147,6 @@ if (error) return handleError(error);
 The project uses TypeScript path aliases configured in both `tsconfig.json` and `vite.config.ts`:
 
 - `@/*` → `./src/*`
-- `shared/*` → `src/Lexical/shared/src/*`
 
 ### Lexical Dependencies
 
@@ -225,14 +224,14 @@ Prompts support multiple prompt types: `scene_beat`, `gen_summary`, `selection_s
 
 #### Lexical Editor Integration
 
-The Lexical editor is embedded from `src/Lexical/lexical-playground/` with custom plugins:
+The Lexical editor lives in `src/components/story-editor/` (descended from the Lexical playground; substantial vestigial playground code remains). Composition chain: `EditorTool` → `StoryEditor` → `EmbeddedPlayground` → `App.tsx` → `Editor.tsx`. Key custom plugins:
 
-- **SceneBeatNode** - Inline scene beat commands (triggered by Alt+S / Option+S)
-- **LorebookTagPlugin** - Autocomplete for `@tag` mentions that match lorebook tags
-- **SaveChapterContent** / **LoadChapterContent** - Auto-save and load chapter content from database
-- **WordCountPlugin** - Displays real-time word count
-
-The editor uses a modified version of the Lexical playground and includes custom nodes for scene beats, special text, and page breaks.
+- **SceneBeatNode** (`nodes/scene-beat/`) - Inline scene beat blocks; state stored in the separate `sceneBeats` DB table keyed by node `sceneBeatId`
+- **SceneBeatShortcutPlugin** - Alt+S / Option+S insertion; also insertable via toolbar Insert dropdown and the SlashCommandPlugin
+- **LorebookTagPlugin** - Computes lorebook entries matched against chapter text (no `@tag` autocomplete)
+- **SaveChapterContent** / **LoadChapterContent** - Debounced auto-save (flushes on chapter switch/unmount/beforeunload) and editor-state load
+- **WordCountPlugin** - Real-time word count
+- **FloatingTextFormatToolbarPlugin** - Selection formatting plus selection-based AI actions
 
 ### Project Structure
 
@@ -267,31 +266,26 @@ Each feature typically contains:
 
 Other frontend directories:
 
-- `src/components/` - Reusable UI components
-- `src/Lexical/` - Text editor implementation (custom Lexical editor)
+- `src/components/workspace/` - Workspace shell: `Sidebar`, `TopBar`, `MainContent`, and the tool components (`tools/`) it switches between
+- `src/components/story-editor/` - Text editor implementation (custom Lexical editor, playground-descended)
+- `src/components/ui/` - Reusable UI components (Shadcn)
 - `src/services/` - Services (AI, API client, export utilities)
 - `src/types/` - TypeScript type definitions
 - `src/lib/` - Utility functions and helpers
 
-### Routing Structure
+### Routing & Navigation Structure
+
+The app is a single-route workspace shell plus a handful of secondary pages (`src/main.tsx`):
 
 ```
-/ - Landing page
-/series - Series listing
-/series/:seriesId - Series dashboard
-/stories - Story listing
-/ai-settings - AI provider configuration
+/ - Workspace (Sidebar + TopBar + MainContent)
+/series - Series listing page
+/stories/:storyId/read - Story reader
+/settings - AI provider configuration
 /guide - User guide
-/dashboard/:storyId/
-  ├── chapters - Chapter list
-  ├── chapters/:chapterId - Chapter editor (Lexical)
-  ├── prompts - Prompt manager
-  ├── lorebook - Lorebook entries
-  ├── brainstorm - AI chat interface
-  └── notes - Story notes
 ```
 
-Story-specific routes are nested under `/dashboard/:storyId` with a shared layout showing story navigation. Series provide optional grouping for related stories with inherited lorebook entries.
+The workspace at `/` is **stateful, not routed**: `MainContent` switches between tools (stories, series, chapters, editor, lorebook, brainstorm, prompts, notes) based on `currentTool` in `StoryContext`, with `currentStoryId` and `currentTool` persisted to localStorage. The secondary routes render under `MainLayout`. Series provide optional grouping for related stories with inherited lorebook entries.
 
 ### Lorebook System
 
@@ -309,7 +303,7 @@ Lorebook entries are integrated into the prompt system for context injection. St
 
 Scene beats are inline writing commands in the editor:
 
-- Triggered by Alt+S (Option+S on Mac)
+- Inserted via Alt+S (Option+S on Mac), the toolbar Insert → Scene Beat menu, or the `/` slash-command menu
 - Store command, POV settings, generated content, and acceptance status
 - Support three context modes:
     - `useMatchedChapter` - Include chapter-matched lorebook entries

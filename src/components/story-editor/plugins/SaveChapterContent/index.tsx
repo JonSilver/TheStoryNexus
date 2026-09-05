@@ -47,9 +47,13 @@ export function SaveChapterContentPlugin(): null {
             saveContent(currentChapterId, content);
         });
 
+        const flushPendingSave = () => saveContent.flush();
+        window.addEventListener("beforeunload", flushPendingSave);
+
         return () => {
             removeUpdateListener();
-            saveContent.cancel();
+            window.removeEventListener("beforeunload", flushPendingSave);
+            saveContent.flush();
         };
     }, [editor, currentChapterId]);
 

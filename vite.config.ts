@@ -10,9 +10,7 @@ export default defineConfig(() => ({
     plugins: [{ enforce: "pre", ...mdx({ remarkPlugins: [remarkGfm, remarkAlert] }) }, react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ })],
     resolve: {
         alias: {
-            "@": path.resolve(__dirname, "./src"),
-            "@lexical-playground": path.resolve(__dirname, "src/Lexical/lexical-playground/src"),
-            shared: path.resolve(__dirname, "src/Lexical/shared/src")
+            "@": path.resolve(__dirname, "./src")
         }
     },
     server: {

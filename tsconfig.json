@@ -1,8 +1,7 @@
 {
     "compilerOptions": {
         "paths": {
-            "@/*": ["./src/*"],
-            "shared/*": ["./src/Lexical/shared/src/*"]
+            "@/*": ["./src/*"]
         },
         "target": "ES2020",
         "useDefineForClassFields": true,
