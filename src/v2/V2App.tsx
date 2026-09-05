@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { BookOpen, Library, MoreHorizontal, PenLine } from "lucide-react";
 import { ActionsScreen } from "./screens/ActionsScreen";
+import { BrainstormScreen } from "./screens/BrainstormScreen";
 import { BibleScreen } from "./screens/BibleScreen";
 import { ChaptersScreen } from "./screens/ChaptersScreen";
 import { MoreScreen } from "./screens/MoreScreen";
+import { NotesScreen } from "./screens/NotesScreen";
 import { StoriesScreen } from "./screens/StoriesScreen";
 import { WriteScreen } from "./screens/WriteScreen";
 
@@ -14,7 +16,7 @@ const TOOLS = [
     { id: "more", label: "More", icon: MoreHorizontal, Screen: MoreScreen }
 ] as const;
 
-export type V2Tool = (typeof TOOLS)[number]["id"] | "bible" | "actions";
+export type V2Tool = (typeof TOOLS)[number]["id"] | "bible" | "actions" | "notes" | "brainstorm";
 
 export default function V2App() {
     const [tool, setTool] = useState<V2Tool>("write");
@@ -27,6 +29,10 @@ export default function V2App() {
                     <BibleScreen goTo={setTool} />
                 ) : tool === "actions" ? (
                     <ActionsScreen goTo={setTool} />
+                ) : tool === "notes" ? (
+                    <NotesScreen goTo={setTool} />
+                ) : tool === "brainstorm" ? (
+                    <BrainstormScreen goTo={setTool} />
                 ) : (
                     <active.Screen goTo={setTool} />
                 )}

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { BookMarked, BookOpenText, ExternalLink, Settings, SlidersHorizontal } from "lucide-react";
+import { BookMarked, BookOpen, BookOpenText, ExternalLink, Library, Lightbulb, NotebookPen, Settings, SlidersHorizontal } from "lucide-react";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
 
 const LINKS = [
     { to: "/settings", label: "AI Settings", icon: Settings },
+    { to: "/series", label: "Series", icon: Library },
     { to: "/guide", label: "Guide", icon: BookMarked },
     { to: "/", label: "v1 workspace (everything not yet in v2)", icon: ExternalLink }
 ] as const;
@@ -63,7 +64,7 @@ const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     );
 };
 
-export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions") => void }) => {
+export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "notes" | "brainstorm") => void }) => {
     const { currentStoryId } = useV2Store();
 
     return (
@@ -72,14 +73,36 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions") => voi
                 <h1 className="text-lg font-semibold">More</h1>
             </header>
             {currentStoryId && goTo && (
-                <button
-                    type="button"
-                    onClick={() => goTo("bible")}
-                    className="flex items-center gap-3 border-t px-4 py-3 text-left"
-                >
-                    <BookOpenText className="h-5 w-5 text-muted-foreground" />
-                    Story Bible (AI extraction)
-                </button>
+                <>
+                    <button
+                        type="button"
+                        onClick={() => goTo("bible")}
+                        className="flex items-center gap-3 border-t px-4 py-3 text-left"
+                    >
+                        <BookOpenText className="h-5 w-5 text-muted-foreground" />
+                        Story Bible (AI extraction)
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => goTo("brainstorm")}
+                        className="flex items-center gap-3 border-t px-4 py-3 text-left"
+                    >
+                        <Lightbulb className="h-5 w-5 text-muted-foreground" />
+                        Brainstorm
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => goTo("notes")}
+                        className="flex items-center gap-3 border-t px-4 py-3 text-left"
+                    >
+                        <NotebookPen className="h-5 w-5 text-muted-foreground" />
+                        Notes
+                    </button>
+                    <Link to={`/stories/${currentStoryId}/read`} className="flex items-center gap-3 border-t px-4 py-3">
+                        <BookOpen className="h-5 w-5 text-muted-foreground" />
+                        Read this story
+                    </Link>
+                </>
             )}
             {goTo && (
                 <button
