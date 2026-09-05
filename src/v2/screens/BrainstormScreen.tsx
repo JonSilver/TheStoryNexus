@@ -44,7 +44,9 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         const userMessage = draft.trim();
         setDraft("");
         const withUser = [...chat.messages, chatMessage("user", userMessage)];
-        updateChat.mutate({ id: chat.id, data: { messages: withUser } });
+        // Sequential writes: firing the user-message update without awaiting
+        // let it finish AFTER the reply update and clobber the assistant turn
+        await updateChat.mutateAsync({ id: chat.id, data: { messages: withUser } }).catch(() => undefined);
 
         const reply = await generation.run({
             actionId: "brainstorm",
@@ -53,7 +55,9 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         });
         const finalReply = reply || generation.text;
         if (finalReply)
-            updateChat.mutate({ id: chat.id, data: { messages: [...withUser, chatMessage("assistant", finalReply)] } });
+            await updateChat
+                .mutateAsync({ id: chat.id, data: { messages: [...withUser, chatMessage("assistant", finalReply)] } })
+                .catch(() => undefined);
         generation.reset();
         requestAnimationFrame(() => scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight }));
     };

@@ -31,7 +31,7 @@ const putChapterContent = async (
             // keepalive survives page teardown but caps the body (~64KB);
             // larger saves fall back to a normal fetch and rely on the
             // visibilitychange flush firing while the page is still alive
-            keepalive: exiting && body.length < KEEPALIVE_BODY_LIMIT
+            keepalive: exiting && new Blob([body]).size < KEEPALIVE_BODY_LIMIT
         })
     );
     if (error || !response) return { outcome: "error", message: (error as Error)?.message ?? "Network error" };

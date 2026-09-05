@@ -21,7 +21,7 @@ import {
     parseManuscriptText
 } from "../services/ingest/parse.js";
 import { type SplitChapter, splitIntoChapters } from "../services/ingest/split.js";
-import { dropAnalysis, getAnalysis, storeAnalysis } from "../services/ingest/store.js";
+import { restoreAnalysis, storeAnalysis, takeAnalysis } from "../services/ingest/store.js";
 import { toLexicalDocument } from "../services/ingest/toLexical.js";
 
 const router = express.Router();
@@ -60,7 +60,14 @@ const asyncHandler =
         res.status(status ?? 500).json({ error: error.message || "Server error" });
     };
 
+// Compressed uploads (docx/epub) can expand far beyond the 20 MB file cap
+const MAX_EXPANDED_CHARS = 8_000_000;
+
 const analysisResponse = (res: express.Response, { title, text }: ParsedManuscript) => {
+    if (text.length > MAX_EXPANDED_CHARS) {
+        res.status(413).json({ error: "The manuscript is too large after extraction (8M character limit)" });
+        return;
+    }
     const chapters = splitIntoChapters(text);
     res.json({
         token: storeAnalysis(title, chapters),
@@ -91,7 +98,7 @@ router.post(
 );
 
 const pastedSchema = z.object({
-    text: z.string().min(1).max(40_000_000),
+    text: z.string().min(1).max(8_000_000),
     title: z.string().max(500).optional()
 });
 
@@ -120,12 +127,17 @@ const commitSchema = z.object({
 
 type CommitChapter = z.infer<typeof commitSchema>["chapters"][number];
 
-const selectChapters = (stored: SplitChapter[], requested: CommitChapter[]): SplitChapter[] =>
-    requested.map(({ index, title }) => {
-        const source = stored[index];
-        if (!source) throw new Error(`Unknown chapter index ${index}`);
-        return { title: title.trim() || source.title, body: source.body };
-    });
+const selectChapters = (stored: SplitChapter[], requested: CommitChapter[]): SplitChapter[] => {
+    // Duplicate indices would amplify one staged chapter into thousands of rows
+    const seen = new Set<number>();
+    return requested
+        .filter(({ index }) => (seen.has(index) ? false : (seen.add(index), true)))
+        .map(({ index, title }) => {
+            const source = stored[index];
+            if (!source) throw new Error(`Unknown chapter index ${index}`);
+            return { title: title.trim() || source.title, body: source.body };
+        });
+};
 
 router.post(
     "/commit",
@@ -137,7 +149,9 @@ router.post(
         }
         const { token, title, author, language, chapters } = parsed.data;
 
-        const analysis = getAnalysis(token);
+        // Taken atomically (synchronous, pre-await): concurrent commits of the
+        // same token cannot both proceed
+        const analysis = takeAnalysis(token);
         if (!analysis) {
             res.status(410).json({ error: "That analysis has expired. Upload the manuscript again." });
             return;
@@ -146,7 +160,8 @@ router.post(
         const [selectionError, selected] = await attemptPromise(async () =>
             selectChapters(analysis.chapters, chapters)
         );
-        if (selectionError || !selected) {
+        if (selectionError || !selected || selected.length === 0) {
+            restoreAnalysis(token, analysis);
             res.status(400).json({ error: selectionError?.message ?? "No chapters selected" });
             return;
         }
@@ -154,7 +169,8 @@ router.post(
         const storyId = crypto.randomUUID();
         const createdAt = new Date();
 
-        await db.transaction(tx => {
+        const [transactionError] = await attemptPromise(async () =>
+            db.transaction(tx => {
             tx.insert(schema.stories)
                 .values({
                     id: storyId,
@@ -179,9 +195,13 @@ router.post(
                     })
                     .run();
             });
-        });
+            })
+        );
+        if (transactionError) {
+            restoreAnalysis(token, analysis);
+            throw transactionError;
+        }
 
-        dropAnalysis(token);
         res.status(201).json({ storyId, chapterCount: selected.length });
     })
 );

@@ -16,6 +16,7 @@ export interface StoredAnalysis {
 export const ANALYSIS_TTL_MS = 30 * 60 * 1000;
 
 const MAX_ANALYSES = 20;
+const MAX_TOTAL_CHARS = 24_000_000;
 
 const analyses = new Map<string, StoredAnalysis>();
 
@@ -27,16 +28,37 @@ const sweep = (now: number) => {
     [...analyses.keys()].slice(0, Math.max(0, analyses.size - MAX_ANALYSES)).forEach(token => analyses.delete(token));
 };
 
+const totalChars = () =>
+    [...analyses.values()].reduce((sum, a) => sum + a.chapters.reduce((n, c) => n + c.body.length, 0), 0);
+
 export const storeAnalysis = (title: string, chapters: SplitChapter[], now = Date.now()): string => {
     const token = crypto.randomUUID();
     analyses.set(token, { title, chapters, expiresAt: now + ANALYSIS_TTL_MS });
     sweep(now);
+    // Byte ceiling across all staged analyses: shed oldest until under it
+    const keys = [...analyses.keys()];
+    const cursor = { i: 0 };
+    while (totalChars() > MAX_TOTAL_CHARS && cursor.i < keys.length && keys[cursor.i] !== token)
+        analyses.delete(keys[cursor.i++]);
     return token;
 };
 
 export const getAnalysis = (token: string, now = Date.now()): StoredAnalysis | null => {
     sweep(now);
     return analyses.get(token) ?? null;
+};
+
+/** Atomic get-and-remove (synchronous): concurrent consumers cannot share a token. */
+export const takeAnalysis = (token: string, now = Date.now()): StoredAnalysis | null => {
+    sweep(now);
+    const analysis = analyses.get(token) ?? null;
+    if (analysis) analyses.delete(token);
+    return analysis;
+};
+
+/** Put an analysis back after a failed commit so the client can retry. */
+export const restoreAnalysis = (token: string, analysis: StoredAnalysis): void => {
+    analyses.set(token, analysis);
 };
 
 export const dropAnalysis = (token: string): boolean => analyses.delete(token);

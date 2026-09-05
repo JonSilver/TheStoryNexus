@@ -13,17 +13,19 @@ type Chapter = InferSelectModel<typeof schema.chapters>;
 // v2 canonical converter: correct headings/lists/marks, fully escaped output.
 // epub-gen-memory downloads images to embed them and only accepts absolute
 // URLs, so relative asset paths are pointed back at this server.
-const convertLexicalToHtml = (jsonContent: string): string => {
-    const [, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
+const convertLexicalToHtml = (jsonContent: string, chapterTitle: string): string => {
+    const [error, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
+    // Silently exporting an empty chapter would discard prose without a trace
+    if (error || html === undefined) throw new Error(`Chapter "${chapterTitle}" could not be converted: ${error?.message}`);
     const port = process.env.PORT || 3000;
-    return (html ?? "").split('src="/api/assets/').join(`src="http://127.0.0.1:${port}/api/assets/`);
+    return html.split('src="/api/assets/').join(`src="http://127.0.0.1:${port}/api/assets/`);
 };
 
 /**
  * Generates an EPUB file from story and chapters
  */
 export const generateEpub = async (story: Story, chapters: Chapter[]): Promise<Buffer> => {
-    const chapterHtmls = chapters.map(chapter => convertLexicalToHtml(chapter.content));
+    const chapterHtmls = chapters.map(chapter => convertLexicalToHtml(chapter.content, chapter.title));
 
     const epubChapters = [
         {

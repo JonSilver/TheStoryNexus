@@ -319,9 +319,17 @@ router.post("/preview", async (req, res) => {
             ? { provider: settings.defaultProvider as AIProviderId, modelId: settings.defaultModelId }
             : null);
 
+    // The inspector must show EXACTLY what generation would send — identical
+    // budget arithmetic, including the output cap and voice cost
     const contextLimit = model ? contextLimitFor(settings, model.provider, model.modelId) : 16384;
-    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n"));
-    const tokenBudget = Math.max(contextLimit - resolved.params.maxTokens - templateSize - BUDGET_SAFETY_MARGIN, 512);
+    const maxTokens = Math.min(resolved.params.maxTokens, Math.floor(contextLimit / 2));
+    const voiceSize = resolved.def.voiceApplies ? countTokens(await voiceFor(storyId)) : 0;
+    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n")) + voiceSize;
+    const tokenBudget = contextLimit - maxTokens - templateSize - BUDGET_SAFETY_MARGIN;
+    if (tokenBudget <= 0) {
+        res.status(422).json({ error: "Prompt template and output size exceed the model's context window" });
+        return;
+    }
 
     const [assemblyError, assembled] = await attemptPromise(() =>
         assembleContext({ storyId, chapterId, editorContext, contextNeeds: resolved.def.contextNeeds, tokenBudget })
@@ -338,7 +346,7 @@ router.post("/preview", async (req, res) => {
     );
     res.json({
         model,
-        params: resolved.params,
+        params: { ...resolved.params, maxTokens },
         promptTokens: countTokens(messages.map(m => m.content).join("\n")),
         messages
     });

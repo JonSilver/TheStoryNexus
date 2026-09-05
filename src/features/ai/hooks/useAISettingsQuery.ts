@@ -59,8 +59,8 @@ export const useUpdateLocalApiUrlMutation = () => {
             queryClient.setQueryData(aiSettingsKeys.modelsByProvider("local"), models);
             toast.success("Local API URL updated");
         },
-        onError: () => {
-            toast.error("Failed to update local API URL");
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to update local API URL");
         }
     });
 };

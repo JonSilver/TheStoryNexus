@@ -62,7 +62,9 @@ export const parseEpub = async (buffer: Buffer): Promise<{ title: string; text: 
     const candidates = spinePaths(opf, baseDir).filter(entry => zip.file(entry) !== null);
     const documents = candidates.length > 0 ? candidates : archiveXhtmlPaths(zip);
 
-    const sections = await Promise.all(documents.map(async entry => xhtmlToText(await readText(zip, entry))));
+    // Sequential: concurrent expansion of every spine item multiplies peak memory
+    const sections: string[] = [];
+    for (const entry of documents) sections.push(xhtmlToText(await readText(zip, entry)));
 
     return { title: tagText(opf, "title"), text: sections.filter(section => section.length > 0).join("\n\n") };
 };

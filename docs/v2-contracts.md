@@ -40,7 +40,7 @@ Node state (fully serialised in-document): `{ beatId, command, povCharacter?, po
 One canonical converter: document JSON → intermediate block list → per-target renderers (Markdown, HTML, EPUB XHTML, PDF, AI plain text). Snapshot fixtures required for every block/mark type per target. Rules:
 
 - Headings → `#`×level / `<h{level}>`; lists → `-` / `1.` / `<ul>/<ol>`; HR → `---` / `<hr>`; marks → `**` `*` `<u>` / tags.
-- Images: HTML/EPUB embed the asset; Markdown references relative path (bundled in a zip when exporting with assets); PDF embeds; AI plain text omits.
+- Images: EPUB embeds the asset; Markdown/HTML reference the relative asset path; PDF embeds; AI plain text omits. (Deviation log: browser Markdown/HTML downloads do not yet bundle assets into a zip — references only; EPUB is the with-images export.) Image `src` values are restricted to `/api/assets/` at the parser, so no exporter can be steered at other URLs.
 - Scene beats: omitted everywhere.
 - All HTML/EPUB output is escaped (v1's EPUB interpolates raw text — must not survive).
 

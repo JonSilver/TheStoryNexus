@@ -117,14 +117,6 @@ export async function* streamCompletion(request: GenerationRequest, settings: Pr
     }
 }
 
-const FALLBACK_LOCAL_MODEL: AIModel = {
-    id: "local",
-    name: "Local Model",
-    provider: "local",
-    contextLength: 16384,
-    enabled: true
-};
-
 const openAIContextLength = (modelId: string): number => {
     if (modelId.includes("gpt-4")) return 8192;
     if (modelId.includes("gpt-3.5-turbo-16k")) return 16384;
@@ -153,10 +145,16 @@ export const fetchModelsForProvider = async (provider: AIProviderId, settings: P
     }
 
     if (provider === "local") {
-        const [error, response] = await attemptPromise(() => fetch(`${localBaseUrl(settings)}/models`));
-        if (error || !response?.ok) return [FALLBACK_LOCAL_MODEL];
+        const base = localBaseUrl(settings);
+        // Unreachable must FAIL, not fabricate a phantom model: the UI needs
+        // the real error to say "the server can't reach that URL"
+        const [error, response] = await attemptPromise(() =>
+            fetch(`${base}/models`, { signal: AbortSignal.timeout(8000) })
+        );
+        if (error) throw new Error(`The server could not reach ${base} (${(error as Error).message})`);
+        if (!response.ok) throw new Error(`${base}/models answered ${response.status}`);
         const [jsonError, result] = await attemptPromise<{ data: Array<{ id: string }> }>(() => response.json());
-        if (jsonError || !result?.data) return [FALLBACK_LOCAL_MODEL];
+        if (jsonError || !result?.data) throw new Error(`${base}/models did not return an OpenAI-style model list`);
         return result.data.map(model => ({
             id: `local/${model.id}`,
             name: model.id,

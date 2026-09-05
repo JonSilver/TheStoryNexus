@@ -226,10 +226,6 @@ export default createCrudRouter({
             asyncHandler(async (req, res) => {
                 const storyId = req.params.id;
 
-                // Assets go first; a filesystem failure must not leave the story undeletable
-                const [assetError] = await attemptPromise(() => deleteStoryAssets(storyId));
-                if (assetError) console.error(`Failed to delete assets for story ${storyId}:`, assetError);
-
                 // better-sqlite3 transactions are synchronous — an async callback
                 // makes drizzle throw AFTER the statements have run, turning an
                 // atomic delete into a 500 with side effects
@@ -244,6 +240,12 @@ export default createCrudRouter({
                     // 2. Delete story (FK cascades handle chapters, aiChats, notes, etc.)
                     tx.delete(schema.stories).where(eq(schema.stories.id, storyId)).run();
                 });
+
+                // Assets go after the transaction: a DB failure must not leave
+                // a live story whose images are already destroyed. A filesystem
+                // failure here just logs — the orphan sweep can collect later.
+                const [assetError] = await attemptPromise(() => deleteStoryAssets(storyId));
+                if (assetError) console.error(`Failed to delete assets for story ${storyId}:`, assetError);
 
                 res.status(204).send();
             })

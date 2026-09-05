@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { attemptPromise } from "@jfdi/attempt";
 import { Loader2, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -60,31 +61,44 @@ export const ExtractSheet = ({
         }
     };
 
-    const approveEntries = () => {
+    const approveEntries = async () => {
         const chosen = (proposals ?? []).filter((_, i) => ticked.has(i));
-        chosen.forEach(proposal =>
-            createEntry.mutate({
-                id: crypto.randomUUID(),
-                level: "story",
-                scopeId: storyId,
-                name: proposal.name,
-                description: proposal.description,
-                category: proposal.category,
-                tags: proposal.tags,
-                isDisabled: false
-            })
+        const results = await Promise.allSettled(
+            chosen.map(proposal =>
+                createEntry.mutateAsync({
+                    id: crypto.randomUUID(),
+                    level: "story",
+                    scopeId: storyId,
+                    name: proposal.name,
+                    description: proposal.description,
+                    category: proposal.category,
+                    tags: proposal.tags,
+                    isDisabled: false
+                })
+            )
         );
-        toast.success(`${chosen.length} entr${chosen.length === 1 ? "y" : "ies"} added`);
+        const added = results.filter(r => r.status === "fulfilled").length;
+        const failed = results.length - added;
+        if (failed) toast.error(`${added} added, ${failed} failed — the failures were not saved`);
+        else toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
         onClose();
     };
 
-    const applyUpdate = (proposal: UpdateProposal) => {
+    const applyUpdate = async (proposal: UpdateProposal) => {
         const entry = entries.find(e => e.name.toLowerCase() === proposal.name.toLowerCase());
         if (!entry) {
             toast.error(`No entry named “${proposal.name}”`);
             return;
         }
-        updateEntry.mutate({ id: entry.id, data: { description: proposal.updatedDescription } });
+        // Removed from the list only once the write succeeds, so a failure
+        // leaves the proposal available to retry
+        const [error] = await attemptPromise(() =>
+            updateEntry.mutateAsync({ id: entry.id, data: { description: proposal.updatedDescription } })
+        );
+        if (error) {
+            toast.error(`Couldn't update “${proposal.name}”`);
+            return;
+        }
         setUpdates(current => (current ?? []).filter(u => u !== proposal));
     };
 
@@ -156,7 +170,7 @@ export const ExtractSheet = ({
                                 {proposal.reason && <p className="text-xs text-muted-foreground">{proposal.reason}</p>}
                                 <button
                                     type="button"
-                                    onClick={() => applyUpdate(proposal)}
+                                    onClick={() => void applyUpdate(proposal)}
                                     className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground"
                                 >
                                     Apply
@@ -179,7 +193,7 @@ export const ExtractSheet = ({
                     ) : proposals !== null ? (
                         <button
                             type="button"
-                            onClick={approveEntries}
+                            onClick={() => void approveEntries()}
                             disabled={ticked.size === 0}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >

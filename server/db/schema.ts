@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Series table
 export const series = sqliteTable(
@@ -148,7 +148,11 @@ export const actionOverrides = sqliteTable(
     },
     table => ({
         actionIdx: index("action_override_action_idx").on(table.actionId),
-        storyIdx: index("action_override_story_idx").on(table.storyId)
+        storyIdx: index("action_override_story_idx").on(table.storyId),
+        // One override per (action, story) scope; SQLite treats NULLs as
+        // distinct so global (storyId NULL) uniqueness is enforced by the
+        // upsert logic in routes/actions.ts
+        scopeUnique: uniqueIndex("action_override_scope_unique").on(table.actionId, table.storyId)
     })
 );
 

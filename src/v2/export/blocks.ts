@@ -123,7 +123,10 @@ const parseSceneBeat = (node: LexicalNode): SceneBeatBlock => {
 
 const parseImage = (node: LexicalNode): ImageBlock | null => {
     const src = asString(node.src);
-    if (!src) return null;
+    // Contract §1/§4: image src must be a server asset URL. Enforced here so
+    // no exporter (including server-side EPUB, which FETCHES image URLs) can
+    // be steered at arbitrary or internal addresses by crafted content.
+    if (!src.startsWith("/api/assets/")) return null;
     const caption = asString(node.caption);
     return {
         type: "image",

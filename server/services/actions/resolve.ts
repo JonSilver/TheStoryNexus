@@ -66,22 +66,25 @@ export const resolveAction = (actionId: ActionId, storyId: string | null, overri
     ];
 
     const template = chain.map(o => o.template).find(t => isValidOverrideTemplate(t, def)) ?? def.defaultTemplate;
-    const pick = <K extends keyof ActionOverrideRow>(key: K) =>
-        chain.map(o => o[key]).find(value => value !== null && value !== undefined);
+    // Contract §5: an INVALID stored value falls through to the next scope
+    // (then the built-in) rather than being silently clamped into range
+    const pick = <K extends keyof ActionOverrideRow>(key: K, valid: (value: NonNullable<ActionOverrideRow[K]>) => boolean) =>
+        chain
+            .map(o => o[key])
+            .find(value => value !== null && value !== undefined && valid(value as NonNullable<ActionOverrideRow[K]>));
 
-    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+    const inRange = (min: number, max: number) => (value: number) => Number.isFinite(value) && value >= min && value <= max;
     return {
         def,
         template,
         params: {
-            temperature: clamp((pick("temperature") as number | undefined) ?? def.defaultParams.temperature, 0, 2),
-            maxTokens: Math.floor(clamp((pick("maxTokens") as number | undefined) ?? def.defaultParams.maxTokens, 64, 65536)),
-            topP: (() => {
-                const value = (pick("topP") as number | undefined) ?? def.defaultParams.topP;
-                return value === undefined ? undefined : clamp(value, 0, 1);
-            })()
+            temperature: (pick("temperature", inRange(0, 2)) as number | undefined) ?? def.defaultParams.temperature,
+            maxTokens: Math.floor(
+                (pick("maxTokens", inRange(64, 65536)) as number | undefined) ?? def.defaultParams.maxTokens
+            ),
+            topP: (pick("topP", inRange(0, 1)) as number | undefined) ?? def.defaultParams.topP
         },
-        modelRef: (pick("modelRef") as string | undefined) ?? undefined
+        modelRef: (pick("modelRef", value => typeof value === "string" && value.includes("::")) as string | undefined) ?? undefined
     };
 };
 

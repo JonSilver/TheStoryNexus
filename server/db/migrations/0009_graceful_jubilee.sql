@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `action_override_scope_unique` ON `actionOverrides` (`actionId`,`storyId`);

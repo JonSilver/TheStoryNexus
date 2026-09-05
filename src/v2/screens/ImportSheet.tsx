@@ -119,10 +119,11 @@ export const ImportSheet = ({
                                     type="file"
                                     accept=".txt,.md,.docx,.epub"
                                     className="hidden"
+                                    disabled={busy}
                                     onChange={e => {
                                         const file = e.target.files?.[0];
                                         e.target.value = "";
-                                        if (file) void analyseFile(file);
+                                        if (file && !busy) void analyseFile(file);
                                     }}
                                 />
                             </label>

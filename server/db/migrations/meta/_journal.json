@@ -64,6 +64,13 @@
       "when": 1788608912961,
       "tag": "0008_red_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788616582459,
+      "tag": "0009_graceful_jubilee",
+      "breakpoints": true
     }
   ]
 }
