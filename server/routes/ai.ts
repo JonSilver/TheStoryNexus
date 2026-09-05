@@ -57,8 +57,13 @@ const mergeProviderModels = (existing: AIModel[], provider: AIProviderId, fresh:
 const refreshModels = async (settings: AISettingsRow, provider: AIProviderId): Promise<AISettingsRow> => {
     const fresh = await fetchModelsForProvider(provider, settings);
     const availableModels = mergeProviderModels((settings.availableModels as AIModel[]) ?? [], provider, fresh);
-    // First working provider becomes the global default automatically
-    const needsDefault = !settings.defaultProvider || !settings.defaultModelId;
+    // First working provider becomes the global default automatically; a
+    // default that no longer exists in the refreshed list (renamed model,
+    // stale phantom) is re-selected rather than left dangling (§11)
+    const defaultStillExists = availableModels.some(
+        m => m.provider === settings.defaultProvider && m.id === settings.defaultModelId
+    );
+    const needsDefault = !settings.defaultProvider || !settings.defaultModelId || !defaultStillExists;
     const defaults =
         needsDefault && fresh.length > 0 ? { defaultProvider: provider, defaultModelId: fresh[0].id } : {};
     const [updated] = await db
