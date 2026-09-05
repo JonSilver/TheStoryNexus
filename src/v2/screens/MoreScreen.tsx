@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { BookMarked, BookOpen, BookOpenText, ExternalLink, Library, Lightbulb, NotebookPen, Settings, SlidersHorizontal } from "lucide-react";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
+import { ExportButtons } from "./ExportButtons";
 
 const LINKS = [
     { to: "/settings", label: "AI Settings", icon: Settings },
@@ -115,6 +116,7 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "note
                 </button>
             )}
             {currentStoryId && <StoryVoiceEditor storyId={currentStoryId} />}
+            {currentStoryId && <ExportButtons storyId={currentStoryId} />}
             <ul className="divide-y border-t">
                 {LINKS.map(({ to, label, icon: Icon }) => (
                     <li key={to}>
