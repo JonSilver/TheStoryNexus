@@ -32,3 +32,4 @@ dist-ssr
 # Windows reserved device names
 NUL
 .omc/
+.playwright-cli/

@@ -14,6 +14,7 @@ import { ThemeProvider } from "./lib/theme-provider";
 
 // Lazy loaded pages
 const StoryReader = lazy(() => import("./features/stories/pages/StoryReader").then(m => ({ default: m.StoryReader })));
+const V2App = lazy(() => import("./v2/V2App"));
 const SeriesListPage = lazy(() => import("./features/series/pages/SeriesListPage"));
 const SettingsPage = lazy(() => import("./features/ai/pages/SettingsPage"));
 const GuidePage = lazy(() => import("./features/guide/pages/GuidePage"));
@@ -36,6 +37,7 @@ ReactDOM.createRoot(rootElement).render(
                         <Suspense fallback={<PageLoadingFallback />}>
                             <Routes>
                                 <Route path="/" element={<Workspace />} />
+                                <Route path="/v2" element={<V2App />} />
                                 <Route element={<MainLayout />}>
                                     <Route path="/stories/:storyId/read" element={<StoryReader />} />
                                     <Route path="/series" element={<SeriesListPage />} />

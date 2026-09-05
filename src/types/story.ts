@@ -27,6 +27,9 @@ export interface Chapter extends BaseEntity {
     summary?: string;
     order: number;
     content: string;
+    revision?: number; // server-managed; always present on reads, omitted from creates
+    updatedAt?: Date;
+    summarySourceRevision?: number;
     outline?: ChapterOutline;
     wordCount: number;
     povCharacter?: string;
