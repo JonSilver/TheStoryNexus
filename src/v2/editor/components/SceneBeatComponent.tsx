@@ -8,8 +8,7 @@ import {
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
     type LexicalNode,
-    type NodeKey,
-    type UpdateTag
+    type NodeKey
 } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ChevronDown, ChevronRight, Sparkles, Trash2 } from "lucide-react";
@@ -18,35 +17,26 @@ import {
     commandState,
     generatedTextState,
     $isSceneBeatNode,
-    type SceneBeatNode,
     statusState
 } from "../nodes/SceneBeatNode";
+import { ContextInspector } from "../../ai/ContextInspector";
+import { useChapterIdentity } from "../ChapterContext";
 import { useSceneBeatData } from "../useSceneBeatData";
+import { useSceneBeatGeneration } from "../useSceneBeatGeneration";
 
 const stopKeydown = (e: KeyboardEvent) => e.stopPropagation();
 
 export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
     const { command, status, generatedText, collapsed } = useSceneBeatData(nodeKey);
+    const { storyId, chapterId } = useChapterIdentity();
+    const { generate, stop, mutate, abortActive, textBeforeNode } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
-
-    const mutate = useCallback(
-        (fn: (node: SceneBeatNode) => void, tag: UpdateTag | UpdateTag[]) =>
-            editor.update(
-                () => {
-                    const node = $getNodeByKey(nodeKey);
-                    if ($isSceneBeatNode(node)) fn(node);
-                },
-                { tag }
-            ),
-        [editor, nodeKey]
-    );
 
     /**
      * Lexical's keydown listener sits on the contenteditable root, below the
      * React root container, so React synthetic stopPropagation runs too late —
-     * shortcuts like Ctrl+A get swallowed by the editor. Native listener
-     * required (React 18: manual attach/detach in the ref callback).
+     * a native listener is required (spike finding).
      */
     const isolateKeys = useCallback((el: HTMLTextAreaElement | null) => {
         isolatedRef.current?.removeEventListener("keydown", stopKeydown);
@@ -55,7 +45,7 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     }, []);
 
     const accept = () =>
-        mutate((node) => {
+        mutate(node => {
             const text = $getState(node, generatedTextState);
             const paragraphs = text
                 .split(/\n{2,}/)
@@ -77,18 +67,22 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
         }, HISTORY_PUSH_TAG);
 
     const reject = () =>
-        mutate((node) => {
+        mutate(node => {
             $setState(node, statusState, "idle");
             $setState(node, generatedTextState, "");
         }, HISTORY_PUSH_TAG);
 
-    const remove = () =>
+    const remove = () => {
+        abortActive();
         editor.update(() => {
             const node = $getNodeByKey(nodeKey);
             if ($isSceneBeatNode(node)) node.remove();
         });
+    };
 
-    const toggleCollapsed = () => mutate((node) => $setState(node, collapsedState, prev => !prev), HISTORY_MERGE_TAG);
+    const toggleCollapsed = () => mutate(node => $setState(node, collapsedState, prev => !prev), HISTORY_MERGE_TAG);
+
+    const isGenerating = status === "generating";
 
     return (
         <div
@@ -121,10 +115,10 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                         value={command}
                         rows={2}
                         placeholder="Describe what happens in this beat…"
-                        disabled={status === "generating"}
+                        disabled={isGenerating}
                         onChange={e => {
                             const next = e.target.value;
-                            mutate((node) => $setState(node, commandState, next), HISTORY_MERGE_TAG);
+                            mutate(node => $setState(node, commandState, next), HISTORY_MERGE_TAG);
                         }}
                     />
 
@@ -133,14 +127,20 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                     )}
 
                     <footer className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            disabled
-                            title="Generation arrives with the AI actions phase"
-                            className="rounded-md border px-3 py-1 text-sm opacity-50"
-                        >
-                            Generate
-                        </button>
+                        {isGenerating ? (
+                            <button type="button" onClick={stop} className="rounded-md border px-3 py-1 text-sm">
+                                Stop
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => void generate(command)}
+                                disabled={!command.trim()}
+                                className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+                            >
+                                {status === "accepted" ? "Regenerate" : "Generate"}
+                            </button>
+                        )}
                         {status === "done" && generatedText && (
                             <>
                                 <button
@@ -155,6 +155,14 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                                 </button>
                             </>
                         )}
+                        <span className="ml-auto">
+                            <ContextInspector
+                                actionId="scene_beat"
+                                storyId={storyId}
+                                chapterId={chapterId}
+                                buildEditorContext={() => ({ command, recentProse: textBeforeNode() })}
+                            />
+                        </span>
                     </footer>
                 </div>
             )}

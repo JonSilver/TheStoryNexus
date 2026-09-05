@@ -263,6 +263,65 @@ router.post("/action", async (req, res) => {
     });
 });
 
+// Inspector: the exact messages an action request would send, without generating
+router.post("/preview", async (req, res) => {
+    const parsed = actionRequestSchema.omit({ requestId: true }).safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400).json({ error: "Invalid preview request", details: parsed.error.issues });
+        return;
+    }
+    const { actionId, storyId, chapterId, editorContext, modelRef } = parsed.data;
+
+    const settings = await loadSettings();
+    if (!settings) {
+        res.status(500).json({ error: "AI settings unavailable" });
+        return;
+    }
+    const [overridesError, overrideRows] = await attemptPromise(() =>
+        db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.actionId, actionId))
+    );
+    if (overridesError) {
+        res.status(500).json({ error: "Failed to load action overrides" });
+        return;
+    }
+    const overrides = (overrideRows ?? []).map(row => ({
+        ...row,
+        template: row.template as PromptMessage[] | null
+    })) as ActionOverrideRow[];
+    const resolved = resolveAction(actionId, storyId, overrides);
+
+    const model =
+        modelRef ??
+        parseModelRef(resolved.modelRef) ??
+        (settings.defaultProvider && settings.defaultModelId
+            ? { provider: settings.defaultProvider as AIProviderId, modelId: settings.defaultModelId }
+            : null);
+
+    const contextLimit = model ? contextLimitFor(settings, model.provider, model.modelId) : 16384;
+    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n"));
+    const tokenBudget = Math.max(contextLimit - resolved.params.maxTokens - templateSize - BUDGET_SAFETY_MARGIN, 512);
+
+    const [assemblyError, assembled] = await attemptPromise(() =>
+        assembleContext({ storyId, chapterId, editorContext, contextNeeds: resolved.def.contextNeeds, tokenBudget })
+    );
+    if (assemblyError || !assembled) {
+        res.status(422).json({ error: assemblyError?.message || "Context assembly failed" });
+        return;
+    }
+
+    const messages = renderTemplate(
+        resolved.template,
+        assembled.context,
+        resolved.def.voiceApplies ? assembled.voice : undefined
+    );
+    res.json({
+        model,
+        params: resolved.params,
+        promptTokens: countTokens(messages.map(m => m.content).join("\n")),
+        messages
+    });
+});
+
 router.post("/abort", (req, res) => {
     const { requestId } = req.body ?? {};
     const controller = typeof requestId === "string" ? activeGenerations.get(requestId) : undefined;
