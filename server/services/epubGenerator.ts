@@ -1,5 +1,8 @@
+import { attempt } from "@jfdi/attempt";
 import type { InferSelectModel } from "drizzle-orm";
 import epubModule from "epub-gen-memory";
+import { parseSerialisedDocument } from "../../src/v2/export/blocks.js";
+import { blocksToHtml, escapeHtmlText } from "../../src/v2/export/toHtml.js";
 import type { schema } from "../db/client.js";
 
 const epub = epubModule.default || epubModule;
@@ -7,29 +10,10 @@ const epub = epubModule.default || epubModule;
 type Story = InferSelectModel<typeof schema.stories>;
 type Chapter = InferSelectModel<typeof schema.chapters>;
 
-/**
- * Converts Lexical JSON content to HTML
- */
+// v2 canonical converter: correct headings/lists/marks, fully escaped output
 const convertLexicalToHtml = (jsonContent: string): string => {
-    const editorState = JSON.parse(jsonContent);
-    if (!editorState.root?.children) return "";
-
-    const processNode = (node: { type?: string; text?: string; tag?: string; children?: unknown[] }): string => {
-        if (node.type === "text") return node.text || "";
-        if (node.type === "linebreak") return "<br>";
-        if (node.type === "paragraph") {
-            const childrenHtml = node.children?.map(processNode).join("") || "";
-            return `<p>${childrenHtml}</p>`;
-        }
-        if (node.type === "heading" && node.tag) {
-            const childrenHtml = node.children?.map(processNode).join("") || "";
-            return `<${node.tag}>${childrenHtml}</${node.tag}>`;
-        }
-        if (node.children) return node.children.map(processNode).join("");
-        return "";
-    };
-
-    return editorState.root.children.map(processNode).join("");
+    const [, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
+    return html ?? "";
 };
 
 /**
@@ -43,9 +27,9 @@ export const generateEpub = async (story: Story, chapters: Chapter[]): Promise<B
             title: "",
             content: `
                 <div class="cover-page">
-                    <h1 class="cover-title">${story.title}</h1>
-                    <p class="cover-author">by ${story.author}</p>
-                    ${story.synopsis ? `<div class="cover-synopsis"><p><strong>Synopsis</strong></p><p>${story.synopsis}</p></div>` : ""}
+                    <h1 class="cover-title">${escapeHtmlText(story.title)}</h1>
+                    <p class="cover-author">by ${escapeHtmlText(story.author)}</p>
+                    ${story.synopsis ? `<div class="cover-synopsis"><p><strong>Synopsis</strong></p><p>${escapeHtmlText(story.synopsis)}</p></div>` : ""}
                 </div>
             `,
             excludeFromToc: true,
