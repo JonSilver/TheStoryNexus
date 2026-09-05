@@ -33,3 +33,4 @@ dist-ssr
 NUL
 .omc/
 .playwright-cli/
+data/assets/
