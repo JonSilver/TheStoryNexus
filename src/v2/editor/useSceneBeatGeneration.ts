@@ -64,7 +64,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             cancelRef.current?.();
             const requestId = crypto.randomUUID();
             const controller = new AbortController();
-            cancelRef.current = () => {
+            const cancel = () => {
                 controller.abort();
                 void attemptPromise(() =>
                     fetch("/api/generate/abort", {
@@ -74,6 +74,10 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                     })
                 );
             };
+            cancelRef.current = cancel;
+            // Superseded runs must neither mutate the node nor clear the
+            // successor's cancel handle
+            const owns = () => cancelRef.current === cancel;
 
             mutate(node => {
                 $setState(node, statusState, "generating");
@@ -81,6 +85,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             }, HISTORY_PUSH_TAG);
 
             const finish = (errorMessage?: string) => {
+                if (!owns()) return;
                 cancelRef.current = null;
                 mutate(node => $setState(node, statusState, "done"), HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
@@ -111,11 +116,13 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             }
 
             const parser = createSSEParser({
-                onToken: token =>
+                onToken: token => {
+                    if (!owns()) return;
                     mutate(
                         node => $setState(node, generatedTextState, prev => prev + token),
                         [HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]
-                    ),
+                    );
+                },
                 onComplete: () => finish(),
                 onError: error => finish(error.message)
             });

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { createSSEParser } from "@/services/ai/sseParser";
 
@@ -42,6 +42,15 @@ export const useActionGeneration = () => {
     const [error, setError] = useState<string | null>(null);
     const active = useRef<{ requestId: string; controller: AbortController } | null>(null);
 
+    // Abort any in-flight generation when the owning component unmounts
+    useEffect(
+        () => () => {
+            active.current?.controller.abort();
+            active.current = null;
+        },
+        []
+    );
+
     const abort = useCallback(() => {
         const current = active.current;
         if (!current) return;
@@ -75,6 +84,9 @@ export const useActionGeneration = () => {
 
             const chunks: string[] = [];
             const finished = { ok: false };
+            // Only the request that still owns `active` may touch state —
+            // a superseded run's late callbacks must not clobber its successor
+            const owns = () => active.current?.requestId === requestId;
 
             const [fetchError, response] = await attemptPromise(() =>
                 fetch("/api/generate/action", {
@@ -86,7 +98,7 @@ export const useActionGeneration = () => {
             );
 
             if (fetchError || !response) {
-                if ((fetchError as Error)?.name !== "AbortError") {
+                if ((fetchError as Error)?.name !== "AbortError" && owns()) {
                     setPhase("error");
                     setError((fetchError as Error)?.message ?? "Request failed");
                 }
@@ -94,13 +106,16 @@ export const useActionGeneration = () => {
             }
             if (!response.ok) {
                 const body = await response.json().catch(() => ({}));
-                setPhase("error");
-                setError(body.error || `Generation failed (${response.status})`);
+                if (owns()) {
+                    setPhase("error");
+                    setError(body.error || `Generation failed (${response.status})`);
+                }
                 return "";
             }
 
             const parser = createSSEParser({
                 onToken: token => {
+                    if (!owns()) return;
                     chunks.push(token);
                     setText(chunks.join(""));
                 },
@@ -108,6 +123,7 @@ export const useActionGeneration = () => {
                     finished.ok = true;
                 },
                 onError: streamError => {
+                    if (!owns()) return;
                     setPhase("error");
                     setError(streamError.message);
                 }
@@ -115,8 +131,10 @@ export const useActionGeneration = () => {
 
             const reader = response.body?.getReader();
             if (!reader) {
-                setPhase("error");
-                setError("No response stream");
+                if (owns()) {
+                    setPhase("error");
+                    setError("No response stream");
+                }
                 return "";
             }
             const decoder = new TextDecoder();
@@ -132,6 +150,7 @@ export const useActionGeneration = () => {
                 }
             });
 
+            if (!owns()) return "";
             active.current = null;
             if (readError)
                 if ((readError as Error).name === "AbortError") {

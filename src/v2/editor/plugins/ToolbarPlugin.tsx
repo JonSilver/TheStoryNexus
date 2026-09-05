@@ -11,26 +11,15 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
+import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { $setBlocksType } from "@lexical/selection";
 import { $createHeadingNode, $isHeadingNode, type HeadingTagType } from "@lexical/rich-text";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
-import {
-    Bold,
-    FileText,
-    Italic,
-    Maximize2,
-    Minimize2,
-    Minus,
-    Redo2,
-    RefreshCw,
-    Sparkles,
-    Underline,
-    Undo2,
-    Wand2
-} from "lucide-react";
+import { Bold, Italic, List, ListOrdered, Minus, Redo2, Sparkles, Underline, Undo2 } from "lucide-react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
+import { AiActionButtons, type ToolbarActions } from "./AiActionButtons";
 import { ImageUploadButton } from "./ImageUploadButton";
 import type { SaveStatus } from "../useChapterSaver";
 
@@ -53,12 +42,6 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
 
 const toolButton =
     "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground disabled:opacity-40 data-[active=true]:bg-accent data-[active=true]:text-foreground";
-
-export interface ToolbarActions {
-    onContinue: () => void;
-    onSummarise: () => void;
-    onSelectionAction: (actionId: "rework" | "expand" | "shorten", label: string) => void;
-}
 
 export const ToolbarPlugin = ({
     saveStatus,
@@ -201,42 +184,22 @@ export const ToolbarPlugin = ({
             >
                 <Sparkles className="h-4 w-4" />
             </button>
+            <AiActionButtons actions={actions} hasSelection={hasSelection} className={toolButton} />
             <button
                 type="button"
                 className={toolButton}
-                onClick={actions.onContinue}
-                aria-label="Continue writing"
-                title="Continue writing"
+                onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
+                aria-label="Bullet list"
             >
-                <Wand2 className="h-4 w-4" />
+                <List className="h-4 w-4" />
             </button>
-            {hasSelection &&
-                (
-                    [
-                        ["rework", "Rework", RefreshCw],
-                        ["expand", "Expand", Maximize2],
-                        ["shorten", "Shorten", Minimize2]
-                    ] as const
-                ).map(([actionId, label, Icon]) => (
-                    <button
-                        key={actionId}
-                        type="button"
-                        className={toolButton}
-                        onClick={() => actions.onSelectionAction(actionId, label)}
-                        aria-label={`${label} selection`}
-                        title={`${label} selection`}
-                    >
-                        <Icon className="h-4 w-4" />
-                    </button>
-                ))}
             <button
                 type="button"
                 className={toolButton}
-                onClick={actions.onSummarise}
-                aria-label="Summarise chapter"
-                title="Summarise chapter"
+                onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}
+                aria-label="Numbered list"
             >
-                <FileText className="h-4 w-4" />
+                <ListOrdered className="h-4 w-4" />
             </button>
             <button
                 type="button"

@@ -69,13 +69,17 @@ export const resolveAction = (actionId: ActionId, storyId: string | null, overri
     const pick = <K extends keyof ActionOverrideRow>(key: K) =>
         chain.map(o => o[key]).find(value => value !== null && value !== undefined);
 
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
     return {
         def,
         template,
         params: {
-            temperature: (pick("temperature") as number | undefined) ?? def.defaultParams.temperature,
-            maxTokens: (pick("maxTokens") as number | undefined) ?? def.defaultParams.maxTokens,
-            topP: (pick("topP") as number | undefined) ?? def.defaultParams.topP
+            temperature: clamp((pick("temperature") as number | undefined) ?? def.defaultParams.temperature, 0, 2),
+            maxTokens: Math.floor(clamp((pick("maxTokens") as number | undefined) ?? def.defaultParams.maxTokens, 64, 65536)),
+            topP: (() => {
+                const value = (pick("topP") as number | undefined) ?? def.defaultParams.topP;
+                return value === undefined ? undefined : clamp(value, 0, 1);
+            })()
         },
         modelRef: (pick("modelRef") as string | undefined) ?? undefined
     };

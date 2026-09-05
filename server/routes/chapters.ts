@@ -1,4 +1,4 @@
-import { eq, type InferSelectModel } from "drizzle-orm";
+import { and, eq, type InferSelectModel } from "drizzle-orm";
 import { db, schema } from "../db/client.js";
 import { resolveChapterUpdate } from "../lib/chapterUpdate.js";
 import { createCrudRouter } from "../lib/crud.js";
@@ -34,11 +34,21 @@ export default createCrudRouter({
                     });
                     return;
                 }
+                // Atomic optimistic concurrency: the revision predicate makes
+                // check-and-write one statement, so racing writers can't both pass
                 const [updated] = await db
                     .update(schema.chapters)
                     .set(resolution.updates)
-                    .where(eq(schema.chapters.id, req.params.id))
+                    .where(and(eq(schema.chapters.id, req.params.id), eq(schema.chapters.revision, current.revision)))
                     .returning();
+                if (!updated) {
+                    const [latest] = await db
+                        .select()
+                        .from(schema.chapters)
+                        .where(eq(schema.chapters.id, req.params.id));
+                    res.status(409).json({ error: "Chapter was modified elsewhere", current: latest ? afterRead(latest) : null });
+                    return;
+                }
                 res.json(afterRead(updated));
             })
         );

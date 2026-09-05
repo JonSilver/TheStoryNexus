@@ -50,11 +50,19 @@ const formatPov = (povType?: string | null, povCharacter?: string | null): strin
 // Trim to a token budget from the chosen end, cutting at a word boundary
 const trimToTokens = (text: string, budget: number, keep: "head" | "tail"): string => {
     if (budget <= 0) return "";
-    if (countTokens(text) <= budget) return text;
-    const approxChars = budget * 4;
-    const slice = keep === "tail" ? text.slice(-approxChars) : text.slice(0, approxChars);
-    const boundary = keep === "tail" ? slice.indexOf(" ") + 1 : slice.lastIndexOf(" ");
-    return keep === "tail" ? slice.slice(boundary) : slice.slice(0, Math.max(boundary, 0));
+    const shrink = (candidate: string, charBudget: number): string => {
+        const slice = keep === "tail" ? candidate.slice(-charBudget) : candidate.slice(0, charBudget);
+        const boundary = keep === "tail" ? slice.indexOf(" ") + 1 : slice.lastIndexOf(" ");
+        return keep === "tail" ? slice.slice(boundary) : slice.slice(0, Math.max(boundary, 0));
+    };
+    // chars/token varies (CJK ≈1); shrink until the token count actually fits
+    const state = { text, chars: budget * 4 };
+    for (const _attempt of [0, 1, 2, 3]) {
+        if (countTokens(state.text) <= budget) return state.text;
+        state.text = shrink(state.text, state.chars);
+        state.chars = Math.floor(state.chars / 2);
+    }
+    return countTokens(state.text) <= budget ? state.text : "";
 };
 
 const loadStoryEntries = async (story: StoryRow): Promise<LorebookRow[]> => {
@@ -127,7 +135,9 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
             chapter ? chapterPlainText(chapter.content) : "",
             editorContext.command ?? "",
             editorContext.selection ?? "",
-            editorContext.userMessage ?? ""
+            editorContext.userMessage ?? "",
+            editorContext.recentProse ?? "",
+            editorContext.chatHistory ?? ""
         ].join("\n");
         const matches = matchEntries(searchText, entries);
         const lines: string[] = [];

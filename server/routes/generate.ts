@@ -74,6 +74,13 @@ const contextLimitFor = (settings: Settings, provider: AIProviderId, modelId: st
     return model?.contextLength || PROVIDER_CONTEXT_DEFAULTS[provider];
 };
 
+const voiceFor = async (storyId: string): Promise<string> => {
+    const [, rows] = await attemptPromise(() =>
+        db.select({ aiInstructions: schema.stories.aiInstructions }).from(schema.stories).where(eq(schema.stories.id, storyId))
+    );
+    return rows?.[0]?.aiInstructions ?? "";
+};
+
 const parseModelRef = (ref: string | null | undefined): { provider: AIProviderId; modelId: string } | null => {
     if (!ref) return null;
     const [provider, ...rest] = ref.split("::");
@@ -231,8 +238,17 @@ router.post("/action", async (req, res) => {
     }
 
     const contextLimit = contextLimitFor(settings, model.provider, model.modelId);
-    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n"));
-    const tokenBudget = Math.max(contextLimit - resolved.params.maxTokens - templateSize - BUDGET_SAFETY_MARGIN, 512);
+    // Output may not consume more than half the window; the hard §10 guarantee
+    // is enforced after rendering, not papered over with a floor
+    const maxTokens = Math.min(resolved.params.maxTokens, Math.floor(contextLimit / 2));
+    const voiceSize = resolved.def.voiceApplies ? countTokens(await voiceFor(storyId)) : 0;
+    const templateSize = countTokens(resolved.template.map(m => m.content).join("\n")) + voiceSize;
+    const tokenBudget = contextLimit - maxTokens - templateSize - BUDGET_SAFETY_MARGIN;
+    if (tokenBudget <= 0) {
+        cleanup();
+        res.status(422).json({ error: "Prompt template and output size exceed the model's context window" });
+        return;
+    }
 
     const [assemblyError, assembled] = await attemptPromise(() =>
         assembleContext({ storyId, chapterId, editorContext, contextNeeds: resolved.def.contextNeeds, tokenBudget })
@@ -253,13 +269,19 @@ router.post("/action", async (req, res) => {
         assembled.context,
         resolved.def.voiceApplies ? assembled.voice : undefined
     );
+    const promptTokens = countTokens(messages.map(m => m.content).join("\n"));
+    if (promptTokens + maxTokens > contextLimit) {
+        cleanup();
+        res.status(422).json({ error: "Assembled prompt exceeds the model's context window" });
+        return;
+    }
 
     await streamToClient(res, requestId, abortController, settings, {
         provider: model.provider,
         modelId: model.modelId,
         messages,
         temperature: resolved.params.temperature,
-        maxTokens: resolved.params.maxTokens
+        maxTokens
     });
 });
 

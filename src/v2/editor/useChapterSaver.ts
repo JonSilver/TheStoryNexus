@@ -14,16 +14,24 @@ type SaveResult =
     | { outcome: "conflict"; current: Chapter }
     | { outcome: "error"; message: string };
 
+const KEEPALIVE_BODY_LIMIT = 60_000;
+
 const putChapterContent = async (
     chapterId: string,
     payload: SavePayload,
-    expectedRevision: number
+    expectedRevision: number,
+    exiting = false
 ): Promise<SaveResult> => {
+    const body = JSON.stringify({ ...payload, expectedRevision });
     const [error, response] = await attemptPromise(() =>
         fetch(`/api/chapters/${chapterId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...payload, expectedRevision })
+            body,
+            // keepalive survives page teardown but caps the body (~64KB);
+            // larger saves fall back to a normal fetch and rely on the
+            // visibilitychange flush firing while the page is still alive
+            keepalive: exiting && body.length < KEEPALIVE_BODY_LIMIT
         })
     );
     if (error || !response) return { outcome: "error", message: (error as Error)?.message ?? "Network error" };
@@ -59,7 +67,7 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         conflictChapter: null as Chapter | null
     });
 
-    const drain = useCallback(async (): Promise<void> => {
+    const drain = useCallback(async (exiting = false): Promise<void> => {
         const s = internals.current;
         if (s.inFlight || s.conflicted || !s.pending) return;
         const payload = s.pending;
@@ -67,7 +75,7 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         s.inFlight = true;
         setStatus("saving");
 
-        const result = await putChapterContent(chapterId, payload, s.revision);
+        const result = await putChapterContent(chapterId, payload, s.revision, exiting);
         s.inFlight = false;
 
         if (result.outcome === "ok") {
@@ -93,7 +101,10 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
     const scheduleSave = useCallback(
         (content: string, wordCount: number) => {
             const s = internals.current;
-            if (s.conflicted || content === s.lastSavedContent) return;
+            // Reverting to the last-saved content still needs saving whenever a
+            // different payload is queued or in flight, or the in-flight write
+            // wins and the visible text is silently lost
+            if (s.conflicted || (content === s.lastSavedContent && !s.inFlight && !s.pending)) return;
             s.pending = { content, wordCount };
             clearTimeout(s.debounceTimer);
             s.debounceTimer = setTimeout(() => void drain(), DEBOUNCE_MS);
@@ -101,24 +112,28 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         [drain]
     );
 
-    const flush = useCallback(() => {
-        const s = internals.current;
-        clearTimeout(s.debounceTimer);
-        if (s.pending) void drain();
-    }, [drain]);
+    const flush = useCallback(
+        (exiting = false) => {
+            const s = internals.current;
+            clearTimeout(s.debounceTimer);
+            if (s.pending) void drain(exiting);
+        },
+        [drain]
+    );
 
     // Flush on every mobile-real exit path; clean timers on unmount
     useEffect(() => {
         const s = internals.current;
+        const flushExiting = () => flush(true);
         const flushWhenHidden = () => {
-            if (document.visibilityState === "hidden") flush();
+            if (document.visibilityState === "hidden") flush(true);
         };
-        window.addEventListener("beforeunload", flush);
-        window.addEventListener("pagehide", flush);
+        window.addEventListener("beforeunload", flushExiting);
+        window.addEventListener("pagehide", flushExiting);
         document.addEventListener("visibilitychange", flushWhenHidden);
         return () => {
-            window.removeEventListener("beforeunload", flush);
-            window.removeEventListener("pagehide", flush);
+            window.removeEventListener("beforeunload", flushExiting);
+            window.removeEventListener("pagehide", flushExiting);
             document.removeEventListener("visibilitychange", flushWhenHidden);
             flush();
             clearTimeout(s.debounceTimer);

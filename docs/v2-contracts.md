@@ -77,11 +77,15 @@ Overrides table `actionOverrides { id, actionId, storyId | null, template?, para
 ## 6. Generation API
 
 ```
-POST /api/generate
-{ requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage? }, modelRef? }
-→ SSE: event: token {text} | usage {prompt,completion} | finish {reason} | error {message} | aborted
+POST /api/generate/action
+{ requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory? }, modelRef? }
+→ SSE: event: token {text} | finish {reason} | error {message} | aborted
+POST /api/generate/preview  — same body minus requestId; returns resolved messages + model + prompt token count (the inspector)
 POST /api/generate/abort { requestId }
+POST /api/generate          — raw-messages mode, v1-frontend compatibility only; deleted at cutover
 ```
+
+(Deviation log: a `usage` event is not emitted — nothing consumes it; add if a consumer appears.)
 
 - Server owns: template resolution (registry + overrides), voice injection, summary retrieval (fresh only, §9), lorebook matching over supplied text + stored chapter content (§7), token budgeting (§10), provider fan-out, model fallback.
 - Client owns: editor-derived text (selection, recent prose tail, scene-beat command) — the server never parses editor JSON for generation.
@@ -155,11 +159,13 @@ TipTap's genuine advantages — cross-app HTML clipboard fidelity, prosemirror-m
 **Serialisation shape** (supersedes §2's `beatId` — the node's identity is its Lexical key at runtime; no serialised id is needed since state is self-contained and paste-clones are independent):
 
 ```json
-{ "type": "scene-beat", "version": 1,
-  "command": "…", "status": "idle|generating|done",
+{ "type": "scene-beat-v2", "version": 1,
+  "command": "…", "status": "idle|generating|done|accepted",
   "generatedText": "…", "collapsed": false,
   "povCharacter": "…", "povType": "…" }
 ```
+
+Two amendments made during build, both deliberate: the type is **`scene-beat-v2`** because v1 also registers `scene-beat` and each editor silently destroyed the other's node state when they shared the name (live-verified data loss; v1 now shows v2 documents read-only). And **`accepted`** is a fourth status so a beat whose output was taken into the document is distinguishable from one never run; a serialised `generating` is normalised to `done` on parse (an orphaned stream by definition).
 
 Fields are declared via `createState` with `flat: true` (project-wide decision); parse functions provide defaults, and **defaults are omitted from JSON** — readers must not assume presence.
 

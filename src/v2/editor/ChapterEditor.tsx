@@ -3,7 +3,9 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { ListItemNode, ListNode } from "@lexical/list";
 import { HeadingNode } from "@lexical/rich-text";
 import { debounce } from "lodash";
 import { Component, type ReactNode, useCallback, useRef, useState } from "react";
@@ -28,6 +30,11 @@ const theme = {
         h3: "mb-2 mt-4 text-xl font-semibold"
     },
     hr: "my-6 border-t",
+    list: {
+        ul: "my-3 list-disc pl-6",
+        ol: "my-3 list-decimal pl-6",
+        listitem: "my-1"
+    },
     text: { bold: "font-bold", italic: "italic", underline: "underline" }
 };
 
@@ -121,6 +128,7 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
                         ErrorBoundary={LexicalErrorBoundary}
                     />
                 </div>
+                <ListPlugin />
                 <SlashMenuPlugin />
                 <SceneBeatShortcutPlugin />
                 <HistoryPlugin />
@@ -136,7 +144,7 @@ export const ChapterEditor = ({ chapter }: { chapter: Chapter }) => (
             initialConfig={{
                 namespace: "story-nexus-v2",
                 theme,
-                nodes: [HeadingNode, HorizontalRuleNode, SceneBeatNode, ImageNode],
+                nodes: [HeadingNode, HorizontalRuleNode, ListNode, ListItemNode, SceneBeatNode, ImageNode],
                 editorState: chapter.content || undefined,
                 onError: error => {
                     throw error;

@@ -17,7 +17,10 @@ const asBoolean = (v: unknown) => v === true;
  */
 export const commandState = createState("command", { parse: asString });
 export const statusState = createState("status", {
-    parse: (v): SceneBeatStatus => (isStatus(v) ? v : "idle")
+    // A serialised "generating" is by definition orphaned (the request died
+    // with its editor) — normalise to done so reopening never shows a live
+    // Stop state with no stream behind it
+    parse: (v): SceneBeatStatus => (v === "generating" ? "done" : isStatus(v) ? v : "idle")
 });
 export const generatedTextState = createState("generatedText", { parse: asString });
 export const collapsedState = createState("collapsed", { parse: asBoolean });
