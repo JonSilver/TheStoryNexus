@@ -1,0 +1,140 @@
+# v2 Contracts & Foundations Spec
+
+Editor-independent contracts for the v2 build. The editor-specific serialisation appendix is completed after the Phase 1 editor spike. Everything here is binding on later phases; changes require a documented decision.
+
+## 1. Document model
+
+A chapter document is a sequence of **blocks**; inline text carries **marks**.
+
+| Block | Notes |
+| --- | --- |
+| `paragraph` | Inline children with marks |
+| `heading` | Levels 1–3 only |
+| `bulletList` / `orderedList` | Items contain paragraphs |
+| `horizontalRule` | — |
+| `image` | `src` (server asset URL — never data URLs), `alt`, optional `caption` |
+| `sceneBeat` | See §2 |
+
+Marks: `bold`, `italic`, `underline`. Nothing else. No tables, code, layout, collab, hashtags, page breaks (page breaks are a print concern; EPUB/PDF derive breaks from headings).
+
+Invariants:
+
+- The document is self-contained: no node references external DB rows for its own state.
+- Any v2 document must round-trip its own serialisation and export deterministically to every target in §3.
+- Word count = text of paragraphs/headings/lists only; scene-beat internals excluded.
+
+## 2. Scene beat lifecycle
+
+Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`.
+
+- **Streaming**: tokens accumulate in component state during generation (NOT written to the document per token — avoids undo-history pollution and save churn); committed to `generatedText` + `status: 'done'` in one transaction at completion or abort.
+- **Accept**: one transaction — insert `generatedText` as ordinary paragraph blocks after the node, set node `generatedText: ''`, `status: 'idle'`, `collapsed: true`. One undo step reverts the whole accept.
+- **Reject**: clear `generatedText`, `status: 'idle'`. No trace retained.
+- **Copy/paste**: node state travels with the copy; `beatId` is regenerated on paste (state is self-contained, so duplicates are harmless). Cross-story paste is legal.
+- **Delete while generating**: client aborts that request via its `requestId`; no orphaned anything (no table).
+- **Persistence mid-generation**: a save during generation stores the node as it last was committed (streaming text is not persisted until completion).
+- **Export/word count**: scene-beat nodes emit nothing in any export target and count zero words, in every status.
+
+## 3. Export mapping
+
+One canonical converter: document JSON → intermediate block list → per-target renderers (Markdown, HTML, EPUB XHTML, PDF, AI plain text). Snapshot fixtures required for every block/mark type per target. Rules:
+
+- Headings → `#`×level / `<h{level}>`; lists → `-` / `1.` / `<ul>/<ol>`; HR → `---` / `<hr>`; marks → `**` `*` `<u>` / tags.
+- Images: HTML/EPUB embed the asset; Markdown references relative path (bundled in a zip when exporting with assets); PDF embeds; AI plain text omits.
+- Scene beats: omitted everywhere.
+- All HTML/EPUB output is escaped (v1's EPUB interpolates raw text — must not survive).
+
+## 4. Asset model (images)
+
+- `POST /api/stories/:storyId/assets` — multer to disk at `{dataDir}/assets/{storyId}/{uuid}.{ext}`; 10 MB/file cap; images only.
+- Documents store the served relative URL (`/api/assets/{storyId}/{file}`).
+- Deleting a story deletes its asset directory. An orphan sweep (assets unreferenced by any chapter) runs on demand from settings, not automatically.
+
+## 5. Action registry
+
+Data-driven; built-ins defined in code, overrides in DB.
+
+```ts
+type ActionId =
+    | 'continue' | 'rework' | 'expand' | 'shorten'
+    | 'summarise_chapter' | 'brainstorm' | 'scene_beat'
+    | 'extract_entries' | 'propose_updates' | 'split_chapters';
+
+type ActionDef = {
+    id: ActionId;
+    label: string;
+    voiceApplies: boolean;            // §8 — true only for prose actions
+    contextNeeds: ContextKey[];       // e.g. 'selection', 'recentProse', 'matchedEntries', 'summaries', 'command'
+    defaultTemplate: PromptMessage[]; // {{variable}} slots drawn from contextNeeds — unknown variables are validation errors
+    defaultParams: { temperature: number; maxTokens: number; topP?: number };
+};
+```
+
+`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm. `false`: summarise_chapter, extract_entries, propose_updates, split_chapters.
+
+Overrides table `actionOverrides { id, actionId, storyId | null, template?, params?, modelRef? }` — `storyId: null` = global. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
+
+## 6. Generation API
+
+```
+POST /api/generate
+{ requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage? }, modelRef? }
+→ SSE: event: token {text} | usage {prompt,completion} | finish {reason} | error {message} | aborted
+POST /api/generate/abort { requestId }
+```
+
+- Server owns: template resolution (registry + overrides), voice injection, summary retrieval (fresh only, §9), lorebook matching over supplied text + stored chapter content (§7), token budgeting (§10), provider fan-out, model fallback.
+- Client owns: editor-derived text (selection, recent prose tail, scene-beat command) — the server never parses editor JSON for generation.
+- One `AbortController` per `requestId`; client socket close aborts upstream; concurrent generations are independent.
+- SSE parsing (client) must buffer across chunk boundaries — v1's split-on-newline-per-chunk parser is banned.
+- Errors after tokens have streamed terminate with `error`; no automatic retry.
+
+## 7. Lorebook matching
+
+- Alias set per entry = name + tags. Matching is case-insensitive, Unicode-normalised (NFKC casefold), on **word boundaries**; multi-word aliases match as phrases; trailing possessive `'s` tolerated.
+- Disabled entries excluded. Collisions (same alias, multiple levels): story beats series beats global; equal level → all match.
+- Ranking: level specificity, then occurrence count. Deterministic truncation by rank under the token budget.
+- Implemented server-side as a pure module with tests; the same module serves editor highlighting via an endpoint if needed.
+
+## 8. Story voice
+
+`stories.aiInstructions` (text): style, tense, tone, framing rules. Appended to the system message for actions with `voiceApplies: true` only. Inspectable via the resolved-prompt view (Phase 5 inspector / Phase 8 drawer). Soft cap ~2,000 chars with UI counter.
+
+## 9. Revisions, saves, summary freshness
+
+- `chapters` gains `revision` (int, ++ per content save), `updatedAt`, `summarySourceRevision`.
+- Chapter content PUT carries `expectedRevision`; mismatch → 409 + current row; client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome.
+- Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled in UI; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
+
+## 10. Token budgeting
+
+Per request: `budget = modelContextLimit − maxTokens − resolvedTemplateSize`. Fill order (drop from the bottom when over budget):
+
+1. System + voice + action template (fixed)
+2. Selection / scene-beat command / user message (fixed)
+3. Recent prose, tail-first, up to 60% of remainder
+4. Matched entries by rank
+5. Prior-chapter summaries, nearest-first
+
+Model context limits come from provider metadata where available, else a conservative per-provider default table — never v1's hard-coded 4096.
+
+## 11. Settings & model selection
+
+- `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default columns retired at cutover.
+- Settings GET returns `hasOpenaiKey`-style booleans — never key material. Keys set via `PUT /api/ai/keys/:provider` (write-only). Keys stripped from full-DB export. (Keys remain plaintext at rest — accepted for trusted-LAN scope.)
+
+## 12. Schema change summary
+
+| Table | Change | When |
+| --- | --- | --- |
+| `chapters` | + `revision`, `updatedAt`, `summarySourceRevision` | Phase 3 |
+| `stories` | + `aiInstructions` | Phase 4 |
+| `aiSettings` | + `defaultProvider`, `defaultModelId`; key redaction at API layer | Phase 2 |
+| `actionOverrides` | new | Phase 2 (storage), Phase 8 (UI) |
+| `sceneBeats` | retired (dropped) | Phase 5 |
+| `prompts` | retired in favour of registry + overrides | Phase 8 |
+| — | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format | Phase 3 |
+
+## Appendix A — editor choice & serialisation (completed after spike)
+
+_Pending: spike results for trimmed Lexical vs TipTap against §1–§2; decision + rationale; concrete node/attr serialisation shapes._

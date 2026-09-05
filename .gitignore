@@ -31,3 +31,4 @@ dist-ssr
 
 # Windows reserved device names
 NUL
+.omc/
