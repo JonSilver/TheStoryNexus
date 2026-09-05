@@ -48,6 +48,9 @@ export const chapters = sqliteTable(
         summary: text("summary"),
         order: integer("order").notNull(),
         content: text("content").notNull(),
+        revision: integer("revision").notNull().default(0),
+        updatedAt: integer("updatedAt", { mode: "timestamp" }),
+        summarySourceRevision: integer("summarySourceRevision"),
         outline: text("outline", { mode: "json" }), // JSON: { content: string, lastUpdated: Date }
         wordCount: integer("wordCount").notNull().default(0),
         povCharacter: text("povCharacter"),

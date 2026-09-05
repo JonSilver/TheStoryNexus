@@ -50,6 +50,13 @@
       "when": 1788607222358,
       "tag": "0006_equal_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1788607731642,
+      "tag": "0007_pretty_jean_grey",
+      "breakpoints": true
     }
   ]
 }
