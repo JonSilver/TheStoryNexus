@@ -11,6 +11,7 @@ import assetsRouter from "./routes/assets.js";
 import brainstormRouter from "./routes/brainstorm.js";
 import chaptersRouter from "./routes/chapters.js";
 import generateRouter from "./routes/generate.js";
+import ingestRouter from "./routes/ingest.js";
 import lorebookRouter from "./routes/lorebook.js";
 import notesRouter from "./routes/notes.js";
 import promptsRouter from "./routes/prompts.js";
@@ -61,6 +62,7 @@ app.use("/api/scenebeats", scenebeatsRouter);
 app.use("/api/notes", notesRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/assets", assetsRouter);
+app.use("/api/ingest", ingestRouter);
 
 // Health check
 app.get("/api/health", (_, res) => {

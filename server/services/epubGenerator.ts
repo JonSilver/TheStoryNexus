@@ -16,7 +16,7 @@ type Chapter = InferSelectModel<typeof schema.chapters>;
 const convertLexicalToHtml = (jsonContent: string): string => {
     const [, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
     const port = process.env.PORT || 3000;
-    return (html ?? "").replaceAll('src="/api/assets/', `src="http://127.0.0.1:${port}/api/assets/`);
+    return (html ?? "").split('src="/api/assets/').join(`src="http://127.0.0.1:${port}/api/assets/`);
 };
 
 /**
