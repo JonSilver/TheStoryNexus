@@ -12,12 +12,13 @@ import type { AIChat, ChatMessage } from "@/types/story";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { useV2Store } from "../state/useV2Store";
 import type { ScreenProps } from "../V2App";
+import { randomUUID } from "@/utils/crypto";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
 
 const chatMessage = (role: ChatMessage["role"], content: string): ChatMessage => ({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     role,
     content,
     timestamp: new Date()
@@ -76,7 +77,7 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
     const newChat = () => {
         if (!currentStoryId) return;
         createChat.mutate(
-            { id: crypto.randomUUID(), storyId: currentStoryId, title: `Chat ${(chats?.length ?? 0) + 1}`, messages: [] } as Omit<
+            { id: randomUUID(), storyId: currentStoryId, title: `Chat ${(chats?.length ?? 0) + 1}`, messages: [] } as Omit<
                 AIChat,
                 "createdAt"
             >,

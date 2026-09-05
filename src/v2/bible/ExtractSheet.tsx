@@ -6,6 +6,7 @@ import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features
 import type { LorebookEntry } from "@/types/story";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { type EntryProposal, type UpdateProposal, parseEntryProposals, parseUpdateProposals } from "./parseProposals";
+import { randomUUID } from "@/utils/crypto";
 
 export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates";
 
@@ -75,7 +76,7 @@ export const ExtractSheet = ({
         const results = await Promise.allSettled(
             chosen.map(proposal =>
                 createEntry.mutateAsync({
-                    id: crypto.randomUUID(),
+                    id: randomUUID(),
                     level: "story",
                     scopeId: storyId,
                     name: proposal.name,

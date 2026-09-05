@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { createSSEParser } from "@/services/ai/sseParser";
 import { useChapterIdentity } from "./ChapterContext";
 import { generatedTextState, $isSceneBeatNode, type SceneBeatNode, statusState } from "./nodes/SceneBeatNode";
+import { randomUUID } from "@/utils/crypto";
 
 const RECENT_PROSE_CHAR_CAP = 100_000;
 
@@ -62,7 +63,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     const generate = useCallback(
         async (command: string) => {
             cancelRef.current?.();
-            const requestId = crypto.randomUUID();
+            const requestId = randomUUID();
             const controller = new AbortController();
             const cancel = () => {
                 controller.abort();

@@ -8,6 +8,7 @@ import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hook
 import { useV2Store } from "../state/useV2Store";
 import { ImportSheet } from "./ImportSheet";
 import type { ScreenProps } from "../V2App";
+import { randomUUID } from "@/utils/crypto";
 
 export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setCurrentStory } = useV2Store();
@@ -35,7 +36,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
         const title = newTitle.trim();
         if (!title) return;
         createStory.mutate(
-            { id: crypto.randomUUID(), title, author: "", language: "English", synopsis: "" },
+            { id: randomUUID(), title, author: "", language: "English", synopsis: "" },
             {
                 onSuccess: story => {
                     setNewTitle("");

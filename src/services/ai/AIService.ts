@@ -4,6 +4,7 @@ import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/sto
 import { logger } from "@/utils/logger";
 import { aiApi } from "../api/client";
 import { createSSEParser } from "./sseParser";
+import { randomUUID } from "@/utils/crypto";
 
 /**
  * Client-side facade over the server's AI endpoints. All provider access,
@@ -38,7 +39,7 @@ const generate = async (
     temperature: number = 1.0,
     maxTokens: number = 2048
 ): Promise<Response> => {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
     const controller = new AbortController();
     state.activeRequestId = requestId;
     state.fetchController = controller;
@@ -180,7 +181,12 @@ const DEFAULT_MODEL_FIELDS: Record<AIProvider, keyof AISettings> = {
 };
 
 const updateDefaultModel = async (provider: AIProvider, modelId: string | undefined): Promise<void> =>
-    updateSettingsField({ [DEFAULT_MODEL_FIELDS[provider]]: modelId });
+    updateSettingsField({
+        [DEFAULT_MODEL_FIELDS[provider]]: modelId,
+        // Choosing a default in Settings means THE default: the global
+        // provider/model pair is what every v2 action resolves against
+        ...(modelId ? { defaultProvider: provider, defaultModelId: modelId } : {})
+    });
 
 export const aiService = {
     initialize,

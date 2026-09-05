@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { createSSEParser } from "@/services/ai/sseParser";
+import { randomUUID } from "@/utils/crypto";
 
 export type ActionId =
     | "continue"
@@ -77,7 +78,7 @@ export const useActionGeneration = () => {
     const run = useCallback(
         async (request: ActionRun): Promise<string> => {
             abort();
-            const requestId = crypto.randomUUID();
+            const requestId = randomUUID();
             const controller = new AbortController();
             active.current = { requestId, controller };
             setPhase("streaming");

@@ -4,6 +4,7 @@ import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/ch
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
 import type { ScreenProps } from "../V2App";
+import { randomUUID } from "@/utils/crypto";
 
 export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setLastChapter } = useV2Store();
@@ -32,7 +33,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
         const title = newTitle.trim() || `Chapter ${ordered.length + 1}`;
         createChapter.mutate(
             {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 storyId: currentStoryId,
                 title,
                 order: ordered.length,
