@@ -17,7 +17,6 @@ import { useSettings } from "./context/SettingsContext";
 import { useSharedHistoryContext } from "./context/SharedHistoryContext";
 import AutoLinkPlugin from "./plugins/AutoLinkPlugin";
 import CollapsiblePlugin from "./plugins/CollapsiblePlugin";
-import ContextMenuPlugin from "./plugins/ContextMenuPlugin";
 import DragDropPaste from "./plugins/DragDropPastePlugin";
 import DraggableBlockPlugin from "./plugins/DraggableBlockPlugin";
 import FloatingLinkEditorPlugin from "./plugins/FloatingLinkEditorPlugin";
@@ -46,7 +45,6 @@ export default function Editor(): JSX.Element {
             hasLinkAttributes,
             isRichText,
             showTreeView,
-            shouldUseLexicalContextMenu,
             selectionAlwaysOnDisplay
         }
     } = useSettings();
@@ -147,7 +145,6 @@ export default function Editor(): JSX.Element {
                         <HistoryPlugin externalHistoryState={historyState} />
                     </>
                 )}
-                {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
             </div>
         </>
     );

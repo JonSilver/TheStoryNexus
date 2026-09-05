@@ -35,7 +35,10 @@ export interface SceneBeatData {
 
 export class SceneBeatNode extends DecoratorNode<JSX.Element> {
     $config() {
-        return this.config("scene-beat", {
+        // Distinct from v1's "scene-beat": the two editors must never claim
+        // each other's nodes — v1 parsing a v2 beat silently destroyed its
+        // state (and vice versa) when both used the same type name
+        return this.config("scene-beat-v2", {
             extends: DecoratorNode,
             stateConfigs: [
                 { stateConfig: commandState, flat: true },
