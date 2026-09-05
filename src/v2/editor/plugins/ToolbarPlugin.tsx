@@ -224,7 +224,7 @@ export const ToolbarPlugin = ({
                 type="file"
                 accept="image/png,image/jpeg,image/gif,image/webp,image/avif"
                 className="hidden"
-                aria-hidden
+                tabIndex={-1}
                 onChange={e => {
                     const file = e.target.files?.[0];
                     e.target.value = "";
