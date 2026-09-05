@@ -25,6 +25,7 @@ export const stories = sqliteTable(
         author: text("author").notNull(),
         language: text("language").notNull(),
         synopsis: text("synopsis"),
+        aiInstructions: text("aiInstructions"), // per-story voice/framing, injected into prose actions only
         seriesId: text("seriesId").references(() => series.id, { onDelete: "set null" }),
         createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
         isDemo: integer("isDemo", { mode: "boolean" })
