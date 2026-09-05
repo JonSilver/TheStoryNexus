@@ -71,7 +71,7 @@ export default function SettingsPage() {
                         title="OpenAI Configuration"
                         keyLabel="OpenAI API Key"
                         keyPlaceholder="Enter your OpenAI API key"
-                        storedKey={settings?.openaiKey}
+                        hasStoredKey={Boolean(settings?.hasOpenaiKey)}
                         models={openaiModels}
                         defaultModel={settings?.defaultOpenAIModel}
                         isKeyMutating={updateKeyMutation.isPending}
@@ -88,7 +88,7 @@ export default function SettingsPage() {
                         title="OpenRouter Configuration"
                         keyLabel="OpenRouter API Key"
                         keyPlaceholder="Enter your OpenRouter API key"
-                        storedKey={settings?.openrouterKey}
+                        hasStoredKey={Boolean(settings?.hasOpenrouterKey)}
                         models={openrouterModels}
                         defaultModel={settings?.defaultOpenRouterModel}
                         isKeyMutating={updateKeyMutation.isPending}
@@ -105,7 +105,7 @@ export default function SettingsPage() {
                         title="Google Gemini Configuration"
                         keyLabel="Gemini API Key"
                         keyPlaceholder="Enter your Gemini API key"
-                        storedKey={settings?.geminiKey}
+                        hasStoredKey={Boolean(settings?.hasGeminiKey)}
                         models={geminiModels}
                         defaultModel={settings?.defaultGeminiModel}
                         isKeyMutating={updateKeyMutation.isPending}

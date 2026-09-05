@@ -1,257 +1,225 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { API_URLS } from "@/constants/urls";
 import { aiSettingsSchema } from "@/schemas/entities";
 import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { aiApi } from "../api/client";
-import { AIProviderFactory } from "./AIProviderFactory";
-import { formatStreamAsSSE, processStreamedResponse } from "./streamUtils";
 
-export class AIService {
-    private static instance: AIService;
-    private settings: AISettings | null = null;
-    private readonly DEFAULT_LOCAL_API_URL = API_URLS.LOCAL_AI_DEFAULT;
-    private providerFactory: AIProviderFactory;
-    private abortController: AbortController | null = null;
+/**
+ * Client-side facade over the server's AI endpoints. All provider access,
+ * key handling, and upstream streaming happen server-side; this module only
+ * posts generation requests and parses the server's SSE stream.
+ */
+const state: {
+    settings: AISettings | null;
+    activeRequestId: string | null;
+    fetchController: AbortController | null;
+} = {
+    settings: null,
+    activeRequestId: null,
+    fetchController: null
+};
 
-    private constructor() {
-        this.providerFactory = new AIProviderFactory(this.DEFAULT_LOCAL_API_URL);
+const initialize = async (): Promise<void> => {
+    const [error, settings] = await attemptPromise(() => aiApi.getSettings());
+    if (error) {
+        logger.error("[AIService] Failed to fetch settings from API", error);
+        throw error;
+    }
+    state.settings = settings;
+};
+
+const getSettings = (): AISettings | null => state.settings;
+
+const generate = async (
+    providerType: AIProvider,
+    messages: PromptMessage[],
+    modelId: string,
+    temperature: number = 1.0,
+    maxTokens: number = 2048
+): Promise<Response> => {
+    const requestId = crypto.randomUUID();
+    const controller = new AbortController();
+    state.activeRequestId = requestId;
+    state.fetchController = controller;
+
+    const [error, response] = await attemptPromise(() =>
+        fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestId, provider: providerType, modelId, messages, temperature, maxTokens }),
+            signal: controller.signal
+        })
+    );
+
+    if (error) {
+        if ((error as Error).name === "AbortError") return new Response(null, { status: 204 });
+        throw error;
+    }
+    if (!response) throw new Error("No response from server");
+    return response;
+};
+
+/**
+ * Parses the server's SSE stream (event: token | error | finish | aborted),
+ * buffering across network chunk boundaries.
+ */
+const handleStreamedResponse = async (
+    response: Response,
+    onToken: (text: string) => void,
+    onComplete: () => void,
+    onError: (error: Error) => void
+): Promise<void> => {
+    if (response.status === 204 || !response.body) {
+        onComplete();
+        return;
+    }
+    if (!response.ok) {
+        const [, body] = await attemptPromise(() => response.json());
+        onError(new Error(body?.error || `Generation failed (${response.status})`));
+        return;
     }
 
-    static getInstance(): AIService {
-        if (!AIService.instance) 
-            AIService.instance = new AIService();
-        
-        return AIService.instance;
-    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const buffer = { text: "" };
 
-    async initialize() {
-        // Fetch settings from backend API
-        const [error, settings] = await attemptPromise(() => aiApi.getSettings());
+    const dispatchFrame = (frame: string): "continue" | "done" => {
+        const eventMatch = frame.match(/^event: (.+)$/m);
+        const dataMatch = frame.match(/^data: (.+)$/m);
+        if (!eventMatch) return "continue";
+        const [parseError, data] = dataMatch
+            ? (() => {
+                  try {
+                      return [null, JSON.parse(dataMatch[1])] as const;
+                  } catch (e) {
+                      return [e as Error, null] as const;
+                  }
+              })()
+            : ([null, {}] as const);
+        if (parseError) return "continue";
 
-        if (error) {
-            logger.error("[AIService] Failed to fetch settings from API", error);
-            throw error;
+        switch (eventMatch[1]) {
+            case "token":
+                if (data?.text) onToken(data.text);
+                return "continue";
+            case "error":
+                onError(new Error(data?.message || "Generation failed"));
+                return "done";
+            case "finish":
+            case "aborted":
+                onComplete();
+                return "done";
+            default:
+                return "continue";
         }
+    };
 
-        this.settings = settings;
+    const [error] = await attemptPromise(async () => {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                onComplete();
+                break;
+            }
+            buffer.text += decoder.decode(value, { stream: true });
+            const frames = buffer.text.split("\n\n");
+            buffer.text = frames.pop() ?? "";
+            for (const frame of frames) if (dispatchFrame(frame) === "done") return;
+        }
+    });
 
-        // Initialize providers with stored keys
-        if (this.settings.openaiKey)
-            this.providerFactory.initializeProvider("openai", this.settings.openaiKey);
+    state.activeRequestId = null;
+    state.fetchController = null;
 
-        if (this.settings.openrouterKey)
-            this.providerFactory.initializeProvider("openrouter", this.settings.openrouterKey);
+    if (error)
+        if ((error as Error).name === "AbortError") {
+            logger.info("Stream reading aborted.");
+            onComplete();
+        } else onError(error as Error);
+};
 
-        if (this.settings.geminiKey)
-            this.providerFactory.initializeProvider("gemini", this.settings.geminiKey);
+const abortStream = (): void => {
+    logger.info("[AIService] Aborting stream");
+    const requestId = state.activeRequestId;
+    state.fetchController?.abort();
+    state.fetchController = null;
+    state.activeRequestId = null;
+    if (requestId)
+        void attemptPromise(() =>
+            fetch("/api/generate/abort", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ requestId })
+            })
+        );
+};
 
-        if (this.settings.localApiUrl)
-            this.providerFactory.updateLocalApiUrl(this.settings.localApiUrl);
-        
-    }
+const applySettings = (settings: AISettings): AISettings => {
+    state.settings = settings;
+    return settings;
+};
 
-    async updateKey(provider: AIProvider, key: string) {
-        logger.info(`[AIService] Updating key for provider: ${provider}`);
-
-        const keyFieldMap: Record<string, keyof AISettings> = {
-            openai: "openaiKey",
-            openrouter: "openrouterKey",
-            gemini: "geminiKey"
-        };
-        const field = keyFieldMap[provider];
-        if (!field) return;
-
-        await this.updateSettingsField({ [field]: key });
-        this.providerFactory.initializeProvider(provider, key);
-        await this.fetchAvailableModels(provider);
-    }
-
-    private async fetchAvailableModels(provider: AIProvider) {
-        if (!this.settings) throw new Error("AIService not initialized");
-
-        logger.info(`[AIService] Fetching available models for provider: ${provider}`);
-
-        const aiProvider = this.providerFactory.getProvider(provider);
-        const [error, models] = await attemptPromise(() => aiProvider.fetchModels());
+const getAvailableModels = async (provider?: AIProvider, forceRefresh: boolean = true): Promise<AIModel[]> => {
+    if (provider && forceRefresh) {
+        const [error, refreshed] = await attemptPromise(() => aiApi.refreshModels(provider));
         if (error) {
             logger.error("Error fetching models:", error);
             throw error;
         }
-
-        logger.info(`[AIService] Fetched ${models.length} models for ${provider}`);
-
-        const existingModels = this.settings.availableModels.filter(m => m.provider !== provider);
-        const updatedModels = [...existingModels, ...models];
-
-        await this.updateSettingsField({
-            availableModels: updatedModels,
-            lastModelsFetch: new Date()
-        });
+        applySettings(refreshed);
+    } else {
+        const [error, settings] = await attemptPromise(() => aiApi.getSettings());
+        if (!error && settings) applySettings(settings);
     }
 
-    async getAvailableModels(provider?: AIProvider, forceRefresh: boolean = true): Promise<AIModel[]> {
-        if (!this.settings) throw new Error("AIService not initialized");
+    const models = state.settings?.availableModels ?? [];
+    return provider ? models.filter(m => m.provider === provider) : models;
+};
 
-        // Refresh settings from API to ensure we have latest data
-        const [error, freshSettings] = await attemptPromise(() => aiApi.getSettings());
-        if (!error && freshSettings) 
-            this.settings = freshSettings;
-        
+const updateKey = async (provider: AIProvider, key: string): Promise<void> => {
+    logger.info(`[AIService] Updating key for provider: ${provider}`);
+    const [error, settings] = await attemptPromise(() => aiApi.setKey(provider, key));
+    if (error) throw error;
+    applySettings(settings);
+};
 
-        // Check if we should fetch fresh models
-        if (provider && forceRefresh) 
-            await this.fetchAvailableModels(provider);
-        
+const updateLocalApiUrl = async (url: string): Promise<void> => {
+    const [error, settings] = await attemptPromise(() => aiApi.setLocalUrl(url));
+    if (error) throw error;
+    applySettings(settings);
+};
 
-        const result = provider
-            ? this.settings.availableModels.filter(m => m.provider === provider)
-            : this.settings.availableModels;
-
-        return result;
+const updateSettingsField = async (updateData: Partial<AISettings>): Promise<void> => {
+    const settingsId = state.settings?.id;
+    if (!settingsId) throw new Error("Settings not initialized");
+    const result = aiSettingsSchema.partial().safeParse(updateData);
+    if (!result.success) throw new Error(`Invalid AI settings update data: ${result.error.message}`);
+    const [error, updated] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
+    if (error) {
+        logger.error("[AIService] Failed to update settings via API", error);
+        throw error;
     }
+    applySettings(updated);
+};
 
-    async generate(
-        providerType: AIProvider,
-        messages: PromptMessage[],
-        modelId: string,
-        temperature: number = 1.0,
-        maxTokens: number = 2048
-    ): Promise<Response> {
-        this.abortController = new AbortController();
-        const signal = this.abortController.signal;
+const DEFAULT_MODEL_FIELDS: Record<AIProvider, keyof AISettings> = {
+    local: "defaultLocalModel",
+    openai: "defaultOpenAIModel",
+    openrouter: "defaultOpenRouterModel",
+    gemini: "defaultGeminiModel"
+};
 
-        // Local provider doesn't need SSE formatting
-        if (providerType === "local") {
-            const provider = this.providerFactory.getProvider("local");
-            return provider.generate(messages, modelId, temperature, maxTokens, signal);
-        }
+const updateDefaultModel = async (provider: AIProvider, modelId: string | undefined): Promise<void> =>
+    updateSettingsField({ [DEFAULT_MODEL_FIELDS[provider]]: modelId });
 
-        // Ensure provider is initialized with API key
-        this.ensureProviderInitialized(providerType);
-
-        const provider = this.providerFactory.getProvider(providerType);
-        const [error, response] = await attemptPromise(() =>
-            provider.generate(messages, modelId, temperature, maxTokens, signal)
-        );
-
-        if (error) {
-            if ((error as Error).name === "AbortError")
-                return new Response(null, { status: 204 });
-            throw error;
-        }
-
-        if (!response) throw new Error("No response from provider");
-        return formatStreamAsSSE(response);
-    }
-
-    private ensureProviderInitialized(providerType: AIProvider): void {
-        const provider = this.providerFactory.getProvider(providerType);
-        if (provider.isInitialized()) return;
-
-        const keyMap: Record<string, string | undefined> = {
-            openai: this.settings?.openaiKey,
-            openrouter: this.settings?.openrouterKey,
-            gemini: this.settings?.geminiKey
-        };
-
-        const key = keyMap[providerType];
-        if (!key) throw new Error(`${providerType} API key not set`);
-        this.providerFactory.initializeProvider(providerType, key);
-    }
-
-    async handleStreamedResponse(
-        response: Response,
-        onToken: (text: string) => void,
-        onComplete: () => void,
-        onError: (error: Error) => void
-    ) {
-        await processStreamedResponse(response, onToken, onComplete, onError);
-        this.abortController = null;
-    }
-
-    // Getter methods
-    getOpenAIKey(): string | undefined {
-        return this.settings?.openaiKey;
-    }
-
-    getOpenRouterKey(): string | undefined {
-        return this.settings?.openrouterKey;
-    }
-
-    getLocalApiUrl(): string {
-        return this.settings?.localApiUrl || this.DEFAULT_LOCAL_API_URL;
-    }
-
-    getDefaultLocalModel(): string | undefined {
-        return this.settings?.defaultLocalModel;
-    }
-
-    getDefaultOpenAIModel(): string | undefined {
-        return this.settings?.defaultOpenAIModel;
-    }
-
-    getDefaultOpenRouterModel(): string | undefined {
-        return this.settings?.defaultOpenRouterModel;
-    }
-
-    getGeminiKey(): string | undefined {
-        return this.settings?.geminiKey;
-    }
-
-    getDefaultGeminiModel(): string | undefined {
-        return this.settings?.defaultGeminiModel;
-    }
-
-    async updateDefaultModel(provider: AIProvider, modelId: string | undefined): Promise<void> {
-        if (!this.settings) throw new Error("AI settings not initialized");
-
-        const fieldMap: Record<AIProvider, keyof AISettings> = {
-            local: "defaultLocalModel",
-            openai: "defaultOpenAIModel",
-            openrouter: "defaultOpenRouterModel",
-            gemini: "defaultGeminiModel"
-        };
-        const field = fieldMap[provider];
-        if (!field) return;
-
-        await this.updateSettingsField({ [field]: modelId });
-    }
-
-    private async updateSettingsField(updateData: Partial<AISettings>): Promise<void> {
-        if (!this.settings) throw new Error("Settings not initialized");
-
-        const result = aiSettingsSchema.partial().safeParse(updateData);
-        if (!result.success)
-            throw new Error(`Invalid AI settings update data: ${result.error.message}`);
-
-        const settingsId = this.settings.id;
-        const [error] = await attemptPromise(() => aiApi.updateSettings(settingsId, updateData));
-        if (error) {
-            logger.error("[AIService] Failed to update settings via API", error);
-            throw error;
-        }
-
-        Object.assign(this.settings, updateData);
-    }
-
-    async updateLocalApiUrl(url: string): Promise<void> {
-        await this.updateSettingsField({ localApiUrl: url });
-        this.providerFactory.updateLocalApiUrl(url);
-        await this.fetchAvailableModels("local");
-    }
-
-    getSettings(): AISettings | null {
-        return this.settings;
-    }
-
-    abortStream(): void {
-        if (this.abortController) {
-            logger.info("[AIService] Aborting stream");
-            this.abortController.abort();
-            this.abortController = null;
-        }
-    }
-}
-
-export const aiService = AIService.getInstance();
+export const aiService = {
+    initialize,
+    getSettings,
+    generate,
+    handleStreamedResponse,
+    abortStream,
+    getAvailableModels,
+    updateKey,
+    updateLocalApiUrl,
+    updateDefaultModel
+};

@@ -94,7 +94,13 @@ export const promptsApi = {
 export const aiApi = {
     getSettings: () => fetchJSON<AISettings>("/ai/settings"),
     updateSettings: (id: string, data: Partial<AISettings>) =>
-        fetchJSON<AISettings>(`/ai/settings/${id}`, { method: "PUT", body: JSON.stringify(data) })
+        fetchJSON<AISettings>(`/ai/settings/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    setKey: (provider: string, key: string) =>
+        fetchJSON<AISettings>(`/ai/keys/${provider}`, { method: "PUT", body: JSON.stringify({ key }) }),
+    setLocalUrl: (url: string) =>
+        fetchJSON<AISettings>("/ai/local-url", { method: "PUT", body: JSON.stringify({ url }) }),
+    refreshModels: (provider: string) =>
+        fetchJSON<AISettings>(`/ai/models/refresh/${provider}`, { method: "POST" })
 };
 
 // Brainstorm (AI Chats) API

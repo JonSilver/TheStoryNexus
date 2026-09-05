@@ -123,9 +123,9 @@ export interface AIModel {
 }
 
 export interface AISettings extends BaseEntity {
-    openaiKey?: string;
-    openrouterKey?: string;
-    geminiKey?: string;
+    hasOpenaiKey?: boolean;
+    hasOpenrouterKey?: boolean;
+    hasGeminiKey?: boolean;
     availableModels: AIModel[];
     lastModelsFetch?: Date;
     localApiUrl?: string;
@@ -133,6 +133,8 @@ export interface AISettings extends BaseEntity {
     defaultOpenAIModel?: string;
     defaultOpenRouterModel?: string;
     defaultGeminiModel?: string;
+    defaultProvider?: AIProvider;
+    defaultModelId?: string;
 }
 
 // Note types

@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Series table
 export const series = sqliteTable(
@@ -123,8 +123,30 @@ export const aiSettings = sqliteTable("aiSettings", {
     defaultOpenAIModel: text("defaultOpenAIModel"),
     defaultOpenRouterModel: text("defaultOpenRouterModel"),
     defaultGeminiModel: text("defaultGeminiModel"),
+    defaultProvider: text("defaultProvider"), // 'openai' | 'openrouter' | 'gemini' | 'local'
+    defaultModelId: text("defaultModelId"),
     createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
 });
+
+// Per-action prompt/param overrides (v2 action registry storage; storyId null = global)
+export const actionOverrides = sqliteTable(
+    "actionOverrides",
+    {
+        id: text("id").primaryKey(),
+        actionId: text("actionId").notNull(),
+        storyId: text("storyId").references(() => stories.id, { onDelete: "cascade" }),
+        template: text("template", { mode: "json" }), // JSON: PromptMessage[]
+        temperature: real("temperature"),
+        maxTokens: integer("maxTokens"),
+        topP: real("topP"),
+        modelRef: text("modelRef"), // 'provider/modelId'
+        createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
+    },
+    table => ({
+        actionIdx: index("action_override_action_idx").on(table.actionId),
+        storyIdx: index("action_override_story_idx").on(table.storyId)
+    })
+);
 
 // Lorebook Entries table
 export const lorebookEntries = sqliteTable(

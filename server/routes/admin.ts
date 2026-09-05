@@ -39,10 +39,12 @@ router.get("/export", async (_, res) => {
     }
 
     const [series, stories, chapters, prompts, lorebookEntries, aiChats, sceneBeats, notes, aiSettings] = tables;
+    // API keys never leave the server, including via export
+    const sanitisedAiSettings = aiSettings.map(({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...rest }) => rest);
     res.json({
         version: "1.0",
         exportedAt: new Date().toISOString(),
-        tables: { series, stories, chapters, prompts, lorebookEntries, aiChats, sceneBeats, notes, aiSettings }
+        tables: { series, stories, chapters, prompts, lorebookEntries, aiChats, sceneBeats, notes, aiSettings: sanitisedAiSettings }
     });
 });
 

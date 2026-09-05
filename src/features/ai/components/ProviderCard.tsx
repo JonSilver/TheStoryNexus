@@ -12,7 +12,7 @@ type ProviderCardProps = {
     title: string;
     keyLabel: string;
     keyPlaceholder: string;
-    storedKey: string | undefined;
+    hasStoredKey: boolean;
     models: AIModel[];
     defaultModel: string | undefined;
     isKeyMutating: boolean;
@@ -26,7 +26,7 @@ export const ProviderCard = ({
     title,
     keyLabel,
     keyPlaceholder,
-    storedKey,
+    hasStoredKey,
     models,
     defaultModel,
     isKeyMutating,
@@ -35,7 +35,7 @@ export const ProviderCard = ({
     onRefresh,
     onDefaultModelChange
 }: ProviderCardProps) => {
-    const [inputKey, setInputKey] = useState(storedKey || "");
+    const [inputKey, setInputKey] = useState("");
     const isPending = isKeyMutating || isRefreshing;
 
     return (
@@ -43,7 +43,7 @@ export const ProviderCard = ({
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                     {title}
-                    <Button variant="outline" size="sm" onClick={onRefresh} disabled={isPending || !storedKey?.trim()}>
+                    <Button variant="outline" size="sm" onClick={onRefresh} disabled={isPending || !hasStoredKey}>
                         {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh Models"}
                     </Button>
                 </CardTitle>
@@ -54,7 +54,7 @@ export const ProviderCard = ({
                     <div className="flex gap-2">
                         <Input
                             type="password"
-                            placeholder={keyPlaceholder}
+                            placeholder={hasStoredKey ? "Key saved — enter a new key to replace" : keyPlaceholder}
                             value={inputKey}
                             onChange={e => setInputKey(e.target.value)}
                         />

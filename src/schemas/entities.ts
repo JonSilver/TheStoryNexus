@@ -104,14 +104,16 @@ const aiModelSchema = z.object({
 
 // AI Settings schema
 export const aiSettingsSchema = baseEntitySchema.extend({
-    openaiKey: z.string().optional(),
-    openrouterKey: z.string().optional(),
-    geminiKey: z.string().optional(),
+    hasOpenaiKey: z.boolean().optional(),
+    hasOpenrouterKey: z.boolean().optional(),
+    hasGeminiKey: z.boolean().optional(),
     availableModels: z.array(aiModelSchema),
     lastModelsFetch: z.coerce.date().optional(),
     localApiUrl: z.string().optional(),
     defaultLocalModel: z.string().optional(),
     defaultOpenAIModel: z.string().optional(),
     defaultOpenRouterModel: z.string().optional(),
-    defaultGeminiModel: z.string().optional()
+    defaultGeminiModel: z.string().optional(),
+    defaultProvider: aiProviderSchema.optional(),
+    defaultModelId: z.string().optional()
 });
