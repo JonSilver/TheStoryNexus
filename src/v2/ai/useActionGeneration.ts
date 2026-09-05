@@ -9,7 +9,9 @@ export type ActionId =
     | "shorten"
     | "summarise_chapter"
     | "brainstorm"
-    | "scene_beat";
+    | "scene_beat"
+    | "extract_entries"
+    | "propose_updates";
 
 export interface ActionEditorContext {
     selection?: string;

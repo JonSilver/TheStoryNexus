@@ -1,0 +1,196 @@
+import { useState } from "react";
+import { Loader2, X } from "lucide-react";
+import { toast } from "react-toastify";
+import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
+import type { LorebookEntry } from "@/types/story";
+import { useActionGeneration } from "../ai/useActionGeneration";
+import { type EntryProposal, type UpdateProposal, parseEntryProposals, parseUpdateProposals } from "./parseProposals";
+
+export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates";
+
+const TITLES: Record<BibleFlowMode, string> = {
+    "extract-chapter": "Extract entries from this chapter",
+    "extract-paste": "Extract entries from pasted text",
+    updates: "Scan chapter for entry updates"
+};
+
+/**
+ * Review-before-save flow (contracts Phase 6): nothing the model proposes
+ * is written to the bible without explicit approval.
+ */
+export const ExtractSheet = ({
+    mode,
+    storyId,
+    chapterId,
+    entries,
+    onClose
+}: {
+    mode: BibleFlowMode;
+    storyId: string;
+    chapterId: string | null;
+    entries: LorebookEntry[];
+    onClose: () => void;
+}) => {
+    const generation = useActionGeneration();
+    const createEntry = useCreateLorebookMutation();
+    const updateEntry = useUpdateLorebookMutation();
+    const [pasted, setPasted] = useState("");
+    const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
+    const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
+    const [ticked, setTicked] = useState<Set<number>>(new Set());
+
+    const run = async () => {
+        const actionId = mode === "updates" ? "propose_updates" : "extract_entries";
+        const text = await generation.run({
+            actionId,
+            storyId,
+            ...(mode !== "extract-paste" && chapterId ? { chapterId } : {}),
+            editorContext: mode === "extract-paste" ? { userMessage: pasted } : {}
+        });
+        if (!text) return;
+        if (mode === "updates") {
+            const parsed = parseUpdateProposals(text);
+            setUpdates(parsed);
+            if (!parsed.length) toast.info("No entry updates suggested");
+        } else {
+            const parsed = parseEntryProposals(text);
+            setProposals(parsed);
+            setTicked(new Set(parsed.map((_, i) => i)));
+            if (!parsed.length) toast.info("Nothing extractable found");
+        }
+    };
+
+    const approveEntries = () => {
+        const chosen = (proposals ?? []).filter((_, i) => ticked.has(i));
+        chosen.forEach(proposal =>
+            createEntry.mutate({
+                id: crypto.randomUUID(),
+                level: "story",
+                scopeId: storyId,
+                name: proposal.name,
+                description: proposal.description,
+                category: proposal.category,
+                tags: proposal.tags,
+                isDisabled: false
+            })
+        );
+        toast.success(`${chosen.length} entr${chosen.length === 1 ? "y" : "ies"} added`);
+        onClose();
+    };
+
+    const applyUpdate = (proposal: UpdateProposal) => {
+        const entry = entries.find(e => e.name.toLowerCase() === proposal.name.toLowerCase());
+        if (!entry) {
+            toast.error(`No entry named “${proposal.name}”`);
+            return;
+        }
+        updateEntry.mutate({ id: entry.id, data: { description: proposal.updatedDescription } });
+        setUpdates(current => (current ?? []).filter(u => u !== proposal));
+    };
+
+    const busy = generation.phase === "streaming";
+    const needsPaste = mode === "extract-paste" && proposals === null;
+    const showRun = proposals === null && updates === null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label={TITLES[mode]}>
+            <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
+                <header className="flex items-center justify-between px-4 py-3">
+                    <span className="font-medium">{TITLES[mode]}</span>
+                    <button type="button" onClick={onClose} aria-label="Close">
+                        <X className="h-4 w-4" />
+                    </button>
+                </header>
+
+                <div className="min-h-[10rem] flex-1 space-y-3 overflow-y-auto px-4 pb-4 text-sm">
+                    {needsPaste && (
+                        <textarea
+                            className="min-h-40 w-full resize-y rounded-md border bg-background p-2"
+                            placeholder="Paste story text here…"
+                            value={pasted}
+                            onChange={e => setPasted(e.target.value)}
+                        />
+                    )}
+                    {busy && (
+                        <p className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" /> Reading…
+                        </p>
+                    )}
+                    {generation.error && <p className="text-destructive">{generation.error}</p>}
+
+                    {proposals?.map((proposal, index) => (
+                        <label key={index} className="flex items-start gap-2 rounded-md border p-2">
+                            <input
+                                type="checkbox"
+                                checked={ticked.has(index)}
+                                onChange={() =>
+                                    setTicked(current => {
+                                        const next = new Set(current);
+                                        if (next.has(index)) next.delete(index);
+                                        else next.add(index);
+                                        return next;
+                                    })
+                                }
+                            />
+                            <span>
+                                <span className="font-medium">{proposal.name}</span>{" "}
+                                <span className="text-xs text-muted-foreground">({proposal.category})</span>
+                                <br />
+                                {proposal.description}
+                                {proposal.tags.length > 0 && (
+                                    <span className="block text-xs text-muted-foreground">
+                                        aka: {proposal.tags.join(", ")}
+                                    </span>
+                                )}
+                            </span>
+                        </label>
+                    ))}
+
+                    {updates?.map(proposal => {
+                        const existing = entries.find(e => e.name.toLowerCase() === proposal.name.toLowerCase());
+                        return (
+                            <div key={proposal.name} className="space-y-1 rounded-md border p-2">
+                                <p className="font-medium">{proposal.name}</p>
+                                {existing && <p className="text-xs text-muted-foreground line-through">{existing.description}</p>}
+                                <p>{proposal.updatedDescription}</p>
+                                {proposal.reason && <p className="text-xs text-muted-foreground">{proposal.reason}</p>}
+                                <button
+                                    type="button"
+                                    onClick={() => applyUpdate(proposal)}
+                                    className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <footer className="flex gap-2 border-t p-3">
+                    {showRun ? (
+                        <button
+                            type="button"
+                            onClick={() => void run()}
+                            disabled={busy || (mode === "extract-paste" && !pasted.trim())}
+                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                        >
+                            {busy ? "Working…" : "Run"}
+                        </button>
+                    ) : proposals !== null ? (
+                        <button
+                            type="button"
+                            onClick={approveEntries}
+                            disabled={ticked.size === 0}
+                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                        >
+                            Add {ticked.size} to bible
+                        </button>
+                    ) : null}
+                    <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
+                        Close
+                    </button>
+                </footer>
+            </div>
+        </div>
+    );
+};

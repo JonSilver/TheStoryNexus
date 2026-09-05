@@ -29,7 +29,9 @@ export const ACTION_IDS = [
     "shorten",
     "summarise_chapter",
     "brainstorm",
-    "scene_beat"
+    "scene_beat",
+    "extract_entries",
+    "propose_updates"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -154,6 +156,36 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Summarise the following chapter content:\nChapter Content: {{chapter_content}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 512 }
+    },
+    extract_entries: {
+        id: "extract_entries",
+        label: "Extract Bible Entries",
+        voiceApplies: false,
+        contextNeeds: ["chapter_content", "user_message", "matched_entries"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You extract story-bible entries from fiction text. Return ONLY a JSON array — no prose, no code fences — of objects shaped: {"name": string, "category": "character" | "location" | "item" | "event", "description": string, "tags": string[]}. Descriptions are 2-3 factual sentences grounded in the text. Tags are aliases, nicknames, or titles used for the entity in the text. Do not invent facts. Skip entities already well covered by these existing entries:\n{{matched_entries}}'
+            },
+            { role: "user", content: "Extract entries from the following text:\n{{chapter_content}}\n{{user_message}}" }
+        ],
+        defaultParams: { temperature: 0.3, maxTokens: 4096 }
+    },
+    propose_updates: {
+        id: "propose_updates",
+        label: "Propose Bible Updates",
+        voiceApplies: false,
+        contextNeeds: ["chapter_content", "matched_entries"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You maintain a story bible. Given existing entries and new chapter text, propose updates to entries whose facts have changed or grown. Return ONLY a JSON array — no prose, no code fences — of objects shaped: {"name": string (an existing entry name, verbatim), "updatedDescription": string (the full replacement description), "reason": string (one sentence)}. Only include entries that genuinely need changing; return [] if none do. Do not invent facts.\nExisting entries:\n{{matched_entries}}'
+            },
+            { role: "user", content: "New chapter text:\n{{chapter_content}}" }
+        ],
+        defaultParams: { temperature: 0.3, maxTokens: 4096 }
     },
     brainstorm: {
         id: "brainstorm",
