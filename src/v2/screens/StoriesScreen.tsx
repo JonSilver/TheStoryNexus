@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { BookUp, Loader2, Plus } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { attemptPromise } from "@jfdi/attempt";
+import { toast } from "react-toastify";
+import { BookUp, Loader2, Plus, Sparkles } from "lucide-react";
+import { adminApi } from "@/services/api/client";
 import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
 import { ImportSheet } from "./ImportSheet";
@@ -11,6 +15,21 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const createStory = useCreateStoryMutation();
     const [newTitle, setNewTitle] = useState("");
     const [importing, setImporting] = useState(false);
+    const queryClient = useQueryClient();
+    const { data: demoExists } = useQuery({
+        queryKey: ["demo-exists"],
+        queryFn: () => adminApi.checkDemoExists().then(r => r.exists)
+    });
+
+    const restoreDemo = async () => {
+        const [error] = await attemptPromise(() => adminApi.importDemoData());
+        if (error) {
+            toast.error("Couldn't restore the sample story");
+            return;
+        }
+        void queryClient.invalidateQueries();
+        toast.success("Sample story restored");
+    };
 
     const create = () => {
         const title = newTitle.trim();
@@ -65,7 +84,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                         ))}
                         {(stories ?? []).length === 0 && (
                             <li className="p-8 text-center text-sm text-muted-foreground">
-                                No stories yet — create one below.
+                                No stories yet — create one below, or import a manuscript.
                             </li>
                         )}
                     </ul>
@@ -88,6 +107,15 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                     <Plus className="h-4 w-4" /> Create
                 </button>
             </footer>
+            {demoExists === false && (
+                <button
+                    type="button"
+                    onClick={() => void restoreDemo()}
+                    className="flex items-center gap-2 border-t px-4 py-3 text-left text-sm text-muted-foreground"
+                >
+                    <Sparkles className="h-4 w-4" /> Restore the sample story (Shadows Over Berlin)
+                </button>
+            )}
             {importing && (
                 <ImportSheet
                     onClose={() => setImporting(false)}

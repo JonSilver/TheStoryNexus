@@ -32,6 +32,17 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const initializeDatabase = async () => {
     runMigrations();
     await seedSystemPrompts();
+
+    // A content-free database greets the user with the sample story rather
+    // than an empty app; any existing story or lorebook entry suppresses it
+    const { db, schema } = await import("./db/client.js");
+    const [stories] = await db.select({ id: schema.stories.id }).from(schema.stories).limit(1);
+    const [entries] = await db.select({ id: schema.lorebookEntries.id }).from(schema.lorebookEntries).limit(1);
+    if (!stories && !entries) {
+        const { seedDemoStory } = await import("./db/seedDemoStory.js");
+        console.log("Fresh database — seeding the sample story...");
+        await seedDemoStory();
+    }
 };
 
 initializeDatabase().catch(error => {
