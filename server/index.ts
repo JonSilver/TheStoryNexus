@@ -6,6 +6,7 @@ import { runMigrations } from "./db/migrate.js";
 import { seedSystemPrompts } from "./db/seedSystemPrompts.js";
 import adminRouter from "./routes/admin.js";
 import aiRouter from "./routes/ai.js";
+import assetsRouter from "./routes/assets.js";
 import brainstormRouter from "./routes/brainstorm.js";
 import chaptersRouter from "./routes/chapters.js";
 import generateRouter from "./routes/generate.js";
@@ -57,6 +58,7 @@ app.use("/api/brainstorm", brainstormRouter);
 app.use("/api/scenebeats", scenebeatsRouter);
 app.use("/api/notes", notesRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/assets", assetsRouter);
 
 // Health check
 app.get("/api/health", (_, res) => {

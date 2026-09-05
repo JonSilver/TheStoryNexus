@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import multer from "multer";
 import { db, schema } from "../db/client.js";
 import { createCrudRouter } from "../lib/crud.js";
+import { deleteStoryAssets } from "../services/assets/storage.js";
 import { generateEpub } from "../services/epubGenerator.js";
 
 type ImportedChapter = InferSelectModel<typeof schema.chapters>;
@@ -224,6 +225,10 @@ export default createCrudRouter({
             "/:id",
             asyncHandler(async (req, res) => {
                 const storyId = req.params.id;
+
+                // Assets go first; a filesystem failure must not leave the story undeletable
+                const [assetError] = await attemptPromise(() => deleteStoryAssets(storyId));
+                if (assetError) console.error(`Failed to delete assets for story ${storyId}:`, assetError);
 
                 await db.transaction(async tx => {
                     // 1. Delete story-level lorebook entries
