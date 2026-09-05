@@ -1,4 +1,4 @@
-import { FileText, Maximize2, Minimize2, RefreshCw, Wand2 } from "lucide-react";
+import { Maximize2, Minimize2, RefreshCw, Wand2 } from "lucide-react";
 
 export interface ToolbarActions {
     onContinue: () => void;
@@ -44,14 +44,5 @@ export const AiActionButtons = ({
                     <Icon className="h-4 w-4" />
                 </button>
             ))}
-        <button
-            type="button"
-            className={className}
-            onClick={actions.onSummarise}
-            aria-label="Summarise chapter"
-            title="Summarise chapter"
-        >
-            <FileText className="h-4 w-4" />
-        </button>
     </>
 );

@@ -6,7 +6,17 @@ import { Image as ImageIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import { $createImageNode } from "../nodes/ImageNode";
 
-export const ImageUploadButton = ({ storyId, className }: { storyId: string; className: string }) => {
+export const ImageUploadButton = ({
+    storyId,
+    className,
+    label,
+    onDone
+}: {
+    storyId: string;
+    className: string;
+    label?: string;
+    onDone?: () => void;
+}) => {
     const [editor] = useLexicalComposerContext();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -20,6 +30,7 @@ export const ImageUploadButton = ({ storyId, className }: { storyId: string; cla
             return;
         }
         const { url } = await response.json();
+        onDone?.();
         editor.update(() => {
             // Focus moved to the file picker, so the editor selection is often
             // gone by now — fall back to the end of the document
@@ -37,6 +48,7 @@ export const ImageUploadButton = ({ storyId, className }: { storyId: string; cla
                 aria-label="Insert image"
             >
                 <ImageIcon className="h-4 w-4" />
+                {label}
             </button>
             <input
                 ref={fileInputRef}

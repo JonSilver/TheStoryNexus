@@ -11,38 +11,30 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
-import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
-import { $setBlocksType } from "@lexical/selection";
-import { $createHeadingNode, $isHeadingNode, type HeadingTagType } from "@lexical/rich-text";
-import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
+import { $isHeadingNode } from "@lexical/rich-text";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
-import { Bold, Italic, List, ListOrdered, Minus, Redo2, Sparkles, Underline, Undo2 } from "lucide-react";
+import { Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
-import { AiActionButtons, type ToolbarActions } from "./AiActionButtons";
-import { ImageUploadButton } from "./ImageUploadButton";
 import type { SaveStatus } from "../useChapterSaver";
-
-const BLOCK_OPTIONS = [
-    { value: "paragraph", label: "Text" },
-    { value: "h1", label: "Heading 1" },
-    { value: "h2", label: "Heading 2" },
-    { value: "h3", label: "Heading 3" }
-] as const;
-
-type BlockValue = (typeof BLOCK_OPTIONS)[number]["value"];
+import { AiActionButtons, type ToolbarActions } from "./AiActionButtons";
+import { type BlockValue, ToolbarMoreMenu } from "./ToolbarMoreMenu";
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
     idle: "",
     saving: "Saving…",
     saved: "Saved",
-    failed: "Save failed — retrying",
-    conflict: "Edited elsewhere"
+    failed: "Retrying…",
+    conflict: "Conflict"
 };
 
 const toolButton =
     "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground disabled:opacity-40 data-[active=true]:bg-accent data-[active=true]:text-foreground";
 
+/**
+ * One compact row: high-frequency controls only, contextual selection
+ * actions, and a "…" sheet for the rest. Never scrolls horizontally.
+ */
 export const ToolbarPlugin = ({
     saveStatus,
     wordCount,
@@ -57,7 +49,7 @@ export const ToolbarPlugin = ({
     const [editor] = useLexicalComposerContext();
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
-    const [formats, setFormats] = useState({ bold: false, italic: false, underline: false });
+    const [formats, setFormats] = useState({ bold: false, italic: false });
     const [block, setBlock] = useState<BlockValue>("paragraph");
     const [hasSelection, setHasSelection] = useState(false);
 
@@ -65,11 +57,7 @@ export const ToolbarPlugin = ({
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) return;
         setHasSelection(!selection.isCollapsed());
-        setFormats({
-            bold: selection.hasFormat("bold"),
-            italic: selection.hasFormat("italic"),
-            underline: selection.hasFormat("underline")
-        });
+        setFormats({ bold: selection.hasFormat("bold"), italic: selection.hasFormat("italic") });
         const anchorNode = selection.anchor.getNode();
         const element = anchorNode.getKey() === "root" ? anchorNode : anchorNode.getTopLevelElementOrThrow();
         setBlock($isHeadingNode(element) ? (element.getTag() as BlockValue) : "paragraph");
@@ -106,15 +94,6 @@ export const ToolbarPlugin = ({
         [editor, readSelection]
     );
 
-    const setBlockType = (value: BlockValue) =>
-        editor.update(() => {
-            const selection = $getSelection();
-            if (!$isRangeSelection(selection)) return;
-            $setBlocksType(selection, () =>
-                value === "paragraph" ? $createParagraphNode() : $createHeadingNode(value as HeadingTagType)
-            );
-        });
-
     const insertSceneBeat = () =>
         editor.update(() => {
             const selection = $getSelection();
@@ -123,7 +102,7 @@ export const ToolbarPlugin = ({
         });
 
     return (
-        <div className="flex items-center gap-1 overflow-x-auto border-b bg-background px-2 py-1">
+        <div className="flex items-center gap-0.5 border-b bg-background px-1 py-1">
             <button
                 type="button"
                 className={toolButton}
@@ -142,25 +121,10 @@ export const ToolbarPlugin = ({
             >
                 <Redo2 className="h-4 w-4" />
             </button>
-
-            <select
-                className="h-9 shrink-0 rounded-md border bg-background px-2 text-sm"
-                value={block}
-                onChange={e => setBlockType(e.target.value as BlockValue)}
-                aria-label="Block format"
-            >
-                {BLOCK_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
-
             {(
                 [
                     ["bold", Bold],
-                    ["italic", Italic],
-                    ["underline", Underline]
+                    ["italic", Italic]
                 ] as const
             ).map(([format, Icon]) => (
                 <button
@@ -174,7 +138,6 @@ export const ToolbarPlugin = ({
                     <Icon className="h-4 w-4" />
                 </button>
             ))}
-
             <button
                 type="button"
                 className={toolButton}
@@ -185,35 +148,22 @@ export const ToolbarPlugin = ({
                 <Sparkles className="h-4 w-4" />
             </button>
             <AiActionButtons actions={actions} hasSelection={hasSelection} className={toolButton} />
-            <button
-                type="button"
-                className={toolButton}
-                onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
-                aria-label="Bullet list"
-            >
-                <List className="h-4 w-4" />
-            </button>
-            <button
-                type="button"
-                className={toolButton}
-                onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}
-                aria-label="Numbered list"
-            >
-                <ListOrdered className="h-4 w-4" />
-            </button>
-            <button
-                type="button"
-                className={toolButton}
-                onClick={() => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)}
-                aria-label="Insert horizontal rule"
-            >
-                <Minus className="h-4 w-4" />
-            </button>
-            <ImageUploadButton storyId={storyId} className={toolButton} />
 
-            <div className="ml-auto flex shrink-0 items-center gap-2 pl-2 text-xs text-muted-foreground">
-                <span>{wordCount} words</span>
-                <span data-save-status={saveStatus}>{SAVE_LABELS[saveStatus]}</span>
+            <div className="ml-auto flex shrink-0 items-center gap-0.5">
+                {!hasSelection && (
+                    <span className="px-1 text-xs text-muted-foreground" data-save-status={saveStatus}>
+                        {wordCount.toLocaleString()}
+                        {SAVE_LABELS[saveStatus] && ` · ${SAVE_LABELS[saveStatus]}`}
+                    </span>
+                )}
+                <ToolbarMoreMenu
+                    editor={editor}
+                    block={block}
+                    storyId={storyId}
+                    buttonClass={toolButton}
+                    onUnderline={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
+                    onSummarise={actions.onSummarise}
+                />
             </div>
         </div>
     );

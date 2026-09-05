@@ -62,7 +62,9 @@ export const useActionGeneration = () => {
                 body: JSON.stringify({ requestId: current.requestId })
             })
         );
-        active.current = null;
+        // Deliberately NOT clearing active here: the aborted run still owns
+        // its completion and must transition streaming → done itself. A
+        // superseding run() disowns it by replacing active instead.
     }, []);
 
     const reset = useCallback(() => {

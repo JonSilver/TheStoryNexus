@@ -140,14 +140,16 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                     parser.push(decoder.decode(value, { stream: true }));
                 }
             });
-            if (readError && (readError as Error).name === "AbortError") finish();
+            if (readError)
+                finish((readError as Error).name === "AbortError" ? undefined : (readError as Error).message);
         },
         [mutate, storyId, chapterId, textBeforeNode]
     );
 
     const stop = useCallback(() => {
+        // Abort only — the run still owns cancelRef and must finish() itself
+        // to move the node out of "generating"
         cancelRef.current?.();
-        cancelRef.current = null;
     }, []);
 
     return { generate, stop, mutate, textBeforeNode, abortActive: () => cancelRef.current?.() };
