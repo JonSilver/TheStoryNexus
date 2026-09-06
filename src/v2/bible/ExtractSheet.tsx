@@ -207,7 +207,8 @@ export const ExtractSheet = ({
                         <p className="flex items-center gap-2 text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             {sweep.progress
-                                ? `Reading chapter ${sweep.progress.current} of ${sweep.progress.total}: “${sweep.progress.title}”…`
+                                ? `Reading chapter ${sweep.progress.current} of ${sweep.progress.total}: “${sweep.progress.title}”… ` +
+                                  `${sweep.progress.found} entr${sweep.progress.found === 1 ? "y" : "ies"} found so far`
                                 : "Reading…"}
                         </p>
                     )}

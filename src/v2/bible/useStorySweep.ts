@@ -7,6 +7,8 @@ export interface SweepProgress {
     current: number;
     total: number;
     title: string;
+    /** Distinct proposals gathered so far — live, not end-of-job. */
+    found: number;
 }
 
 /**
@@ -33,7 +35,7 @@ export const useStorySweep = (
         const gathered: EntryProposal[] = [];
         for (const [index, chapter] of chapters.entries()) {
             if (stopRequested.current) break;
-            setProgress({ current: index + 1, total: chapters.length, title: chapter.title });
+            setProgress({ current: index + 1, total: chapters.length, title: chapter.title, found: gathered.length });
             await flushChapterSave(chapter.id);
             const text = await generation.run({
                 actionId: "extract_entries",
@@ -47,6 +49,7 @@ export const useStorySweep = (
                 seen.add(key);
                 gathered.push(proposal);
             }
+            setProgress(current => (current ? { ...current, found: gathered.length } : current));
         }
         setProgress(null);
         return gathered;
