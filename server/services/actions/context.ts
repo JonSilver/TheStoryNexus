@@ -121,10 +121,21 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
 
     if (needs.has("chapter_content") && chapter) {
         // The primary payload for summarise/extract, but still bounded: an
-        // over-long chapter must degrade to a trimmed head, not blow the
-        // window and 422 the whole action
+        // over-long chapter must degrade gracefully, not blow the window and
+        // 422 the whole action. Keep head AND tail — a head-only trim made
+        // summaries and continuity checks silently blind to chapter endings.
         const contentBudget = Math.floor(Math.max(remaining.budget, 0) * 0.85);
-        context.chapter_content = spend(trimToTokens(chapterPlainText(chapter.content), contentBudget, "head"));
+        const fullText = chapterPlainText(chapter.content);
+        const fits = countTokens(fullText) <= contentBudget;
+        context.chapter_content = spend(
+            fits
+                ? fullText
+                : [
+                      trimToTokens(fullText, Math.floor(contentBudget * 0.6), "head"),
+                      "\n[... middle of chapter omitted to fit the model's context ...]\n",
+                      trimToTokens(fullText, Math.floor(contentBudget * 0.35), "tail")
+                  ].join("")
+        );
     }
 
     if (needs.has("chat_history") && editorContext.chatHistory)

@@ -1,6 +1,11 @@
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
+import {
+    useChaptersByStoryQuery,
+    useCreateChapterMutation,
+    useDeleteChapterMutation,
+    useUpdateChapterMutation
+} from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
@@ -11,6 +16,18 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
     const createChapter = useCreateChapterMutation();
+    const updateChapter = useUpdateChapterMutation();
+    const deleteChapter = useDeleteChapterMutation();
+
+    const rename = (id: string, current: string) => {
+        const title = window.prompt("Chapter title", current)?.trim();
+        if (title && title !== current) updateChapter.mutate({ id, data: { title } });
+    };
+
+    const remove = (id: string, title: string, words: number) => {
+        if (window.confirm(`Delete “${title}”${words ? ` (${words} words)` : ""}? This cannot be undone.`))
+            deleteChapter.mutate(id);
+    };
     const [newTitle, setNewTitle] = useState("");
 
     if (!currentStoryId)
@@ -66,10 +83,10 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                 ) : (
                     <ul className="divide-y">
                         {ordered.map(chapter => (
-                            <li key={chapter.id}>
+                            <li key={chapter.id} className="flex items-center">
                                 <button
                                     type="button"
-                                    className="flex w-full items-baseline justify-between px-4 py-3 text-left"
+                                    className="flex min-w-0 flex-1 items-baseline justify-between px-4 py-3 text-left"
                                     onClick={() => {
                                         setLastChapter(currentStoryId, chapter.id);
                                         goTo("write");
@@ -79,6 +96,22 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                     <span className="ml-3 shrink-0 text-xs text-muted-foreground">
                                         {chapter.wordCount ? `${chapter.wordCount} words` : "empty"}
                                     </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => rename(chapter.id, chapter.title)}
+                                    aria-label={`Rename ${chapter.title}`}
+                                    className="px-2 py-3 text-muted-foreground"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => remove(chapter.id, chapter.title, chapter.wordCount ?? 0)}
+                                    aria-label={`Delete ${chapter.title}`}
+                                    className="pl-2 pr-4 py-3 text-muted-foreground"
+                                >
+                                    <Trash2 className="h-4 w-4" />
                                 </button>
                             </li>
                         ))}

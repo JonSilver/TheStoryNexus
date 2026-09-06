@@ -7,7 +7,12 @@ import { db, schema } from "../db/client.js";
 import { assembleContext } from "../services/actions/context.js";
 import { ACTION_IDS } from "../services/actions/registry.js";
 import { type ActionOverrideRow, renderTemplate, resolveAction } from "../services/actions/resolve.js";
-import { type AIProviderId, type PromptMessage, streamCompletion } from "../services/ai/providers.js";
+import {
+    type AIProviderId,
+    openAIContextLength,
+    type PromptMessage,
+    streamCompletion
+} from "../services/ai/providers.js";
 
 const router = express.Router();
 
@@ -72,6 +77,9 @@ const loadSettings = async (): Promise<Settings | null> => {
 const contextLimitFor = (settings: Settings, provider: AIProviderId, modelId: string): number => {
     const models = (settings.availableModels ?? []) as Array<{ id: string; provider: string; contextLength?: number }>;
     const model = models.find(m => m.provider === provider && m.id === modelId);
+    // OpenAI limits come from the live name table, not the cached model list —
+    // stale caches carried 4096 for 128k models, silently amputating context
+    if (provider === "openai") return Math.max(model?.contextLength ?? 0, openAIContextLength(modelId));
     return model?.contextLength || PROVIDER_CONTEXT_DEFAULTS[provider];
 };
 

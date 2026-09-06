@@ -79,8 +79,10 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                 })
             );
             if (replyWriteError) toast.error("The reply couldn't be saved — it may vanish on refresh");
+            generation.reset();
         }
-        generation.reset();
+        // Failure path deliberately does NOT reset: the inline error must
+        // survive to be seen, or the AI just looks like it ignored the writer
         requestAnimationFrame(() => scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight }));
     };
 

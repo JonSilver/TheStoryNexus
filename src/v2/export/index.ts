@@ -23,3 +23,4 @@ export {
 export { blocksToHtml, escapeHtmlAttribute, escapeHtmlText } from "./toHtml.js";
 export { blocksToMarkdown } from "./toMarkdown.js";
 export { blocksToPlainText } from "./toPlainText.js";
+export { countUndecided } from "./undecided.js";

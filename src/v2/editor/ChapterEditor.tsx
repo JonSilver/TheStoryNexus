@@ -77,6 +77,12 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     const [editor] = useLexicalComposerContext();
     const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.revision ?? 0, chapter.content);
 
+    // A conflicted editor must not keep accepting words it will never save —
+    // lock it so "typing works" and "nothing is saved" can't coexist
+    useEffect(() => {
+        editor.setEditable(status !== "conflict");
+    }, [editor, status]);
+
     // The writer's conflicting draft is still on screen — it must be savable
     // BEFORE Reload replaces it with the server copy
     const downloadDraft = () => {

@@ -139,11 +139,27 @@ export async function* streamCompletion(
     }
 }
 
-const openAIContextLength = (modelId: string): number => {
-    if (modelId.includes("gpt-4")) return 8192;
-    if (modelId.includes("gpt-3.5-turbo-16k")) return 16384;
-    return 4096;
-};
+// OpenAI's models API doesn't report context windows, so this table maps
+// model-name fragments to their documented limits — first match wins, most
+// specific first. Unknown models default HIGH: every model OpenAI has shipped
+// since 2023 has ≥128k, and undershooting silently amputates the writer's
+// chapter from the prompt (worse than a provider-side overflow error).
+const OPENAI_CONTEXT_LENGTHS: Array<[fragment: string, tokens: number]> = [
+    ["gpt-5", 256_000],
+    ["gpt-4.1", 256_000],
+    ["gpt-4o", 128_000],
+    ["gpt-4-turbo", 128_000],
+    ["gpt-4-32k", 32_768],
+    ["gpt-4", 8_192],
+    ["o1", 128_000],
+    ["o3", 128_000],
+    ["o4", 128_000],
+    ["gpt-3.5-turbo-16k", 16_384],
+    ["gpt-3.5", 16_384]
+];
+
+export const openAIContextLength = (modelId: string): number =>
+    OPENAI_CONTEXT_LENGTHS.find(([fragment]) => modelId.includes(fragment))?.[1] ?? 128_000;
 
 export const fetchModelsForProvider = async (
     provider: AIProviderId,

@@ -3,6 +3,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import {
     $getNodeByKey,
     $getRoot,
+    $getState,
     $setState,
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
@@ -18,6 +19,8 @@ import { useChapterIdentity } from "./ChapterContext";
 import {
     $commitStreamingAsTake,
     $isSceneBeatNode,
+    povCharacterState,
+    povTypeState,
     type SceneBeatNode,
     statusState,
     streamingState
@@ -86,6 +89,19 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             cancelRef.current = cancel;
             const owns = () => cancelRef.current === cancel;
 
+            // The beat's own POV wins over the chapter default — the picker
+            // must actually steer generation, not just persist state
+            const pov = editor.getEditorState().read(() => {
+                const node = $getNodeByKey(nodeKey);
+                if (!$isSceneBeatNode(node)) return {};
+                const povCharacter = $getState(node, povCharacterState);
+                const povType = $getState(node, povTypeState);
+                return {
+                    ...(povCharacter ? { povCharacter } : {}),
+                    ...(povType ? { povType } : {})
+                };
+            });
+
             mutate(node => {
                 $setState(node, statusState, "generating");
                 $setState(node, streamingState, "");
@@ -112,6 +128,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                         editorContext: {
                             command,
                             recentProse: textBeforeNode(),
+                            ...pov,
                             ...(guidance?.trim() ? { guidance: guidance.trim() } : {})
                         }
                     }),

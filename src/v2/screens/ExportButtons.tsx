@@ -2,7 +2,16 @@ import { attemptPromise } from "@jfdi/attempt";
 import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { chaptersApi, storiesApi } from "@/services/api/client";
-import { blocksToHtml, blocksToMarkdown, blocksToPlainText, escapeHtmlText, parseSerialisedDocument } from "../export";
+import { flushChapterSave } from "../editor/useChapterSaver";
+import {
+    blocksToHtml,
+    blocksToMarkdown,
+    blocksToPlainText,
+    countUndecided,
+    escapeHtmlText,
+    parseSerialisedDocument
+} from "../export";
+import { useV2Store } from "../state/useV2Store";
 
 type ExportFormat = "md" | "txt" | "html";
 
@@ -27,16 +36,34 @@ const MIME: Record<ExportFormat, string> = { md: "text/markdown", txt: "text/pla
 
 /** Whole-story export through the v2 converters (headings actually work). */
 export const ExportButtons = ({ storyId }: { storyId: string }) => {
+    const { lastChapterFor } = useV2Store();
+    // Undecided takes and ghost suggestions are visible on screen but omitted
+    // from every export — the writer must choose, not discover the hole later
+    const confirmUndecided = (chapters: Array<{ content: string }>): boolean => {
+        const undecided = chapters.reduce((sum, c) => sum + countUndecided(c.content), 0);
+        return (
+            undecided === 0 ||
+            window.confirm(
+                `${undecided} unaccepted AI draft${undecided === 1 ? "" : "s"} (scene-beat takes or pending suggestions) won't be included. Export anyway?`
+            )
+        );
+    };
+
     const exportAs = async (format: ExportFormat) => {
         const [error, result] = await attemptPromise(async () => {
+            // The book must contain the last keystrokes, not race the debounce
+            const openChapter = lastChapterFor(storyId);
+            if (openChapter) await flushChapterSave(openChapter);
             const [story, chapters] = await Promise.all([storiesApi.getById(storyId), chaptersApi.getByStory(storyId)]);
             const ordered = [...chapters].sort((a, b) => a.order - b.order);
+            if (!confirmUndecided(ordered)) return null;
             return { story, body: RENDERERS[format](ordered) };
         });
-        if (error || !result) {
+        if (error) {
             toast.error("Export failed — a chapter may not be v2 format");
             return;
         }
+        if (!result) return;
         const blob = new Blob([result.body], { type: `${MIME[format]};charset=utf-8` });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);

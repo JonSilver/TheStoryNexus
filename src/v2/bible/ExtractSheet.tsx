@@ -102,7 +102,12 @@ export const ExtractSheet = ({
                         .filter(i => i >= 0)
                 )
             );
-            if (!parsed.length) toast.info("Nothing extractable found");
+            if (!parsed.length)
+                toast.info(
+                    text.trim().length > 40
+                        ? "The reply couldn't be read as entries — the model may have run out of tokens. Try again or raise max tokens for this action."
+                        : "Nothing extractable found"
+                );
         }
     };
 

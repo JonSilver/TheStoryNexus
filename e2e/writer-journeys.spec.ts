@@ -19,15 +19,23 @@ test("typing autosaves and survives a reload", async ({ page }) => {
 
 test("scene beat: generate, second take, navigate, accept into prose", async ({ page }) => {
     const takes = ["First take: the storm broke at midnight.", "Second take: the storm never came."];
+    const seenRequests: Array<Record<string, unknown>> = [];
     let calls = 0;
-    await mockGeneration(page, () => takes[Math.min(calls++, takes.length - 1)]);
+    await mockGeneration(page, request => {
+        seenRequests.push(request.editorContext ?? {});
+        return takes[Math.min(calls++, takes.length - 1)];
+    });
 
     await createStoryAndChapter(page, "Journey — beats", "One");
     await typeInEditor(page, "Setup paragraph.");
     await page.getByRole("button", { name: "Insert scene beat" }).click();
     await page.getByPlaceholder("Describe what happens in this beat…").fill("A storm hits the harbour");
+    // The per-beat POV picker must steer generation, not just persist state
+    await page.getByLabel("POV type").selectOption("First Person");
     await page.getByRole("button", { name: "Generate" }).click();
     await expect(page.getByText(takes[0])).toBeVisible();
+    if (seenRequests[0]?.povType !== "First Person")
+        throw new Error(`Beat generation ignored the POV picker: ${JSON.stringify(seenRequests[0])}`);
 
     // A second take must never destroy the first
     await page.getByRole("button", { name: "New take" }).click();
