@@ -78,6 +78,27 @@ const convertGeminiMessages = (messages: PromptMessage[], supportsSystemInstruct
     return { systemInstruction: systemInstruction || undefined, contents };
 };
 
+/**
+ * Pure payload builder for the OpenAI-compatible family. Unset optional
+ * samplers are OMITTED (the model server's own tuning applies); newer OpenAI
+ * models reject max_tokens but accept max_completion_tokens, so the budgeted
+ * output cap always reaches the provider.
+ */
+export const buildOpenAICompatiblePayload = (request: Omit<GenerationRequest, "signal">) => {
+    const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty } = request;
+    const model = provider === "local" ? modelId.replace(/^local\//, "") : modelId;
+    const modernOpenAI = provider === "openai" && /^(gpt-5|o1|o3)/.test(model);
+    return {
+        model,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+        temperature,
+        ...(modernOpenAI ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
+        ...(topP !== undefined && { top_p: topP }),
+        ...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
+        ...(presencePenalty !== undefined && { presence_penalty: presencePenalty })
+    };
+};
+
 export async function* streamCompletion(request: GenerationRequest, settings: ProviderSettings): AsyncGenerator<string> {
     const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, signal } =
         request;
@@ -105,21 +126,8 @@ export async function* streamCompletion(request: GenerationRequest, settings: Pr
     }
 
     const client = openAICompatibleClient(provider, settings);
-    const model = provider === "local" ? modelId.replace(/^local\//, "") : modelId;
-    // Newer OpenAI models reject max_tokens but accept max_completion_tokens,
-    // so the budgeted output cap always reaches the provider
-    const modernOpenAI = provider === "openai" && /^(gpt-5|o1|o3)/.test(model);
     const stream = await client.chat.completions.create(
-        {
-            model,
-            messages: messages.map(m => ({ role: m.role, content: m.content })),
-            temperature,
-            ...(modernOpenAI ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
-            ...(topP !== undefined && { top_p: topP }),
-            ...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
-            ...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
-            stream: true
-        },
+        { ...buildOpenAICompatiblePayload(request), stream: true },
         { signal }
     );
     for await (const chunk of stream) {
