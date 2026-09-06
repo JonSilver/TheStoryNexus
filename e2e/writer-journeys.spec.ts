@@ -116,3 +116,35 @@ test("brainstorm: reply appears and survives a reload", async ({ page }) => {
     await page.getByRole("button", { name: /^Chat 1/ }).click();
     await expect(page.getByText("What if the ferry never existed at all?")).toBeVisible();
 });
+
+test("import: pasted manuscript becomes a story with chapters", async ({ page }) => {
+    await page.goto("/v2");
+    await page.getByRole("button", { name: "Stories" }).click();
+    await page.getByRole("button", { name: "Import" }).click();
+    await page
+        .getByPlaceholder("Paste your manuscript here…")
+        .fill("Chapter 1\n\nThe tide was wrong that morning.\n\nChapter 2\n\nBy noon the harbour was empty.");
+    await page.getByRole("button", { name: "Analyse pasted text" }).click();
+    await expect(page.getByText(/Chapter 2/).first()).toBeVisible();
+    await page.getByRole("button", { name: /Create story/ }).click();
+
+    // The promise: a real story with real chapters, opened for writing
+    await expect(page.getByPlaceholder("New chapter title (optional)")).toBeVisible();
+    await expect(page.getByText("Chapter 1")).toBeVisible();
+    await expect(page.getByText("Chapter 2")).toBeVisible();
+});
+
+test("export: markdown download contains the chapter text", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — export", "One");
+    await typeInEditor(page, "Exportable sentence about the tide.");
+    await waitForSaved(page);
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Markdown" }).click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    const content = Buffer.concat(chunks).toString("utf-8");
+    if (!content.includes("Exportable sentence about the tide.")) throw new Error(`Export missing prose: ${content}`);
+});
