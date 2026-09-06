@@ -12,7 +12,9 @@ export type ActionId =
     | "brainstorm"
     | "scene_beat"
     | "extract_entries"
-    | "propose_updates";
+    | "propose_updates"
+    | "ask"
+    | "check_continuity";
 
 export interface ActionEditorContext {
     selection?: string;
@@ -22,6 +24,7 @@ export interface ActionEditorContext {
     povType?: string;
     userMessage?: string;
     chatHistory?: string;
+    guidance?: string;
 }
 
 export interface ActionRun {

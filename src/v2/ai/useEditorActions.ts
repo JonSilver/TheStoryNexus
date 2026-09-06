@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import type { Chapter } from "@/types/story";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 
-type ActionKind = "selection" | "continue" | "summarise";
+type ActionKind = "selection" | "continue" | "summarise" | "ask";
 
 interface ActiveAction {
     id: ActionId;
@@ -26,7 +26,8 @@ interface ActiveAction {
 const ACCEPT_LABELS: Record<ActionKind, string> = {
     selection: "Replace selection",
     continue: "Insert",
-    summarise: "Save summary"
+    summarise: "Save summary",
+    ask: "Replace selection"
 };
 
 const RECENT_PROSE_CHAR_CAP = 100_000;
@@ -42,7 +43,10 @@ export const useEditorActions = (chapter: Chapter) => {
     const generation = useActionGeneration();
     const [active, setActive] = useState<ActiveAction | null>(null);
     const savedSelection = useRef<RangeSelection | null>(null);
+    const savedSelectionText = useRef<string>("");
     const summariseBaseRevision = useRef<number | null>(null);
+    const lastRun = useRef<{ actionId: ActionId; editorContext: Record<string, string> } | null>(null);
+    const [askPending, setAskPending] = useState(false);
 
     const docTextTail = useCallback(
         () => editor.getEditorState().read(() => $getRoot().getTextContent()).slice(-RECENT_PROSE_CHAR_CAP),
@@ -70,28 +74,73 @@ export const useEditorActions = (chapter: Chapter) => {
                 return;
             }
             savedSelection.current = info.clone;
+            savedSelectionText.current = info.text;
             // The saved selection is positional: freeze the document while the
             // sheet is up so accept can't land on shifted or deleted nodes
             editor.setEditable(false);
             setActive({ id: actionId, title: label, kind: "selection" });
-            void generation.run({
-                actionId,
-                storyId: chapter.storyId,
-                chapterId: chapter.id,
-                editorContext: { ...baseContext(), selection: info.text, recentProse: docTextTail() }
-            });
+            const editorContext = { ...baseContext(), selection: info.text, recentProse: docTextTail() };
+            lastRun.current = { actionId, editorContext };
+            void generation.run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext });
         },
         [editor, generation, chapter.storyId, chapter.id, baseContext, docTextTail]
     );
 
+    // Free-form instruction on a selection: capture first, ask the writer
+    // what to do, then run the ask action with their instruction
+    const onAsk = useCallback(() => {
+        const info = editor.getEditorState().read(() => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection) || selection.isCollapsed()) return null;
+            return { text: selection.getTextContent(), clone: selection.clone() };
+        });
+        if (!info) {
+            toast.info("Select some text first");
+            return;
+        }
+        savedSelection.current = info.clone;
+        savedSelectionText.current = info.text;
+        editor.setEditable(false);
+        setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
+        setAskPending(true);
+    }, [editor]);
+
+    const submitAsk = useCallback(
+        (instruction: string) => {
+            setAskPending(false);
+            const editorContext = {
+                ...baseContext(),
+                selection: savedSelectionText.current,
+                recentProse: docTextTail(),
+                userMessage: instruction
+            };
+            lastRun.current = { actionId: "ask", editorContext };
+            void generation.run({ actionId: "ask", storyId: chapter.storyId, chapterId: chapter.id, editorContext });
+        },
+        [generation, chapter.storyId, chapter.id, baseContext, docTextTail]
+    );
+
+    const onRefine = useCallback(
+        (guidance: string) => {
+            const previous = lastRun.current;
+            if (!previous) return;
+            const editorContext = { ...previous.editorContext, guidance };
+            lastRun.current = { actionId: previous.actionId, editorContext };
+            void generation.run({
+                actionId: previous.actionId,
+                storyId: chapter.storyId,
+                chapterId: chapter.id,
+                editorContext
+            });
+        },
+        [generation, chapter.storyId, chapter.id]
+    );
+
     const onContinue = useCallback(() => {
         setActive({ id: "continue", title: "Continue writing", kind: "continue" });
-        void generation.run({
-            actionId: "continue",
-            storyId: chapter.storyId,
-            chapterId: chapter.id,
-            editorContext: { ...baseContext(), recentProse: docTextTail() }
-        });
+        const editorContext = { ...baseContext(), recentProse: docTextTail() };
+        lastRun.current = { actionId: "continue", editorContext };
+        void generation.run({ actionId: "continue", storyId: chapter.storyId, chapterId: chapter.id, editorContext });
     }, [generation, chapter.storyId, chapter.id, baseContext, docTextTail]);
 
     const onSummarise = useCallback(() => {
@@ -111,7 +160,9 @@ export const useEditorActions = (chapter: Chapter) => {
 
     const close = useCallback(() => {
         setActive(null);
+        setAskPending(false);
         savedSelection.current = null;
+        lastRun.current = null;
         editor.setEditable(true);
         generation.reset();
     }, [generation, editor]);
@@ -153,7 +204,7 @@ export const useEditorActions = (chapter: Chapter) => {
         const text = generation.text;
         if (!kind || !text) return;
 
-        if (kind === "selection")
+        if (kind === "selection" || kind === "ask")
             editor.update(
                 () => {
                     const saved = savedSelection.current;
@@ -171,7 +222,7 @@ export const useEditorActions = (chapter: Chapter) => {
     }, [active, generation.text, editor, close]);
 
     return {
-        toolbarActions: { onContinue, onSummarise, onSelectionAction },
+        toolbarActions: { onContinue, onSummarise, onSelectionAction, onAsk },
         sheetProps: {
             title: active?.title ?? "",
             phase: generation.phase,
@@ -180,7 +231,12 @@ export const useEditorActions = (chapter: Chapter) => {
             acceptLabel: active ? ACCEPT_LABELS[active.kind] : undefined,
             onAccept,
             onDiscard: close,
-            onStop: generation.abort
+            onStop: generation.abort,
+            onRefine: active && active.kind !== "summarise" ? onRefine : undefined,
+            inputRequest:
+                askPending && active?.kind === "ask"
+                    ? { placeholder: "What should happen to this passage? e.g. make the threat implicit…", onSubmit: submitAsk }
+                    : null
         }
     };
 };
