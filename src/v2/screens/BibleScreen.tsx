@@ -1,11 +1,11 @@
-import { useState } from "react";
 import { ArrowLeft, ClipboardPaste, FileScan, ScanSearch, ShieldQuestion, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
+import type { ScreenProps } from "../V2App";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { useV2Store } from "../state/useV2Store";
-import type { ScreenProps } from "../V2App";
 
 const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
 
@@ -88,12 +88,16 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                                         <p className="font-medium">
                                             {entry.name}
                                             {entry.level !== "story" && (
-                                                <span className="ml-2 text-xs text-muted-foreground">({entry.level})</span>
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                    ({entry.level})
+                                                </span>
                                             )}
                                         </p>
                                         <p className="text-sm text-muted-foreground">{entry.description}</p>
                                         {Array.isArray(entry.tags) && entry.tags.length > 0 && (
-                                            <p className="text-xs text-muted-foreground">aka: {entry.tags.join(", ")}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                aka: {entry.tags.join(", ")}
+                                            </p>
                                         )}
                                     </div>
                                     {entry.level === "story" && (

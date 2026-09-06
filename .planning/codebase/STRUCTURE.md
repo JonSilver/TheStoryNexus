@@ -201,36 +201,43 @@ TheStoryNexus/
 ## Directory Purposes
 
 **server/:**
+
 - Purpose: Express.js REST API backend
 - Contains: Route handlers, database client, migrations, utility services
 - Key files: `index.ts` (entry), `db/schema.ts` (ORM definitions), `routes/*.ts` (endpoints)
 
 **src/main.tsx:**
+
 - Purpose: React application entry point
 - Contains: Router setup, provider initialization, root component rendering
 - Key providers: ErrorBoundary, QueryProvider, ThemeProvider, StoryProvider
 
 **src/components/:**
+
 - Purpose: Shared, reusable UI components
 - Contains: shadcn/ui components, error boundary, main layout, workspace shell, Lexical editor
 - Key subdirectory: `story-editor/` contains 103 files for rich text editing
 
 **src/features/:**
+
 - Purpose: Feature modules organized by domain
 - Contains: Stories, chapters, series, lorebook, prompts, brainstorm, notes, AI settings, guide
 - Pattern: Each feature has hooks/ (TanStack Query), pages/, components/, sometimes services/
 
 **src/services/:**
+
 - Purpose: Core application logic and external integrations
 - Contains: AIService singleton, API client factory, export utilities
 - Key file: `ai/AIService.ts` manages multiple AI providers
 
 **src/lib/ and src/utils/:**
+
 - Purpose: Utility functions and helpers
 - Contains: Logger, text utilities, lexical helpers, string manipulation, toast helpers
 - Not feature-specific; shared across application
 
 **server/db/:**
+
 - Purpose: Database layer
 - Contains: Drizzle ORM schema, SQLite connection, migrations, seed data
 - Key file: `schema.ts` defines all 12 tables
@@ -238,11 +245,13 @@ TheStoryNexus/
 ## Key File Locations
 
 **Entry Points:**
+
 - Frontend: `src/main.tsx` - React root, routing, providers
 - Backend: `server/index.ts` - Express setup, middleware, route mounting
 - Editor: `src/components/story-editor/Editor.tsx` - Lexical editor component
 
 **Configuration:**
+
 - Frontend build: `vite.config.ts` - Vite plugins, aliases, server proxy
 - Frontend types: `tsconfig.json` - Path aliases, strict checks
 - Backend types: `server/tsconfig.json` - Separate TypeScript config
@@ -250,6 +259,7 @@ TheStoryNexus/
 - Dependencies: `package.json` - All npm packages and scripts
 
 **Core Logic:**
+
 - AI Integration: `src/services/ai/AIService.ts` - Singleton provider manager
 - API Client: `src/services/api/client.ts` - Type-safe fetch wrapper
 - Database Schema: `server/db/schema.ts` - Drizzle ORM definitions
@@ -257,6 +267,7 @@ TheStoryNexus/
 - Prompt Parser: `src/features/prompts/services/promptParser.ts` - Template substitution
 
 **API Routes:**
+
 - Stories: `server/routes/stories.ts` - Story CRUD, export/import
 - Chapters: `server/routes/chapters.ts` - Chapter operations
 - Lorebook: `server/routes/lorebook.ts` - Entry management, hierarchical queries
@@ -266,11 +277,13 @@ TheStoryNexus/
 - Admin: `server/routes/admin.ts` - Database export/import, demo data
 
 **Testing:**
+
 - Not detected - no test files found (quality concerns)
 
 ## Naming Conventions
 
 **Files:**
+
 - Components: PascalCase (e.g., `CreateStoryDialog.tsx`, `Workspace.tsx`)
 - Utilities: camelCase (e.g., `logger.ts`, `promptParser.ts`)
 - Services: PascalCase + "Service" (e.g., `AIService.ts`)
@@ -279,16 +292,19 @@ TheStoryNexus/
 - Routes: camelCase (e.g., `stories.ts`, `lorebook.ts`)
 
 **Directories:**
+
 - Feature modules: lowercase (e.g., `stories/`, `chapters/`, `lorebook/`)
 - Shared: lowercase (e.g., `components/`, `services/`, `lib/`, `utils/`)
 - Subdivisions: functional purpose (e.g., `hooks/`, `components/`, `pages/`, `services/`)
 
 **Variables & Functions:**
+
 - camelCase throughout (enforced by ESLint)
 - Constants: UPPER_CASE or PascalCase (e.g., `DEFAULT_LOCAL_API_URL`, `API_URLS`)
 - Type names: PascalCase (e.g., `Story`, `Chapter`, `LorebookEntry`)
 
 **Database:**
+
 - Tables: singular lowercase (e.g., `stories`, `chapters`, `lorebookEntries`)
 - Columns: camelCase (e.g., `storyId`, `povCharacter`, `createdAt`)
 - IDs: text type with nanoid (e.g., `id: text().primaryKey()`)
@@ -297,6 +313,7 @@ TheStoryNexus/
 ## Where to Add New Code
 
 **New Feature:**
+
 - Primary code: `src/features/{featureName}/` with subdirs: `hooks/`, `pages/`, `components/`
 - Backend: `server/routes/{featureName}.ts` with standard CRUD or custom routes
 - Database: Add table to `server/db/schema.ts`, run `npm run db:generate` to create migration
@@ -304,22 +321,26 @@ TheStoryNexus/
 - Tests: Create `src/features/{featureName}/__tests__/` (if test structure added)
 
 **New Component/Module:**
+
 - Shared component: `src/components/{name}.tsx`
 - Feature-specific component: `src/features/{featureName}/components/{name}.tsx`
 - Custom hook: `src/features/{featureName}/hooks/use{Name}.ts`
 - Service logic: `src/features/{featureName}/services/{name}.ts`
 
 **Utilities:**
+
 - Shared helpers: `src/utils/{purpose}.ts`
 - Library functions: `src/lib/{purpose}.ts`
 - Backend utilities: `server/services/{purpose}.ts` or `server/lib/{purpose}.ts`
 
 **Styling:**
+
 - Global: `src/index.css` (Tailwind imports and root styles)
 - Component: Inline Tailwind classes in JSX (`className="...")
 - UI library: shadcn/ui components in `src/components/ui/` (auto-generated)
 
 **Types:**
+
 - Global story types: `src/types/story.ts`
 - Feature-specific types: `src/features/{featureName}/types/{name}.ts`
 - Global types: `src/types/global.d.ts`
@@ -327,6 +348,7 @@ TheStoryNexus/
 ## Special Directories
 
 **src/Lexical/:**
+
 - Purpose: Custom Lexical editor implementation
 - Generated: No, source code
 - Committed: Yes
@@ -335,6 +357,7 @@ TheStoryNexus/
 - Not to be deleted; core to editor functionality
 
 **dist/:**
+
 - Purpose: Production build output
 - Generated: Yes (from `npm run build`)
 - Committed: No (gitignored)
@@ -343,6 +366,7 @@ TheStoryNexus/
 - Runtime: `npm start` serves from `dist/client/` as static files
 
 **data/:**
+
 - Purpose: SQLite database storage
 - Generated: Yes (created at runtime if missing)
 - Committed: No (gitignored)
@@ -350,6 +374,7 @@ TheStoryNexus/
 - Configurable: `DATABASE_PATH` env var
 
 **server/db/migrations/:**
+
 - Purpose: Generated Drizzle migrations
 - Generated: Yes (from `npm run db:generate`)
 - Committed: Yes (version control for schema)
@@ -357,6 +382,7 @@ TheStoryNexus/
 - Applied when: Backend starts (auto-run via `runMigrations()`)
 
 **public/:**
+
 - Purpose: Static assets served in development and embedded in production
 - Generated: No
 - Committed: Yes
@@ -365,4 +391,4 @@ TheStoryNexus/
 
 ---
 
-*Structure analysis: 2026-01-23*
+_Structure analysis: 2026-01-23_

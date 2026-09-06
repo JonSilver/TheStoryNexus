@@ -171,30 +171,30 @@ router.post(
 
         const [transactionError] = await attemptPromise(async () =>
             db.transaction(tx => {
-            tx.insert(schema.stories)
-                .values({
-                    id: storyId,
-                    title: title.trim(),
-                    author: author?.trim() ?? "",
-                    language: language?.trim() || "English",
-                    createdAt
-                })
-                .run();
-            selected.forEach((chapter, order) => {
-                tx.insert(schema.chapters)
+                tx.insert(schema.stories)
                     .values({
-                        id: crypto.randomUUID(),
-                        storyId,
-                        title: chapter.title,
-                        order,
-                        content: toLexicalDocument(chapter.body),
-                        revision: 0,
-                        wordCount: countWords(chapter.body),
-                        createdAt,
-                        updatedAt: createdAt
+                        id: storyId,
+                        title: title.trim(),
+                        author: author?.trim() ?? "",
+                        language: language?.trim() || "English",
+                        createdAt
                     })
                     .run();
-            });
+                selected.forEach((chapter, order) => {
+                    tx.insert(schema.chapters)
+                        .values({
+                            id: crypto.randomUUID(),
+                            storyId,
+                            title: chapter.title,
+                            order,
+                            content: toLexicalDocument(chapter.body),
+                            revision: 0,
+                            wordCount: countWords(chapter.body),
+                            createdAt,
+                            updatedAt: createdAt
+                        })
+                        .run();
+                });
             })
         );
         if (transactionError) {

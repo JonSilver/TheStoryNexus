@@ -13,12 +13,9 @@ export const uuidV4Fallback = (getRandomValues: (bytes: Uint8Array) => Uint8Arra
 
 export const randomUUID = (): string => {
     // Try native implementations first
-    if (typeof window !== "undefined" && window.crypto?.randomUUID) 
-        return window.crypto.randomUUID();
-    
-    if (typeof crypto !== "undefined" && crypto.randomUUID) 
-        return crypto.randomUUID();
-    
+    if (typeof window !== "undefined" && window.crypto?.randomUUID) return window.crypto.randomUUID();
+
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
 
     // Fallback: available in both secure and insecure contexts
     if (typeof window !== "undefined" && window.crypto?.getRandomValues)

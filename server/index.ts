@@ -4,8 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runMigrations } from "./db/migrate.js";
 import { seedSystemPrompts } from "./db/seedSystemPrompts.js";
-import adminRouter from "./routes/admin.js";
 import actionsRouter from "./routes/actions.js";
+import adminRouter from "./routes/admin.js";
 import aiRouter from "./routes/ai.js";
 import assetsRouter from "./routes/assets.js";
 import brainstormRouter from "./routes/brainstorm.js";
@@ -55,9 +55,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // CORS - allow all in development, restrict in production if needed
-if (NODE_ENV === "development") 
-    app.use(cors());
-
+if (NODE_ENV === "development") app.use(cors());
 
 // API routes
 app.use("/api/series", seriesRouter);

@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-    $createHorizontalRuleNode
-} from "@lexical/react/LexicalHorizontalRuleNode";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $createHorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import {
     $createParagraphNode,
     $getNodeByKey,
@@ -10,8 +8,8 @@ import {
     $isTextNode,
     type NodeKey
 } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { Minus, Sparkles, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 
 /**
@@ -91,7 +89,11 @@ export const SlashMenuPlugin = () => {
             >
                 <Sparkles className="h-4 w-4" /> Scene Beat
             </button>
-            <button type="button" onClick={insertDivider} className="flex items-center gap-1 rounded-md border px-3 py-1.5">
+            <button
+                type="button"
+                onClick={insertDivider}
+                className="flex items-center gap-1 rounded-md border px-3 py-1.5"
+            >
                 <Minus className="h-4 w-4" /> Divider
             </button>
             <button type="button" onClick={dismiss} aria-label="Dismiss" className="ml-auto text-muted-foreground">

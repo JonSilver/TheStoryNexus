@@ -20,10 +20,10 @@ import { useSharedHistoryContext } from "../context/SharedHistoryContext";
 import LinkPlugin from "../plugins/LinkPlugin";
 import ContentEditable from "../ui/ContentEditable";
 import ImageResizer from "../ui/ImageResizer";
-import { BrokenImage, LazyImage } from "./image/LazyImage";
-import { useImageCommands } from "./image/useImageCommands";
 import { $isImageNode } from "./ImageNode";
 import "./ImageNode.css";
+import { BrokenImage, LazyImage } from "./image/LazyImage";
+import { useImageCommands } from "./image/useImageCommands";
 
 export { RIGHT_CLICK_IMAGE_COMMAND } from "./image/useImageCommands";
 
@@ -117,7 +117,11 @@ export default function ImageComponent({
                         <LinkPlugin />
                         <HashtagPlugin />
                         {isCollabActive ? (
-                            <CollaborationPlugin id={caption.getKey()} providerFactory={createWebsocketProvider} shouldBootstrap={true} />
+                            <CollaborationPlugin
+                                id={caption.getKey()}
+                                providerFactory={createWebsocketProvider}
+                                shouldBootstrap={true}
+                            />
                         ) : (
                             <HistoryPlugin externalHistoryState={historyState} />
                         )}

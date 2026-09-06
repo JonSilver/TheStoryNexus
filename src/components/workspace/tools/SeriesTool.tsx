@@ -4,8 +4,8 @@ import type { MouseEvent } from "react";
 import { useState } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchFilter } from "@/components/ui/SearchFilter";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateSeriesDialog } from "@/features/series/components/CreateSeriesDialog";
 import { EditSeriesDialog } from "@/features/series/components/EditSeriesDialog";
 import { useDeleteSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
@@ -102,11 +102,7 @@ export const SeriesTool = () => {
                         No series yet. Create your first series to organise related stories!
                     </div>
                 ) : (
-                    <SearchFilter
-                        items={seriesList}
-                        predicate={seriesMatchesSearch}
-                        placeholder="Search series..."
-                    >
+                    <SearchFilter items={seriesList} predicate={seriesMatchesSearch} placeholder="Search series...">
                         {({ filteredItems, searchInput }) => (
                             <>
                                 <div className="flex justify-center">{searchInput}</div>

@@ -1,8 +1,8 @@
-import { useRef } from "react";
-import { $createParagraphNode, $getRoot, $getSelection } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { attemptPromise } from "@jfdi/attempt";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $createParagraphNode, $getRoot, $getSelection } from "lexical";
 import { Image as ImageIcon } from "lucide-react";
+import { useRef } from "react";
 import { toast } from "react-toastify";
 import { $createImageNode } from "../nodes/ImageNode";
 

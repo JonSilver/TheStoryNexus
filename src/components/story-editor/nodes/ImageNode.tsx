@@ -41,9 +41,8 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
 
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
     const img = domNode as HTMLImageElement;
-    if (img.src.startsWith("file:///") || isGoogleDocCheckboxImg(img)) 
-        return null;
-    
+    if (img.src.startsWith("file:///") || isGoogleDocCheckboxImg(img)) return null;
+
     const { alt: altText, src, width, height } = img;
     const node = $createImageNode({ altText, height, src, width });
     return { node };
@@ -109,9 +108,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
         const nestedEditor = node.__caption;
         const editorState = nestedEditor.parseEditorState(caption.editorState);
-        if (!editorState.isEmpty()) 
-            nestedEditor.setEditorState(editorState);
-        
+        if (!editorState.isEmpty()) nestedEditor.setEditorState(editorState);
+
         return node;
     }
 
@@ -189,9 +187,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         const span = document.createElement("span");
         const theme = config.theme;
         const className = theme.image;
-        if (className !== undefined) 
-            span.className = className;
-        
+        if (className !== undefined) span.className = className;
+
         return span;
     }
 

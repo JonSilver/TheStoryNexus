@@ -10,7 +10,15 @@ interface ModelSelectorProps {
 }
 
 export const ModelSelector = ({ modelSelection }: ModelSelectorProps) => {
-    const { selectedModels, filteredModelGroups, modelSearch, setModelSearch, handleModelSelect, removeModel, handleUseDefaultModels } = modelSelection;
+    const {
+        selectedModels,
+        filteredModelGroups,
+        modelSearch,
+        setModelSearch,
+        handleModelSelect,
+        removeModel,
+        handleUseDefaultModels
+    } = modelSelection;
 
     return (
         <div className="border-t border-input pt-6">

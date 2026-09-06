@@ -6,9 +6,40 @@
  */
 
 const STOP_WORDS = new Set([
-    "the", "she", "he", "they", "but", "and", "then", "when", "while", "after", "before",
-    "his", "her", "its", "their", "that", "this", "there", "here", "what", "who", "why",
-    "how", "not", "now", "yes", "no", "chapter", "prologue", "epilogue", "mr", "mrs", "ms", "dr"
+    "the",
+    "she",
+    "he",
+    "they",
+    "but",
+    "and",
+    "then",
+    "when",
+    "while",
+    "after",
+    "before",
+    "his",
+    "her",
+    "its",
+    "their",
+    "that",
+    "this",
+    "there",
+    "here",
+    "what",
+    "who",
+    "why",
+    "how",
+    "not",
+    "now",
+    "yes",
+    "no",
+    "chapter",
+    "prologue",
+    "epilogue",
+    "mr",
+    "mrs",
+    "ms",
+    "dr"
 ]);
 
 const MIN_OCCURRENCES = 3;

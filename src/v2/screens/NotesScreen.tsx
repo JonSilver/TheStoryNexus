@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import {
     useCreateNoteMutation,
     useDeleteNoteMutation,
@@ -7,8 +7,8 @@ import {
     useUpdateNoteMutation
 } from "@/features/notes/hooks/useNotesQuery";
 import type { Note } from "@/types/story";
-import { useV2Store } from "../state/useV2Store";
 import type { ScreenProps } from "../V2App";
+import { useV2Store } from "../state/useV2Store";
 
 const NOTE_TYPES = ["idea", "research", "todo", "other"] as const;
 

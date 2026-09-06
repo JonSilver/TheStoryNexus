@@ -6,9 +6,10 @@
 
 **Status:** Not detected
 
-This codebase does not currently have a configured test runner (Jest, Vitest, etc.) or test files in the source tree. No `jest.config.js`, `vitest.config.ts`, or test files (*.test.ts, *.test.tsx, *.spec.ts, *.spec.tsx) exist in `src/` or `server/` directories.
+This codebase does not currently have a configured test runner (Jest, Vitest, etc.) or test files in the source tree. No `jest.config.js`, `vitest.config.ts`, or test files (_.test.ts, _.test.tsx, _.spec.ts, _.spec.tsx) exist in `src/` or `server/` directories.
 
 **Development Setup:**
+
 - **Runner:** None configured
 - **Assertion Library:** None configured
 - **Run Commands:** No test scripts in `package.json`
@@ -18,6 +19,7 @@ This codebase does not currently have a configured test runner (Jest, Vitest, et
 **Requirements:** Not enforced
 
 No coverage thresholds or coverage configuration present. Code quality relies on:
+
 - OxLint for static analysis
 - TypeScript strict checks
 - Prettier for code consistency
@@ -28,27 +30,31 @@ No coverage thresholds or coverage configuration present. Code quality relies on
 While automated tests are not present, the codebase follows patterns that support testability:
 
 **Error Handling via @jfdi/attempt:**
+
 - Functional error handling makes async/sync boundaries explicit and testable
 - Return tuples `[error, result]` enable deterministic error assertions
 - Example testable pattern:
-  ```typescript
-  const [error, result] = await attemptPromise(async () => {
-      return await fetchData();
-  });
-  // Easy to assert: expect(error).toBeDefined() or expect(result).toBeDefined()
-  ```
+    ```typescript
+    const [error, result] = await attemptPromise(async () => {
+        return await fetchData();
+    });
+    // Easy to assert: expect(error).toBeDefined() or expect(result).toBeDefined()
+    ```
 
 **Type System as Test:**
+
 - Strict TypeScript settings enforce type safety at compile time
 - Type mismatches caught before runtime
 - Interfaces (`ErrorBoundaryProps`, `PromptParserConfig`) document contracts
 
 **API Client Abstraction** (`src/services/api/client.ts`):
+
 - Centralized API calls via factory pattern
 - Easy to mock/stub for testing
 - Example structure allows dependency injection for tests
 
 **TanStack Query Hooks** (`src/features/*/hooks/useXQuery.ts`):
+
 - Query keys are constants—easy to validate and control
 - Mutations include callbacks—testable side effects
 - Cache invalidation explicit and traceable
@@ -56,14 +62,17 @@ While automated tests are not present, the codebase follows patterns that suppor
 ## Recommended Test Structure (When Adding Tests)
 
 **Test file location:**
+
 - Co-located with implementation: `src/components/ErrorBoundary.tsx` → `src/components/ErrorBoundary.test.tsx`
 - Feature tests: `src/features/stories/hooks/__tests__/useStoriesQuery.test.ts`
 
 **Test naming pattern:**
+
 - Describe component/function: `describe("ErrorBoundary", () => { ... })`
 - Describe behavior: `it("renders error message when child component throws", () => { ... })`
 
 **Structure template:**
+
 ```typescript
 import { render, screen } from "@testing-library/react";  // if React Testing Library chosen
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -92,18 +101,21 @@ describe("ErrorBoundary", () => {
 ## Mocking Strategy (When Adding Tests)
 
 **What to mock:**
+
 - API calls (fetch, axios interceptors)
 - TanStack Query client and hooks
 - External libraries (OpenAI SDK, Google GenAI SDK)
 - File system operations (in Node.js tests)
 
 **What NOT to mock:**
+
 - Business logic functions (they should be tested, not mocked)
 - Internal component behavior
 - React hooks from React (test actual behavior)
 - Type utilities and helpers
 
 **Mocking pattern for API calls:**
+
 ```typescript
 import { vi } from "vitest";  // or jest
 import { storiesApi } from "@/services/api/client";
@@ -117,6 +129,7 @@ vi.mock("@/services/api/client", () => ({
 ```
 
 **Mocking pattern for hooks:**
+
 ```typescript
 import { useQuery } from "@tanstack/react-query";
 
@@ -132,6 +145,7 @@ vi.mock("@tanstack/react-query", () => ({
 ## Unit Testing Approach (When Adding Tests)
 
 **Service/utility functions:**
+
 ```typescript
 import { PromptParser } from "@/features/prompts/services/promptParser";
 
@@ -162,8 +176,10 @@ describe("PromptParser", () => {
 ```
 
 **Hook testing pattern:**
+
 ```typescript
-import { renderHook, act } from "@testing-library/react";  // React Testing Library
+import { renderHook, act } from "@testing-library/react";
+// React Testing Library
 import { useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 
 describe("useStoriesQuery", () => {
@@ -193,6 +209,7 @@ describe("useStoriesQuery", () => {
 ## Integration Testing Approach (When Adding Tests)
 
 **Component integration** (with context/providers):
+
 ```typescript
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -234,11 +251,12 @@ describe("Story editor integration", () => {
 ```
 
 **API route testing** (server-side):
+
 ```typescript
-import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
-import app from "@/server/index";
+import { describe, it, expect, beforeEach } from "vitest";
 import { db, schema } from "@/server/db/client";
+import app from "@/server/index";
 
 describe("POST /api/stories", () => {
     beforeEach(async () => {
@@ -262,7 +280,7 @@ describe("POST /api/stories", () => {
     it("rejects invalid input", async () => {
         const response = await request(app)
             .post("/api/stories")
-            .send({ title: "" })  // Missing required fields
+            .send({ title: "" }) // Missing required fields
             .expect(400);
 
         expect(response.body.error).toBeDefined();
@@ -273,6 +291,7 @@ describe("POST /api/stories", () => {
 ## Async Testing Patterns (When Adding Tests)
 
 **Promise-based async:**
+
 ```typescript
 it("handles async operation", async () => {
     const promise = asyncFunction();
@@ -284,6 +303,7 @@ it("handles async operation", async () => {
 ```
 
 **Await with timeout:**
+
 ```typescript
 it("waits for async state update", async () => {
     render(<Component />);
@@ -295,6 +315,7 @@ it("waits for async state update", async () => {
 ```
 
 **With @jfdi/attempt:**
+
 ```typescript
 it("handles attempt result tuple", async () => {
     const [error, result] = await attemptPromise(async () => {
@@ -312,6 +333,7 @@ it("handles attempt result tuple", async () => {
 ## Error Testing Patterns (When Adding Tests)
 
 **Error boundary:**
+
 ```typescript
 it("catches and displays errors", () => {
     const ErrorComponent = () => {
@@ -333,6 +355,7 @@ it("catches and displays errors", () => {
 ```
 
 **API error response:**
+
 ```typescript
 it("handles API error", async () => {
     const [error] = await attemptPromise(async () => {
@@ -345,6 +368,7 @@ it("handles API error", async () => {
 ```
 
 **Validation error:**
+
 ```typescript
 it("validates input before processing", async () => {
     const schema = z.object({ title: z.string().min(1) });
@@ -358,6 +382,7 @@ it("validates input before processing", async () => {
 ## Test Data & Fixtures (When Adding Tests)
 
 **Factory pattern:**
+
 ```typescript
 // __tests__/factories/storyFactory.ts
 export const createStory = (overrides?: Partial<Story>): Story => ({
@@ -382,6 +407,7 @@ export const createChapter = (overrides?: Partial<Chapter>): Chapter => ({
 ```
 
 **Usage in tests:**
+
 ```typescript
 it("displays story chapters", () => {
     const story = createStory();
@@ -400,6 +426,7 @@ it("displays story chapters", () => {
 If tests are added in future, recommended setup:
 
 **Package.json scripts:**
+
 ```json
 {
     "test": "vitest",
@@ -410,10 +437,11 @@ If tests are added in future, recommended setup:
 ```
 
 **vitest.config.ts:**
+
 ```typescript
-import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
     plugins: [react()],
@@ -448,4 +476,4 @@ While testing framework is not present, code quality is maintained via:
 
 ---
 
-*Testing analysis: 2026-01-23*
+_Testing analysis: 2026-01-23_

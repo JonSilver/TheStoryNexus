@@ -5,38 +5,40 @@
 ## APIs & External Services
 
 **AI Providers:**
+
 - OpenAI - LLM API for text generation
-  - SDK: `openai` v6.10
-  - Auth: API key stored in `aiSettings.openaiKey`
-  - Implementation: `src/services/ai/providers/OpenAIProvider.ts`
-  - Supports streaming chat completions
-  - Default model setting: `aiSettings.defaultOpenAIModel`
+    - SDK: `openai` v6.10
+    - Auth: API key stored in `aiSettings.openaiKey`
+    - Implementation: `src/services/ai/providers/OpenAIProvider.ts`
+    - Supports streaming chat completions
+    - Default model setting: `aiSettings.defaultOpenAIModel`
 
 - Google Gemini - Google's LLM API
-  - SDK: `@google/genai` v1.34
-  - Auth: API key stored in `aiSettings.geminiKey`
-  - Implementation: `src/services/ai/providers/GeminiProvider.ts`
-  - Supports streaming responses
-  - Default model setting: `aiSettings.defaultGeminiModel`
+    - SDK: `@google/genai` v1.34
+    - Auth: API key stored in `aiSettings.geminiKey`
+    - Implementation: `src/services/ai/providers/GeminiProvider.ts`
+    - Supports streaming responses
+    - Default model setting: `aiSettings.defaultGeminiModel`
 
 - OpenRouter - LLM aggregator API
-  - Base URL: `https://openrouter.ai/api/v1`
-  - SDK: `openai` v6.10 (compatible)
-  - Auth: API key stored in `aiSettings.openrouterKey`
-  - Implementation: `src/services/ai/providers/OpenRouterProvider.ts`
-  - Requires HTTP-Referer header: `http://localhost:5173`
-  - Default model setting: `aiSettings.defaultOpenRouterModel`
+    - Base URL: `https://openrouter.ai/api/v1`
+    - SDK: `openai` v6.10 (compatible)
+    - Auth: API key stored in `aiSettings.openrouterKey`
+    - Implementation: `src/services/ai/providers/OpenRouterProvider.ts`
+    - Requires HTTP-Referer header: `http://localhost:5173`
+    - Default model setting: `aiSettings.defaultOpenRouterModel`
 
 - Local AI (LM Studio Compatible) - Self-hosted models
-  - Default endpoint: `http://localhost:1234/v1` (configurable via `aiSettings.localApiUrl`)
-  - SDK: Custom fetch implementation
-  - Auth: None required
-  - Implementation: `src/services/ai/providers/LocalAIProvider.ts`
-  - Expects OpenAI-compatible API format
-  - Model discovery via `/models` endpoint
-  - Default model setting: `aiSettings.defaultLocalModel`
+    - Default endpoint: `http://localhost:1234/v1` (configurable via `aiSettings.localApiUrl`)
+    - SDK: Custom fetch implementation
+    - Auth: None required
+    - Implementation: `src/services/ai/providers/LocalAIProvider.ts`
+    - Expects OpenAI-compatible API format
+    - Model discovery via `/models` endpoint
+    - Default model setting: `aiSettings.defaultLocalModel`
 
 **AI Service Architecture:**
+
 - Singleton: `AIService` (`src/services/ai/AIService.ts`)
 - Factory pattern: `AIProviderFactory` manages four provider instances
 - Streaming support: `processStreamedResponse()` handles response streaming
@@ -45,16 +47,18 @@
 ## Data Storage
 
 **Database:**
+
 - **SQLite** (Local embedded)
-  - File-based: `storynexus.db` (default path: `./data/storynexus.db`)
-  - Configurable: `DATABASE_PATH` environment variable
-  - WAL mode enabled for concurrency
-  - Client: `better-sqlite3` native driver
-  - ORM: Drizzle ORM v0.45
-  - Schema: `server/db/schema.ts`
-  - Migrations: Generated via Drizzle Kit, stored in `server/db/migrations/`
+    - File-based: `storynexus.db` (default path: `./data/storynexus.db`)
+    - Configurable: `DATABASE_PATH` environment variable
+    - WAL mode enabled for concurrency
+    - Client: `better-sqlite3` native driver
+    - ORM: Drizzle ORM v0.45
+    - Schema: `server/db/schema.ts`
+    - Migrations: Generated via Drizzle Kit, stored in `server/db/migrations/`
 
 **Tables:**
+
 - `series` - Series grouping metadata
 - `stories` - Story metadata, synopsis, optional series link
 - `chapters` - Chapter content (Lexical JSON), outline, POV, word count
@@ -66,6 +70,7 @@
 - `notes` - Story notes (ideas, research, todos)
 
 **File Storage:**
+
 - Local filesystem only (no cloud storage)
 - File uploads handled via Multer v2.0
 - Import/export functionality for JSON files (prompts, lorebook)
@@ -74,11 +79,13 @@
 ## Authentication & Identity
 
 **Auth Provider:**
+
 - None built-in
 - Single-user, local-first application (no authentication layer)
 - All data stored locally on user's machine
 
 **API Key Management:**
+
 - Keys stored in SQLite `aiSettings` table
 - Server-side storage via API endpoint: `PUT /api/ai/settings/:id`
 - Frontend retrieves settings via `GET /api/ai/settings`
@@ -86,10 +93,12 @@
 ## Monitoring & Observability
 
 **Error Tracking:**
+
 - None configured
 - Local logging via `loglevel` package
 
 **Logs:**
+
 - Browser console logging (frontend)
 - Server console logging (backend)
 - Logger utility: `src/utils/logger.ts`
@@ -98,18 +107,21 @@
 ## CI/CD & Deployment
 
 **Hosting Options:**
+
 - Local development: `npm run dev` (dual servers)
 - Docker containerization: `docker-compose up --build`
 - Docker image: Node.js 22 Alpine with native module support
 - Production single-server setup: `npm start` on port 3000
 
 **CI Pipeline:**
+
 - None configured (manual deployment)
 - Local linting: `npm run lint` (OxLint)
 - Local type checking: `tsc`
 - Local formatting: `npm run format` (Prettier)
 
 **Docker Setup:**
+
 - `Dockerfile` - Multi-stage build (builder + production)
 - `docker-compose.yml` - Production configuration
 - `docker-compose.dev.yml` - Development configuration
@@ -123,6 +135,7 @@
 ## Environment Configuration
 
 **Required env vars (Optional - all have defaults):**
+
 - `NODE_ENV` - Set to `development` or `production`
 - `PORT` - Server port (default: 3000)
 - `DATABASE_PATH` - SQLite database file path
@@ -133,11 +146,13 @@
 - `PUID` / `PGID` - Docker user/group IDs (docker-compose only)
 
 **Secrets Location:**
+
 - AI API keys entered via UI, stored in `aiSettings` SQLite table
 - No `.env` file required (local-first design)
 - Docker env vars via `docker-compose.yml`
 
 **Configuration Files:**
+
 - `.env.production.example` - Docker configuration template
 - `drizzle.config.ts` - Database configuration
 - `vite.config.ts` - Frontend build configuration
@@ -146,10 +161,12 @@
 ## Webhooks & Callbacks
 
 **Incoming:**
+
 - None configured
 - No external webhook support
 
 **Outgoing:**
+
 - None configured
 - All external API calls are request/response (OpenAI, Gemini, OpenRouter, LocalAI)
 - No background job/message queue system
@@ -157,6 +174,7 @@
 ## API Endpoints (Backend)
 
 **Main API Routes:**
+
 - `GET/POST /api/series` - Series management
 - `GET/POST /api/stories` - Story management
 - `GET/POST /api/chapters` - Chapter management
@@ -170,6 +188,7 @@
 - `GET /api/health` - Health check endpoint
 
 **Frontend API Client:**
+
 - Located: `src/services/api/client.ts`
 - Pattern: Typed API object exports for each domain
 - Methods: `storiesApi`, `seriesApi`, `chaptersApi`, `lorebookApi`, `promptsApi`, `aiApi`, `brainstormApi`, `scenebeatsApi`, `notesApi`
@@ -178,12 +197,14 @@
 ## Network Configuration
 
 **Development:**
+
 - Backend: `http://localhost:3001`
 - Frontend: `http://localhost:5173`
 - Vite proxy: `/api` → backend (auto-proxied in dev)
 - CORS enabled in development mode
 
 **Production:**
+
 - Single origin: `http://localhost:3000` (or configured `PORT`)
 - Static frontend served from Express
 - API routes under `/api/*`
@@ -191,4 +212,4 @@
 
 ---
 
-*Integration audit: 2026-01-23*
+_Integration audit: 2026-01-23_

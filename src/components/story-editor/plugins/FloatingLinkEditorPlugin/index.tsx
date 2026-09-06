@@ -3,8 +3,8 @@ import type { JSX } from "react";
 import { type Dispatch } from "react";
 import { createPortal } from "react-dom";
 import { FloatingLinkEditor } from "./FloatingLinkEditor";
-import { useFloatingLinkEditorToolbar } from "./useFloatingLinkEditorToolbar";
 import "./index.css";
+import { useFloatingLinkEditorToolbar } from "./useFloatingLinkEditorToolbar";
 
 export default function FloatingLinkEditorPlugin({
     anchorElem = document.body,

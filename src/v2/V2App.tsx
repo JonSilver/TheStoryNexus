@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { BookOpen, Library, MoreHorizontal, PenLine } from "lucide-react";
+import { useState } from "react";
 import { ActionsScreen } from "./screens/ActionsScreen";
-import { BrainstormScreen } from "./screens/BrainstormScreen";
 import { BibleScreen } from "./screens/BibleScreen";
+import { BrainstormScreen } from "./screens/BrainstormScreen";
 import { ChaptersScreen } from "./screens/ChaptersScreen";
 import { MoreScreen } from "./screens/MoreScreen";
 import { NotesScreen } from "./screens/NotesScreen";

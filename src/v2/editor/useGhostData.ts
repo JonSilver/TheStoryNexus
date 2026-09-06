@@ -1,7 +1,7 @@
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $getNodeByKey, type NodeKey } from "lexical";
 import { useCallback, useRef } from "react";
 import { useSyncExternalStore } from "react";
-import { $getNodeByKey, type NodeKey } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isGhostSuggestionNode, $readGhost } from "./nodes/GhostSuggestionNode";
 
 interface GhostData {

@@ -131,9 +131,7 @@ describe("splitIntoChapters — fallbacks", () => {
         const text = Array.from({ length: 40 }, (_, index) => paragraph(1000, `p${index}`)).join("\n\n");
         const chapters = splitIntoChapters(text);
         expect(chapters.length).toBeGreaterThan(5);
-        expect(chapters.map(chapter => chapter.title)).toEqual(
-            chapters.map((_, index) => `Chapter ${index + 1}`)
-        );
+        expect(chapters.map(chapter => chapter.title)).toEqual(chapters.map((_, index) => `Chapter ${index + 1}`));
         expect(chapters.every(chapter => chapter.body.trim().length > 0)).toBe(true);
     });
 

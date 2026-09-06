@@ -18,17 +18,13 @@ function PortalImpl({
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (modalRef.current !== null) 
-            modalRef.current.focus();
-        
+        if (modalRef.current !== null) modalRef.current.focus();
     }, []);
 
     useEffect(() => {
         let modalOverlayElement: HTMLElement | null = null;
         const handler = (event: KeyboardEvent) => {
-            if (event.key === "Escape") 
-                onClose();
-            
+            if (event.key === "Escape") onClose();
         };
         const clickOutsideHandler = (event: MouseEvent) => {
             const target = event.target;
@@ -37,25 +33,20 @@ function PortalImpl({
                 isDOMNode(target) &&
                 !modalRef.current.contains(target) &&
                 closeOnClickOutside
-            ) 
+            )
                 onClose();
-            
         };
         const modelElement = modalRef.current;
         if (modelElement !== null) {
             modalOverlayElement = modelElement.parentElement;
-            if (modalOverlayElement !== null) 
-                modalOverlayElement.addEventListener("click", clickOutsideHandler);
-            
+            if (modalOverlayElement !== null) modalOverlayElement.addEventListener("click", clickOutsideHandler);
         }
 
         window.addEventListener("keydown", handler);
 
         return () => {
             window.removeEventListener("keydown", handler);
-            if (modalOverlayElement !== null) 
-                modalOverlayElement?.removeEventListener("click", clickOutsideHandler);
-            
+            if (modalOverlayElement !== null) modalOverlayElement?.removeEventListener("click", clickOutsideHandler);
         };
     }, [closeOnClickOutside, onClose]);
 

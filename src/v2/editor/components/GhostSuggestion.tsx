@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     $createParagraphNode,
     $createTextNode,
@@ -11,17 +11,12 @@ import {
     type LexicalNode,
     type NodeKey
 } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { Check, CornerDownRight, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { streamAction } from "../../ai/streamAction";
 import { useChapterIdentity } from "../ChapterContext";
-import {
-    ghostStatusState,
-    $isGhostSuggestionNode,
-    $readGhost,
-    $setGhostText
-} from "../nodes/GhostSuggestionNode";
+import { ghostStatusState, $isGhostSuggestionNode, $readGhost, $setGhostText } from "../nodes/GhostSuggestionNode";
 import { useGhostData } from "../useGhostData";
 
 /**

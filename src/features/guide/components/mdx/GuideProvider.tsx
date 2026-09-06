@@ -53,9 +53,7 @@ const mdxComponents = {
     // Handle GitHub alert divs from remark-github-blockquote-alert
     div: ({ className, children, ...props }: ElementProps<"div">) => {
         // Check for markdown-alert classes
-        const alertType = Object.keys(alertConfig).find(type =>
-            className?.includes(`markdown-alert-${type}`)
-        );
+        const alertType = Object.keys(alertConfig).find(type => className?.includes(`markdown-alert-${type}`));
 
         if (alertType && className?.includes("markdown-alert")) {
             const config = alertConfig[alertType];
@@ -70,13 +68,15 @@ const mdxComponents = {
             );
         }
 
-        return <div className={className} {...props}>{children}</div>;
+        return (
+            <div className={className} {...props}>
+                {children}
+            </div>
+        );
     }
 };
 /* eslint-enable jsx-a11y/heading-has-content, jsx-a11y/anchor-has-content */
 
-export const GuideProvider = ({ children }: { children: ReactNode }) => (
-    <div className="space-y-6">{children}</div>
-);
+export const GuideProvider = ({ children }: { children: ReactNode }) => <div className="space-y-6">{children}</div>;
 
 export { mdxComponents };

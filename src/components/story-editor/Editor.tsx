@@ -40,13 +40,7 @@ import ContentEditable from "./ui/ContentEditable";
 export default function Editor(): JSX.Element {
     const { historyState } = useSharedHistoryContext();
     const {
-        settings: {
-            isCollab,
-            hasLinkAttributes,
-            isRichText,
-            showTreeView,
-            selectionAlwaysOnDisplay
-        }
+        settings: { isCollab, hasLinkAttributes, isRichText, showTreeView, selectionAlwaysOnDisplay }
     } = useSettings();
     const isEditable = useLexicalEditable();
     const placeholder = isCollab

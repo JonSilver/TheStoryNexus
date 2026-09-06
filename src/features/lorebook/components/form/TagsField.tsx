@@ -39,8 +39,8 @@ export const TagsField = ({ control, tagInput }: TagsFieldProps) => (
                         <Input {...field} placeholder="Harry Potter, The Boy Who Lived, Quidditch Player" />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
-                        Enter tags separated by commas. The entry name is automatically used as a tag. You can use spaces
-                        and special characters in tags.
+                        Enter tags separated by commas. The entry name is automatically used as a tag. You can use
+                        spaces and special characters in tags.
                     </p>
                     <FormMessage />
                 </FormItem>

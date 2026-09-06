@@ -30,13 +30,11 @@ function PageBreakComponent({ nodeKey }: { nodeKey: NodeKey }) {
         (event: KeyboardEvent) => {
             event.preventDefault();
             const deleteSelection = $getSelection();
-            if (isSelected && $isNodeSelection(deleteSelection)) 
+            if (isSelected && $isNodeSelection(deleteSelection))
                 deleteSelection.getNodes().forEach(node => {
-                    if ($isPageBreakNode(node)) 
-                        node.remove();
-                    
+                    if ($isPageBreakNode(node)) node.remove();
                 });
-            
+
             return false;
         },
         [isSelected]
@@ -51,9 +49,8 @@ function PageBreakComponent({ nodeKey }: { nodeKey: NodeKey }) {
                         const pbElem = editor.getElementByKey(nodeKey);
 
                         if (event.target === pbElem) {
-                            if (!event.shiftKey) 
-                                clearSelection();
-                            
+                            if (!event.shiftKey) clearSelection();
+
                             setSelected(!isSelected);
                             return true;
                         }
@@ -70,9 +67,7 @@ function PageBreakComponent({ nodeKey }: { nodeKey: NodeKey }) {
 
     useEffect(() => {
         const pbElem = editor.getElementByKey(nodeKey);
-        if (pbElem !== null) 
-            pbElem.className = isSelected ? "selected" : "";
-        
+        if (pbElem !== null) pbElem.className = isSelected ? "selected" : "";
     }, [editor, isSelected, nodeKey]);
 
     return null;
@@ -95,9 +90,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
         return {
             figure: (domNode: HTMLElement) => {
                 const tp = domNode.getAttribute("type");
-                if (tp !== PageBreakNode.getType()) 
-                    return null;
-                
+                if (tp !== PageBreakNode.getType()) return null;
 
                 return {
                     conversion: $convertPageBreakElement,

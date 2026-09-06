@@ -56,7 +56,6 @@ export const useModelSelection = ({ initialModels = [] }: UseModelSelectionProps
                 else if (model.name.includes("NVIDIA")) groups.NVIDIA.push(model);
                 else if (model.name.includes("xAI")) groups.xAI.push(model);
                 else groups.Other.push(model);
-
         });
 
         return Object.fromEntries(Object.entries(groups).filter(([_, models]) => models.length > 0));

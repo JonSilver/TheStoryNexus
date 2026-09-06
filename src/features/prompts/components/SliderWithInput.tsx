@@ -25,8 +25,7 @@ const formatValue = (value: number, decimals: number | undefined, disabled: bool
     return decimals !== undefined ? value.toFixed(decimals) : value.toString();
 };
 
-const parseValue = (input: string, isFloat: boolean): number =>
-    isFloat ? parseFloat(input) : parseInt(input, 10);
+const parseValue = (input: string, isFloat: boolean): number => (isFloat ? parseFloat(input) : parseInt(input, 10));
 
 export const SliderWithInput = ({ id, label, value, onChange, config, disableable = false }: SliderWithInputProps) => {
     const { min, max, step, decimals, defaultEnabled } = config;

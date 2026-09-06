@@ -66,8 +66,17 @@ router.put(
             res.status(400).json({ error: "Invalid override", details: parsed.error.issues });
             return;
         }
-        const { actionId, storyId, template, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, modelRef } =
-            parsed.data;
+        const {
+            actionId,
+            storyId,
+            template,
+            temperature,
+            maxTokens,
+            topP,
+            frequencyPenalty,
+            presencePenalty,
+            modelRef
+        } = parsed.data;
 
         if (template) {
             const result = validateTemplate(template as PromptMessage[], BUILTIN_ACTIONS[actionId].contextNeeds);

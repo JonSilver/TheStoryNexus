@@ -1,5 +1,5 @@
-import type { JSX } from "react";
 import { $getState, $setState, createState, DecoratorNode, type LexicalNode } from "lexical";
+import type { JSX } from "react";
 import { GhostSuggestion } from "../components/GhostSuggestion";
 
 const asString = (v: unknown) => (typeof v === "string" ? v : "");

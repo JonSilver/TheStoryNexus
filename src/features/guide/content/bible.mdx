@@ -10,24 +10,24 @@ Each entry has a **name** and any number of **aliases** (nicknames, titles, othe
 
 The matching is stricter than a plain search, deliberately:
 
-- **Word boundaries only.** An entry called *Ash* matches "Ash turned away", not "ashtray".
+- **Word boundaries only.** An entry called _Ash_ matches "Ash turned away", not "ashtray".
 - **Case and accents are normalised**, so "MIRIAM" and "Miriam" are the same person.
-- **Possessives count.** "Miriam's coat" matches *Miriam*.
+- **Possessives count.** "Miriam's coat" matches _Miriam_.
 - **Multi-word aliases match as phrases**, so "The Blue Hour" works as a name.
 - **Disabled entries are skipped** entirely.
 
 When more entries match than the model's context window can take, they're ranked — story entries before series before global, then by how often they appear — and the tail is dropped. Ranking is deterministic: the same chapter always yields the same context.
 
 > [!TIP]
-> Aliases are the highest-value field in the bible. If your narrator calls someone "the sergeant" for three chapters, add *the sergeant* as an alias or those chapters won't match the entry at all.
+> Aliases are the highest-value field in the bible. If your narrator calls someone "the sergeant" for three chapters, add _the sergeant_ as an alias or those chapters won't match the entry at all.
 
 ## Three levels
 
-| Level | Reaches | Good for |
-| --- | --- | --- |
-| **Story** | One story | People, places and things unique to this book |
-| **Series** | Every story in the series | Recurring cast, shared geography, series-wide history |
-| **Global** | Everything you write | Your standing world-building, house rules, universal lore |
+| Level      | Reaches                   | Good for                                                  |
+| ---------- | ------------------------- | --------------------------------------------------------- |
+| **Story**  | One story                 | People, places and things unique to this book             |
+| **Series** | Every story in the series | Recurring cast, shared geography, series-wide history     |
+| **Global** | Everything you write      | Your standing world-building, house rules, universal lore |
 
 A story sees all three at once. If the same name exists at more than one level, all of them match, and the most specific one goes into the prompt first.
 

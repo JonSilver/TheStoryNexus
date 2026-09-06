@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
-import { Loader2, Upload, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, Upload, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 
 interface AnalysedChapter {
@@ -100,7 +100,11 @@ export const ImportSheet = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label="Import manuscript">
+        <div
+            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
+            role="dialog"
+            aria-label="Import manuscript"
+        >
             <div className="flex max-h-[90dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 <header className="flex items-center justify-between px-4 py-3">
                     <span className="font-medium">Import a manuscript</span>

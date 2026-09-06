@@ -17,15 +17,15 @@ Tap an action to edit it. Its template is a list of role-tagged messages (**syst
 
 The header of the editor lists the `{{variables}}` that action is allowed to use — the same context the built-in template draws on. They're substituted at generation time:
 
-| Action | Follows story voice | Variables available |
-| --- | --- | --- |
-| Scene Beat | Yes | `matched_entries` `summaries` `recent_prose` `pov` `command` |
-| Continue Writing | Yes | `matched_entries` `summaries` `recent_prose` `pov` |
-| Rework / Expand / Shorten | Yes | `selection` `recent_prose` `pov` `story_language` |
-| Brainstorm | Yes | `matched_entries` `chat_history` `user_message` |
-| Summarise Chapter | No | `chapter_content` |
-| Extract Bible Entries | No | `chapter_content` `user_message` `matched_entries` |
-| Propose Bible Updates | No | `chapter_content` `matched_entries` |
+| Action                    | Follows story voice | Variables available                                          |
+| ------------------------- | ------------------- | ------------------------------------------------------------ |
+| Scene Beat                | Yes                 | `matched_entries` `summaries` `recent_prose` `pov` `command` |
+| Continue Writing          | Yes                 | `matched_entries` `summaries` `recent_prose` `pov`           |
+| Rework / Expand / Shorten | Yes                 | `selection` `recent_prose` `pov` `story_language`            |
+| Brainstorm                | Yes                 | `matched_entries` `chat_history` `user_message`              |
+| Summarise Chapter         | No                  | `chapter_content`                                            |
+| Extract Bible Entries     | No                  | `chapter_content` `user_message` `matched_entries`           |
+| Propose Bible Updates     | No                  | `chapter_content` `matched_entries`                          |
 
 An unknown variable is a **save-time error**, not a silent passthrough — you'll be told rather than discovering a literal `{{summarie}}` in your prose three chapters later. If an override somehow becomes invalid, generation falls back to the built-in template rather than failing.
 
@@ -39,18 +39,18 @@ An unknown variable is a **save-time error**, not a silent passthrough — you'l
 
 **More → Export story** downloads the whole story — every chapter in order, chapter titles as headings — in whichever format you tap:
 
-| Format | Notes |
-| --- | --- |
-| **Markdown** | Headings, lists, emphasis and rules as Markdown |
-| **Text** | Plain prose, no markup |
-| **HTML** | Escaped, standalone markup |
-| **EPUB** | A real e-book, built on the server: cover page with your title, author and synopsis, a table of contents, and any images embedded in the file |
+| Format       | Notes                                                                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Markdown** | Headings, lists, emphasis and rules as Markdown                                                                                               |
+| **Text**     | Plain prose, no markup                                                                                                                        |
+| **HTML**     | Escaped, standalone markup                                                                                                                    |
+| **EPUB**     | A real e-book, built on the server: cover page with your title, author and synopsis, a table of contents, and any images embedded in the file |
 
 Scene beats are omitted from every format; they're instructions to the AI, not part of the book.
 
 ## Running a local model
 
-AI generation happens on the **server**, not in your browser. The local model URL you set in **AI Settings → Local Models → Advanced Settings** must therefore be reachable *from wherever The Story Nexus server is running* — not from your phone. That's what makes local models work from a phone at all.
+AI generation happens on the **server**, not in your browser. The local model URL you set in **AI Settings → Local Models → Advanced Settings** must therefore be reachable _from wherever The Story Nexus server is running_ — not from your phone. That's what makes local models work from a phone at all.
 
 - **Server and LM Studio on the same machine:** the default `http://localhost:1234/v1` is right.
 - **Docker on Linux, model on the host:** `localhost` inside a container is the container. Add a host gateway to `docker-compose.yml` and use it:
@@ -88,4 +88,4 @@ Then visit `http://YOUR-SERVER-IP:3000` — for example `http://192.168.1.100:30
 
 ## Two devices, one chapter
 
-Editing the same chapter on two devices in sequence is fine — each save carries the revision it was based on. If a chapter has moved on underneath you, saving stops, the editor says **This chapter was changed on another device**, and offers **Reload**. Nothing gets silently overwritten. Editing the same chapter on two devices *simultaneously* isn't supported.
+Editing the same chapter on two devices in sequence is fine — each save carries the revision it was based on. If a chapter has moved on underneath you, saving stops, the editor says **This chapter was changed on another device**, and offers **Reload**. Nothing gets silently overwritten. Editing the same chapter on two devices _simultaneously_ isn't supported.

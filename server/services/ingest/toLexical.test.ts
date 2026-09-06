@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blocksToPlainText } from "../../../src/v2/export/toPlainText.js";
 import { type Block, parseSerialisedDocument } from "../../../src/v2/export/blocks.js";
+import { blocksToPlainText } from "../../../src/v2/export/toPlainText.js";
 import { splitIntoChapters } from "./split.js";
 import { toLexicalDocument } from "./toLexical.js";
 

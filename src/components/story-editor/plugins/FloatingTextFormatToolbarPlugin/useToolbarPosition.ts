@@ -1,5 +1,11 @@
 import { mergeRegister } from "@lexical/utils";
-import { $getSelection, COMMAND_PRIORITY_LOW, getDOMSelection, type LexicalEditor, SELECTION_CHANGE_COMMAND } from "lexical";
+import {
+    $getSelection,
+    COMMAND_PRIORITY_LOW,
+    getDOMSelection,
+    type LexicalEditor,
+    SELECTION_CHANGE_COMMAND
+} from "lexical";
 import { type RefObject, useCallback, useEffect } from "react";
 import { getDOMRangeRect } from "../../utils/getDOMRangeRect";
 import { setFloatingElemPosition } from "../../utils/setFloatingElemPosition";

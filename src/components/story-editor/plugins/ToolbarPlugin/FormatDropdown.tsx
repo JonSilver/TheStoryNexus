@@ -1,7 +1,12 @@
 import { FORMAT_TEXT_COMMAND, type LexicalEditor } from "lexical";
 import { MoreHorizontal, Strikethrough } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import { clearFormatting } from "./utils";
 

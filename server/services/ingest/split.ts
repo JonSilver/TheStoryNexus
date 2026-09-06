@@ -35,9 +35,34 @@ const MIN_MEAN_SECTION_WORDS = 150;
 const SEPARATOR_MIN_MEAN_WORDS = 1_000;
 
 const NUMBER_WORDS = [
-    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
-    "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred"
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+    "thirty",
+    "forty",
+    "fifty",
+    "sixty",
+    "seventy",
+    "eighty",
+    "ninety",
+    "hundred"
 ];
 
 /** Digits, roman numerals or a spelled-out ordinal, optionally compound ("twenty-one"). */
@@ -63,7 +88,11 @@ const HEADING_PATTERNS: readonly { pattern: RegExp; group: number; kind: Heading
 /** Three or more repeated punctuation marks alone on a line: `* * *`, `---`, `~~~`, `• • •`. */
 const SEPARATOR = /^[ \t]*(?:[*\-–—_~•·]+[ \t]*){3,}$/;
 
-const cleanTitle = (title: string): string => title.replace(/^#+[ \t]*/, "").replace(/[\s:]+$/, "").trim();
+const cleanTitle = (title: string): string =>
+    title
+        .replace(/^#+[ \t]*/, "")
+        .replace(/[\s:]+$/, "")
+        .trim();
 
 const matchHeading = (line: string): Omit<DetectedHeading, "index"> | null => {
     const trimmed = line.trim();

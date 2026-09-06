@@ -20,10 +20,10 @@ import type { AllowedModel, Prompt, PromptMessage } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { FormatButtons } from "./FormatButtons";
 import { GenerateButtons } from "./GenerateButtons";
+import "./index.css";
 import { useFloatingTextFormatToolbar } from "./useFloatingTextFormatToolbar";
 import { useSelectionPromptConfig } from "./useSelectionPromptConfig";
 import { useMouseDragListener, useToolbarPosition } from "./useToolbarPosition";
-import "./index.css";
 
 interface TextFormatFloatingToolbarProps {
     editor: LexicalEditor;
@@ -33,7 +33,13 @@ interface TextFormatFloatingToolbarProps {
     isUnderline: boolean;
 }
 
-const TextFormatFloatingToolbar = ({ editor, anchorElem, isBold, isItalic, isUnderline }: TextFormatFloatingToolbarProps): JSX.Element => {
+const TextFormatFloatingToolbar = ({
+    editor,
+    anchorElem,
+    isBold,
+    isItalic,
+    isUnderline
+}: TextFormatFloatingToolbarProps): JSX.Element => {
     const popupRef = useRef<HTMLDivElement | null>(null);
     const { currentStoryId, currentChapterId } = useStoryContext();
     const { data: prompts = [], isLoading, error } = usePromptsQuery({ includeSystem: true });
@@ -183,14 +189,24 @@ const TextFormatFloatingToolbar = ({ editor, anchorElem, isBold, isItalic, isUnd
     );
 };
 
-export default function FloatingTextFormatToolbarPlugin({ anchorElem = document.body }: { anchorElem?: HTMLElement }): JSX.Element | null {
+export default function FloatingTextFormatToolbarPlugin({
+    anchorElem = document.body
+}: {
+    anchorElem?: HTMLElement;
+}): JSX.Element | null {
     const [editor] = useLexicalComposerContext();
     const { isText, isBold, isItalic, isUnderline } = useFloatingTextFormatToolbar(editor);
 
     if (!isText) return null;
 
     return createPortal(
-        <TextFormatFloatingToolbar editor={editor} anchorElem={anchorElem} isBold={isBold} isItalic={isItalic} isUnderline={isUnderline} />,
+        <TextFormatFloatingToolbar
+            editor={editor}
+            anchorElem={anchorElem}
+            isBold={isBold}
+            isItalic={isItalic}
+            isUnderline={isUnderline}
+        />,
         anchorElem
     );
 }

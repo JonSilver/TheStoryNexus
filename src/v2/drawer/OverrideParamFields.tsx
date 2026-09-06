@@ -102,8 +102,8 @@ export const OverrideParamFields = ({
                 </label>
             </div>
             <p className="text-xs text-muted-foreground">
-                Blank sampler fields defer to the model server's own tuning. top_k / min_p / repeat_penalty live in
-                your Ollama Modelfile — they don't travel over the OpenAI-compatible API.
+                Blank sampler fields defer to the model server's own tuning. top_k / min_p / repeat_penalty live in your
+                Ollama Modelfile — they don't travel over the OpenAI-compatible API.
             </p>
         </div>
     );

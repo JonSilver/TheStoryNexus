@@ -1,4 +1,11 @@
-import { $getSelection, $isElementNode, $isRangeSelection, $isTextNode, type LexicalEditor, type LexicalNode } from "lexical";
+import {
+    $getSelection,
+    $isElementNode,
+    $isRangeSelection,
+    $isTextNode,
+    type LexicalEditor,
+    type LexicalNode
+} from "lexical";
 import { useCallback } from "react";
 import type { Prompt, PromptParserConfig } from "@/types/story";
 import { $isSceneBeatNode } from "../../nodes/SceneBeatNode";

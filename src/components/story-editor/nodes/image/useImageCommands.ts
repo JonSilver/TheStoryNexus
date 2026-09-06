@@ -125,7 +125,11 @@ export const useImageCommands = ({
             editor.getEditorState().read(() => {
                 const latestSelection = $getSelection();
                 const domElement = event.target as HTMLElement;
-                if (domElement.tagName === "IMG" && $isRangeSelection(latestSelection) && latestSelection.getNodes().length === 1)
+                if (
+                    domElement.tagName === "IMG" &&
+                    $isRangeSelection(latestSelection) &&
+                    latestSelection.getNodes().length === 1
+                )
                     editor.dispatchCommand(RIGHT_CLICK_IMAGE_COMMAND, event as MouseEvent);
             });
         },

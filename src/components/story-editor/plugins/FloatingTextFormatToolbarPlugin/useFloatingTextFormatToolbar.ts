@@ -1,5 +1,12 @@
 import { mergeRegister } from "@lexical/utils";
-import { $getSelection, $isParagraphNode, $isRangeSelection, $isTextNode, getDOMSelection, type LexicalEditor } from "lexical";
+import {
+    $getSelection,
+    $isParagraphNode,
+    $isRangeSelection,
+    $isTextNode,
+    getDOMSelection,
+    type LexicalEditor
+} from "lexical";
 import { useCallback, useEffect, useState } from "react";
 import { getSelectedNode } from "../../utils/getSelectedNode";
 
@@ -26,7 +33,9 @@ export const useFloatingTextFormatToolbar = (editor: LexicalEditor): FloatingToo
 
             if (
                 nativeSelection !== null &&
-                (!$isRangeSelection(selection) || rootElement === null || !rootElement.contains(nativeSelection.anchorNode))
+                (!$isRangeSelection(selection) ||
+                    rootElement === null ||
+                    !rootElement.contains(nativeSelection.anchorNode))
             ) {
                 setIsText(false);
                 return;

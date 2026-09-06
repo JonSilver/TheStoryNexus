@@ -42,7 +42,11 @@ export const streamAction = (request: StreamActionRequest, handlers: StreamActio
             })
         );
         if (fetchError || !response) {
-            done((fetchError as Error)?.name === "AbortError" ? undefined : ((fetchError as Error)?.message ?? "Request failed"));
+            done(
+                (fetchError as Error)?.name === "AbortError"
+                    ? undefined
+                    : ((fetchError as Error)?.message ?? "Request failed")
+            );
             return;
         }
         if (!response.ok || !response.body) {

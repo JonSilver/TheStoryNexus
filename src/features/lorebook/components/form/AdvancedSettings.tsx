@@ -5,9 +5,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { SelectField } from "./SelectField";
 import type { CreateEntryForm } from "./entryFormUtils";
 import { STATUS_OPTIONS } from "./entryFormUtils";
-import { SelectField } from "./SelectField";
 
 interface AdvancedSettingsProps {
     control: Control<CreateEntryForm>;

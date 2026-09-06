@@ -7,13 +7,18 @@ import {
     useSensor,
     useSensors
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy
+} from "@dnd-kit/sortable";
 import { attemptPromise } from "@jfdi/attempt";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchFilter } from "@/components/ui/SearchFilter";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChapterCard } from "@/features/chapters/components/ChapterCard";
 import {
     useChaptersByStoryQuery,

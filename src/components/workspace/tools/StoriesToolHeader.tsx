@@ -5,7 +5,12 @@ import { type ChangeEvent, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { CreateStoryDialog } from "@/features/stories/components/CreateStoryDialog";
 import { adminApi } from "@/services/api/client";
 import { storyExportService } from "@/services/storyExportService";
@@ -54,9 +59,7 @@ export const StoriesToolHeader = ({ onStoriesChange }: StoriesToolHeaderProps) =
         if (error) {
             logger.error("Demo import failed:", error);
             toast.error("Failed to import demo story");
-        } else 
-            toast.success("Demo story imported successfully");
-        
+        } else toast.success("Demo story imported successfully");
 
         setIsImportingDemo(false);
     };

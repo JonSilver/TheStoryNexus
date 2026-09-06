@@ -170,37 +170,35 @@ export const useSceneBeatHandlers = ({
         return createPromptConfig(editor, nodeKey, selectedPrompt, {
             storyId: currentStoryId,
             chapterId: currentChapterId,
-                command,
-                povType,
-                povCharacter,
-                chapterMatchedEntries,
-                localMatchedEntries,
-                sceneBeatContext: {
-                    useMatchedChapter,
-                    useMatchedSceneBeat,
-                    useCustomContext,
-                    customContextItems: selectedItems.map(item => item.id)
-                },
-                selectedItems
-            });
-        },
-        [
-            editor,
-            nodeKey,
-            selectedPrompt,
-            currentStoryId,
-            currentChapterId,
             command,
             povType,
             povCharacter,
             chapterMatchedEntries,
             localMatchedEntries,
-            useMatchedChapter,
-            useMatchedSceneBeat,
-            useCustomContext,
+            sceneBeatContext: {
+                useMatchedChapter,
+                useMatchedSceneBeat,
+                useCustomContext,
+                customContextItems: selectedItems.map(item => item.id)
+            },
             selectedItems
-        ]
-    );
+        });
+    }, [
+        editor,
+        nodeKey,
+        selectedPrompt,
+        currentStoryId,
+        currentChapterId,
+        command,
+        povType,
+        povCharacter,
+        chapterMatchedEntries,
+        localMatchedEntries,
+        useMatchedChapter,
+        useMatchedSceneBeat,
+        useCustomContext,
+        selectedItems
+    ]);
 
     const handlePreviewPrompt = useCallback(async () => {
         const config = createConfig();

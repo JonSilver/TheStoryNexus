@@ -10,13 +10,13 @@ Spike code: scratchpad `spike-tiptap` (TipTap 2.27.3) and `spike-tiptap-v3` (sam
 
 1. **Custom node**: 235 lines total (≤150 lean) — schema/attrs/HTML serialisation/commands in SceneBeatNode.ts + React node view. Typed commands end-to-end via declaration merging. Pain points: `updateAttributes` cannot skip undo history (need a hand-written command with `tr.setMeta('addToHistory', false)`); doc-attr-backed textareas need uncontrolled+debounced treatment; `getPos()` must be re-read every tick; v2 re-renders the whole React tree per transaction (v3 fixes the default).
 
-2. **Serialisation**: full control via attrs with per-attr parseHTML/renderHTML (data-* attributes); round-trips through JSON, HTML, and cross-document paste. TRAP: an atom node contributes nothing to `getText()`/clipboard text until `renderText` is added.
+2. **Serialisation**: full control via attrs with per-attr parseHTML/renderHTML (data-\* attributes); round-trips through JSON, HTML, and cross-document paste. TRAP: an atom node contributes nothing to `getText()`/clipboard text until `renderText` is added.
 
 3. **Streaming history pollution — the big finding**: naive attr-update-per-token = **71 undo entries for 71 tokens**; `addToHistory: false` = **0**, and prosemirror-history correctly maps existing entries through skipped transactions (verified: undo after streaming removes the user's typing, leaves streamed text). Use `tr.setNodeAttribute` (AttrStep → node view update(), keeps textarea focus).
 
 4. **Accept**: one command, one transaction, one undo entry; single undo restores the exact prior document including the beat's pending text (byte-compared JSON).
 
-5. **Copy/paste**: full state within editor and across documents (data-* HTML carries it, even stripped of ProseMirror's clipboard hint). Pending generations duplicate with the node — product decision whether to strip via transformPasted.
+5. **Copy/paste**: full state within editor and across documents (data-\* HTML carries it, even stripped of ProseMirror's clipboard hint). Pending generations duplicate with the node — product decision whether to strip via transformPasted.
 
 6. **Markdown**: hand-rolled serialiser 31 lines; prosemirror-markdown produces byte-identical output and also buys the **parser** (useful for Phase 7 ingestion) at 50.8 kB gzip — lazy-load or server-side. v3 drops the @tiptap/pm re-export; explicit dep.
 

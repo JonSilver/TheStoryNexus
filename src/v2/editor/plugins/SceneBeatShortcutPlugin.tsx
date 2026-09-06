@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { $createParagraphNode, $getSelection, COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $createParagraphNode, $getSelection, COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND } from "lexical";
+import { useEffect } from "react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 
 /** Alt+S / Option+S inserts a scene beat at the caret (desktop path). */

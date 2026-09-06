@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { Loader2, Plus } from "lucide-react";
+import { useState } from "react";
 import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { useV2Store } from "../state/useV2Store";
-import type { ScreenProps } from "../V2App";
 import { randomUUID } from "@/utils/crypto";
+import type { ScreenProps } from "../V2App";
+import { useV2Store } from "../state/useV2Store";
 
 export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setLastChapter } = useV2Store();

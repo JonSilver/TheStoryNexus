@@ -1,13 +1,8 @@
-import { useState } from "react";
 import { X } from "lucide-react";
+import { useState } from "react";
 import type { PromptMessage } from "@/types/story";
 import { OverrideParamFields, type OverrideParams } from "./OverrideParamFields";
-import {
-    type ActionDefinition,
-    type OverrideRow,
-    useResetOverride,
-    useSaveOverride
-} from "./useActionOverrides";
+import { type ActionDefinition, type OverrideRow, useResetOverride, useSaveOverride } from "./useActionOverrides";
 
 /**
  * Advanced-drawer editor for one action's override in one scope. The
@@ -58,7 +53,11 @@ export const OverrideEditor = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label={`Edit ${def.label}`}>
+        <div
+            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
+            role="dialog"
+            aria-label={`Edit ${def.label}`}
+        >
             <div className="flex max-h-[90dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 <header className="flex items-center justify-between px-4 py-3">
                     <div>
@@ -83,7 +82,9 @@ export const OverrideEditor = ({
                                     onChange={e =>
                                         setMessages(current =>
                                             current.map((m, i) =>
-                                                i === index ? { ...m, role: e.target.value as PromptMessage["role"] } : m
+                                                i === index
+                                                    ? { ...m, role: e.target.value as PromptMessage["role"] }
+                                                    : m
                                             )
                                         )
                                     }
@@ -132,7 +133,11 @@ export const OverrideEditor = ({
                         Save override
                     </button>
                     {override && (
-                        <button type="button" onClick={() => void reset()} className="rounded-md border px-4 py-2 text-sm">
+                        <button
+                            type="button"
+                            onClick={() => void reset()}
+                            className="rounded-md border px-4 py-2 text-sm"
+                        >
                             Reset to built-in
                         </button>
                     )}

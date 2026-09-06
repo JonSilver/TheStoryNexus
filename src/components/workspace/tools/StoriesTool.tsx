@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Label } from "@/components/ui/label";
 import { SearchFilter } from "@/components/ui/SearchFilter";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { EditStoryDialog } from "@/features/stories/components/EditStoryDialog";
@@ -60,10 +60,7 @@ export const StoriesTool = () => {
                                     {searchInput}
                                     <div className="flex flex-col gap-2 w-64">
                                         <Label htmlFor="series-filter">Filter by Series</Label>
-                                        <Select
-                                            value={selectedSeriesFilter}
-                                            onValueChange={setSelectedSeriesFilter}
-                                        >
+                                        <Select value={selectedSeriesFilter} onValueChange={setSelectedSeriesFilter}>
                                             <SelectTrigger id="series-filter">
                                                 <SelectValue placeholder="All Stories" />
                                             </SelectTrigger>

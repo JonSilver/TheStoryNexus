@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $isHeadingNode } from "@lexical/rich-text";
+import { mergeRegister } from "@lexical/utils";
 import {
     $createParagraphNode,
     $getSelection,
@@ -11,10 +13,8 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
-import { $isHeadingNode } from "@lexical/rich-text";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { mergeRegister } from "@lexical/utils";
 import { Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 import type { SaveStatus } from "../useChapterSaver";
 import { AiActionButtons, type ToolbarActions } from "./AiActionButtons";

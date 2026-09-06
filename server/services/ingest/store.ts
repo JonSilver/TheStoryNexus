@@ -22,9 +22,7 @@ const analyses = new Map<string, StoredAnalysis>();
 
 /** Map iteration is insertion-ordered, so the oldest entries are the ones to shed. */
 const sweep = (now: number) => {
-    [...analyses]
-        .filter(([, analysis]) => analysis.expiresAt <= now)
-        .forEach(([token]) => analyses.delete(token));
+    [...analyses].filter(([, analysis]) => analysis.expiresAt <= now).forEach(([token]) => analyses.delete(token));
     [...analyses.keys()].slice(0, Math.max(0, analyses.size - MAX_ANALYSES)).forEach(token => analyses.delete(token));
 };
 

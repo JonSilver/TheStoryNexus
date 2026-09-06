@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { CornerDownRight, Loader2, Square } from "lucide-react";
+import { useState } from "react";
 import type { GenerationPhase } from "./useActionGeneration";
 
 /**

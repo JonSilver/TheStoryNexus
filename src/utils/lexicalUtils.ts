@@ -92,27 +92,19 @@ export const extractPlainTextFromLexical = (
     }
 
     const editorState = result.data;
-    if (!editorState.root?.children) 
-        return "";
-    
+    if (!editorState.root?.children) return "";
 
     const extractText = (node: LexicalNode): string => {
         if (!node) return "";
 
         // Check if this node type should be excluded
-        if (opts.excludeNodeTypes?.includes(node.type)) 
-            return "";
-        
+        if (opts.excludeNodeTypes?.includes(node.type)) return "";
 
         // Handle text nodes
-        if (node.type === "text") 
-            return node.text || "";
-        
+        if (node.type === "text") return node.text || "";
 
         // Handle linebreak nodes
-        if (node.type === "linebreak") 
-            return "\n";
-        
+        if (node.type === "linebreak") return "\n";
 
         // Recursively extract text from children
         const childrenText = Array.isArray(node.children) ? node.children.map(extractText).join("") : "";

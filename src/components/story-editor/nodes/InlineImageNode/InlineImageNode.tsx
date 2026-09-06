@@ -102,9 +102,8 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
         const node = super.updateFromJSON(serializedNode);
         const nestedEditor = node.__caption;
         const editorState = nestedEditor.parseEditorState(caption.editorState);
-        if (!editorState.isEmpty()) 
-            nestedEditor.setEditorState(editorState);
-        
+        if (!editorState.isEmpty()) nestedEditor.setEditorState(editorState);
+
         return node;
     }
 
@@ -199,15 +198,11 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
     update(payload: UpdateInlineImagePayload): void {
         const writable = this.getWritable();
         const { altText, showCaption, position } = payload;
-        if (altText !== undefined) 
-            writable.__altText = altText;
-        
-        if (showCaption !== undefined) 
-            writable.__showCaption = showCaption;
-        
-        if (position !== undefined) 
-            writable.__position = position;
-        
+        if (altText !== undefined) writable.__altText = altText;
+
+        if (showCaption !== undefined) writable.__showCaption = showCaption;
+
+        if (position !== undefined) writable.__position = position;
     }
 
     // View
@@ -215,9 +210,8 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
     createDOM(config: EditorConfig): HTMLElement {
         const span = document.createElement("span");
         const className = `${config.theme.inlineImage} position-${this.__position}`;
-        if (className !== undefined) 
-            span.className = className;
-        
+        if (className !== undefined) span.className = className;
+
         return span;
     }
 
@@ -225,9 +219,7 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
         const position = this.__position;
         if (position !== prevNode.__position) {
             const className = `${config.theme.inlineImage} position-${position}`;
-            if (className !== undefined) 
-                dom.className = className;
-            
+            if (className !== undefined) dom.className = className;
         }
         return false;
     }

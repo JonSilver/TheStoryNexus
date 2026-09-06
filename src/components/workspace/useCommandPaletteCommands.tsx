@@ -1,7 +1,7 @@
 import { BookOpen, FileCode, FileText, HelpCircle, MessageSquare, StickyNote, Tags } from "lucide-react";
 import { useMemo } from "react";
-import type { Chapter, LorebookEntry, Note, Prompt, Story } from "@/types/story";
 import type { WorkspaceTool } from "@/features/stories/context/StoryContext";
+import type { Chapter, LorebookEntry, Note, Prompt, Story } from "@/types/story";
 
 interface CommandItem {
     id: string;

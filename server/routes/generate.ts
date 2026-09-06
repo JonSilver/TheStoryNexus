@@ -77,7 +77,10 @@ const contextLimitFor = (settings: Settings, provider: AIProviderId, modelId: st
 
 const voiceFor = async (storyId: string): Promise<string> => {
     const [, rows] = await attemptPromise(() =>
-        db.select({ aiInstructions: schema.stories.aiInstructions }).from(schema.stories).where(eq(schema.stories.id, storyId))
+        db
+            .select({ aiInstructions: schema.stories.aiInstructions })
+            .from(schema.stories)
+            .where(eq(schema.stories.id, storyId))
     );
     return rows?.[0]?.aiInstructions ?? "";
 };
@@ -86,9 +89,7 @@ const parseModelRef = (ref: string | null | undefined): { provider: AIProviderId
     if (!ref) return null;
     const [provider, ...rest] = ref.split("::");
     const modelId = rest.join("::");
-    return providerEnum.safeParse(provider).success && modelId
-        ? { provider: provider as AIProviderId, modelId }
-        : null;
+    return providerEnum.safeParse(provider).success && modelId ? { provider: provider as AIProviderId, modelId } : null;
 };
 
 /**

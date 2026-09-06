@@ -185,10 +185,22 @@ export const FloatingLinkEditor = ({
                         onKeyDown={event => monitorInputInteraction(event)}
                     />
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onMouseDown={preventDefault} onClick={() => setIsLinkEditMode(false)}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onMouseDown={preventDefault}
+                            onClick={() => setIsLinkEditMode(false)}
+                        >
                             <X className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onMouseDown={preventDefault} onClick={handleLinkSubmission}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onMouseDown={preventDefault}
+                            onClick={handleLinkSubmission}
+                        >
                             <Check className="h-4 w-4" />
                         </Button>
                     </div>

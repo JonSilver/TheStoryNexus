@@ -1,12 +1,6 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { describe, expect, it } from "vitest";
-import {
-    extensionOf,
-    ingestStatusOf,
-    isSupportedManuscript,
-    parseManuscript,
-    parseManuscriptText
-} from "./parse.js";
+import { extensionOf, ingestStatusOf, isSupportedManuscript, parseManuscript, parseManuscriptText } from "./parse.js";
 
 const utf8 = (text: string) => Buffer.from(text, "utf-8");
 

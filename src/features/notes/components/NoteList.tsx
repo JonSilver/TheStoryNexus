@@ -1,10 +1,15 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { type MouseEvent, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/types/story";
-import { useCreateNoteMutation, useDeleteNoteMutation, useNotesByStoryQuery, useUpdateNoteMutation } from "../hooks/useNotesQuery";
+import {
+    useCreateNoteMutation,
+    useDeleteNoteMutation,
+    useNotesByStoryQuery,
+    useUpdateNoteMutation
+} from "../hooks/useNotesQuery";
 import { NoteFormDialog } from "./NoteFormDialog";
 import { NoteListItem } from "./NoteListItem";
 
@@ -42,8 +47,7 @@ export default function NoteList({ storyId, selectedNoteId, onSelectNote }: Note
     };
 
     const handleSaveEdit = async (title: string, type: Note["type"]) => {
-        if (editingNote)
-            await updateNoteMutation.mutateAsync({ id: editingNote.id, data: { title, type } });
+        if (editingNote) await updateNoteMutation.mutateAsync({ id: editingNote.id, data: { title, type } });
         setIsEditDialogOpen(false);
         setEditingNote(null);
     };

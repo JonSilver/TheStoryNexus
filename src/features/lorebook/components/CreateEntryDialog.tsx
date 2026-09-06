@@ -11,6 +11,7 @@ import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "../hooks/useLorebookQuery";
+import { LevelBadge } from "./LevelBadge";
 import {
     AdvancedSettings,
     CATEGORIES,
@@ -22,7 +23,6 @@ import {
     getDefaultFormValues
 } from "./form";
 import type { CreateEntryForm, LorebookCategory } from "./form";
-import { LevelBadge } from "./LevelBadge";
 
 interface CreateEntryDialogProps {
     open: boolean;
@@ -66,8 +66,7 @@ export function CreateEntryDialog({
         const [error] = await attemptPromise(async () => {
             const dataToSubmit = buildSubmitData(data);
 
-            if (entry)
-                await updateMutation.mutateAsync({ id: entry.id, data: dataToSubmit });
+            if (entry) await updateMutation.mutateAsync({ id: entry.id, data: dataToSubmit });
             else
                 await createMutation.mutateAsync({
                     id: randomUUID(),

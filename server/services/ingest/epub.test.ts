@@ -68,10 +68,7 @@ describe("EPUB ingestion", () => {
 
     it("splits the extracted text into the manuscript's chapters", async () => {
         const parsed = await parseManuscript("whatever.epub", await sampleEpub());
-        expect(splitIntoChapters(parsed.text).map(chapter => chapter.title)).toEqual([
-            "Chapter One",
-            "Chapter Two"
-        ]);
+        expect(splitIntoChapters(parsed.text).map(chapter => chapter.title)).toEqual(["Chapter One", "Chapter Two"]);
     });
 
     it("ignores stylesheets, the ncx and head content", async () => {

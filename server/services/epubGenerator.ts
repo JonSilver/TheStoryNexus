@@ -16,7 +16,8 @@ type Chapter = InferSelectModel<typeof schema.chapters>;
 const convertLexicalToHtml = (jsonContent: string, chapterTitle: string): string => {
     const [error, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
     // Silently exporting an empty chapter would discard prose without a trace
-    if (error || html === undefined) throw new Error(`Chapter "${chapterTitle}" could not be converted: ${error?.message}`);
+    if (error || html === undefined)
+        throw new Error(`Chapter "${chapterTitle}" could not be converted: ${error?.message}`);
     const port = process.env.PORT || 3000;
     return html.split('src="/api/assets/').join(`src="http://127.0.0.1:${port}/api/assets/`);
 };

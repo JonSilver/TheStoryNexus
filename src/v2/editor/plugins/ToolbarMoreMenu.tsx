@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { $createParagraphNode, $getSelection, $isRangeSelection, type LexicalEditor } from "lexical";
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $createHeadingNode, type HeadingTagType } from "@lexical/rich-text";
 import { $setBlocksType } from "@lexical/selection";
+import { $createParagraphNode, $getSelection, $isRangeSelection, type LexicalEditor } from "lexical";
 import { FileText, List, ListOrdered, Minus, MoreHorizontal, Underline, X } from "lucide-react";
+import { useState } from "react";
 import { ImageUploadButton } from "./ImageUploadButton";
 
 const BLOCK_OPTIONS = [
@@ -59,7 +59,11 @@ export const ToolbarMoreMenu = ({
                 <MoreHorizontal className="h-4 w-4" />
             </button>
             {open && (
-                <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label="More tools">
+                <div
+                    className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
+                    role="dialog"
+                    aria-label="More tools"
+                >
                     <div className="rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                         <header className="flex items-center justify-between px-4 py-3">
                             <span className="font-medium">More tools</span>

@@ -1,19 +1,19 @@
-import { useRef, useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
-import { toast } from "react-toastify";
 import { ArrowLeft, Loader2, NotebookPen, Plus, Send, Square, Trash2 } from "lucide-react";
-import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { useRef, useState } from "react";
+import { toast } from "react-toastify";
 import {
     useBrainstormByStoryQuery,
     useCreateBrainstormMutation,
     useDeleteBrainstormMutation,
     useUpdateBrainstormMutation
 } from "@/features/brainstorm/hooks/useBrainstormQuery";
+import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
 import type { AIChat, ChatMessage } from "@/types/story";
+import { randomUUID } from "@/utils/crypto";
+import type { ScreenProps } from "../V2App";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { useV2Store } from "../state/useV2Store";
-import type { ScreenProps } from "../V2App";
-import { randomUUID } from "@/utils/crypto";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
@@ -71,7 +71,10 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         const finalReply = reply || generation.text;
         if (finalReply) {
             const [replyWriteError] = await attemptPromise(() =>
-                updateChat.mutateAsync({ id: chat.id, data: { messages: [...withUser, chatMessage("assistant", finalReply)] } })
+                updateChat.mutateAsync({
+                    id: chat.id,
+                    data: { messages: [...withUser, chatMessage("assistant", finalReply)] }
+                })
             );
             if (replyWriteError) toast.error("The reply couldn't be saved — it may vanish on refresh");
         }
@@ -82,10 +85,12 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
     const newChat = () => {
         if (!currentStoryId) return;
         createChat.mutate(
-            { id: randomUUID(), storyId: currentStoryId, title: `Chat ${(chats?.length ?? 0) + 1}`, messages: [] } as Omit<
-                AIChat,
-                "createdAt"
-            >,
+            {
+                id: randomUUID(),
+                storyId: currentStoryId,
+                title: `Chat ${(chats?.length ?? 0) + 1}`,
+                messages: []
+            } as Omit<AIChat, "createdAt">,
             { onSuccess: created => setChatId(created.id) }
         );
     };
@@ -200,7 +205,12 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                     }}
                 />
                 {generation.phase === "streaming" ? (
-                    <button type="button" onClick={generation.abort} aria-label="Stop" className="rounded-md border px-3">
+                    <button
+                        type="button"
+                        onClick={generation.abort}
+                        aria-label="Stop"
+                        className="rounded-md border px-3"
+                    >
                         <Square className="h-4 w-4" />
                     </button>
                 ) : (

@@ -34,7 +34,9 @@ export default function GuidePage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Welcome to The Story Nexus</CardTitle>
-                    <CardDescription>Writing in front, machinery behind — how to get the most out of it</CardDescription>
+                    <CardDescription>
+                        Writing in front, machinery behind — how to get the most out of it
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

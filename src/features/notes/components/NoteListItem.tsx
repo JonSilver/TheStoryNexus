@@ -36,7 +36,13 @@ export const NoteListItem = ({ note, isSelected, onSelect, onEdit, onDelete }: N
                 <span className="text-xs text-muted-foreground">{new Date(note.updatedAt).toLocaleDateString()}</span>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ActionButton icon={Edit2} tooltip="Edit note" onClick={onEdit} size="sm" />
-                    <ActionButton icon={Trash2} tooltip="Delete note" onClick={onDelete} size="sm" variant="destructive" />
+                    <ActionButton
+                        icon={Trash2}
+                        tooltip="Delete note"
+                        onClick={onDelete}
+                        size="sm"
+                        variant="destructive"
+                    />
                 </div>
             </div>
         </div>

@@ -59,7 +59,7 @@ Gate: generation works old-frontend end-to-end via server; keys absent from ever
 
 Gate: serialisation + export fixtures green; kill-the-tab-mid-typing test recovers within one debounce window; two-device sequential edit doesn't clobber.
 
-## Phase 4 — Context & AI actions  ⭐ declared ship-point after this phase
+## Phase 4 — Context & AI actions ⭐ declared ship-point after this phase
 
 - **Matching fixed first**: word-boundary, case/Unicode-normalised matching; multi-word tags and possessives; hierarchy collision rules (story > series > global); disabled entries excluded; deterministic ranking + truncation; efficient re-match on edit.
 - **Server-side context assembly**: recent prose + fresh summaries + matched entries, under an explicit token budget with a defined degradation order (trim oldest prose → drop least-ranked entries → drop stale summaries).

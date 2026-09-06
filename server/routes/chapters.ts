@@ -46,7 +46,10 @@ export default createCrudRouter({
                         .select()
                         .from(schema.chapters)
                         .where(eq(schema.chapters.id, req.params.id));
-                    res.status(409).json({ error: "Chapter was modified elsewhere", current: latest ? afterRead(latest) : null });
+                    res.status(409).json({
+                        error: "Chapter was modified elsewhere",
+                        current: latest ? afterRead(latest) : null
+                    });
                     return;
                 }
                 res.json(afterRead(updated));

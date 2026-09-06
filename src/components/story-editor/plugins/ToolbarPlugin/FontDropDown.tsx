@@ -4,7 +4,12 @@ import { ChevronDown } from "lucide-react";
 import type { JSX } from "react";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { FONT_FAMILY_OPTIONS, FONT_SIZE_OPTIONS } from "./constants";
 
 interface FontDropDownProps {

@@ -168,7 +168,13 @@ describe("images and unknown nodes", () => {
     });
 
     it("drops images whose src is not a server asset URL (SSRF guard)", () => {
-        const hostile = ["http://169.254.169.254/latest/meta-data", "https://evil.example/x.png", "file:///etc/passwd", "//evil.example/x.png", "data:image/png;base64,AAAA"];
+        const hostile = [
+            "http://169.254.169.254/latest/meta-data",
+            "https://evil.example/x.png",
+            "file:///etc/passwd",
+            "//evil.example/x.png",
+            "data:image/png;base64,AAAA"
+        ];
         for (const src of hostile) {
             const blocks = parseEditorState({
                 root: { children: [{ type: "image", src, alt: "x" }] }

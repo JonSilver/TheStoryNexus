@@ -18,7 +18,9 @@ const RENDERERS: Record<ExportFormat, (chapters: Array<{ title: string; content:
     txt: chapters =>
         chapters.map(c => `${c.title}\n\n${blocksToPlainText(parseSerialisedDocument(c.content))}`).join("\n\n\n"),
     html: chapters =>
-        chapters.map(c => `<h1>${escapeHtmlText(c.title)}</h1>\n${blocksToHtml(parseSerialisedDocument(c.content))}`).join("\n")
+        chapters
+            .map(c => `<h1>${escapeHtmlText(c.title)}</h1>\n${blocksToHtml(parseSerialisedDocument(c.content))}`)
+            .join("\n")
 };
 
 const MIME: Record<ExportFormat, string> = { md: "text/markdown", txt: "text/plain", html: "text/html" };

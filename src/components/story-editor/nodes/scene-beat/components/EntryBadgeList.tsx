@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import { Badge } from "@/components/ui/badge";
 import { RemovableBadge } from "@/components/ui/RemovableBadge";
+import { Badge } from "@/components/ui/badge";
 import type { LorebookEntry } from "@/types/story";
 
 interface EntryBadgeListProps {

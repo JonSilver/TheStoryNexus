@@ -82,9 +82,9 @@ export default function ImageResizer({
 
         const cursorDir = ew ? "ew" : ns ? "ns" : nwse ? "nwse" : "nesw";
 
-        if (editorRootElement !== null) 
+        if (editorRootElement !== null)
             editorRootElement.style.setProperty("cursor", `${cursorDir}-resize`, "important");
-        
+
         if (document.body !== null) {
             document.body.style.setProperty("cursor", `${cursorDir}-resize`, "important");
             userSelect.current.value = document.body.style.getPropertyValue("-webkit-user-select");
@@ -94,9 +94,8 @@ export default function ImageResizer({
     };
 
     const setEndCursor = () => {
-        if (editorRootElement !== null) 
-            editorRootElement.style.setProperty("cursor", "text");
-        
+        if (editorRootElement !== null) editorRootElement.style.setProperty("cursor", "text");
+
         if (document.body !== null) {
             document.body.style.setProperty("cursor", "default");
             document.body.style.setProperty(
@@ -108,9 +107,7 @@ export default function ImageResizer({
     };
 
     const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>, direction: number) => {
-        if (!editor.isEditable()) 
-            return;
-        
+        if (!editor.isEditable()) return;
 
         const image = imageRef.current;
         const controlWrapper = controlWrapperRef.current;

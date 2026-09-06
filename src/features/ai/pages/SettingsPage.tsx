@@ -1,9 +1,9 @@
 import { AlertTriangle, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
@@ -30,13 +30,12 @@ export default function SettingsPage() {
     const refreshModelsMutation = useRefreshModelsMutation();
     const deleteDemoMutation = useDeleteDemoDataMutation();
 
-    if (isLoadingSettings) 
+    if (isLoadingSettings)
         return (
             <div className="p-8 flex justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
-    
 
     const allModels = settings?.availableModels || [];
     const openaiModels = allModels.filter(m => m.provider === "openai");

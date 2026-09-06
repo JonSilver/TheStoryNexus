@@ -38,11 +38,7 @@ const countOccurrences = (normalisedText: string, alias: string): number => {
 };
 
 const entryAliases = (entry: MatchableEntry): string[] => [
-    ...new Set(
-        [entry.name, ...entry.tags]
-            .map(alias => normalise(alias.trim()))
-            .filter(alias => alias.length > 0)
-    )
+    ...new Set([entry.name, ...entry.tags].map(alias => normalise(alias.trim())).filter(alias => alias.length > 0))
 ];
 
 export const matchEntries = <T extends MatchableEntry>(text: string, entries: T[]): EntryMatch<T>[] => {
@@ -52,7 +48,10 @@ export const matchEntries = <T extends MatchableEntry>(text: string, entries: T[
     return entries
         .filter(entry => !entry.isDisabled)
         .map(entry => {
-            const counts = entryAliases(entry).map(alias => ({ alias, count: countOccurrences(normalisedText, alias) }));
+            const counts = entryAliases(entry).map(alias => ({
+                alias,
+                count: countOccurrences(normalisedText, alias)
+            }));
             const matched = counts.filter(c => c.count > 0);
             return {
                 entry,

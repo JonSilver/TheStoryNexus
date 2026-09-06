@@ -1,3 +1,4 @@
+import { mergeRegister } from "@lexical/utils";
 import {
     CAN_REDO_COMMAND,
     CAN_UNDO_COMMAND,
@@ -8,7 +9,6 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
-import { mergeRegister } from "@lexical/utils";
 import { Bold, Bot, Italic, Maximize, Minimize, Underline } from "lucide-react";
 import type { JSX } from "react";
 import { type Dispatch, useEffect, useState } from "react";
@@ -20,9 +20,9 @@ import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import { BlockFormatDropDown } from "./BlockFormatDropDown";
 import { ElementFormatDropdown } from "./ElementFormatDropdown";
 import { FontDropDown } from "./FontDropDown";
-import FontSize from "./fontSize";
 import { FormatDropdown } from "./FormatDropdown";
 import { InsertDropdown, insertSceneBeat } from "./InsertDropdown";
+import FontSize from "./fontSize";
 import { useToolbarUpdate } from "./useToolbarUpdate";
 
 const Divider = (): JSX.Element => <div className="divider" />;

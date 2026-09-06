@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { RemovableBadge } from "@/components/ui/RemovableBadge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -114,7 +114,10 @@ export function ContextSelector({
                                         {selectedChapterContent.map(chapterId => {
                                             const chapter = chapters.find(ch => ch.id === chapterId);
                                             return (
-                                                <RemovableBadge key={chapterId} onRemove={() => onRemoveChapterContent(chapterId)}>
+                                                <RemovableBadge
+                                                    key={chapterId}
+                                                    onRemove={() => onRemoveChapterContent(chapterId)}
+                                                >
                                                     Chapter {chapter?.order}: {chapter?.title}
                                                 </RemovableBadge>
                                             );

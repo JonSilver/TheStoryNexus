@@ -1,9 +1,10 @@
-import { useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { Loader2, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
+import { randomUUID } from "@/utils/crypto";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import {
     type ContinuityIssue,
@@ -13,7 +14,6 @@ import {
     parseEntryProposals,
     parseUpdateProposals
 } from "./parseProposals";
-import { randomUUID } from "@/utils/crypto";
 
 export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates" | "continuity";
 
@@ -83,7 +83,13 @@ export const ExtractSheet = ({
                 return true;
             });
             setProposals(parsed);
-            setTicked(new Set(parsed.map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i)).filter(i => i >= 0)));
+            setTicked(
+                new Set(
+                    parsed
+                        .map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i))
+                        .filter(i => i >= 0)
+                )
+            );
             if (!parsed.length) toast.info("Nothing extractable found");
         }
     };
@@ -136,7 +142,11 @@ export const ExtractSheet = ({
     const showRun = proposals === null && updates === null && issues === null;
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label={TITLES[mode]}>
+        <div
+            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
+            role="dialog"
+            aria-label={TITLES[mode]}
+        >
             <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 <header className="flex items-center justify-between px-4 py-3">
                     <span className="font-medium">{TITLES[mode]}</span>
@@ -209,7 +219,9 @@ export const ExtractSheet = ({
                         return (
                             <div key={proposal.name} className="space-y-1 rounded-md border p-2">
                                 <p className="font-medium">{proposal.name}</p>
-                                {existing && <p className="text-xs text-muted-foreground line-through">{existing.description}</p>}
+                                {existing && (
+                                    <p className="text-xs text-muted-foreground line-through">{existing.description}</p>
+                                )}
                                 <p>{proposal.updatedDescription}</p>
                                 {proposal.reason && <p className="text-xs text-muted-foreground">{proposal.reason}</p>}
                                 <button

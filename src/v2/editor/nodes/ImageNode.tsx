@@ -1,5 +1,5 @@
-import type { JSX } from "react";
 import { $getState, $setState, createState, DecoratorNode, type LexicalNode } from "lexical";
+import type { JSX } from "react";
 
 const asString = (v: unknown) => (typeof v === "string" ? v : "");
 
@@ -41,7 +41,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return (
             <figure className="my-4">
                 <img src={src} alt={alt} className="max-w-full rounded-md" />
-                {caption && <figcaption className="mt-1 text-center text-xs text-muted-foreground">{caption}</figcaption>}
+                {caption && (
+                    <figcaption className="mt-1 text-center text-xs text-muted-foreground">{caption}</figcaption>
+                )}
             </figure>
         );
     }

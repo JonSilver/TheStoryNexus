@@ -10,7 +10,8 @@ describe("parseEntryProposals", () => {
     });
 
     it("strips code fences and surrounding prose", () => {
-        const text = 'Here you go:\n```json\n[{"name":"Iron Keep","category":"location","description":"A fortress."}]\n```\nHope that helps!';
+        const text =
+            'Here you go:\n```json\n[{"name":"Iron Keep","category":"location","description":"A fortress."}]\n```\nHope that helps!';
         const parsed = parseEntryProposals(text);
         expect(parsed).toHaveLength(1);
         expect(parsed[0].name).toBe("Iron Keep");
@@ -34,7 +35,8 @@ describe("parseEntryProposals", () => {
 
 describe("parseUpdateProposals", () => {
     it("parses updates and tolerates missing reason", () => {
-        const text = '[{"name":"Mara","updatedDescription":"Now harbourmaster.","reason":"Promoted"},{"name":"B","updatedDescription":"x"}]';
+        const text =
+            '[{"name":"Mara","updatedDescription":"Now harbourmaster.","reason":"Promoted"},{"name":"B","updatedDescription":"x"}]';
         expect(parseUpdateProposals(text)).toEqual([
             { name: "Mara", updatedDescription: "Now harbourmaster.", reason: "Promoted" },
             { name: "B", updatedDescription: "x", reason: "" }
@@ -48,7 +50,8 @@ describe("parseUpdateProposals", () => {
 
 describe("parseContinuityIssues", () => {
     it("parses issues and tolerates missing evidence", () => {
-        const text = '[{"name":"Quill","issue":"Eyes were blue in ch1, green here.","evidence":"his green eyes"},{"name":"X","issue":"y"}]';
+        const text =
+            '[{"name":"Quill","issue":"Eyes were blue in ch1, green here.","evidence":"his green eyes"},{"name":"X","issue":"y"}]';
         expect(parseContinuityIssues(text)).toEqual([
             { name: "Quill", issue: "Eyes were blue in ch1, green here.", evidence: "his green eyes" },
             { name: "X", issue: "y", evidence: "" }

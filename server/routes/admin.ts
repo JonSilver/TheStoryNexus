@@ -44,13 +44,27 @@ router.get("/export", async (_, res) => {
     res.json({
         version: "1.0",
         exportedAt: new Date().toISOString(),
-        tables: { series, stories, chapters, prompts, lorebookEntries, aiChats, sceneBeats, notes, aiSettings: sanitisedAiSettings }
+        tables: {
+            series,
+            stories,
+            chapters,
+            prompts,
+            lorebookEntries,
+            aiChats,
+            sceneBeats,
+            notes,
+            aiSettings: sanitisedAiSettings
+        }
     });
 });
 
 router.get("/demo/exists", async (_, res) => {
     const [error, result] = await attemptPromise(async () => {
-        const demoStory = await db.select({ id: schema.stories.id }).from(schema.stories).where(eq(schema.stories.isDemo, true)).limit(1);
+        const demoStory = await db
+            .select({ id: schema.stories.id })
+            .from(schema.stories)
+            .where(eq(schema.stories.isDemo, true))
+            .limit(1);
         return demoStory.length > 0;
     });
 
@@ -195,12 +209,10 @@ router.post("/import", upload.single("file"), async (req, res) => {
                     createdAt: new Date(c.createdAt),
                     updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined
                 })),
-                sceneBeats: importTable(
-                    "sceneBeats",
-                    schema.sceneBeats,
-                    tables.sceneBeats,
-                    (s: ImportedSceneBeat) => ({ ...s, createdAt: new Date(s.createdAt) })
-                ),
+                sceneBeats: importTable("sceneBeats", schema.sceneBeats, tables.sceneBeats, (s: ImportedSceneBeat) => ({
+                    ...s,
+                    createdAt: new Date(s.createdAt)
+                })),
                 notes: importTable("notes", schema.notes, tables.notes, (n: ImportedNote) => ({
                     ...n,
                     createdAt: new Date(n.createdAt),

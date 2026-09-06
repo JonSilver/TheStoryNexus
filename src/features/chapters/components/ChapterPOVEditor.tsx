@@ -36,9 +36,7 @@ export function ChapterPOVEditor({ chapter, onClose }: ChapterPOVEditorProps) {
     const handlePovTypeChange = (value: string, onChange: (value: string) => void) => {
         onChange(value);
         // Clear POV character when switching to omniscient
-        if (value === "Third Person Omniscient") 
-            form.setValue("povCharacter", undefined);
-        
+        if (value === "Third Person Omniscient") form.setValue("povCharacter", undefined);
     };
 
     const handleSubmit = async (data: POVForm) => {

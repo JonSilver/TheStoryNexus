@@ -91,7 +91,9 @@ export const LevelScopeFields = ({
             {selectedLevel === "story" && storyId && (
                 <div className="space-y-2">
                     <FormLabel>Story</FormLabel>
-                    <div className="text-sm text-muted-foreground">This entry will be created for the current story</div>
+                    <div className="text-sm text-muted-foreground">
+                        This entry will be created for the current story
+                    </div>
                 </div>
             )}
         </>

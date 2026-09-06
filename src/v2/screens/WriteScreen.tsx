@@ -1,10 +1,10 @@
-import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { useChapterQuery, useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
+import type { ScreenProps } from "../V2App";
 import { ChapterEditor } from "../editor/ChapterEditor";
 import { useV2Store } from "../state/useV2Store";
-import type { ScreenProps } from "../V2App";
 
 const Empty = ({ message, actionLabel, onAction }: { message: string; actionLabel: string; onAction: () => void }) => (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
@@ -43,11 +43,21 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
     const { data: chapter, isLoading: chapterLoading } = useChapterQuery(currentChapterId ?? "");
 
     if (!currentStoryId)
-        return <Empty message="Pick a story to start writing." actionLabel="Choose a story" onAction={() => goTo("stories")} />;
+        return (
+            <Empty
+                message="Pick a story to start writing."
+                actionLabel="Choose a story"
+                onAction={() => goTo("stories")}
+            />
+        );
     if (chaptersLoading || (currentChapterId && chapterLoading)) return <Spinner />;
     if (!currentChapterId)
         return (
-            <Empty message="This story has no chapters yet." actionLabel="Create a chapter" onAction={() => goTo("chapters")} />
+            <Empty
+                message="This story has no chapters yet."
+                actionLabel="Create a chapter"
+                onAction={() => goTo("chapters")}
+            />
         );
     if (!chapter) return <Spinner />;
 

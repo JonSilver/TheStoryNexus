@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { Eye, Loader2, X } from "lucide-react";
+import { useState } from "react";
 import type { PromptMessage } from "@/types/story";
 import type { ActionEditorContext, ActionId } from "./useActionGeneration";
 
@@ -58,7 +58,11 @@ export const ContextInspector = ({
                 <Eye className="h-4 w-4" />
             </button>
             {preview !== null && (
-                <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label="Context preview">
+                <div
+                    className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
+                    role="dialog"
+                    aria-label="Context preview"
+                >
                     <div className="flex max-h-[80dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                         <header className="flex items-center justify-between px-4 py-3">
                             <span className="font-medium">What gets sent</span>

@@ -1,9 +1,9 @@
 import { attempt } from "@jfdi/attempt";
 import { and, eq, or } from "drizzle-orm";
 import { countTokens } from "gpt-tokenizer";
-import { db, schema } from "../../db/client.js";
 import { parseSerialisedDocument } from "../../../src/v2/export/blocks.js";
 import { blocksToPlainText } from "../../../src/v2/export/toPlainText.js";
+import { db, schema } from "../../db/client.js";
 import { matchEntries } from "../lorebook/matching.js";
 import type { ContextKey } from "./registry.js";
 
@@ -73,7 +73,10 @@ const loadStoryEntries = async (story: StoryRow): Promise<LorebookRow[]> => {
         and(eq(table.level, "story"), eq(table.scopeId, story.id)),
         ...(story.seriesId ? [and(eq(table.level, "series"), eq(table.scopeId, story.seriesId))] : [])
     ];
-    return db.select().from(table).where(or(...conditions));
+    return db
+        .select()
+        .from(table)
+        .where(or(...conditions));
 };
 
 const summaryLine = (chapter: ChapterRow): string => {
@@ -125,7 +128,9 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
     }
 
     if (needs.has("chat_history") && editorContext.chatHistory)
-        context.chat_history = spend(trimToTokens(editorContext.chatHistory, Math.floor(remaining.budget * 0.5), "tail"));
+        context.chat_history = spend(
+            trimToTokens(editorContext.chatHistory, Math.floor(remaining.budget * 0.5), "tail")
+        );
 
     if (needs.has("recent_prose") && editorContext.recentProse) {
         const proseBudget = Math.floor(Math.max(remaining.budget, 0) * PROSE_SHARE_OF_BUDGET);
@@ -160,9 +165,7 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
     }
 
     if (needs.has("summaries") && chapter) {
-        const prior = chapters
-            .filter(c => c.order < chapter.order && c.summary)
-            .sort((a, b) => b.order - a.order); // nearest first for budgeting
+        const prior = chapters.filter(c => c.order < chapter.order && c.summary).sort((a, b) => b.order - a.order); // nearest first for budgeting
         const kept: ChapterRow[] = [];
         for (const c of prior) {
             const cost = countTokens(summaryLine(c));

@@ -1,5 +1,5 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { GoogleGenAI } from "@google/genai";
+import { attemptPromise } from "@jfdi/attempt";
 import OpenAI from "openai";
 
 export type AIProviderId = "openai" | "openrouter" | "gemini" | "local";
@@ -99,7 +99,10 @@ export const buildOpenAICompatiblePayload = (request: Omit<GenerationRequest, "s
     };
 };
 
-export async function* streamCompletion(request: GenerationRequest, settings: ProviderSettings): AsyncGenerator<string> {
+export async function* streamCompletion(
+    request: GenerationRequest,
+    settings: ProviderSettings
+): AsyncGenerator<string> {
     const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, signal } =
         request;
 
@@ -142,7 +145,10 @@ const openAIContextLength = (modelId: string): number => {
     return 4096;
 };
 
-export const fetchModelsForProvider = async (provider: AIProviderId, settings: ProviderSettings): Promise<AIModel[]> => {
+export const fetchModelsForProvider = async (
+    provider: AIProviderId,
+    settings: ProviderSettings
+): Promise<AIModel[]> => {
     if (provider === "gemini") {
         if (!settings.geminiKey) return [];
         const client = new GoogleGenAI({ apiKey: settings.geminiKey });

@@ -7,6 +7,7 @@
 **Overall:** Server-driven SPA with feature-based frontend organization and domain-aligned backend routing
 
 **Key Characteristics:**
+
 - Decoupled frontend and backend running on separate ports (frontend: Vite on 5173, backend: Express on 3001)
 - Frontend uses React Router for client-side routing with nested route structure
 - Backend provides REST API endpoints organized by domain (stories, chapters, lorebook, etc.)
@@ -17,6 +18,7 @@
 ## Layers
 
 **Presentation Layer:**
+
 - Purpose: React components, routing, UI state, forms, user interactions
 - Location: `src/` (components, features, lib, providers)
 - Contains: Page components, feature components, utility components, context/hooks, forms
@@ -24,6 +26,7 @@
 - Used by: Browser, Workspace shell
 
 **Service Layer:**
+
 - Purpose: Business logic, external service integration, data transformation
 - Location: `src/services/` and `src/features/*/services/`
 - Contains: AI integration (`AIService.ts`), API client factory, export utilities (PDF/EPUB), prompt parsing
@@ -31,6 +34,7 @@
 - Used by: Components, hooks, routes
 
 **API Layer:**
+
 - Purpose: HTTP endpoints, request handling, database operations
 - Location: `server/routes/` and `server/lib/crud.ts`
 - Contains: CRUD route generators, domain-specific routes (stories, chapters, lorebook, etc.), file upload handlers
@@ -38,6 +42,7 @@
 - Used by: Frontend via fetch/API client
 
 **Persistence Layer:**
+
 - Purpose: Data storage and retrieval
 - Location: `server/db/`
 - Contains: SQLite database with Drizzle ORM, schema definitions, migrations
@@ -45,6 +50,7 @@
 - Used by: API routes via Drizzle query builder
 
 **Data Access Hooks:**
+
 - Purpose: TanStack Query hooks for frontend data fetching and mutations
 - Location: `src/features/*/hooks/` (e.g., `useStoriesQuery`, `useChaptersQuery`)
 - Contains: Query hooks with proper cache invalidation, mutation hooks with toast notifications
@@ -102,12 +108,14 @@
 ## Key Abstractions
 
 **TanStack Query Pattern:**
+
 - Purpose: Centralized server state management with automatic cache invalidation
 - Examples: `src/features/stories/hooks/useStoriesQuery.ts`, `src/features/chapters/hooks/useChaptersQuery.ts`
 - Pattern: Query keys factory, useQuery for reads, useMutation for writes, queryClient.invalidateQueries for cache
 - Benefit: Automatic refetching, stale-while-revalidate, request deduplication
 
 **CRUD Router Factory:**
+
 - Purpose: Generic REST endpoint generation for database tables
 - Location: `server/lib/crud.ts`
 - Pattern: `createCrudRouter({ table, name, parentKey, customRoutes })` generates GET/POST/PUT/DELETE endpoints
@@ -115,12 +123,14 @@
 - Custom routes extend factory (e.g., story export/import in `server/routes/stories.ts`)
 
 **API Client Factory:**
+
 - Purpose: Type-safe fetch wrapper with automatic JSON serialization
 - Location: `src/services/api/client.ts` and `src/services/api/apiFactory.ts`
 - Pattern: Domain-specific API objects (storiesApi, chaptersApi, lorebookApi) with methods for each operation
 - Benefit: Single point of change for API URL changes, type-safe client definitions
 
 **AIService Singleton:**
+
 - Purpose: Unified multi-provider AI integration
 - Location: `src/services/ai/AIService.ts`
 - Pattern: Static getInstance(), provider factory pattern, model fetching and caching
@@ -128,6 +138,7 @@
 - Used by: Prompt system, scene beats, brainstorm chat, continue writing
 
 **Prompt Parser & Substitution:**
+
 - Purpose: Template variable substitution in prompts
 - Location: `src/features/prompts/services/promptParser.ts`
 - Pattern: Process `{{variable_name}}` syntax, support function calls
@@ -135,6 +146,7 @@
 - Categories: Different variable sets for scene beats, summaries, brainstorming
 
 **Lexical Editor Integration:**
+
 - Purpose: Custom rich text editing with story-specific capabilities
 - Location: `src/components/story-editor/` (103 files)
 - Plugins: Custom nodes (SceneBeatNode, PageBreakNode), auto-save, auto-load, word count
@@ -142,6 +154,7 @@
 - Validation: Content loaded via `LoadChapterContentPlugin` on component mount
 
 **Lorebook Hierarchy:**
+
 - Purpose: Multi-level scope system for story context
 - Pattern: Three levels (global, series, story) with inheritance
 - Categories: character, location, item, event, note, synopsis, timeline
@@ -150,41 +163,45 @@
 ## Entry Points
 
 **Frontend Entry Point:**
+
 - Location: `src/main.tsx`
 - Triggers: App load in browser
 - Responsibilities:
-  - Initialize providers (QueryProvider, ThemeProvider, StoryProvider)
-  - Set up routing (BrowserRouter, Routes)
-  - Render root components (ErrorBoundary, Workspace, MainLayout)
-  - Global state providers and wrappers
+    - Initialize providers (QueryProvider, ThemeProvider, StoryProvider)
+    - Set up routing (BrowserRouter, Routes)
+    - Render root components (ErrorBoundary, Workspace, MainLayout)
+    - Global state providers and wrappers
 
 **Backend Entry Point:**
+
 - Location: `server/index.ts`
 - Triggers: `npm run dev:server` or `npm start`
 - Responsibilities:
-  - Configure Express middleware (CORS, JSON parsing)
-  - Run database migrations and seed system prompts
-  - Mount API routers (/api/stories, /api/chapters, etc.)
-  - Serve static files in production (SPA routing fallback to index.html)
-  - Global error handling middleware
+    - Configure Express middleware (CORS, JSON parsing)
+    - Run database migrations and seed system prompts
+    - Mount API routers (/api/stories, /api/chapters, etc.)
+    - Serve static files in production (SPA routing fallback to index.html)
+    - Global error handling middleware
 
 **Workspace Component:**
+
 - Location: `src/components/workspace/Workspace.tsx`
 - Triggers: `/` route
 - Responsibilities:
-  - Top-level layout (sidebar, top bar, main content, command palette)
-  - Navigation state management
-  - Story/chapter selection and display
-  - Feature routing (chapters, prompts, lorebook, brainstorm)
+    - Top-level layout (sidebar, top bar, main content, command palette)
+    - Navigation state management
+    - Story/chapter selection and display
+    - Feature routing (chapters, prompts, lorebook, brainstorm)
 
 **Chapter Editor:**
+
 - Location: `src/components/story-editor/` (embedded via EmbeddedPlayground)
 - Triggers: Chapter edit action
 - Responsibilities:
-  - Lexical editor initialization with chapter content
-  - Auto-save and auto-load of content
-  - Word count tracking
-  - Scene beat and lorebook tag integration
+    - Lexical editor initialization with chapter content
+    - Auto-save and auto-load of content
+    - Word count tracking
+    - Scene beat and lorebook tag integration
 
 ## Error Handling
 
@@ -218,28 +235,33 @@ router.get("/:id", asyncHandler(async (req, res) => {
 ## Cross-Cutting Concerns
 
 **Logging:**
+
 - `src/utils/logger.ts` wraps loglevel
 - Used for AI service diagnostics, database operations, error tracking
 - Pattern: `logger.info()`, `logger.error()` for structured logging
 
 **Validation:**
+
 - Frontend: React Hook Form for form validation
 - Backend: Zod schemas in `src/schemas/` for runtime type checking
 - Database: Drizzle schema enforces types and constraints
 
 **Authentication:**
+
 - Not implemented; assumes single-user local deployment
 - File-based data storage with SQLite (no auth layer needed)
 
 **CORS:**
+
 - Enabled in development (`npm run dev` on different ports)
 - Disabled in production (single server serving both frontend and API)
 
 **Type Safety:**
+
 - TypeScript with `strict: false` but specific strict checks enabled
 - Path aliases: `@/*` → `src/*`, `shared/*` → `src/Lexical/shared/src/*`
 - Type inference from database schema via Drizzle
 
 ---
 
-*Architecture analysis: 2026-01-23*
+_Architecture analysis: 2026-01-23_

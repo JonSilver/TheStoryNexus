@@ -29,7 +29,16 @@ interface LazyImageProps {
     onError: () => void;
 }
 
-export const LazyImage = ({ altText, className, imageRef, src, width, height, maxWidth, onError }: LazyImageProps): JSX.Element => {
+export const LazyImage = ({
+    altText,
+    className,
+    imageRef,
+    src,
+    width,
+    height,
+    maxWidth,
+    onError
+}: LazyImageProps): JSX.Element => {
     useSuspenseImage(src);
     return (
         <img

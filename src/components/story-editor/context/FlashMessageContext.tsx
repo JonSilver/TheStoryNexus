@@ -33,4 +33,3 @@ export const FlashMessageContext = ({ children }: { children: ReactNode }): JSX.
         </Context.Provider>
     );
 };
-

@@ -35,11 +35,10 @@ export default function CollapsiblePlugin(): null {
     const [editor] = useLexicalComposerContext();
 
     useEffect(() => {
-        if (!editor.hasNodes([CollapsibleContainerNode, CollapsibleTitleNode, CollapsibleContentNode])) 
+        if (!editor.hasNodes([CollapsibleContainerNode, CollapsibleTitleNode, CollapsibleContentNode]))
             throw new Error(
                 "CollapsiblePlugin: CollapsibleContainerNode, CollapsibleTitleNode, or CollapsibleContentNode not registered on editor"
             );
-        
 
         const $onEscapeUp = () => {
             const selection = $getSelection();
@@ -52,9 +51,8 @@ export default function CollapsiblePlugin(): null {
                         parent !== null &&
                         parent.getFirstChild<LexicalNode>() === container &&
                         selection.anchor.key === container.getFirstDescendant<LexicalNode>()?.getKey()
-                    ) 
+                    )
                         container.insertBefore($createParagraphNode());
-                    
                 }
             }
 
@@ -79,9 +77,8 @@ export default function CollapsiblePlugin(): null {
                             (titleParagraph !== null &&
                                 selection.anchor.key === titleParagraph.getKey() &&
                                 selection.anchor.offset === titleParagraph.getTextContentSize())
-                        ) 
+                        )
                             container.insertAfter($createParagraphNode());
-                        
                     }
                 }
             }
@@ -97,9 +94,8 @@ export default function CollapsiblePlugin(): null {
                 const parent = node.getParent<ElementNode>();
                 if (!$isCollapsibleContainerNode(parent)) {
                     const children = node.getChildren<LexicalNode>();
-                    for (const child of children) 
-                        node.insertBefore(child);
-                    
+                    for (const child of children) node.insertBefore(child);
+
                     node.remove();
                 }
             }),
@@ -119,9 +115,8 @@ export default function CollapsiblePlugin(): null {
                     !$isCollapsibleTitleNode(children[0]) ||
                     !$isCollapsibleContentNode(children[1])
                 ) {
-                    for (const child of children) 
-                        node.insertBefore(child);
-                    
+                    for (const child of children) node.insertBefore(child);
+
                     node.remove();
                 }
             }),
@@ -134,20 +129,15 @@ export default function CollapsiblePlugin(): null {
                 DELETE_CHARACTER_COMMAND,
                 () => {
                     const selection = $getSelection();
-                    if (!$isRangeSelection(selection) || !selection.isCollapsed() || selection.anchor.offset !== 0) 
+                    if (!$isRangeSelection(selection) || !selection.isCollapsed() || selection.anchor.offset !== 0)
                         return false;
-                    
 
                     const anchorNode = selection.anchor.getNode();
                     const topLevelElement = anchorNode.getTopLevelElement();
-                    if (topLevelElement === null) 
-                        return false;
-                    
+                    if (topLevelElement === null) return false;
 
                     const container = topLevelElement.getPreviousSibling<LexicalNode>();
-                    if (!$isCollapsibleContainerNode(container) || container.getOpen()) 
-                        return false;
-                    
+                    if (!$isCollapsibleContainerNode(container) || container.getOpen()) return false;
 
                     container.setOpen(true);
                     return true;
@@ -184,9 +174,8 @@ export default function CollapsiblePlugin(): null {
                         if ($isCollapsibleTitleNode(titleNode)) {
                             const container = titleNode.getParent<ElementNode>();
                             if (container && $isCollapsibleContainerNode(container)) {
-                                if (!container.getOpen()) 
-                                    container.toggleOpen();
-                                
+                                if (!container.getOpen()) container.toggleOpen();
+
                                 titleNode.getNextSibling()?.selectEnd();
                                 return true;
                             }

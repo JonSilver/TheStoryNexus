@@ -33,9 +33,7 @@ export const useStreamingGeneration = (): UseStreamingGenerationReturn => {
             return "";
         }
 
-        if (!response.ok) 
-            throw new Error("Failed to generate response");
-        
+        if (!response.ok) throw new Error("Failed to generate response");
 
         setState({ isStreaming: true, streamedText: "", isComplete: false });
 

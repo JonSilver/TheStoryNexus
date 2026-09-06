@@ -67,7 +67,9 @@ export const WorkspaceStoryCard = ({ story, onEdit, onExport }: WorkspaceStoryCa
                     <div>By {story.author}</div>
                 </CardDescription>
             </CardHeader>
-            <CardContent>{story.synopsis && <p className="text-sm text-muted-foreground">{story.synopsis}</p>}</CardContent>
+            <CardContent>
+                {story.synopsis && <p className="text-sm text-muted-foreground">{story.synopsis}</p>}
+            </CardContent>
             <CardFooter className="flex justify-end gap-2">
                 <ActionButton icon={BookOpen} tooltip="Read story" onClick={handleRead} />
                 <TooltipProvider>

@@ -41,9 +41,7 @@ export const useSceneBeatGeneration = (): UseSceneBeatGenerationResult => {
                 await processStream(response);
             });
 
-            if (error) 
-                toast.error("Failed to generate text");
-            
+            if (error) toast.error("Failed to generate text");
         },
         [generateWithPrompt, processStream]
     );

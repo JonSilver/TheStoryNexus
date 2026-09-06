@@ -74,10 +74,7 @@ const consume = (state: BuildState, rawLine: string): BuildState => {
 };
 
 export const toLexicalDocument = (body: string): string => {
-    const state = body
-        .replace(/\r\n?/g, "\n")
-        .split("\n")
-        .reduce<BuildState>(consume, { blocks: [], buffer: [] });
+    const state = body.replace(/\r\n?/g, "\n").split("\n").reduce<BuildState>(consume, { blocks: [], buffer: [] });
     const blocks = flushed(state);
     return JSON.stringify({
         root: element("root", blocks.length > 0 ? blocks : [paragraph([])])

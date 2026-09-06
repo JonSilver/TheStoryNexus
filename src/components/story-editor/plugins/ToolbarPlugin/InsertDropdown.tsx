@@ -2,7 +2,12 @@ import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontal
 import { $createParagraphNode, $getSelection, type LexicalEditor } from "lexical";
 import { Bot, ChevronDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { $createSceneBeatNode } from "../../nodes/SceneBeatNode";
 import { INSERT_PAGE_BREAK } from "../PageBreakPlugin";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";

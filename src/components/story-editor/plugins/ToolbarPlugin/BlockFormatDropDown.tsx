@@ -2,7 +2,12 @@ import type { LexicalEditor } from "lexical";
 import { ChevronDown } from "lucide-react";
 import type { JSX } from "react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { blockTypeToBlockName } from "../../context/ToolbarContext";
 import {
     formatBulletList,

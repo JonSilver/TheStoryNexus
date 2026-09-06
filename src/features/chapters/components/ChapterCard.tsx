@@ -62,10 +62,7 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
     };
 
     const handleEdit = (data: EditChapterForm) => {
-        updateChapterMutation.mutate(
-            { id: chapter.id, data },
-            { onSuccess: () => setShowEditDialog(false) }
-        );
+        updateChapterMutation.mutate({ id: chapter.id, data }, { onSuccess: () => setShowEditDialog(false) });
     };
 
     const toggleExpanded = (e: MouseEvent) => {
@@ -112,7 +109,12 @@ export function ChapterCard({ chapter, storyId, onWriteClick }: ChapterCardProps
                             </div>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowEditDialog(true)}>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setShowEditDialog(true)}
+                            >
                                 <Pencil className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleWriteClick}>

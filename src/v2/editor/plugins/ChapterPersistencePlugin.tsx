@@ -1,5 +1,5 @@
-import { $getRoot, type EditorState } from "lexical";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { $getRoot, type EditorState } from "lexical";
 import { countWords } from "@/utils/textUtils";
 
 /**

@@ -29,11 +29,9 @@ type Source = { text: string; title?: string };
 export const ingestError = (message: string, ingestStatus = 400): Error =>
     Object.assign(new Error(message), { ingestStatus });
 
-export const ingestStatusOf = (error: Error): number | undefined =>
-    (error as { ingestStatus?: number }).ingestStatus;
+export const ingestStatusOf = (error: Error): number | undefined => (error as { ingestStatus?: number }).ingestStatus;
 
-export const extensionOf = (filename: string): string =>
-    path.extname(filename).replace(/^\./, "").toLowerCase();
+export const extensionOf = (filename: string): string => path.extname(filename).replace(/^\./, "").toLowerCase();
 
 export const isSupportedManuscript = (filename: string): boolean =>
     (SUPPORTED_EXTENSIONS as readonly string[]).includes(extensionOf(filename));
@@ -106,11 +104,7 @@ const withLeadingTitle = (text: string): Source => {
 };
 
 const titleFromFilename = (filename: string): string =>
-    path
-        .basename(filename, path.extname(filename))
-        .replace(/[_]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+    path.basename(filename, path.extname(filename)).replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
 
 export const parseManuscript = async (filename: string, buffer: Buffer): Promise<ParsedManuscript> => {
     const extension = extensionOf(filename);

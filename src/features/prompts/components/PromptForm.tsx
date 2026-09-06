@@ -106,7 +106,9 @@ export function PromptForm({ prompt, onSave, onCancel, fixedType }: PromptFormPr
                         ))}
                     </SelectContent>
                 </Select>
-                {fixedType && <p className="text-xs text-muted-foreground mt-2">Prompt type is fixed for this context</p>}
+                {fixedType && (
+                    <p className="text-xs text-muted-foreground mt-2">Prompt type is fixed for this context</p>
+                )}
             </div>
 
             <PromptSettings formState={formState} />

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ChevronLeft, ChevronRight, CornerDownRight, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 /**
  * Multi-take viewer: every generation is kept; the writer browses ‹ i/n ›,
@@ -33,7 +33,9 @@ export const TakeViewer = ({
 
     return (
         <div className="space-y-2">
-            <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2 select-text">{takes[current]}</div>
+            <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2 select-text">
+                {takes[current]}
+            </div>
             <div className="flex items-center gap-2">
                 {takes.length > 1 && (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">

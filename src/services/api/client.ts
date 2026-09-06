@@ -99,8 +99,7 @@ export const aiApi = {
         fetchJSON<AISettings>(`/ai/keys/${provider}`, { method: "PUT", body: JSON.stringify({ key }) }),
     setLocalUrl: (url: string) =>
         fetchJSON<AISettings>("/ai/local-url", { method: "PUT", body: JSON.stringify({ url }) }),
-    refreshModels: (provider: string) =>
-        fetchJSON<AISettings>(`/ai/models/refresh/${provider}`, { method: "POST" })
+    refreshModels: (provider: string) => fetchJSON<AISettings>(`/ai/models/refresh/${provider}`, { method: "POST" })
 };
 
 // Brainstorm (AI Chats) API

@@ -31,7 +31,8 @@ const NAMED_ENTITIES: Record<string, string> = {
 };
 
 const codePointOf = (body: string): string | null => {
-    const code = body[1]?.toLowerCase() === "x" ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10);
+    const code =
+        body[1]?.toLowerCase() === "x" ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10);
     return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : null;
 };
 
@@ -41,7 +42,8 @@ export const decodeEntities = (value: string): string =>
     );
 
 /** Tags whose boundaries are prose boundaries; everything else is inline and vanishes silently. */
-const BLOCK_TAGS = "p|div|br|h[1-6]|li|ul|ol|tr|td|th|section|article|aside|blockquote|hr|pre|figure|figcaption|header|footer|nav|title";
+const BLOCK_TAGS =
+    "p|div|br|h[1-6]|li|ul|ol|tr|td|th|section|article|aside|blockquote|hr|pre|figure|figcaption|header|footer|nav|title";
 
 const BLOCK_TAG_PATTERN = new RegExp(`</?(?:${BLOCK_TAGS})\\b[^>]*>`, "gi");
 

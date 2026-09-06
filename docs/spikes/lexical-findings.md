@@ -21,15 +21,16 @@ Pain points: baroque type machinery (bad inference errors when it goes wrong); `
 
 ## 3. Streaming — node-state vs react-state (both implemented, measured)
 
-**Chosen: node-state** (write tokens into node state via `editor.update` per token). Decisive: react-state keeps generated text *outside* the document for the whole stream — a data-loss window if the user navigates/backgrounds/crashes mid-generation. Performance objection doesn't exist: 25 keystrokes typed during a 20 tok/sec stream showed **overhead within measurement noise** (−92 ms to +137 ms across runs).
+**Chosen: node-state** (write tokens into node state via `editor.update` per token). Decisive: react-state keeps generated text _outside_ the document for the whole stream — a data-loss window if the user navigates/backgrounds/crashes mid-generation. Performance objection doesn't exist: 25 keystrokes typed during a 20 tok/sec stream showed **overhead within measurement noise** (−92 ms to +137 ms across runs).
 
 Requirements for safety:
+
 1. Tag token updates `[HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]` **as an array** — a space-joined string silently registers one bogus tag → 41 undo entries per stream instead of 0.
 2. Native keydown isolation for the nested textarea (§6).
 
 ## 4. Undo
 
-- Accept (insert paragraphs + set status + clear generatedText + move caret) in one `editor.update` tagged `HISTORY_PUSH_TAG` = **exactly one undo step**; undo restores paragraphs *and* the node's generatedText.
+- Accept (insert paragraphs + set status + clear generatedText + move caret) in one `editor.update` tagged `HISTORY_PUSH_TAG` = **exactly one undo step**; undo restores paragraphs _and_ the node's generatedText.
 - Streaming adds zero undo entries with the history-merge tag; the explicit HISTORY_PUSH boundary at generation start prevents merge-into-previous-user-edit.
 
 ## 5. Copy/paste

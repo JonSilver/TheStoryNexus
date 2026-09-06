@@ -1,7 +1,7 @@
 import { ChevronRight, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { LorebookEntry } from "@/types/story";
 import { cn } from "@/lib/utils";
+import type { LorebookEntry } from "@/types/story";
 import type { POVType } from "./POVSettingsPopover";
 import { POVSettingsPopover } from "./POVSettingsPopover";
 
