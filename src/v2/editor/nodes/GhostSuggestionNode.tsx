@@ -51,7 +51,20 @@ export class GhostSuggestionNode extends DecoratorNode<JSX.Element> {
     }
 }
 
-export const $createGhostSuggestionNode = () => new GhostSuggestionNode();
+// Runtime-only freshness marker: keys of ghosts created this session by the
+// wand. Deliberately NOT node state — a rehydrated ghost must never look
+// fresh, or an empty one saved before its first token auto-fires a paid
+// generation on every load of the chapter.
+const freshGhostKeys = new Set<string>();
+
+export const $createGhostSuggestionNode = () => {
+    const node = new GhostSuggestionNode();
+    freshGhostKeys.add(node.getKey());
+    return node;
+};
+
+/** One-shot: true only for a ghost created this session, consumed on first mount. */
+export const takeFreshGhostFlag = (key: string) => freshGhostKeys.delete(key);
 
 export const $isGhostSuggestionNode = (node: LexicalNode | null | undefined): node is GhostSuggestionNode =>
     node instanceof GhostSuggestionNode;

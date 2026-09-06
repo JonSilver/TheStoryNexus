@@ -87,6 +87,7 @@ export const TakeViewer = ({
             <div className="flex gap-2">
                 <input
                     className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
+                    maxLength={5000}
                     placeholder="Refine: e.g. darker, tighter, from her POV…"
                     value={refineText}
                     onChange={e => setRefineText(e.target.value)}

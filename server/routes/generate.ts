@@ -131,12 +131,12 @@ const streamToClient = async (
     };
     armInactivityTimer();
 
-    const sent = { tokens: 0 };
+    const sent = { content: false };
     const [error] = await attemptPromise(async () => {
         const stream = streamCompletion({ ...request, signal: abortController.signal }, settings);
         for await (const token of stream) {
             armInactivityTimer();
-            sent.tokens += 1;
+            if (token.trim()) sent.content = true;
             sendEvent(res, "token", { text: token });
         }
     });
@@ -148,9 +148,10 @@ const streamToClient = async (
     else if (error)
         if ((error as Error).name === "AbortError" || abortController.signal.aborted) sendEvent(res, "aborted", {});
         else sendEvent(res, "error", { message: (error as Error).message || "Generation failed" });
-    // A clean stream with zero content is a failure, not a completion — thinking
-    // models can burn the whole token budget on hidden reasoning
-    else if (sent.tokens === 0 && !abortController.signal.aborted)
+    // A clean stream with zero content (no events, or whitespace only) is a
+    // failure, not a completion — thinking models can burn the whole token
+    // budget on hidden reasoning
+    else if (!sent.content && !abortController.signal.aborted)
         sendEvent(res, "error", {
             message:
                 "The model produced no output — it may have spent its token budget on hidden reasoning. Raise max tokens for this action or use a non-thinking model."
@@ -384,9 +385,16 @@ router.post("/preview", async (req, res) => {
     });
 });
 
+const abortSchema = z.object({ requestId: z.string().min(1) });
+
 router.post("/abort", (req, res) => {
-    const { requestId } = req.body ?? {};
-    const controller = typeof requestId === "string" ? activeGenerations.get(requestId) : undefined;
+    const parsed = abortSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400).json({ error: "Invalid abort request" });
+        return;
+    }
+    const { requestId } = parsed.data;
+    const controller = activeGenerations.get(requestId);
     if (controller) {
         controller.abort();
         activeGenerations.delete(requestId);

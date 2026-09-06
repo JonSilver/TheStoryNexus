@@ -16,7 +16,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { streamAction } from "../../ai/streamAction";
 import { useChapterIdentity } from "../ChapterContext";
-import { ghostStatusState, $isGhostSuggestionNode, $readGhost, $setGhostText } from "../nodes/GhostSuggestionNode";
+import {
+    ghostStatusState,
+    $isGhostSuggestionNode,
+    $readGhost,
+    $setGhostText,
+    takeFreshGhostFlag
+} from "../nodes/GhostSuggestionNode";
 import { useGhostData } from "../useGhostData";
 
 /**
@@ -97,11 +103,24 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
         [editor, nodeKey, storyId, chapterId, textBeforeNode]
     );
 
-    // Auto-start on first mount of a fresh ghost (inserted by the wand)
+    // Auto-start ONLY for a ghost created this session (one-shot runtime
+    // marker). Anything else without an owning run — a rehydrated ghost, an
+    // undo-revived one still marked streaming — is an orphan: settle partial
+    // text into a reviewable suggestion, remove empty stubs, never generate.
     useEffect(() => {
         if (startedRef.current) return;
         startedRef.current = true;
-        if (!text && ghostStatus === "done") generate();
+        if (takeFreshGhostFlag(nodeKey)) generate();
+        else if (ghostStatus === "streaming" || !text.trim())
+            editor.update(
+                () => {
+                    const node = $getNodeByKey(nodeKey);
+                    if (!$isGhostSuggestionNode(node)) return;
+                    if ($readGhost(node).text.trim()) $setState(node, ghostStatusState, "done");
+                    else node.remove();
+                },
+                { tag: HISTORY_MERGE_TAG }
+            );
         return () => abortRef.current?.();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -179,6 +198,7 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                             </button>
                             <input
                                 className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1"
+                                maxLength={5000}
                                 placeholder="Refine…"
                                 value={refineText}
                                 onChange={e => setRefineText(e.target.value)}

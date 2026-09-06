@@ -7,6 +7,7 @@ import { streamAction } from "../ai/streamAction";
 
 const IDLE_MS = 90_000;
 const MIN_WORDS = 150;
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 /**
  * Background summary freshness (writing-process review W4): when saves have
@@ -19,11 +20,20 @@ const MIN_WORDS = 150;
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
+    const failures = useRef(0);
     const queryClient = useQueryClient();
 
-    const noteActivity = () => {
+    const schedule = () => {
         clearTimeout(timer.current);
         timer.current = setTimeout(() => void refreshIfStale(chapter.id), IDLE_MS);
+    };
+
+    // Real editor activity forgives past failures; internal re-arms don't —
+    // a permanently broken summarise path must not fire a paid generation
+    // every 90s for as long as the editor sits idle
+    const noteActivity = () => {
+        failures.current = 0;
+        schedule();
     };
 
     const refreshIfStale = async (chapterId: string) => {
@@ -35,8 +45,12 @@ export const useAutoSummarise = (chapter: Chapter) => {
         if (!stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
 
         // A run that fails, or lands while the content has already moved on,
-        // must not strand the summary stale until the next edit — re-arm
-        const rearm = () => noteActivity();
+        // must not strand the summary stale until the next edit — re-arm,
+        // but give up after repeated failures until the writer types again
+        const rearmAfterFailure = () => {
+            failures.current += 1;
+            if (failures.current < MAX_CONSECUTIVE_FAILURES) schedule();
+        };
 
         running.current = true;
         const baseRevision = fresh.revision ?? 0;
@@ -49,9 +63,10 @@ export const useAutoSummarise = (chapter: Chapter) => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) {
-                        rearm();
+                        rearmAfterFailure();
                         return;
                     }
+                    failures.current = 0;
                     void attemptPromise(async () => {
                         const response = await fetch(`/api/chapters/${chapterId}`, {
                             method: "PUT",
@@ -61,7 +76,8 @@ export const useAutoSummarise = (chapter: Chapter) => {
                         if (!response.ok) return;
                         const updated: Chapter = await response.json();
                         applyChapterToCaches(queryClient, updated);
-                        if ((updated.summarySourceRevision ?? -1) !== (updated.revision ?? 0)) rearm();
+                        // Content moved while summarising — not a failure, still stale
+                        if ((updated.summarySourceRevision ?? -1) !== (updated.revision ?? 0)) schedule();
                     });
                 }
             }

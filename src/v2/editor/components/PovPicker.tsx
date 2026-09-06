@@ -1,4 +1,4 @@
-import { $setState, HISTORY_MERGE_TAG, type NodeKey } from "lexical";
+import { $setState, HISTORY_PUSH_TAG, type NodeKey } from "lexical";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useChapterIdentity } from "../ChapterContext";
 import { povCharacterState, povTypeState } from "../nodes/SceneBeatNode";
@@ -24,7 +24,7 @@ export const PovPicker = ({ nodeKey, disabled }: { nodeKey: NodeKey; disabled: b
                 aria-label="POV type"
                 onChange={e => {
                     const value = e.target.value;
-                    mutate(node => $setState(node, povTypeState, value), HISTORY_MERGE_TAG);
+                    mutate(node => $setState(node, povTypeState, value), HISTORY_PUSH_TAG);
                 }}
             >
                 {POV_TYPES.map(type => (
@@ -41,7 +41,7 @@ export const PovPicker = ({ nodeKey, disabled }: { nodeKey: NodeKey; disabled: b
                     aria-label="POV character"
                     onChange={e => {
                         const value = e.target.value;
-                        mutate(node => $setState(node, povCharacterState, value), HISTORY_MERGE_TAG);
+                        mutate(node => $setState(node, povCharacterState, value), HISTORY_PUSH_TAG);
                     }}
                 >
                     <option value="">character…</option>

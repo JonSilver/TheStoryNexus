@@ -18,6 +18,7 @@ import {
     collapsedState,
     commandState,
     $commitStreamingAsTake,
+    generatedTextState,
     $isSceneBeatNode,
     statusState,
     takesState
@@ -113,6 +114,9 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
         mutate(node => {
             const remaining = takes.filter((_, i) => i !== index);
             $setState(node, takesState, remaining);
+            // The displayed takes already include any folded legacy draft —
+            // clear it, or an emptied takes list resurrects the deleted take
+            $setState(node, generatedTextState, "");
             $setState(node, activeTakeState, Math.min(index, Math.max(remaining.length - 1, 0)));
             if (remaining.length === 0) $setState(node, statusState, "idle");
         }, HISTORY_PUSH_TAG);

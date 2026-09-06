@@ -179,9 +179,10 @@ export const useActionGeneration = () => {
             if (readError)
                 if ((readError as Error).name === "AbortError") {
                     // Stopped mid-stream: keep the partial text and let the
-                    // user accept or discard it
+                    // user accept or discard it — callers that persist the
+                    // reply (brainstorm) get the partial too, not ""
                     setPhase("done");
-                    return "";
+                    return chunks.join("");
                 } else {
                     setPhase("error");
                     setError((readError as Error).message);
