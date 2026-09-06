@@ -12,6 +12,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - NEVER hand-verify UI behaviour with ad-hoc browser driving. Behavioural coverage lives in the Playwright E2E suite (`e2e/`) — extend it instead. Every user-facing control must deliver the outcome its label promises, and the test asserts that outcome, not that machinery ran.
 - Verification against live data is forbidden. E2E runs hermetically on its own temp database; anything manual uses a scratch story, never the user's stories.
 
+## Engineering SOPs (distilled from the v2 build's failures)
+
+Each rule below exists because its absence shipped a real defect. Do not relax them.
+
+1. **Journey-first.** Define the writer-visible outcome before building, and land the E2E journey in the same commit as the feature. A control's label is a promise; "it navigated" is not "it added". (The "Add to bible" chip navigated and did nothing.)
+2. **Deletions require a parity audit.** Before removing user-facing code, enumerate its capabilities FROM THE CODE BEING DELETED — not from memory — and disposition each: kept / replaced by X / deliberately dropped (recorded). (The cutover silently lost series membership, manual bible CRUD, language editing, chapter metadata, reorder, JSON export, brainstorm regenerate.)
+3. **Unprimed review first.** Adversarial reviews run in two lanes: first unprimed (repo + product claim + user perspective, no category lists, no suspect files — the author's framing steers reviewers into the author's blind spots), then primed technical review. Never primed-only. (Unprimed runs found whole classes — lossy backups, destructive conflict recovery, unreadable reader — that steered reviews missed.)
+4. **No silent failure.** Every catch/fallback either surfaces to the writer, is a designed bounded retry, or carries a comment justifying silence. "Error" and "empty" are different UI states. (Zero-token streams reported "complete"; server outages rendered as "No stories yet"; truncated model JSON toasted "Nothing extractable found".)
+5. **Written state must name its reader.** Persisted state nothing consumes is decorative — grep for the consumer before calling the feature done. Writes bypassing the canonical store must sync it. (The POV picker persisted state generation never sent; raw-fetch saves bypassed the query cache and manufactured 409s.)
+6. **Unknowns default loud or generous, never silently small.** Provider/model metadata (context windows, token budgets) that can't be known must fail visibly or default high — undershooting silently amputates the writer's context. (gpt-5 was budgeted at 4,096 tokens.)
+7. **Discoverability is part of existence.** A capability the writer can't find from the place the need arises is missing. Wire entry points at the point of need (nudge chip → extraction; brainstorm reply → chapter/bible). (Story voice existed while the user hunted for a British-English setting.)
+8. **Multiplier check.** When a change multiplies entities — import creating fifty chapters — sweep every per-entity flow for a batch path before shipping. (Whole-story extraction was only built after the user hit per-chapter tedium.)
+9. **Docs are change surface.** Grep README/docs/guide for claims touched by any change; a stale claim is a defect and a dangerous one (backup instructions) is a serious defect. The in-app guide counts.
+10. **Curate, don't just implement.** After each feature, ask what journey it completes and what adjacent dead-end it exposes; propose the follow-on rather than waiting for the user to trip over it. Keep the task list honest about product gaps, not just build steps.
+
 ## Project Overview
 
 Repo: https://github.com/jonsilver/TheStoryNexus
