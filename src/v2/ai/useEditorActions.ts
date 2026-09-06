@@ -13,6 +13,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { attemptPromise } from "@jfdi/attempt";
 import { toast } from "react-toastify";
 import type { Chapter } from "@/types/story";
+import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 
 type ActionKind = "selection" | "continue" | "summarise" | "ask";
@@ -136,12 +137,19 @@ export const useEditorActions = (chapter: Chapter) => {
         [generation, chapter.storyId, chapter.id]
     );
 
+    // Continue is inline now: a ghost suggestion node streams greyed prose
+    // in the manuscript itself (W2) — no modal, judged in place
     const onContinue = useCallback(() => {
-        setActive({ id: "continue", title: "Continue writing", kind: "continue" });
-        const editorContext = { ...baseContext(), recentProse: docTextTail() };
-        lastRun.current = { actionId: "continue", editorContext };
-        void generation.run({ actionId: "continue", storyId: chapter.storyId, chapterId: chapter.id, editorContext });
-    }, [generation, chapter.storyId, chapter.id, baseContext, docTextTail]);
+        editor.update(() => {
+            const selection = $getSelection();
+            const anchorBlock = $isRangeSelection(selection)
+                ? selection.anchor.getNode().getTopLevelElement()
+                : null;
+            const ghost = $createGhostSuggestionNode();
+            if (anchorBlock) anchorBlock.insertAfter(ghost);
+            else $getRoot().append(ghost);
+        });
+    }, [editor]);
 
     const onSummarise = useCallback(() => {
         setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });

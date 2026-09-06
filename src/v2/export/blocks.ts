@@ -147,7 +147,9 @@ const BLOCK_PARSERS: Record<string, (node: LexicalNode) => Block | null> = {
     horizontalrule: () => ({ type: "horizontalRule" }),
     image: parseImage,
     "scene-beat": parseSceneBeat,
-    "scene-beat-v2": parseSceneBeat
+    "scene-beat-v2": parseSceneBeat,
+    // Provisional continuations are not manuscript
+    "suggestion-v2": () => null
 };
 
 /** Unknown blocks keep their prose: serialise inline descendants as a paragraph. */

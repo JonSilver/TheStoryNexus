@@ -14,6 +14,7 @@ import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
 import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
+import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
 import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
 import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
@@ -144,7 +145,7 @@ export const ChapterEditor = ({ chapter }: { chapter: Chapter }) => (
             initialConfig={{
                 namespace: "story-nexus-v2",
                 theme,
-                nodes: [HeadingNode, HorizontalRuleNode, ListNode, ListItemNode, SceneBeatNode, ImageNode],
+                nodes: [HeadingNode, HorizontalRuleNode, ListNode, ListItemNode, SceneBeatNode, ImageNode, GhostSuggestionNode],
                 editorState: chapter.content || undefined,
                 onError: error => {
                     throw error;
