@@ -24,6 +24,7 @@ import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
 import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
 import { SceneBeatShortcutPlugin } from "./plugins/SceneBeatShortcutPlugin";
+import { SelectionContextMenu } from "./plugins/SelectionContextMenu";
 import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { useAutoSummarise } from "./useAutoSummarise";
@@ -212,6 +213,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                 <ListPlugin />
                 <SlashMenuPlugin />
                 <SceneBeatShortcutPlugin />
+                <SelectionContextMenu actions={actions.toolbarActions} />
                 <HistoryPlugin />
                 <ChapterPersistencePlugin onDocument={onDocument} />
             </div>

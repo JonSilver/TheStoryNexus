@@ -1,4 +1,4 @@
-import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
     useChaptersByStoryQuery,
@@ -7,9 +7,11 @@ import {
     useUpdateChapterMutation
 } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
+import type { Chapter } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { useV2Store } from "../state/useV2Store";
+import { ChapterDetailsSheet } from "./ChapterDetailsSheet";
 
 export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setLastChapter } = useV2Store();
@@ -19,9 +21,15 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const updateChapter = useUpdateChapterMutation();
     const deleteChapter = useDeleteChapterMutation();
 
-    const rename = (id: string, current: string) => {
-        const title = window.prompt("Chapter title", current)?.trim();
-        if (title && title !== current) updateChapter.mutate({ id, data: { title } });
+    const [details, setDetails] = useState<Chapter | null>(null);
+
+    // Swap the order values of adjacent chapters — reorder without dnd
+    const move = (index: number, direction: -1 | 1) => {
+        const a = ordered[index];
+        const b = ordered[index + direction];
+        if (!a || !b) return;
+        updateChapter.mutate({ id: a.id, data: { order: b.order } });
+        updateChapter.mutate({ id: b.id, data: { order: a.order } });
     };
 
     const remove = (id: string, title: string, words: number) => {
@@ -29,6 +37,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
             deleteChapter.mutate(id);
     };
     const [newTitle, setNewTitle] = useState("");
+    const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
 
     if (!currentStoryId)
         return (
@@ -43,8 +52,6 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                 </button>
             </div>
         );
-
-    const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
 
     const create = () => {
         const title = newTitle.trim() || `Chapter ${ordered.length + 1}`;
@@ -82,8 +89,28 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                     </div>
                 ) : (
                     <ul className="divide-y">
-                        {ordered.map(chapter => (
+                        {ordered.map((chapter, index) => (
                             <li key={chapter.id} className="flex items-center">
+                                <span className="flex flex-col">
+                                    <button
+                                        type="button"
+                                        onClick={() => move(index, -1)}
+                                        disabled={index === 0}
+                                        aria-label={`Move ${chapter.title} up`}
+                                        className="px-2 pt-2 text-muted-foreground disabled:opacity-30"
+                                    >
+                                        <ChevronUp className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => move(index, 1)}
+                                        disabled={index === ordered.length - 1}
+                                        aria-label={`Move ${chapter.title} down`}
+                                        className="px-2 pb-2 text-muted-foreground disabled:opacity-30"
+                                    >
+                                        <ChevronDown className="h-4 w-4" />
+                                    </button>
+                                </span>
                                 <button
                                     type="button"
                                     className="flex min-w-0 flex-1 items-baseline justify-between px-4 py-3 text-left"
@@ -99,8 +126,8 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => rename(chapter.id, chapter.title)}
-                                    aria-label={`Rename ${chapter.title}`}
+                                    onClick={() => setDetails(chapter)}
+                                    aria-label={`Edit ${chapter.title} details`}
                                     className="px-2 py-3 text-muted-foreground"
                                 >
                                     <Pencil className="h-4 w-4" />
@@ -138,6 +165,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                     <Plus className="h-4 w-4" /> Add
                 </button>
             </footer>
+            {details && <ChapterDetailsSheet chapter={details} onClose={() => setDetails(null)} />}
         </div>
     );
 };

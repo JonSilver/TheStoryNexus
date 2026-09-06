@@ -226,3 +226,50 @@ test("bible entries: manual create and edit, no AI required", async ({ page }) =
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("A good-humoured meddler with a sharp eye.")).toBeVisible();
 });
+
+test("chapter details: POV, outline and summary are editable and stick", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — chapter details", "One");
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("button", { name: "Edit One details" }).click();
+    await page.getByLabel("Chapter POV type").selectOption("First Person");
+    await page.getByLabel("Outline").fill("Elinor learns the truth.");
+    await page.getByLabel("Summary").fill("A hand-written summary.");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await page.reload();
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("button", { name: "Edit One details" }).click();
+    await expect(page.getByLabel("Chapter POV type")).toHaveValue("First Person");
+    await expect(page.getByLabel("Outline")).toHaveValue("Elinor learns the truth.");
+    await expect(page.getByLabel("Summary")).toHaveValue("A hand-written summary.");
+});
+
+test("selection right-click shows the app's own menu, not the browser's", async ({ page }) => {
+    await mockGeneration(page, () => "Reworked sentence.");
+    await createStoryAndChapter(page, "Journey — context menu", "One");
+    await typeInEditor(page, "A sentence worth improving.");
+    await page.keyboard.press("Control+A");
+    await editorLocator(page).click({ button: "right" });
+    await expect(page.getByRole("menu", { name: "Selection actions" })).toBeVisible();
+    await page.getByRole("menu").getByText("Rework").click();
+    await expect(page.getByText("Reworked sentence.")).toBeVisible();
+});
+
+test("brainstorm reply becomes a chapter outline", async ({ page }) => {
+    await mockGeneration(page, () => "The storm should arrive in chapter two.");
+    await createStoryAndChapter(page, "Journey — bridge", "One");
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Brainstorm" }).click();
+    await page.getByRole("button", { name: "New chat" }).click();
+    await page.getByPlaceholder("Bounce an idea around…").fill("When should the storm arrive?");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("The storm should arrive in chapter two.")).toBeVisible();
+
+    page.once("dialog", dialog => void dialog.accept("The Storm"));
+    await page.getByRole("button", { name: "New chapter from this" }).click();
+    await expect(page.getByText("created with this as its outline")).toBeVisible();
+
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("button", { name: "Edit The Storm details" }).click();
+    await expect(page.getByLabel("Outline")).toHaveValue("The storm should arrive in chapter two.");
+});

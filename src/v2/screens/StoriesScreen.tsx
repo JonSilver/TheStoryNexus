@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { adminApi } from "@/services/api/client";
+import { adminApi, storiesApi } from "@/services/api/client";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { useV2Store } from "../state/useV2Store";
@@ -42,6 +42,16 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
         toast.success("Sample story restored");
     };
 
+    const importJson = async (file: File) => {
+        const [error, story] = await attemptPromise(() => storiesApi.importStory(file));
+        if (error || !story) {
+            toast.error("Couldn't import that JSON — is it a story export?");
+            return;
+        }
+        void queryClient.invalidateQueries();
+        toast.success(`Imported “${story.title}”`);
+    };
+
     const create = () => {
         const title = newTitle.trim();
         if (!title) return;
@@ -61,10 +71,24 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
         <div className="flex h-full flex-col">
             <header className="flex items-center border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
                 <h1 className="text-lg font-semibold">Stories</h1>
+                <label className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm">
+                    JSON
+                    <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        aria-label="Import story JSON"
+                        onChange={e => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) void importJson(file);
+                        }}
+                    />
+                </label>
                 <button
                     type="button"
                     onClick={() => setImporting(true)}
-                    className="ml-auto flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
+                    className="ml-2 flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
                 >
                     <BookUp className="h-4 w-4" /> Import
                 </button>

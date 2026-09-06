@@ -31,6 +31,7 @@ export const ExtractSheet = ({
     entries,
     chapters = [],
     focusNames = [],
+    initialText,
     onClose
 }: {
     mode: BibleFlowMode;
@@ -41,12 +42,14 @@ export const ExtractSheet = ({
     chapters?: Array<{ id: string; title: string }>;
     /** Names from the editor's nudge chip: focuses the extraction and auto-runs it. */
     focusNames?: string[];
+    /** Pre-filled text for extract-paste (e.g. a brainstorm reply) — auto-runs. */
+    initialText?: string;
     onClose: () => void;
 }) => {
     const generation = useActionGeneration();
     const createEntry = useCreateLorebookMutation();
     const updateEntry = useUpdateLorebookMutation();
-    const [pasted, setPasted] = useState("");
+    const [pasted, setPasted] = useState(initialText ?? "");
     const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
     const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
     const [issues, setIssues] = useState<ContinuityIssue[] | null>(null);
@@ -161,9 +164,9 @@ export const ExtractSheet = ({
         setUpdates(current => (current ?? []).filter(u => u !== proposal));
     };
 
-    // The nudge chip's "Add to bible" promises action, not a Run button
+    // Handed-in work auto-runs: the nudge chip's names, or pre-filled text
     useEffect(() => {
-        if (focusNames.length > 0) void run();
+        if (focusNames.length > 0 || initialText) void run();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

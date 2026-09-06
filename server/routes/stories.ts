@@ -74,6 +74,11 @@ export default createCrudRouter({
                     return;
                 }
 
+                // Browsers hitting this via <a download> need a filename
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename="${data.story.title.replace(/[^\w-]+/g, "-")}.story.json"`
+                );
                 res.json(data);
             })
         );

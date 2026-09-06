@@ -91,6 +91,14 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
                 <a href={`/api/stories/${storyId}/epub`} download className="rounded-md border px-3 py-1.5 text-sm">
                     EPUB
                 </a>
+                <a
+                    href={`/api/stories/${storyId}/export`}
+                    download
+                    title="Full story data: chapters, bible, notes, chats, AI overrides — re-importable"
+                    className="rounded-md border px-3 py-1.5 text-sm"
+                >
+                    JSON (backup)
+                </a>
             </div>
         </section>
     );
