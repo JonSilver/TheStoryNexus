@@ -30,18 +30,6 @@ const PROVIDER_CONTEXT_DEFAULTS: Record<AIProviderId, number> = {
 
 const providerEnum = z.enum(["openai", "openrouter", "gemini", "local"]);
 
-const rawRequestSchema = z.object({
-    requestId: z.string().uuid(),
-    provider: providerEnum,
-    modelId: z.string().min(1).max(200),
-    messages: z
-        .array(z.object({ role: z.enum(["system", "user", "assistant"]), content: z.string().max(500_000) }))
-        .min(1)
-        .max(200),
-    temperature: z.number().min(0).max(2).default(1),
-    maxTokens: z.number().int().positive().max(65536).default(2048)
-});
-
 const actionRequestSchema = z.object({
     requestId: z.string().uuid(),
     actionId: z.enum(ACTION_IDS),
@@ -180,41 +168,6 @@ const registerGeneration = (res: express.Response, requestId: string): AbortCont
     });
     return abortController;
 };
-
-// Raw-messages mode: v1 frontend compatibility until cutover
-router.post("/", async (req, res) => {
-    const parsed = rawRequestSchema.safeParse(req.body);
-    if (!parsed.success) {
-        res.status(400).json({ error: "Invalid generation request", details: parsed.error.issues });
-        return;
-    }
-    const { requestId, provider, modelId, messages, temperature, maxTokens } = parsed.data;
-
-    const abortController = registerGeneration(res, requestId);
-    if (!abortController) {
-        res.status(409).json({ error: "requestId already in use" });
-        return;
-    }
-
-    const settings = await loadSettings();
-    if (!settings) {
-        activeGenerations.delete(requestId);
-        res.status(500).json({ error: "AI settings unavailable" });
-        return;
-    }
-    if (abortController.signal.aborted) {
-        activeGenerations.delete(requestId);
-        return;
-    }
-
-    await streamToClient(res, requestId, abortController, settings, {
-        provider: provider as AIProviderId,
-        modelId,
-        messages,
-        temperature,
-        maxTokens
-    });
-});
 
 // Action mode (contracts §5–§6): server owns templates, context, budgeting
 router.post("/action", async (req, res) => {

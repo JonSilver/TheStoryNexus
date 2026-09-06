@@ -1,25 +1,15 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { aiSettingsSchema } from "@/schemas/entities";
-import type { AIModel, AIProvider, AISettings, PromptMessage } from "@/types/story";
-import { randomUUID } from "@/utils/crypto";
+import type { AIModel, AIProvider, AISettings } from "@/types/story";
 import { logger } from "@/utils/logger";
 import { aiApi } from "../api/client";
-import { createSSEParser } from "./sseParser";
 
 /**
- * Client-side facade over the server's AI endpoints. All provider access,
- * key handling, and upstream streaming happen server-side; this module only
- * posts generation requests and parses the server's SSE stream.
+ * Client-side facade over the server's AI settings endpoints: keys, model
+ * lists, defaults. Generation streams live in v2 (streamAction /
+ * useActionGeneration) — this module owns settings only.
  */
-const state: {
-    settings: AISettings | null;
-    activeRequestId: string | null;
-    fetchController: AbortController | null;
-} = {
-    settings: null,
-    activeRequestId: null,
-    fetchController: null
-};
+const state: { settings: AISettings | null } = { settings: null };
 
 const initialize = async (): Promise<void> => {
     const [error, settings] = await attemptPromise(() => aiApi.getSettings());
@@ -31,99 +21,6 @@ const initialize = async (): Promise<void> => {
 };
 
 const getSettings = (): AISettings | null => state.settings;
-
-const generate = async (
-    providerType: AIProvider,
-    messages: PromptMessage[],
-    modelId: string,
-    temperature: number = 1.0,
-    maxTokens: number = 2048
-): Promise<Response> => {
-    const requestId = randomUUID();
-    const controller = new AbortController();
-    state.activeRequestId = requestId;
-    state.fetchController = controller;
-
-    const [error, response] = await attemptPromise(() =>
-        fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestId, provider: providerType, modelId, messages, temperature, maxTokens }),
-            signal: controller.signal
-        })
-    );
-
-    if (error) {
-        if ((error as Error).name === "AbortError") return new Response(null, { status: 204 });
-        throw error;
-    }
-    if (!response) throw new Error("No response from server");
-    return response;
-};
-
-/**
- * Reads the server's generation SSE stream. Stream end without a terminal
- * frame surfaces as an error — truncated output never passes as success.
- */
-const handleStreamedResponse = async (
-    response: Response,
-    onToken: (text: string) => void,
-    onComplete: () => void,
-    onError: (error: Error) => void
-): Promise<void> => {
-    if (response.status === 204 || !response.body) {
-        onComplete();
-        return;
-    }
-    if (!response.ok) {
-        const [, body] = await attemptPromise(() => response.json());
-        state.activeRequestId = null;
-        state.fetchController = null;
-        onError(new Error(body?.error || `Generation failed (${response.status})`));
-        return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    const parser = createSSEParser({ onToken, onComplete, onError });
-
-    const [error] = await attemptPromise(async () => {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                parser.push(decoder.decode());
-                parser.end();
-                break;
-            }
-            parser.push(decoder.decode(value, { stream: true }));
-        }
-    });
-
-    state.activeRequestId = null;
-    state.fetchController = null;
-
-    if (error)
-        if ((error as Error).name === "AbortError") {
-            logger.info("Stream reading aborted.");
-            onComplete();
-        } else onError(error as Error);
-};
-
-const abortStream = (): void => {
-    logger.info("[AIService] Aborting stream");
-    const requestId = state.activeRequestId;
-    state.fetchController?.abort();
-    state.fetchController = null;
-    state.activeRequestId = null;
-    if (requestId)
-        void attemptPromise(() =>
-            fetch("/api/generate/abort", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ requestId })
-            })
-        );
-};
 
 const applySettings = (settings: AISettings): AISettings => {
     state.settings = settings;
@@ -191,9 +88,6 @@ const updateDefaultModel = async (provider: AIProvider, modelId: string | undefi
 export const aiService = {
     initialize,
     getSettings,
-    generate,
-    handleStreamedResponse,
-    abortStream,
     getAvailableModels,
     updateKey,
     updateLocalApiUrl,

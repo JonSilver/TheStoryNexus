@@ -2,7 +2,6 @@ import {
     BookMarked,
     BookOpen,
     BookOpenText,
-    ExternalLink,
     Library,
     Lightbulb,
     NotebookPen,
@@ -18,8 +17,7 @@ import { ExportButtons } from "./ExportButtons";
 const LINKS = [
     { to: "/settings", label: "AI Settings", icon: Settings },
     { to: "/series", label: "Series", icon: Library },
-    { to: "/guide", label: "Guide", icon: BookMarked },
-    { to: "/", label: "v1 workspace (everything not yet in v2)", icon: ExternalLink }
+    { to: "/guide", label: "Guide", icon: BookMarked }
 ] as const;
 
 const VOICE_CHAR_CAP = 2000;
@@ -157,10 +155,7 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "note
                     </li>
                 ))}
             </ul>
-            <p className="mt-auto p-4 text-center text-xs text-muted-foreground">
-                The Story Nexus v2 preview — brainstorm, lorebook, notes and prompts still live in the v1 workspace
-                during the rebuild.
-            </p>
+            <p className="mt-auto p-4 text-center text-xs text-muted-foreground">The Story Nexus</p>
         </div>
     );
 };

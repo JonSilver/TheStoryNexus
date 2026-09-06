@@ -10,10 +10,8 @@ import { db, rawSqlite, schema } from "../db/client.js";
 type ImportedSeries = typeof schema.series.$inferSelect;
 type ImportedStory = typeof schema.stories.$inferSelect;
 type ImportedChapter = typeof schema.chapters.$inferSelect;
-type ImportedPrompt = typeof schema.prompts.$inferSelect;
 type ImportedLorebookEntry = typeof schema.lorebookEntries.$inferSelect;
 type ImportedAiChat = typeof schema.aiChats.$inferSelect;
-type ImportedSceneBeat = typeof schema.sceneBeats.$inferSelect;
 type ImportedNote = typeof schema.notes.$inferSelect;
 type ImportedAiSetting = typeof schema.aiSettings.$inferSelect;
 
@@ -43,10 +41,8 @@ router.get("/export", async (_, res) => {
             db.select().from(schema.series),
             db.select().from(schema.stories),
             db.select().from(schema.chapters),
-            db.select().from(schema.prompts),
             db.select().from(schema.lorebookEntries),
             db.select().from(schema.aiChats),
-            db.select().from(schema.sceneBeats),
             db.select().from(schema.notes),
             db.select().from(schema.aiSettings),
             db.select().from(schema.actionOverrides)
@@ -59,18 +55,7 @@ router.get("/export", async (_, res) => {
         return;
     }
 
-    const [
-        series,
-        stories,
-        chapters,
-        prompts,
-        lorebookEntries,
-        aiChats,
-        sceneBeats,
-        notes,
-        aiSettings,
-        actionOverrides
-    ] = tables;
+    const [series, stories, chapters, lorebookEntries, aiChats, notes, aiSettings, actionOverrides] = tables;
     // API keys never leave the server, including via export
     const sanitisedAiSettings = aiSettings.map(({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...rest }) => rest);
     res.json({
@@ -80,10 +65,8 @@ router.get("/export", async (_, res) => {
             series,
             stories,
             chapters,
-            prompts,
             lorebookEntries,
             aiChats,
-            sceneBeats,
             notes,
             aiSettings: sanitisedAiSettings,
             actionOverrides
@@ -132,7 +115,7 @@ router.delete("/demo", async (_, res) => {
         const seriesResult = await db.delete(schema.series).where(eq(schema.series.isDemo, true));
         const storiesResult = await db.delete(schema.stories).where(eq(schema.stories.isDemo, true));
 
-        // Note: chapters, sceneBeats, aiChats, notes will cascade automatically
+        // Note: chapters, aiChats, notes will cascade automatically
         // lorebook entries need explicit deletion
         const lorebookResult = await db.delete(schema.lorebookEntries).where(eq(schema.lorebookEntries.isDemo, true));
 
@@ -204,12 +187,10 @@ router.post("/import", upload.single("file"), async (req, res) => {
             };
 
             console.log("[Import] Clearing existing data...");
-            tx.delete(schema.sceneBeats).run();
             tx.delete(schema.notes).run();
             tx.delete(schema.lorebookEntries).run();
             tx.delete(schema.aiChats).run();
             tx.delete(schema.chapters).run();
-            tx.delete(schema.prompts).run();
             tx.delete(schema.stories).run();
             tx.delete(schema.series).run();
             tx.delete(schema.aiSettings).run();
@@ -227,10 +208,6 @@ router.post("/import", upload.single("file"), async (req, res) => {
                     ...c,
                     createdAt: new Date(c.createdAt)
                 })),
-                prompts: importTable("prompts", schema.prompts, tables.prompts, (p: ImportedPrompt) => ({
-                    ...p,
-                    createdAt: new Date(p.createdAt)
-                })),
                 lorebookEntries: importTable(
                     "lorebookEntries",
                     schema.lorebookEntries,
@@ -241,10 +218,6 @@ router.post("/import", upload.single("file"), async (req, res) => {
                     ...c,
                     createdAt: new Date(c.createdAt),
                     updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined
-                })),
-                sceneBeats: importTable("sceneBeats", schema.sceneBeats, tables.sceneBeats, (s: ImportedSceneBeat) => ({
-                    ...s,
-                    createdAt: new Date(s.createdAt)
                 })),
                 notes: importTable("notes", schema.notes, tables.notes, (n: ImportedNote) => ({
                     ...n,

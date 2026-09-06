@@ -16,7 +16,7 @@ I didn't like Tauri because I wanted a web app that could run on any device with
 
 The code quality has been improved significantly too, and I'm gradually ripping out custom code in favor of established libraries and patterns.
 
-I'm also in the process of reworking the UI/UX to be more of a writer's workspace.
+The UI is a writer-first workspace: the manuscript in front, AI machinery behind it.
 
 ## Key Features
 
@@ -210,7 +210,7 @@ Migration workflow:
 
 1. Export from old IndexedDB-based version (if migrating)
 2. Import into new SQLite-based version
-3. System prompts automatically initialized on first run
+3. AI actions work out of the box; customise them per action (model, samplers, template) in AI Actions
 
 ### Prompts Export/Import
 

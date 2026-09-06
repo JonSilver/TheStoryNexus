@@ -77,7 +77,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {groups.length === 0 && (
                     <p className="p-8 text-center text-sm text-muted-foreground">
-                        No entries yet — extract some from your writing, or add them in the v1 lorebook.
+                        No entries yet — extract some from your writing with the flows above.
                     </p>
                 )}
                 {groups.map(group => (

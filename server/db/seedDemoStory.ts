@@ -93,22 +93,6 @@ export const seedDemoStory = async () => {
             await db.insert(schema.aiChats).values(chatsToInsert);
         }
 
-        if (demoData.sceneBeats && demoData.sceneBeats.length > 0) {
-            const sceneBeatsToInsert = demoData.sceneBeats.map(beat => ({
-                id: beat.id,
-                storyId: beat.storyId,
-                chapterId: beat.chapterId,
-                command: beat.command,
-                povType: beat.povType || null,
-                povCharacter: beat.povCharacter || null,
-                generatedContent: beat.generatedContent || null,
-                accepted: beat.accepted || false,
-                metadata: beat.metadata || null,
-                createdAt: new Date(beat.createdAt)
-            }));
-            await db.insert(schema.sceneBeats).values(sceneBeatsToInsert);
-        }
-
         if (demoData.notes && demoData.notes.length > 0) {
             const notesToInsert = demoData.notes.map(note => ({
                 id: note.id,

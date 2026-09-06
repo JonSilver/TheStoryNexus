@@ -5,11 +5,10 @@ import { type Request, type Response, Router } from "express";
 import multer from "multer";
 import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
-import { aiChats, chapters, lorebookEntries, sceneBeats, series, stories } from "../db/schema.js";
+import { aiChats, chapters, lorebookEntries, series, stories } from "../db/schema.js";
 
 type ImportedChapter = InferSelectModel<typeof chapters>;
 type ImportedLorebookEntry = InferSelectModel<typeof lorebookEntries>;
-type ImportedSceneBeat = InferSelectModel<typeof sceneBeats>;
 type ImportedAiChat = InferSelectModel<typeof aiChats>;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
@@ -151,13 +150,12 @@ seriesRouter.get(
         // Export each story with full data
         const storyExports = await Promise.all(
             seriesStories.map(async story => {
-                const [storyChapters, storyLorebook, storySceneBeats, storyAiChats] = await Promise.all([
+                const [storyChapters, storyLorebook, storyAiChats] = await Promise.all([
                     db.select().from(chapters).where(eq(chapters.storyId, story.id)),
                     db
                         .select()
                         .from(lorebookEntries)
                         .where(and(eq(lorebookEntries.level, "story"), eq(lorebookEntries.scopeId, story.id))),
-                    db.select().from(sceneBeats).where(eq(sceneBeats.storyId, story.id)),
                     db.select().from(aiChats).where(eq(aiChats.storyId, story.id))
                 ]);
 
@@ -169,7 +167,6 @@ seriesRouter.get(
                     series: seriesResult,
                     chapters: storyChapters,
                     lorebookEntries: storyLorebook,
-                    sceneBeats: storySceneBeats,
                     aiChats: storyAiChats
                 };
             })
@@ -287,17 +284,6 @@ seriesRouter.post(
                     .filter((entry: ImportedLorebookEntry): entry is NonNullable<typeof entry> => entry !== null);
 
                 if (newEntries.length > 0) await db.insert(lorebookEntries).values(newEntries);
-            }
-
-            // Import scene beats
-            if (storyExport.sceneBeats?.length) {
-                const newSceneBeats = storyExport.sceneBeats.map((sceneBeat: ImportedSceneBeat) => ({
-                    ...sceneBeat,
-                    id: nanoid(),
-                    storyId: newStoryId,
-                    createdAt: new Date()
-                }));
-                await db.insert(sceneBeats).values(newSceneBeats);
             }
 
             // Import AI chats

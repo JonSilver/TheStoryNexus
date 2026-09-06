@@ -29,13 +29,6 @@ export default defineConfig(() => ({
     },
     build: {
         outDir: "dist/client",
-        rollupOptions: {
-            output: {
-                manualChunks: {
-                    // Split large markdown rendering dependencies
-                    "react-markdown": ["react-markdown", "remark-gfm", "rehype-raw", "rehype-sanitize"]
-                }
-            }
-        }
+        rollupOptions: {}
     }
 }));

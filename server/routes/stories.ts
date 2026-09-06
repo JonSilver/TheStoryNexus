@@ -9,7 +9,6 @@ import { generateEpub } from "../services/epubGenerator.js";
 
 type ImportedChapter = InferSelectModel<typeof schema.chapters>;
 type ImportedLorebookEntry = InferSelectModel<typeof schema.lorebookEntries>;
-type ImportedSceneBeat = InferSelectModel<typeof schema.sceneBeats>;
 type ImportedAiChat = InferSelectModel<typeof schema.aiChats>;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -46,9 +45,8 @@ export default createCrudRouter({
                             and(eq(schema.lorebookEntries.level, "story"), eq(schema.lorebookEntries.scopeId, storyId))
                         );
 
-                    const [chapters, sceneBeats, aiChats, notes, actionOverrides] = await Promise.all([
+                    const [chapters, aiChats, notes, actionOverrides] = await Promise.all([
                         db.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)),
-                        db.select().from(schema.sceneBeats).where(eq(schema.sceneBeats.storyId, storyId)),
                         db.select().from(schema.aiChats).where(eq(schema.aiChats.storyId, storyId)),
                         db.select().from(schema.notes).where(eq(schema.notes.storyId, storyId)),
                         db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.storyId, storyId))
@@ -62,7 +60,6 @@ export default createCrudRouter({
                         series: seriesData,
                         chapters,
                         lorebookEntries,
-                        sceneBeats,
                         aiChats,
                         notes,
                         actionOverrides
@@ -174,20 +171,6 @@ export default createCrudRouter({
                         if (newEntries.length > 0) await db.insert(schema.lorebookEntries).values(newEntries);
                     }
 
-                    if (storyData.sceneBeats?.length) {
-                        const newSceneBeats = storyData.sceneBeats.map((sceneBeat: ImportedSceneBeat) => {
-                            const newSceneBeatId = crypto.randomUUID();
-                            return {
-                                ...sceneBeat,
-                                id: newSceneBeatId,
-                                storyId: newStoryId,
-                                chapterId: idMap.get(sceneBeat.chapterId) || sceneBeat.chapterId,
-                                createdAt: new Date()
-                            };
-                        });
-                        await db.insert(schema.sceneBeats).values(newSceneBeats);
-                    }
-
                     if (storyData.aiChats?.length) {
                         const newChats = storyData.aiChats.map((chat: ImportedAiChat) => {
                             const newChatId = crypto.randomUUID();
@@ -217,7 +200,6 @@ export default createCrudRouter({
                     imported: {
                         chapters: storyData.chapters?.length || 0,
                         lorebookEntries: storyData.lorebookEntries?.length || 0,
-                        sceneBeats: storyData.sceneBeats?.length || 0,
                         aiChats: storyData.aiChats?.length || 0
                     }
                 });

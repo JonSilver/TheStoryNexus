@@ -62,10 +62,10 @@ class ContentGuard extends Component<{ children: ReactNode }, { failed: boolean 
         if (this.state.failed)
             return (
                 <div className="m-4 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
-                    <p className="font-medium">This chapter can't be opened in the v2 editor.</p>
+                    <p className="font-medium">This chapter can't be opened in the editor.</p>
                     <p className="mt-1 text-muted-foreground">
-                        It was probably written with the v1 editor. Open it from the v1 workspace instead — nothing has
-                        been changed or lost.
+                        It was written with an old version of the app and uses content this editor doesn't support.
+                        Nothing has been changed or lost — it still renders in the story reader and in exports.
                     </p>
                 </div>
             );
