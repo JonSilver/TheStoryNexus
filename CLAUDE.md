@@ -111,4 +111,3 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 - Any OnChangePlugin consumer that must see streamed text needs `ignoreHistoryMergeTagChange={false}`.
 - Interactive controls inside decorators need NATIVE keydown stopPropagation via ref.
 - Transitive Lexical packages (@lexical/utils, @lexical/selection, @lexical/mark, @lexical/yjs, yjs) must NOT be added to package.json.
-

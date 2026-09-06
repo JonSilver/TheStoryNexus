@@ -273,3 +273,29 @@ test("brainstorm reply becomes a chapter outline", async ({ page }) => {
     await page.getByRole("button", { name: "Edit The Storm details" }).click();
     await expect(page.getByLabel("Outline")).toHaveValue("The storm should arrive in chapter two.");
 });
+
+test("context menu clipboard: cut, copy and paste round-trip", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await createStoryAndChapter(page, "Journey — clipboard", "One");
+    await typeInEditor(page, "Words to carry elsewhere.");
+
+    await page.keyboard.press("Control+A");
+    await editorLocator(page).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Copy" }).click();
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    if (!copied.includes("Words to carry elsewhere.")) throw new Error(`Copy failed: "${copied}"`);
+
+    await page.keyboard.press("Control+A");
+    await editorLocator(page).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Cut" }).click();
+    await expect(editorLocator(page)).not.toContainText("Words to carry elsewhere.");
+
+    // Paste replaces a selection (with nothing selected the browser's own
+    // menu — which has native paste — is deliberately left in charge)
+    await typeInEditor(page, "placeholder");
+    await page.keyboard.press("Control+A");
+    await editorLocator(page).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Paste" }).click();
+    await expect(editorLocator(page)).toContainText("Words to carry elsewhere.");
+    await expect(editorLocator(page)).not.toContainText("placeholder");
+});
