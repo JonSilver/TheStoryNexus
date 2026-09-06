@@ -10,6 +10,8 @@ const override = (partial: Partial<ActionOverrideRow>): ActionOverrideRow => ({
     temperature: null,
     maxTokens: null,
     topP: null,
+    frequencyPenalty: null,
+    presencePenalty: null,
     modelRef: null,
     ...partial
 });
@@ -72,6 +74,32 @@ describe("resolveAction precedence", () => {
         const template: PromptMessage[] = [{ role: "user", content: "Rework: {{selection}}" }];
         const resolved = resolveAction("rework", "story-1", [override({ storyId: "story-1", template })]);
         expect(resolved.template).toBe(template);
+    });
+
+    it("resolves penalty and topP overrides", () => {
+        const rows = [override({ storyId: "story-1", topP: 0.9, frequencyPenalty: 0.4, presencePenalty: -0.2 })];
+        const resolved = resolveAction("rework", "story-1", rows);
+        expect(resolved.params.topP).toBe(0.9);
+        expect(resolved.params.frequencyPenalty).toBe(0.4);
+        expect(resolved.params.presencePenalty).toBe(-0.2);
+    });
+
+    it("invalid stored values fall through to the next scope, not clamped (§5)", () => {
+        const rows = [
+            override({ storyId: "story-1", temperature: 9, frequencyPenalty: 5 }),
+            override({ storyId: null, temperature: 0.4, frequencyPenalty: 1.1 })
+        ];
+        const resolved = resolveAction("rework", "story-1", rows);
+        expect(resolved.params.temperature).toBe(0.4);
+        expect(resolved.params.frequencyPenalty).toBe(1.1);
+    });
+
+    it("malformed modelRef falls through to the next scope", () => {
+        const rows = [
+            override({ storyId: "story-1", modelRef: "not-a-ref" }),
+            override({ storyId: null, modelRef: "local::local/qwen3:8b" })
+        ];
+        expect(resolveAction("rework", "story-1", rows).modelRef).toBe("local::local/qwen3:8b");
     });
 
     it("ignores other stories' overrides", () => {
