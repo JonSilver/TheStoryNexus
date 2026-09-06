@@ -159,7 +159,7 @@ test("export: markdown download contains the chapter text", async ({ page }) => 
 
 test("whole-story extraction: every chapter feeds one review list", async ({ page }) => {
     const byChapter: Record<string, string> = {};
-    await mockGeneration(page, request => {
+    await mockGeneration(page, () => {
         // Distinct entity per chapter proves each chapter was actually read
         const call = Object.keys(byChapter).length + 1;
         const name = call === 1 ? "Elinor" : "Willoughby";
@@ -191,4 +191,19 @@ test("whole-story extraction: every chapter feeds one review list", async ({ pag
     await expect(page.getByRole("heading", { name: "character" })).toBeVisible();
     await expect(page.getByText("Elinor appears in chapter 1.")).toBeVisible();
     await expect(page.getByText("Willoughby appears in chapter 2.")).toBeVisible();
+});
+
+test("series: join from story details, grouped in Stories, bible inherits", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — series", "One");
+    await page.getByRole("button", { name: "More", exact: true }).click();
+
+    page.once("dialog", dialog => void dialog.accept("The Dashwood Saga"));
+    await page.getByLabel("Series").selectOption("__new__");
+    await expect(page.getByText("joined the new series")).toBeVisible();
+    await expect(page.getByText("Series bible entries are included")).toBeVisible();
+
+    // Stories screen groups under the series heading
+    await page.getByRole("button", { name: "Stories" }).click();
+    await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Journey — series" })).toBeVisible();
 });

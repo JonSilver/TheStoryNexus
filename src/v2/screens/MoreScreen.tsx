@@ -13,6 +13,7 @@ import { Link } from "react-router";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { useV2Store } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
+import { StoryDetailsEditor } from "./StoryDetailsEditor";
 
 const LINKS = [
     { to: "/settings", label: "AI Settings", icon: Settings },
@@ -133,6 +134,7 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "note
                     </span>
                 </span>
             </label>
+            {currentStoryId && <StoryDetailsEditor storyId={currentStoryId} />}
             {currentStoryId && <StoryVoiceEditor storyId={currentStoryId} />}
             {currentStoryId && <ExportButtons storyId={currentStoryId} />}
             <section className="border-t px-4 py-3">

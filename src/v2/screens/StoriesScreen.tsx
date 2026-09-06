@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookUp, Loader2, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { adminApi } from "@/services/api/client";
 import { randomUUID } from "@/utils/crypto";
@@ -13,6 +14,15 @@ import { ImportSheet } from "./ImportSheet";
 export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setCurrentStory } = useV2Store();
     const { data: stories, isLoading, isError, refetch } = useStoriesQuery();
+    const { data: allSeries } = useSeriesQuery();
+
+    // Series are first-class: grouped with their stories, standalone last
+    const groups = [
+        ...(allSeries ?? [])
+            .map(series => ({ heading: series.name, items: (stories ?? []).filter(s => s.seriesId === series.id) }))
+            .filter(group => group.items.length > 0),
+        { heading: null as string | null, items: (stories ?? []).filter(s => !s.seriesId) }
+    ];
     const createStory = useCreateStoryMutation();
     const [newTitle, setNewTitle] = useState("");
     const [importing, setImporting] = useState(false);
@@ -74,22 +84,35 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
-                    <ul className="divide-y">
-                        {(stories ?? []).map(story => (
-                            <li key={story.id}>
-                                <button
-                                    type="button"
-                                    className={`w-full px-4 py-3 text-left ${story.id === currentStoryId ? "bg-accent/40" : ""}`}
-                                    onClick={() => {
-                                        setCurrentStory(story.id);
-                                        goTo("write");
-                                    }}
-                                >
-                                    <p className="truncate font-medium">{story.title}</p>
-                                    {story.synopsis && (
-                                        <p className="truncate text-xs text-muted-foreground">{story.synopsis}</p>
-                                    )}
-                                </button>
+                    <ul>
+                        {groups.map(group => (
+                            <li key={group.heading ?? "__standalone__"}>
+                                {group.heading && (
+                                    <h2 className="bg-muted/50 px-4 py-1 text-xs font-semibold uppercase text-muted-foreground">
+                                        {group.heading}
+                                    </h2>
+                                )}
+                                <ul className="divide-y">
+                                    {group.items.map(story => (
+                                        <li key={story.id}>
+                                            <button
+                                                type="button"
+                                                className={`w-full px-4 py-3 text-left ${story.id === currentStoryId ? "bg-accent/40" : ""}`}
+                                                onClick={() => {
+                                                    setCurrentStory(story.id);
+                                                    goTo("write");
+                                                }}
+                                            >
+                                                <p className="truncate font-medium">{story.title}</p>
+                                                {story.synopsis && (
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {story.synopsis}
+                                                    </p>
+                                                )}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
                             </li>
                         ))}
                         {(stories ?? []).length === 0 && (
