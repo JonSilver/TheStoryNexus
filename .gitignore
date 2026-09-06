@@ -34,3 +34,7 @@ NUL
 .omc/
 .playwright-cli/
 data/assets/
+
+# Playwright
+test-results/
+playwright-report/

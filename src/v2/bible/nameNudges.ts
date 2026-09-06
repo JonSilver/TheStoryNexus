@@ -47,6 +47,23 @@ const MIN_OCCURRENCES = 3;
 /** Capitalised runs of 1-3 words, captured only mid-sentence (not after ., ! or ?). */
 const MID_SENTENCE_NAME = /(?<=[,;:a-z0-9""'’—–-]\s|\)\s)([A-Z][a-z]{2,}(?:\s[A-Z][a-z]{2,}){0,2})/g;
 
+/**
+ * One-shot handoff from the editor's nudge chip to the bible screen: the
+ * chip's "Add to bible" carries the spotted names so arrival auto-opens a
+ * focused extraction — navigation alone is not "adding".
+ */
+const handoff: { names: string[] } = { names: [] };
+
+export const setNudgeHandoff = (names: string[]) => {
+    handoff.names = names;
+};
+
+export const takeNudgeHandoff = (): string[] => {
+    const names = handoff.names;
+    handoff.names = [];
+    return names;
+};
+
 export const findUnmatchedNames = (text: string, knownNames: string[]): string[] => {
     // Known set carries full names AND their individual words, so "Brandt"
     // is covered by a bible entry named "Captain Brandt"

@@ -1,11 +1,12 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { Loader2, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { IssueList, ProposalList, UpdateList } from "./FlowResults";
 import {
     type ContinuityIssue,
     type EntryProposal,
@@ -33,12 +34,15 @@ export const ExtractSheet = ({
     storyId,
     chapterId,
     entries,
+    focusNames = [],
     onClose
 }: {
     mode: BibleFlowMode;
     storyId: string;
     chapterId: string | null;
     entries: LorebookEntry[];
+    /** Names from the editor's nudge chip: focuses the extraction and auto-runs it. */
+    focusNames?: string[];
     onClose: () => void;
 }) => {
     const generation = useActionGeneration();
@@ -58,7 +62,12 @@ export const ExtractSheet = ({
             actionId,
             storyId,
             ...(mode !== "extract-paste" && chapterId ? { chapterId } : {}),
-            editorContext: mode === "extract-paste" ? { userMessage: pasted } : {}
+            editorContext: {
+                ...(mode === "extract-paste" ? { userMessage: pasted } : {}),
+                ...(focusNames.length > 0 && actionId === "extract_entries"
+                    ? { guidance: `Extract entries ONLY for these newly appearing names: ${focusNames.join(", ")}` }
+                    : {})
+            }
         });
         if (!text) return;
         if (mode === "continuity") {
@@ -137,6 +146,12 @@ export const ExtractSheet = ({
         setUpdates(current => (current ?? []).filter(u => u !== proposal));
     };
 
+    // The nudge chip's "Add to bible" promises action, not a Run button
+    useEffect(() => {
+        if (focusNames.length > 0) void run();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const busy = generation.phase === "streaming";
     const needsPaste = mode === "extract-paste" && proposals === null;
     const showRun = proposals === null && updates === null && issues === null;
@@ -171,69 +186,25 @@ export const ExtractSheet = ({
                     )}
                     {generation.error && <p className="text-destructive">{generation.error}</p>}
 
-                    {proposals?.map((proposal, index) => (
-                        <label key={index} className="flex items-start gap-2 rounded-md border p-2">
-                            <input
-                                type="checkbox"
-                                checked={ticked.has(index)}
-                                onChange={() =>
-                                    setTicked(current => {
-                                        const next = new Set(current);
-                                        if (next.has(index)) next.delete(index);
-                                        else next.add(index);
-                                        return next;
-                                    })
-                                }
-                            />
-                            <span>
-                                <span className="font-medium">{proposal.name}</span>{" "}
-                                <span className="text-xs text-muted-foreground">
-                                    ({proposal.category})
-                                    {entries.some(e => e.name.toLowerCase() === proposal.name.toLowerCase()) &&
-                                        " — already in bible"}
-                                </span>
-                                <br />
-                                {proposal.description}
-                                {proposal.tags.length > 0 && (
-                                    <span className="block text-xs text-muted-foreground">
-                                        aka: {proposal.tags.join(", ")}
-                                    </span>
-                                )}
-                            </span>
-                        </label>
-                    ))}
-
-                    {issues?.map((issue, index) => (
-                        <div key={index} className="space-y-1 rounded-md border border-amber-500/40 p-2">
-                            <p className="font-medium">{issue.name}</p>
-                            <p>{issue.issue}</p>
-                            {issue.evidence && (
-                                <p className="text-xs italic text-muted-foreground">“{issue.evidence}”</p>
-                            )}
-                        </div>
-                    ))}
-                    {issues?.length === 0 && <p className="text-muted-foreground">Nothing conflicts. Carry on.</p>}
-
-                    {updates?.map(proposal => {
-                        const existing = entries.find(e => e.name.toLowerCase() === proposal.name.toLowerCase());
-                        return (
-                            <div key={proposal.name} className="space-y-1 rounded-md border p-2">
-                                <p className="font-medium">{proposal.name}</p>
-                                {existing && (
-                                    <p className="text-xs text-muted-foreground line-through">{existing.description}</p>
-                                )}
-                                <p>{proposal.updatedDescription}</p>
-                                {proposal.reason && <p className="text-xs text-muted-foreground">{proposal.reason}</p>}
-                                <button
-                                    type="button"
-                                    onClick={() => void applyUpdate(proposal)}
-                                    className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground"
-                                >
-                                    Apply
-                                </button>
-                            </div>
-                        );
-                    })}
+                    {proposals && (
+                        <ProposalList
+                            proposals={proposals}
+                            entries={entries}
+                            ticked={ticked}
+                            onToggle={index =>
+                                setTicked(current => {
+                                    const next = new Set(current);
+                                    if (next.has(index)) next.delete(index);
+                                    else next.add(index);
+                                    return next;
+                                })
+                            }
+                        />
+                    )}
+                    {issues && <IssueList issues={issues} />}
+                    {updates && (
+                        <UpdateList updates={updates} entries={entries} onApply={p => void applyUpdate(p)} />
+                    )}
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">

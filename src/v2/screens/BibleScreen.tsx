@@ -5,6 +5,7 @@ import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/featu
 import type { LorebookEntry } from "@/types/story";
 import type { ScreenProps } from "../V2App";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
+import { takeNudgeHandoff } from "../bible/nameNudges";
 import { useV2Store } from "../state/useV2Store";
 
 const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
@@ -27,7 +28,10 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const deleteEntry = useDeleteLorebookMutation();
-    const [flow, setFlow] = useState<BibleFlowMode | null>(null);
+    // Arriving via the editor's nudge chip auto-opens a focused extraction —
+    // the chip says "Add to bible", so landing here must actually start adding
+    const [focusNames] = useState(takeNudgeHandoff);
+    const [flow, setFlow] = useState<BibleFlowMode | null>(focusNames.length > 0 ? "extract-chapter" : null);
 
     if (!currentStoryId)
         return (
@@ -123,6 +127,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                     storyId={currentStoryId}
                     chapterId={chapterId}
                     entries={entries ?? []}
+                    focusNames={flow === "extract-chapter" ? focusNames : []}
                     onClose={() => setFlow(null)}
                 />
             )}

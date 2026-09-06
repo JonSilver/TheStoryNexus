@@ -14,7 +14,7 @@ import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLoreb
 import type { Chapter } from "@/types/story";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
-import { findUnmatchedNames } from "../bible/nameNudges";
+import { findUnmatchedNames, setNudgeHandoff } from "../bible/nameNudges";
 import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
 import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
@@ -131,7 +131,11 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                         {onOpenBible && (
                             <button
                                 type="button"
-                                onClick={onOpenBible}
+                                onClick={() => {
+                                    setNudgeHandoff(nudgeNames);
+                                    setNudgeNames([]);
+                                    onOpenBible();
+                                }}
                                 className="shrink-0 rounded-md border px-2 py-0.5"
                             >
                                 Add to bible
