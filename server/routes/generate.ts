@@ -50,7 +50,8 @@ const actionRequestSchema = z.object({
             povCharacter: z.string().max(200),
             povType: z.string().max(100),
             userMessage: z.string().max(100_000),
-            chatHistory: z.string().max(500_000)
+            chatHistory: z.string().max(500_000),
+            guidance: z.string().max(5_000)
         })
         .partial()
         .default({}),

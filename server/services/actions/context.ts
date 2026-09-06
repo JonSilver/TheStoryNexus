@@ -19,6 +19,7 @@ export interface EditorContext {
     povType?: string;
     userMessage?: string;
     chatHistory?: string;
+    guidance?: string;
 }
 
 export interface AssemblyInput {
@@ -107,6 +108,7 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
     if (needs.has("selection") && editorContext.selection) context.selection = spend(editorContext.selection);
     if (needs.has("command") && editorContext.command) context.command = spend(editorContext.command);
     if (needs.has("user_message") && editorContext.userMessage) context.user_message = spend(editorContext.userMessage);
+    if (needs.has("guidance") && editorContext.guidance) context.guidance = spend(editorContext.guidance);
     if (needs.has("pov"))
         context.pov = formatPov(
             editorContext.povType ?? chapter?.povType,

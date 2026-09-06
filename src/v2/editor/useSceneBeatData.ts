@@ -7,7 +7,9 @@ import { $isSceneBeatNode, $readSceneBeat, type SceneBeatData } from "./nodes/Sc
 const MISSING: SceneBeatData = {
     command: "",
     status: "idle",
-    generatedText: "",
+    takes: [],
+    activeTake: 0,
+    streaming: "",
     collapsed: false,
     povCharacter: "",
     povType: ""
@@ -16,7 +18,10 @@ const MISSING: SceneBeatData = {
 const same = (a: SceneBeatData, b: SceneBeatData) =>
     a.command === b.command &&
     a.status === b.status &&
-    a.generatedText === b.generatedText &&
+    a.takes.length === b.takes.length &&
+    a.takes.every((take, i) => take === b.takes[i]) &&
+    a.activeTake === b.activeTake &&
+    a.streaming === b.streaming &&
     a.collapsed === b.collapsed &&
     a.povCharacter === b.povCharacter &&
     a.povType === b.povType;

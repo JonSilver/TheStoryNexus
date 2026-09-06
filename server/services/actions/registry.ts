@@ -17,7 +17,8 @@ export const CONTEXT_KEYS = [
     "story_language",
     "chapter_content",
     "chat_history",
-    "user_message"
+    "user_message",
+    "guidance"
 ] as const;
 
 export type ContextKey = (typeof CONTEXT_KEYS)[number];
@@ -31,7 +32,9 @@ export const ACTION_IDS = [
     "brainstorm",
     "scene_beat",
     "extract_entries",
-    "propose_updates"
+    "propose_updates",
+    "ask",
+    "check_continuity"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -69,7 +72,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "scene_beat",
         label: "Scene Beat",
         voiceApplies: true,
-        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command"],
+        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
@@ -78,7 +81,8 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
                 role: "user",
                 content:
                     "Write in {{pov}}\n{{command}}\nDo not add a conclusion. Do not end the scene with a tidy resolution or moral lesson."
-            }
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 16384 }
     },
@@ -86,7 +90,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "continue",
         label: "Continue Writing",
         voiceApplies: true,
-        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov"],
+        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
@@ -95,7 +99,8 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
                 role: "user",
                 content:
                     "Continue the scene directly from where the text above leaves off, in {{pov}}. Match the established tense, style and tone. Do not repeat the existing text, do not summarise it, and do not add a conclusion."
-            }
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 8192 }
     },
@@ -103,14 +108,15 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "rework",
         label: "Rework",
         voiceApplies: true,
-        contextNeeds: ["selection", "recent_prose", "pov", "story_language"],
+        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
                     "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Rephrase the provided text while maintaining its original meaning, style, and tone. Do not introduce new ideas or alter the intended message. Use {{story_language}} spelling and grammar conventions. Improve flow, readability, and clarity without changing meaning or tone. Prefer natural language."
             },
-            { role: "user", content: "Rewrite the following:\n{{selection}}\nTake into account the POV: {{pov}}" }
+            { role: "user", content: "Rewrite the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 8192 }
     },
@@ -118,14 +124,15 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "expand",
         label: "Expand",
         voiceApplies: true,
-        contextNeeds: ["selection", "recent_prose", "pov", "story_language"],
+        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
                     "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Expand the provided text with greater detail and richness while maintaining the established tense, style, and tone. Use {{story_language}} spelling and grammar conventions. Avoid introducing unrelated details or contradicting established context. Enhance descriptions, atmosphere, emotions, or character interactions."
             },
-            { role: "user", content: "Expand the following:\n{{selection}}\nTake into account the POV: {{pov}}" }
+            { role: "user", content: "Expand the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 8192 }
     },
@@ -133,14 +140,15 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "shorten",
         label: "Shorten",
         voiceApplies: true,
-        contextNeeds: ["selection", "recent_prose", "pov", "story_language"],
+        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
                     "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Shorten the provided text while preserving its core meaning, style, and tone. Retain details essential for clarity and impact. Use {{story_language}} spelling and grammar conventions. Eliminate redundancy and non-essential description without sacrificing critical information."
             },
-            { role: "user", content: "Shorten the following:\n{{selection}}\nTake into account the POV: {{pov}}" }
+            { role: "user", content: "Shorten the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 8192 }
     },
@@ -158,6 +166,36 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Summarise the following chapter content:\nChapter Content: {{chapter_content}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 512 }
+    },
+    ask: {
+        id: "ask",
+        label: "Ask (free-form on selection)",
+        voiceApplies: true,
+        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "user_message"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    "You are an expert fiction editor working on a passage at the writer's direction. Contextual awareness — the preceding text: {{recent_prose}}\nApply the writer's instruction to the passage. Preserve the established tense, style and POV ({{pov}}) unless the instruction says otherwise. Use {{story_language}} spelling and grammar. Return ONLY the revised passage — no commentary, no quotation marks around it."
+            },
+            { role: "user", content: "The passage:\n{{selection}}\n\nThe instruction: {{user_message}}" }
+        ],
+        defaultParams: { temperature: 0.9, maxTokens: 8192 }
+    },
+    check_continuity: {
+        id: "check_continuity",
+        label: "Check Continuity",
+        voiceApplies: false,
+        contextNeeds: ["chapter_content", "matched_entries"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You are a continuity editor. Compare the chapter text against the story bible entries and find contradictions: physical descriptions, names, relationships, timeline, established facts. Return ONLY a JSON array — no prose, no code fences — of objects shaped: {"name": string (the entry or entity concerned), "issue": string (one sentence stating the contradiction), "evidence": string (short quote from the chapter)}. Return [] if nothing conflicts. Do not invent issues.\nStory bible entries:\n{{matched_entries}}'
+            },
+            { role: "user", content: "Chapter text:\n{{chapter_content}}" }
+        ],
+        defaultParams: { temperature: 0.2, maxTokens: 4096 }
     },
     extract_entries: {
         id: "extract_entries",
@@ -193,14 +231,16 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "brainstorm",
         label: "Brainstorm",
         voiceApplies: true,
-        contextNeeds: ["matched_entries", "chat_history", "user_message"],
+        contextNeeds: ["matched_entries", "summaries", "chapter_content", "chat_history", "user_message"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
-                    "You are a creative writing assistant helping to brainstorm and develop story ideas. Use the provided story context to inform your responses, referencing specific characters, locations, and events when relevant. Explore different angles and possibilities: suggest alternatives, ask thought-provoking questions, and develop ideas further. Keep suggestions consistent with established lore. Build on the conversation naturally. Break complex ideas into manageable parts where helpful, and identify challenges or areas needing development.\n" +
+                    "You are a creative writing assistant helping to brainstorm and develop story ideas. You have READ the story so far — ground every response in it, referencing specific characters, locations, and events. Explore different angles and possibilities: suggest alternatives, ask thought-provoking questions, and develop ideas further. Keep suggestions consistent with established lore. Build on the conversation naturally.\n" +
                     CONTEXT_PREAMBLE
             },
+            { role: "user", content: "Summaries of the story so far: {{summaries}}" },
+            { role: "user", content: "The chapter currently being written: {{chapter_content}}" },
             { role: "user", content: "Here's the chat history of our discussion: {{chat_history}}" },
             { role: "user", content: "{{user_message}}" }
         ],

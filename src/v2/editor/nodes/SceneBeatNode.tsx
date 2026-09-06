@@ -23,6 +23,14 @@ export const statusState = createState("status", {
     parse: (v): SceneBeatStatus => (v === "generating" ? "done" : isStatus(v) ? v : "idle")
 });
 export const generatedTextState = createState("generatedText", { parse: asString });
+const asStringArray = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((item): item is string => typeof item === "string") : [];
+const asIndex = (v: unknown): number => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : 0);
+/** Every completed generation survives as a take; regeneration never destroys a draft. */
+export const takesState = createState("takes", { parse: asStringArray });
+export const activeTakeState = createState("activeTake", { parse: asIndex });
+/** In-flight tokens stream here — durable mid-generation, never clobbering takes. */
+export const streamingState = createState("streaming", { parse: asString });
 export const collapsedState = createState("collapsed", { parse: asBoolean });
 export const povCharacterState = createState("povCharacter", { parse: asString });
 export const povTypeState = createState("povType", { parse: asString });
@@ -30,7 +38,10 @@ export const povTypeState = createState("povType", { parse: asString });
 export interface SceneBeatData {
     command: string;
     status: SceneBeatStatus;
-    generatedText: string;
+    /** Completed generations, oldest first (legacy generatedText folds in as the first take). */
+    takes: string[];
+    activeTake: number;
+    streaming: string;
     collapsed: boolean;
     povCharacter: string;
     povType: string;
@@ -47,6 +58,9 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
                 { stateConfig: commandState, flat: true },
                 { stateConfig: statusState, flat: true },
                 { stateConfig: generatedTextState, flat: true },
+                { stateConfig: takesState, flat: true },
+                { stateConfig: activeTakeState, flat: true },
+                { stateConfig: streamingState, flat: true },
                 { stateConfig: collapsedState, flat: true },
                 { stateConfig: povCharacterState, flat: true },
                 { stateConfig: povTypeState, flat: true }
@@ -82,11 +96,20 @@ export const $createSceneBeatNode = (command = "") => $setState(new SceneBeatNod
 export const $isSceneBeatNode = (node: LexicalNode | null | undefined): node is SceneBeatNode =>
     node instanceof SceneBeatNode;
 
-export const $readSceneBeat = (node: SceneBeatNode): SceneBeatData => ({
-    command: $getState(node, commandState),
-    status: $getState(node, statusState),
-    generatedText: $getState(node, generatedTextState),
-    collapsed: $getState(node, collapsedState),
-    povCharacter: $getState(node, povCharacterState),
-    povType: $getState(node, povTypeState)
-});
+export const $readSceneBeat = (node: SceneBeatNode): SceneBeatData => {
+    const storedTakes = $getState(node, takesState);
+    const legacy = $getState(node, generatedTextState);
+    // Legacy single-draft beats surface their draft as take one
+    const takes = storedTakes.length > 0 ? storedTakes : legacy ? [legacy] : [];
+    const activeTake = Math.min($getState(node, activeTakeState), Math.max(takes.length - 1, 0));
+    return {
+        command: $getState(node, commandState),
+        status: $getState(node, statusState),
+        takes,
+        activeTake,
+        streaming: $getState(node, streamingState),
+        collapsed: $getState(node, collapsedState),
+        povCharacter: $getState(node, povCharacterState),
+        povType: $getState(node, povTypeState)
+    };
+};

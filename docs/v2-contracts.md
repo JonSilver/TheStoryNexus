@@ -163,9 +163,12 @@ TipTap's genuine advantages — cross-app HTML clipboard fidelity, prosemirror-m
 ```json
 { "type": "scene-beat-v2", "version": 1,
   "command": "…", "status": "idle|generating|done|accepted",
+  "takes": ["…"], "activeTake": 0, "streaming": "…",
   "generatedText": "…", "collapsed": false,
   "povCharacter": "…", "povType": "…" }
 ```
+
+Takes model (writing-process review): every completed generation appends to `takes` — regeneration and backend failures never destroy a draft. In-flight tokens stream into `streaming` (durable, outside undo); completion commits `streaming` as a new take. `generatedText` is the legacy single-draft field, folded in as take one on read and cleared on first new take. Accept inserts the ACTIVE take; "Accept & tidy" also removes the beat. Multiple takes may be accepted in sequence for cherry-picking in the prose.
 
 Two amendments made during build, both deliberate: the type is **`scene-beat-v2`** because v1 also registers `scene-beat` and each editor silently destroyed the other's node state when they shared the name (live-verified data loss; v1 now shows v2 documents read-only). And **`accepted`** is a fourth status so a beat whose output was taken into the document is distinguishable from one never run; a serialised `generating` is normalised to `done` on parse (an orphaned stream by definition).
 

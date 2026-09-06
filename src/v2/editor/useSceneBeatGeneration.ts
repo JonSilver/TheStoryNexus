@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import {
     $getNodeByKey,
     $getRoot,
+    $getState,
     $setState,
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
@@ -13,17 +14,27 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { attemptPromise } from "@jfdi/attempt";
 import { toast } from "react-toastify";
 import { createSSEParser } from "@/services/ai/sseParser";
-import { useChapterIdentity } from "./ChapterContext";
-import { generatedTextState, $isSceneBeatNode, type SceneBeatNode, statusState } from "./nodes/SceneBeatNode";
 import { randomUUID } from "@/utils/crypto";
+import { useChapterIdentity } from "./ChapterContext";
+import {
+    activeTakeState,
+    generatedTextState,
+    $isSceneBeatNode,
+    type SceneBeatNode,
+    statusState,
+    streamingState,
+    takesState
+} from "./nodes/SceneBeatNode";
 
 const RECENT_PROSE_CHAR_CAP = 100_000;
 
 /**
- * Streams the scene_beat action into the node's own state — durable per
- * token, kept out of the undo stack via the history-merge tag (as an ARRAY;
- * spike finding), behind a HISTORY_PUSH boundary so merges can't attach to
- * prior edits. Abort on stop, delete, or unmount.
+ * Streams the scene_beat action into the node's streaming field — previous
+ * takes are NEVER touched, so a failed or unwanted generation costs nothing.
+ * On completion (including a partial kept via Stop) the streamed text is
+ * appended as a new take and selected. Legacy single-draft beats fold their
+ * old generatedText in as take one. Streaming stays out of undo history
+ * (history-merge tag as an ARRAY) behind a HISTORY_PUSH boundary.
  */
 export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     const [editor] = useLexicalComposerContext();
@@ -61,7 +72,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     );
 
     const generate = useCallback(
-        async (command: string) => {
+        async (command: string, guidance?: string) => {
             cancelRef.current?.();
             const requestId = randomUUID();
             const controller = new AbortController();
@@ -76,19 +87,32 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 );
             };
             cancelRef.current = cancel;
-            // Superseded runs must neither mutate the node nor clear the
-            // successor's cancel handle
             const owns = () => cancelRef.current === cancel;
 
             mutate(node => {
                 $setState(node, statusState, "generating");
-                $setState(node, generatedTextState, "");
+                $setState(node, streamingState, "");
             }, HISTORY_PUSH_TAG);
 
+            // Completion commits the streamed text (if any) as a NEW take;
+            // failure with nothing streamed restores the pre-generation view
             const finish = (errorMessage?: string) => {
                 if (!owns()) return;
                 cancelRef.current = null;
-                mutate(node => $setState(node, statusState, "done"), HISTORY_MERGE_TAG);
+                mutate(node => {
+                    const streamed = $getState(node, streamingState).trim();
+                    const legacy = $getState(node, generatedTextState);
+                    const stored = $getState(node, takesState);
+                    const takes = stored.length > 0 ? stored : legacy ? [legacy] : [];
+                    if (streamed) {
+                        const next = [...takes, streamed];
+                        $setState(node, takesState, next);
+                        $setState(node, activeTakeState, next.length - 1);
+                        $setState(node, generatedTextState, "");
+                    }
+                    $setState(node, streamingState, "");
+                    $setState(node, statusState, streamed || takes.length > 0 ? "done" : "idle");
+                }, HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
             };
 
@@ -101,13 +125,21 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                         actionId: "scene_beat",
                         storyId,
                         chapterId,
-                        editorContext: { command, recentProse: textBeforeNode() }
+                        editorContext: {
+                            command,
+                            recentProse: textBeforeNode(),
+                            ...(guidance?.trim() ? { guidance: guidance.trim() } : {})
+                        }
                     }),
                     signal: controller.signal
                 })
             );
             if (fetchError || !response) {
-                finish((fetchError as Error)?.name === "AbortError" ? undefined : ((fetchError as Error)?.message ?? "Request failed"));
+                finish(
+                    (fetchError as Error)?.name === "AbortError"
+                        ? undefined
+                        : ((fetchError as Error)?.message ?? "Request failed")
+                );
                 return;
             }
             if (!response.ok || !response.body) {
@@ -120,7 +152,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 onToken: token => {
                     if (!owns()) return;
                     mutate(
-                        node => $setState(node, generatedTextState, prev => prev + token),
+                        node => $setState(node, streamingState, prev => prev + token),
                         [HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]
                     );
                 },
@@ -148,8 +180,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     );
 
     const stop = useCallback(() => {
-        // Abort only — the run still owns cancelRef and must finish() itself
-        // to move the node out of "generating"
+        // Abort only — the run still owns cancelRef and commits the partial
         cancelRef.current?.();
     }, []);
 

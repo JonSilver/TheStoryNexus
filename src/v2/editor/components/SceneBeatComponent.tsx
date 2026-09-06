@@ -1,9 +1,8 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     $createParagraphNode,
     $createTextNode,
     $getNodeByKey,
-    $getState,
     $setState,
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
@@ -11,27 +10,46 @@ import {
     type NodeKey
 } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { ChevronDown, ChevronRight, Sparkles, Trash2 } from "lucide-react";
-import {
-    collapsedState,
-    commandState,
-    generatedTextState,
-    $isSceneBeatNode,
-    statusState
-} from "../nodes/SceneBeatNode";
+import { ChevronDown, ChevronRight, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { ContextInspector } from "../../ai/ContextInspector";
 import { useChapterIdentity } from "../ChapterContext";
+import {
+    activeTakeState,
+    collapsedState,
+    commandState,
+    $isSceneBeatNode,
+    statusState,
+    takesState
+} from "../nodes/SceneBeatNode";
 import { useSceneBeatData } from "../useSceneBeatData";
 import { useSceneBeatGeneration } from "../useSceneBeatGeneration";
+import { PovPicker } from "./PovPicker";
+import { TakeViewer } from "./TakeViewer";
 
 const stopKeydown = (e: KeyboardEvent) => e.stopPropagation();
 
+/** Elapsed seconds while waiting for the first token — cold model loads get a heartbeat. */
+const useWarmupSeconds = (waiting: boolean) => {
+    const [seconds, setSeconds] = useState(0);
+    useEffect(() => {
+        if (!waiting) {
+            setSeconds(0);
+            return undefined;
+        }
+        const timer = setInterval(() => setSeconds(s => s + 1), 1000);
+        return () => clearInterval(timer);
+    }, [waiting]);
+    return seconds;
+};
+
 export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
-    const { command, status, generatedText, collapsed } = useSceneBeatData(nodeKey);
+    const { command, status, takes, activeTake, streaming, collapsed } = useSceneBeatData(nodeKey);
     const { storyId, chapterId } = useChapterIdentity();
     const { generate, stop, mutate, abortActive, textBeforeNode } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
+    const isGenerating = status === "generating";
+    const warmupSeconds = useWarmupSeconds(isGenerating && !streaming);
 
     /**
      * Lexical's keydown listener sits on the contenteditable root, below the
@@ -44,32 +62,49 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
         el?.addEventListener("keydown", stopKeydown);
     }, []);
 
-    const accept = () =>
-        mutate(node => {
-            const text = $getState(node, generatedTextState);
-            const paragraphs = text
-                .split(/\n{2,}/)
-                .map(p => p.trim())
-                .filter(Boolean)
-                .map(p => {
-                    const paragraph = $createParagraphNode();
-                    paragraph.append($createTextNode(p));
-                    return paragraph;
-                });
-            paragraphs.reduce<LexicalNode>((prev, p) => {
-                prev.insertAfter(p);
-                return p;
-            }, node);
-            $setState(node, statusState, "accepted");
-            $setState(node, generatedTextState, "");
-            $setState(node, collapsedState, true);
-            paragraphs[paragraphs.length - 1]?.selectEnd();
-        }, HISTORY_PUSH_TAG);
+    const insertActiveTake = (node: ReturnType<typeof $getNodeByKey> & LexicalNode) => {
+        const text = takes[Math.min(activeTake, takes.length - 1)] ?? "";
+        const paragraphs = text
+            .split(/\n{2,}/)
+            .map(p => p.trim())
+            .filter(Boolean)
+            .map(p => {
+                const paragraph = $createParagraphNode();
+                paragraph.append($createTextNode(p));
+                return paragraph;
+            });
+        paragraphs.reduce<LexicalNode>((prev, p) => {
+            prev.insertAfter(p);
+            return p;
+        }, node);
+        paragraphs[paragraphs.length - 1]?.selectEnd();
+    };
 
-    const reject = () =>
+    // Accept keeps the beat (and every take) for later; tidy removes the
+    // spent machinery from the prose in the same undo step
+    const accept = (removeBeat: boolean) =>
+        editor.update(
+            () => {
+                const node = $getNodeByKey(nodeKey);
+                if (!$isSceneBeatNode(node)) return;
+                insertActiveTake(node);
+                if (removeBeat) node.remove();
+                else {
+                    $setState(node, statusState, "accepted");
+                    $setState(node, collapsedState, true);
+                }
+            },
+            { tag: HISTORY_PUSH_TAG }
+        );
+
+    const selectTake = (index: number) => mutate(node => $setState(node, activeTakeState, index), HISTORY_MERGE_TAG);
+
+    const deleteTake = (index: number) =>
         mutate(node => {
-            $setState(node, statusState, "idle");
-            $setState(node, generatedTextState, "");
+            const remaining = takes.filter((_, i) => i !== index);
+            $setState(node, takesState, remaining);
+            $setState(node, activeTakeState, Math.min(index, Math.max(remaining.length - 1, 0)));
+            if (remaining.length === 0) $setState(node, statusState, "idle");
         }, HISTORY_PUSH_TAG);
 
     const remove = () => {
@@ -81,8 +116,6 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     };
 
     const toggleCollapsed = () => mutate(node => $setState(node, collapsedState, prev => !prev), HISTORY_MERGE_TAG);
-
-    const isGenerating = status === "generating";
 
     return (
         <div
@@ -100,8 +133,10 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                     {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
                 <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-medium">Scene Beat</span>
-                <span className="ml-auto text-xs text-muted-foreground">{status}</span>
+                <span className="min-w-0 flex-1 truncate font-medium">
+                    {collapsed && command ? command : "Scene Beat"}
+                </span>
+                <span className="text-xs text-muted-foreground">{status}</span>
                 <button type="button" onClick={remove} aria-label="Delete scene beat" className="text-muted-foreground">
                     <Trash2 className="h-4 w-4" />
                 </button>
@@ -121,9 +156,27 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                             mutate(node => $setState(node, commandState, next), HISTORY_MERGE_TAG);
                         }}
                     />
+                    <PovPicker nodeKey={nodeKey} disabled={isGenerating} />
 
-                    {generatedText && (
-                        <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">{generatedText}</div>
+                    {isGenerating && (
+                        <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">
+                            {streaming || (
+                                <span className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    {warmupSeconds > 3 ? `warming the model… ${warmupSeconds}s` : "starting…"}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    {!isGenerating && (
+                        <TakeViewer
+                            takes={takes}
+                            activeTake={activeTake}
+                            onSelect={selectTake}
+                            onDelete={deleteTake}
+                            onAccept={removeBeat => accept(removeBeat)}
+                            onRefine={guidance => void generate(command, guidance)}
+                        />
                     )}
 
                     <footer className="flex items-center gap-2">
@@ -138,22 +191,8 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                                 disabled={!command.trim()}
                                 className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
                             >
-                                {status === "accepted" ? "Regenerate" : "Generate"}
+                                {takes.length > 0 ? "New take" : "Generate"}
                             </button>
-                        )}
-                        {status === "done" && generatedText && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={accept}
-                                    className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground"
-                                >
-                                    Accept
-                                </button>
-                                <button type="button" onClick={reject} className="rounded-md border px-3 py-1 text-sm">
-                                    Reject
-                                </button>
-                            </>
                         )}
                         <span className="ml-auto">
                             <ContextInspector
