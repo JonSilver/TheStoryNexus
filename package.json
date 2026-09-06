@@ -19,6 +19,7 @@
         "db:migrate": "drizzle-kit migrate",
         "knip": "knip",
         "test": "vitest run",
+        "verify": "oxlint && tsc --noEmit && tsc --project server/tsconfig.json --noEmit && vitest run",
         "test:watch": "vitest",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",

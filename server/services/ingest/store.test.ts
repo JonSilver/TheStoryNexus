@@ -49,7 +49,7 @@ describe("takeAnalysis / restoreAnalysis", () => {
         const token = storeAnalysis("T", [{ title: "C1", body: "text" }]);
         const taken = takeAnalysis(token);
         expect(taken).not.toBeNull();
-        restoreAnalysis(token, taken!);
+        if (taken) restoreAnalysis(token, taken);
         expect(takeAnalysis(token)?.title).toBe("T");
     });
 
