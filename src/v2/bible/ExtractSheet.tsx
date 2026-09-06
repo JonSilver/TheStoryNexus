@@ -7,7 +7,7 @@ import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { IssueList, ProposalList, UpdateList } from "./FlowResults";
+import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
 import {
     type ContinuityIssue,
     type EntryProposal,
@@ -16,15 +16,9 @@ import {
     parseEntryProposals,
     parseUpdateProposals
 } from "./parseProposals";
+import { useStorySweep } from "./useStorySweep";
 
-export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates" | "continuity";
-
-const TITLES: Record<BibleFlowMode, string> = {
-    "extract-chapter": "Extract entries from this chapter",
-    "extract-paste": "Extract entries from pasted text",
-    updates: "Scan chapter for entry updates",
-    continuity: "Check chapter continuity against the bible"
-};
+export type BibleFlowMode = "extract-chapter" | "extract-story" | "extract-paste" | "updates" | "continuity";
 
 /**
  * Review-before-save flow (contracts Phase 6): nothing the model proposes
@@ -35,6 +29,7 @@ export const ExtractSheet = ({
     storyId,
     chapterId,
     entries,
+    chapters = [],
     focusNames = [],
     onClose
 }: {
@@ -42,6 +37,8 @@ export const ExtractSheet = ({
     storyId: string;
     chapterId: string | null;
     entries: LorebookEntry[];
+    /** Ordered chapters, for the whole-story sweep. */
+    chapters?: Array<{ id: string; title: string }>;
     /** Names from the editor's nudge chip: focuses the extraction and auto-runs it. */
     focusNames?: string[];
     onClose: () => void;
@@ -55,8 +52,27 @@ export const ExtractSheet = ({
     const [issues, setIssues] = useState<ContinuityIssue[] | null>(null);
     const [ticked, setTicked] = useState<Set<number>>(new Set());
     const [approving, setApproving] = useState(false);
+    const sweep = useStorySweep(storyId, chapters, generation);
+
+    const applyProposals = (parsed: EntryProposal[]) => {
+        const existingNames = new Set(entries.map(e => e.name.toLowerCase()));
+        setProposals(parsed);
+        setTicked(
+            new Set(
+                parsed
+                    .map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i))
+                    .filter(i => i >= 0)
+            )
+        );
+    };
 
     const run = async () => {
+        if (mode === "extract-story") {
+            const gathered = await sweep.run();
+            applyProposals(gathered);
+            if (!gathered.length && !sweep.wasStopped()) toast.info("Nothing extractable found in any chapter");
+            return;
+        }
         const actionId =
             mode === "updates" ? "propose_updates" : mode === "continuity" ? "check_continuity" : "extract_entries";
         // Chapter modes read from the server — land any pending editor save first
@@ -84,9 +100,7 @@ export const ExtractSheet = ({
             setUpdates(parsed);
             if (!parsed.length) toast.info("No entry updates suggested");
         } else {
-            // Dedupe within the batch and against the existing bible
-            // (case-insensitive on name); existing ones start unticked
-            const existingNames = new Set(entries.map(e => e.name.toLowerCase()));
+            // Dedupe within the batch; entries already in the bible start unticked
             const seen = new Set<string>();
             const parsed = parseEntryProposals(text).filter(proposal => {
                 const key = proposal.name.toLowerCase();
@@ -94,14 +108,7 @@ export const ExtractSheet = ({
                 seen.add(key);
                 return true;
             });
-            setProposals(parsed);
-            setTicked(
-                new Set(
-                    parsed
-                        .map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i))
-                        .filter(i => i >= 0)
-                )
-            );
+            applyProposals(parsed);
             if (!parsed.length)
                 toast.info(
                     text.trim().length > 40
@@ -160,7 +167,11 @@ export const ExtractSheet = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const busy = generation.phase === "streaming";
+    const busy = generation.phase === "streaming" || sweep.progress !== null;
+    const chapterLabel =
+        mode === "extract-chapter" || mode === "updates" || mode === "continuity"
+            ? (chapters.find(c => c.id === chapterId)?.title ?? null)
+            : null;
     const needsPaste = mode === "extract-paste" && proposals === null;
     const showRun = proposals === null && updates === null && issues === null;
 
@@ -168,11 +179,16 @@ export const ExtractSheet = ({
         <div
             className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
             role="dialog"
-            aria-label={TITLES[mode]}
+            aria-label={FLOW_TITLES[mode]}
         >
             <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 <header className="flex items-center justify-between px-4 py-3">
-                    <span className="font-medium">{TITLES[mode]}</span>
+                    <span className="min-w-0">
+                        <span className="block truncate font-medium">{FLOW_TITLES[mode]}</span>
+                        {chapterLabel && (
+                            <span className="block truncate text-xs text-muted-foreground">“{chapterLabel}”</span>
+                        )}
+                    </span>
                     <button type="button" onClick={onClose} aria-label="Close">
                         <X className="h-4 w-4" />
                     </button>
@@ -189,7 +205,10 @@ export const ExtractSheet = ({
                     )}
                     {busy && (
                         <p className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" /> Reading…
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            {sweep.progress
+                                ? `Reading chapter ${sweep.progress.current} of ${sweep.progress.total}: “${sweep.progress.title}”…`
+                                : "Reading…"}
                         </p>
                     )}
                     {generation.error && <p className="text-destructive">{generation.error}</p>}
@@ -214,7 +233,11 @@ export const ExtractSheet = ({
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">
-                    {showRun ? (
+                    {showRun && busy && mode === "extract-story" ? (
+                        <button type="button" onClick={sweep.stop} className="rounded-md border px-4 py-2 text-sm">
+                            Stop (keep what's found)
+                        </button>
+                    ) : showRun ? (
                         <button
                             type="button"
                             onClick={() => void run()}

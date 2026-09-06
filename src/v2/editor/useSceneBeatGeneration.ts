@@ -177,7 +177,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             if (readError)
                 finish((readError as Error).name === "AbortError" ? undefined : (readError as Error).message);
         },
-        [mutate, storyId, chapterId, textBeforeNode]
+        [mutate, editor, nodeKey, storyId, chapterId, textBeforeNode]
     );
 
     const stop = useCallback(() => {

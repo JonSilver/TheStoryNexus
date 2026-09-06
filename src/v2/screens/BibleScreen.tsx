@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardPaste, FileScan, ScanSearch, ShieldQuestion, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, ClipboardPaste, FileScan, ScanSearch, ShieldQuestion, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -11,6 +11,7 @@ import { useV2Store } from "../state/useV2Store";
 const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
 
 const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; needsChapter: boolean }> = [
+    { mode: "extract-story", label: "Extract from whole story", icon: BookOpenCheck, needsChapter: true },
     { mode: "extract-chapter", label: "Extract from chapter", icon: FileScan, needsChapter: true },
     { mode: "extract-paste", label: "Extract from pasted text", icon: ClipboardPaste, needsChapter: false },
     { mode: "updates", label: "Scan for updates", icon: ScanSearch, needsChapter: true },
@@ -77,7 +78,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {groups.length === 0 && (
                     <p className="p-8 text-center text-sm text-muted-foreground">
-                        No entries yet — extract some from your writing with the flows above.
+                        No entries yet — try “Extract from whole story” above to build your bible in one pass.
                     </p>
                 )}
                 {groups.map(group => (
@@ -129,6 +130,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                     mode={flow}
                     storyId={currentStoryId}
                     chapterId={chapterId}
+                    chapters={[...(chapters ?? [])].sort((a, b) => a.order - b.order)}
                     entries={entries ?? []}
                     focusNames={flow === "extract-chapter" ? focusNames : []}
                     onClose={() => setFlow(null)}

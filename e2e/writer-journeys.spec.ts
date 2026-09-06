@@ -156,3 +156,39 @@ test("export: markdown download contains the chapter text", async ({ page }) => 
     const content = Buffer.concat(chunks).toString("utf-8");
     if (!content.includes("Exportable sentence about the tide.")) throw new Error(`Export missing prose: ${content}`);
 });
+
+test("whole-story extraction: every chapter feeds one review list", async ({ page }) => {
+    const byChapter: Record<string, string> = {};
+    await mockGeneration(page, request => {
+        // Distinct entity per chapter proves each chapter was actually read
+        const call = Object.keys(byChapter).length + 1;
+        const name = call === 1 ? "Elinor" : "Willoughby";
+        byChapter[String(call)] = name;
+        return JSON.stringify([
+            { name, category: "character", description: `${name} appears in chapter ${call}.`, tags: [] }
+        ]);
+    });
+
+    await createStoryAndChapter(page, "Journey — sweep", "One");
+    await typeInEditor(page, "Elinor considered the matter carefully.");
+    await waitForSaved(page);
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByPlaceholder("New chapter title (optional)").fill("Two");
+    await page.getByRole("button", { name: "Add" }).click();
+    await typeInEditor(page, "Willoughby arrived without warning.");
+    await waitForSaved(page);
+
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible (AI extraction)" }).click();
+    await page.getByRole("button", { name: "Extract from whole story" }).click();
+    await page.getByRole("button", { name: "Run" }).click();
+
+    // Both chapters' entities in ONE review list, pre-ticked
+    await expect(page.getByText("Elinor appears in chapter 1.")).toBeVisible();
+    await expect(page.getByText("Willoughby appears in chapter 2.")).toBeVisible();
+    await page.getByRole("button", { name: "Add 2 to bible" }).click();
+
+    await expect(page.getByRole("heading", { name: "character" })).toBeVisible();
+    await expect(page.getByText("Elinor appears in chapter 1.")).toBeVisible();
+    await expect(page.getByText("Willoughby appears in chapter 2.")).toBeVisible();
+});

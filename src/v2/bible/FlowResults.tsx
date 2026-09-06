@@ -1,5 +1,14 @@
 import type { LorebookEntry } from "@/types/story";
+import type { BibleFlowMode } from "./ExtractSheet";
 import type { ContinuityIssue, EntryProposal, UpdateProposal } from "./parseProposals";
+
+export const FLOW_TITLES: Record<BibleFlowMode, string> = {
+    "extract-chapter": "Extract entries from this chapter",
+    "extract-story": "Extract entries from the whole story",
+    "extract-paste": "Extract entries from pasted text",
+    updates: "Scan chapter for entry updates",
+    continuity: "Check chapter continuity against the bible"
+};
 
 /** Result renderers for the bible flow sheet — presentation only. */
 
