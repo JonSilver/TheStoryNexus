@@ -1,3 +1,4 @@
+import { ListItemNode, ListNode } from "@lexical/list";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
@@ -5,14 +6,15 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { ListItemNode, ListNode } from "@lexical/list";
 import { HeadingNode } from "@lexical/rich-text";
 import { debounce } from "lodash";
 import { X } from "lucide-react";
 import { Component, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { Chapter } from "@/types/story";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
+import { findUnmatchedNames } from "../bible/nameNudges";
 import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
 import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
@@ -22,10 +24,8 @@ import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
 import { SceneBeatShortcutPlugin } from "./plugins/SceneBeatShortcutPlugin";
 import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
-import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
-import { findUnmatchedNames } from "../bible/nameNudges";
 import { useAutoSummarise } from "./useAutoSummarise";
-import { useChapterSaver } from "./useChapterSaver";
+import { hasInFlightSave, useChapterSaver, whenSavesSettle } from "./useChapterSaver";
 
 const theme = {
     paragraph: "my-3",
@@ -95,7 +95,10 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
             setWordCount(words);
             scheduleSave(serialised, words);
             noteActivity();
-            const known = (bibleEntries ?? []).flatMap(e => [e.name, ...((e.tags as string[]) ?? [])]);
+            // No detection until the bible has actually loaded — an empty
+            // known list would nudge about names that are already entries
+            if (!bibleEntries) return;
+            const known = bibleEntries.flatMap(e => [e.name, ...((e.tags as string[]) ?? [])]);
             detectNames(text, known, dismissedNudges(chapter.storyId));
         },
         [scheduleSave, noteActivity, bibleEntries, detectNames, dismissedNudges, chapter.storyId]
@@ -184,20 +187,51 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     );
 };
 
-export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => (
-    <ContentGuard key={chapter.id}>
-        <LexicalComposer
-            initialConfig={{
-                namespace: "story-nexus-v2",
-                theme,
-                nodes: [HeadingNode, HorizontalRuleNode, ListNode, ListItemNode, SceneBeatNode, ImageNode, GhostSuggestionNode],
-                editorState: chapter.content || undefined,
-                onError: error => {
-                    throw error;
-                }
-            }}
-        >
-            <EditorSurface chapter={chapter} onOpenBible={onOpenBible} />
-        </LexicalComposer>
-    </ContentGuard>
-);
+export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => {
+    // A previous editor instance's exit save may still be in flight (switch
+    // away and back inside the save debounce). Mounting Lexical now would
+    // initialise from content that save is about to supersede — hold until it
+    // settles and the cache-synced chapter prop arrives.
+    const [settling, setSettling] = useState(() => hasInFlightSave(chapter.id));
+    // Chapter switches don't remount this component, so re-check per chapter
+    useEffect(() => setSettling(hasInFlightSave(chapter.id)), [chapter.id]);
+    useEffect(() => {
+        if (!settling) return undefined;
+        const live = { current: true };
+        void whenSavesSettle(chapter.id).then(() => {
+            if (live.current) setSettling(false);
+        });
+        return () => {
+            live.current = false;
+        };
+    }, [settling, chapter.id]);
+
+    if (settling)
+        return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Saving…</div>;
+
+    return (
+        <ContentGuard key={chapter.id}>
+            <LexicalComposer
+                initialConfig={{
+                    namespace: "story-nexus-v2",
+                    theme,
+                    nodes: [
+                        HeadingNode,
+                        HorizontalRuleNode,
+                        ListNode,
+                        ListItemNode,
+                        SceneBeatNode,
+                        ImageNode,
+                        GhostSuggestionNode
+                    ],
+                    editorState: chapter.content || undefined,
+                    onError: error => {
+                        throw error;
+                    }
+                }}
+            >
+                <EditorSurface chapter={chapter} onOpenBible={onOpenBible} />
+            </LexicalComposer>
+        </ContentGuard>
+    );
+};

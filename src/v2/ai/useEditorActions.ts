@@ -1,4 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { attemptPromise } from "@jfdi/attempt";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useQueryClient } from "@tanstack/react-query";
 import {
     $createParagraphNode,
     $createTextNode,
@@ -9,9 +11,9 @@ import {
     HISTORY_PUSH_TAG,
     type RangeSelection
 } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { attemptPromise } from "@jfdi/attempt";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
@@ -41,6 +43,7 @@ const RECENT_PROSE_CHAR_CAP = 100_000;
  */
 export const useEditorActions = (chapter: Chapter) => {
     const [editor] = useLexicalComposerContext();
+    const queryClient = useQueryClient();
     const generation = useActionGeneration();
     const [active, setActive] = useState<ActiveAction | null>(null);
     const savedSelection = useRef<RangeSelection | null>(null);
@@ -50,7 +53,11 @@ export const useEditorActions = (chapter: Chapter) => {
     const [askPending, setAskPending] = useState(false);
 
     const docTextTail = useCallback(
-        () => editor.getEditorState().read(() => $getRoot().getTextContent()).slice(-RECENT_PROSE_CHAR_CAP),
+        () =>
+            editor
+                .getEditorState()
+                .read(() => $getRoot().getTextContent())
+                .slice(-RECENT_PROSE_CHAR_CAP),
         [editor]
     );
 
@@ -142,9 +149,7 @@ export const useEditorActions = (chapter: Chapter) => {
     const onContinue = useCallback(() => {
         editor.update(() => {
             const selection = $getSelection();
-            const anchorBlock = $isRangeSelection(selection)
-                ? selection.anchor.getNode().getTopLevelElement()
-                : null;
+            const anchorBlock = $isRangeSelection(selection) ? selection.anchor.getNode().getTopLevelElement() : null;
             const ghost = $createGhostSuggestionNode();
             if (anchorBlock) anchorBlock.insertAfter(ghost);
             else $getRoot().append(ghost);
@@ -204,7 +209,10 @@ export const useEditorActions = (chapter: Chapter) => {
             })
         );
         if (saveError || !saveResponse?.ok) toast.error("Couldn't save summary");
-        else toast.success("Summary saved");
+        else {
+            applyChapterToCaches(queryClient, await saveResponse.json());
+            toast.success("Summary saved");
+        }
     };
 
     const onAccept = useCallback(() => {
@@ -243,7 +251,10 @@ export const useEditorActions = (chapter: Chapter) => {
             onRefine: active && active.kind !== "summarise" ? onRefine : undefined,
             inputRequest:
                 askPending && active?.kind === "ask"
-                    ? { placeholder: "What should happen to this passage? e.g. make the threat implicit…", onSubmit: submitAsk }
+                    ? {
+                          placeholder: "What should happen to this passage? e.g. make the threat implicit…",
+                          onSubmit: submitAsk
+                      }
                     : null
         }
     };

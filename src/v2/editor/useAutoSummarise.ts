@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
@@ -34,6 +34,10 @@ export const useAutoSummarise = (chapter: Chapter) => {
         const stale = (fresh.summarySourceRevision ?? -1) !== (fresh.revision ?? 0);
         if (!stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
 
+        // A run that fails, or lands while the content has already moved on,
+        // must not strand the summary stale until the next edit — re-arm
+        const rearm = () => noteActivity();
+
         running.current = true;
         const baseRevision = fresh.revision ?? 0;
         const chunks: string[] = [];
@@ -44,14 +48,20 @@ export const useAutoSummarise = (chapter: Chapter) => {
                 onDone: error => {
                     running.current = false;
                     const summary = chunks.join("").trim();
-                    if (error || !summary) return;
+                    if (error || !summary) {
+                        rearm();
+                        return;
+                    }
                     void attemptPromise(async () => {
                         const response = await fetch(`/api/chapters/${chapterId}`, {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ summary, summarySourceRevision: baseRevision })
                         });
-                        if (response.ok) applyChapterToCaches(queryClient, await response.json());
+                        if (!response.ok) return;
+                        const updated: Chapter = await response.json();
+                        applyChapterToCaches(queryClient, updated);
+                        if ((updated.summarySourceRevision ?? -1) !== (updated.revision ?? 0)) rearm();
                     });
                 }
             }

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
+import { attemptPromise } from "@jfdi/attempt";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     $getNodeByKey,
     $getRoot,
-    $getState,
     $setState,
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
@@ -10,20 +10,17 @@ import {
     type NodeKey,
     type UpdateTag
 } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { attemptPromise } from "@jfdi/attempt";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { createSSEParser } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
 import { useChapterIdentity } from "./ChapterContext";
 import {
-    activeTakeState,
-    generatedTextState,
+    $commitStreamingAsTake,
     $isSceneBeatNode,
     type SceneBeatNode,
     statusState,
-    streamingState,
-    takesState
+    streamingState
 } from "./nodes/SceneBeatNode";
 
 const RECENT_PROSE_CHAR_CAP = 100_000;
@@ -99,20 +96,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             const finish = (errorMessage?: string) => {
                 if (!owns()) return;
                 cancelRef.current = null;
-                mutate(node => {
-                    const streamed = $getState(node, streamingState).trim();
-                    const legacy = $getState(node, generatedTextState);
-                    const stored = $getState(node, takesState);
-                    const takes = stored.length > 0 ? stored : legacy ? [legacy] : [];
-                    if (streamed) {
-                        const next = [...takes, streamed];
-                        $setState(node, takesState, next);
-                        $setState(node, activeTakeState, next.length - 1);
-                        $setState(node, generatedTextState, "");
-                    }
-                    $setState(node, streamingState, "");
-                    $setState(node, statusState, streamed || takes.length > 0 ? "done" : "idle");
-                }, HISTORY_MERGE_TAG);
+                mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
             };
 
@@ -184,5 +168,8 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
         cancelRef.current?.();
     }, []);
 
-    return { generate, stop, mutate, textBeforeNode, abortActive: () => cancelRef.current?.() };
+    const abortActive = useCallback(() => cancelRef.current?.(), []);
+    const ownsRun = useCallback(() => cancelRef.current !== null, []);
+
+    return { generate, stop, mutate, textBeforeNode, abortActive, ownsRun };
 };

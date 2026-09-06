@@ -1,5 +1,5 @@
-import type { JSX } from "react";
 import { $getState, $setState, createState, DecoratorNode, type LexicalNode } from "lexical";
+import type { JSX } from "react";
 import { SceneBeatComponent } from "../components/SceneBeatComponent";
 
 export const SCENE_BEAT_STATUSES = ["idle", "generating", "done", "accepted"] as const;
@@ -95,6 +95,27 @@ export const $createSceneBeatNode = (command = "") => $setState(new SceneBeatNod
 
 export const $isSceneBeatNode = (node: LexicalNode | null | undefined): node is SceneBeatNode =>
     node instanceof SceneBeatNode;
+
+/**
+ * Fold any streamed text into the takes list and settle status. Used at
+ * generation completion AND to recover orphaned streams — a reload
+ * mid-generation or an undo reviving a deleted beat leaves streamed text
+ * with no owning request; it must surface as a take, never vanish.
+ */
+export const $commitStreamingAsTake = (node: SceneBeatNode) => {
+    const streamed = $getState(node, streamingState).trim();
+    const legacy = $getState(node, generatedTextState);
+    const stored = $getState(node, takesState);
+    const takes = stored.length > 0 ? stored : legacy ? [legacy] : [];
+    if (streamed) {
+        const next = [...takes, streamed];
+        $setState(node, takesState, next);
+        $setState(node, activeTakeState, next.length - 1);
+        $setState(node, generatedTextState, "");
+    }
+    $setState(node, streamingState, "");
+    $setState(node, statusState, streamed || takes.length > 0 ? "done" : "idle");
+};
 
 export const $readSceneBeat = (node: SceneBeatNode): SceneBeatData => {
     const storedTakes = $getState(node, takesState);

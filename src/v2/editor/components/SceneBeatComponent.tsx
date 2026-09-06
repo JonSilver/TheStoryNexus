@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     $createParagraphNode,
     $createTextNode,
@@ -9,14 +9,15 @@ import {
     type LexicalNode,
     type NodeKey
 } from "lexical";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ChevronDown, ChevronRight, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ContextInspector } from "../../ai/ContextInspector";
 import { useChapterIdentity } from "../ChapterContext";
 import {
     activeTakeState,
     collapsedState,
     commandState,
+    $commitStreamingAsTake,
     $isSceneBeatNode,
     statusState,
     takesState
@@ -46,10 +47,19 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
     const { command, status, takes, activeTake, streaming, collapsed } = useSceneBeatData(nodeKey);
     const { storyId, chapterId } = useChapterIdentity();
-    const { generate, stop, mutate, abortActive, textBeforeNode } = useSceneBeatGeneration(nodeKey);
+    const { generate, stop, mutate, abortActive, ownsRun, textBeforeNode } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
     const isGenerating = status === "generating";
     const warmupSeconds = useWarmupSeconds(isGenerating && !streaming);
+
+    // Orphaned-stream recovery: streamed text with no owning request (reload
+    // mid-generation, or undo reviving a deleted beat still marked
+    // generating) must surface as a take, not sit invisible or show a dead
+    // Stop button
+    useEffect(() => {
+        if (ownsRun() || (!streaming && !isGenerating)) return;
+        mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+    }, [streaming, isGenerating, ownsRun, mutate]);
 
     /**
      * Lexical's keydown listener sits on the contenteditable root, below the

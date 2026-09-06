@@ -58,7 +58,11 @@ const isValidOverrideTemplate = (template: unknown, def: ActionDef): template is
     ) &&
     validateTemplate(template as PromptMessage[], def.contextNeeds).valid;
 
-export const resolveAction = (actionId: ActionId, storyId: string | null, overrides: ActionOverrideRow[]): ResolvedAction => {
+export const resolveAction = (
+    actionId: ActionId,
+    storyId: string | null,
+    overrides: ActionOverrideRow[]
+): ResolvedAction => {
     const def = BUILTIN_ACTIONS[actionId];
     const relevant = overrides.filter(o => o.actionId === actionId);
     // Story-scoped override wins over global; built-in fills any gaps
@@ -70,12 +74,16 @@ export const resolveAction = (actionId: ActionId, storyId: string | null, overri
     const template = chain.map(o => o.template).find(t => isValidOverrideTemplate(t, def)) ?? def.defaultTemplate;
     // Contract §5: an INVALID stored value falls through to the next scope
     // (then the built-in) rather than being silently clamped into range
-    const pick = <K extends keyof ActionOverrideRow>(key: K, valid: (value: NonNullable<ActionOverrideRow[K]>) => boolean) =>
+    const pick = <K extends keyof ActionOverrideRow>(
+        key: K,
+        valid: (value: NonNullable<ActionOverrideRow[K]>) => boolean
+    ) =>
         chain
             .map(o => o[key])
             .find(value => value !== null && value !== undefined && valid(value as NonNullable<ActionOverrideRow[K]>));
 
-    const inRange = (min: number, max: number) => (value: number) => Number.isFinite(value) && value >= min && value <= max;
+    const inRange = (min: number, max: number) => (value: number) =>
+        Number.isFinite(value) && value >= min && value <= max;
     return {
         def,
         template,
@@ -110,14 +118,24 @@ export const renderTemplate = (
 ): PromptMessage[] =>
     template
         .map((message, index) => {
+            const vars = { total: 0, empty: 0 };
             const content = message.content
                 .replace(COMMENT_PATTERN, "")
-                .replace(VARIABLE_PATTERN, (_, variable: string) => context[variable as ContextKey] ?? "")
+                .replace(VARIABLE_PATTERN, (_, variable: string) => {
+                    const value = context[variable as ContextKey] ?? "";
+                    vars.total += 1;
+                    if (!value.trim()) vars.empty += 1;
+                    return value;
+                })
                 .trim();
+            // A non-system message whose every variable resolved empty is just
+            // its label scaffolding ("Additional instruction: ") — drop it
+            // rather than send a dangling prompt fragment
+            const hollow = message.role !== "system" && vars.total > 0 && vars.empty === vars.total;
             const withVoice =
                 index === 0 && message.role === "system" && voice?.trim()
                     ? `${content}\n\nStory voice and framing (follow strictly): ${voice.trim()}`
                     : content;
-            return { ...message, content: withVoice };
+            return { ...message, content: hollow ? "" : withVoice };
         })
         .filter(message => message.content.length > 0);

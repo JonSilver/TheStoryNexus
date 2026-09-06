@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { PromptMessage } from "../ai/providers.js";
 import { ACTION_IDS, BUILTIN_ACTIONS } from "./registry.js";
-import { type ActionOverrideRow, renderTemplate, resolveAction, templateVariables, validateTemplate } from "./resolve.js";
+import {
+    type ActionOverrideRow,
+    renderTemplate,
+    resolveAction,
+    templateVariables,
+    validateTemplate
+} from "./resolve.js";
 
 const override = (partial: Partial<ActionOverrideRow>): ActionOverrideRow => ({
     actionId: "rework",
@@ -116,15 +122,38 @@ describe("renderTemplate", () => {
     ];
 
     it("substitutes context, strips comments, drops empty messages", () => {
-        const rendered = renderTemplate(template, { matched_entries: "Mara: captain", pov: "First Person", command: "Fight!" });
+        const rendered = renderTemplate(template, {
+            matched_entries: "Mara: captain",
+            pov: "First Person",
+            command: "Fight!"
+        });
         expect(rendered).toHaveLength(2); // summaries message rendered empty and dropped
         expect(rendered[0].content).toBe("Rules here.  Context: Mara: captain");
         expect(rendered[1].content).toBe("POV: First Person\nFight!");
     });
 
     it("appends voice to the system message only when provided", () => {
-        const rendered = renderTemplate(template, { matched_entries: "x", pov: "y", command: "z" }, "Past tense, dry wit.");
+        const rendered = renderTemplate(
+            template,
+            { matched_entries: "x", pov: "y", command: "z" },
+            "Past tense, dry wit."
+        );
         expect(rendered[0].content).toContain("Story voice and framing (follow strictly): Past tense, dry wit.");
         expect(rendered[1].content).not.toContain("Story voice");
+    });
+
+    it("drops label-only messages whose every variable resolved empty", () => {
+        const labelled: PromptMessage[] = [
+            { role: "system", content: "Rules. Context: {{matched_entries}}" },
+            { role: "user", content: "The command: {{command}}" },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ];
+        const rendered = renderTemplate(labelled, { command: "Fight!" });
+        expect(rendered.map(m => m.content)).toEqual(["Rules. Context:", "The command: Fight!"]);
+    });
+
+    it("keeps a mixed message when at least one variable resolved", () => {
+        const mixed: PromptMessage[] = [{ role: "user", content: "Passage: {{selection}}\nInstruction: {{guidance}}" }];
+        expect(renderTemplate(mixed, { selection: "Some text" })[0].content).toBe("Passage: Some text\nInstruction:");
     });
 });

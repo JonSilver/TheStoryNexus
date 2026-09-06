@@ -51,6 +51,15 @@ const putChapterContent = async (
 const DEBOUNCE_MS = 1000;
 const RETRY_MS = 5000;
 
+// In-flight saves by chapter, across saver instances. A remounting editor
+// must wait for the previous instance's exit save to settle, or it
+// initialises from a cache the settling save is about to supersede — stale
+// content plus a guaranteed 409 on the next keystroke.
+const inFlightSaves = new Map<string, Promise<void>>();
+
+export const hasInFlightSave = (chapterId: string) => inFlightSaves.has(chapterId);
+export const whenSavesSettle = (chapterId: string): Promise<void> => inFlightSaves.get(chapterId) ?? Promise.resolve();
+
 /**
  * Single-flight, coalescing, revision-aware chapter saver (contracts §9).
  * One save in flight per chapter; newer content replaces queued content;
@@ -70,37 +79,49 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         conflictChapter: null as Chapter | null
     });
 
-    const drain = useCallback(async (exiting = false): Promise<void> => {
-        const s = internals.current;
-        if (s.inFlight || s.conflicted || !s.pending) return;
-        const payload = s.pending;
-        s.pending = null;
-        s.inFlight = true;
-        setStatus("saving");
+    const drain = useCallback(
+        async (exiting = false): Promise<void> => {
+            const s = internals.current;
+            if (s.inFlight || s.conflicted || !s.pending) return;
+            const payload = s.pending;
+            s.pending = null;
+            s.inFlight = true;
+            setStatus("saving");
 
-        const result = await putChapterContent(chapterId, payload, s.revision, exiting);
-        s.inFlight = false;
+            const request = putChapterContent(chapterId, payload, s.revision, exiting);
+            const tracked = request.then(
+                () => undefined,
+                () => undefined
+            );
+            inFlightSaves.set(chapterId, tracked);
+            void tracked.finally(() => {
+                if (inFlightSaves.get(chapterId) === tracked) inFlightSaves.delete(chapterId);
+            });
+            const result = await request;
+            s.inFlight = false;
 
-        if (result.outcome === "ok") {
-            s.revision = result.chapter.revision ?? s.revision + 1;
-            s.lastSavedContent = payload.content;
-            applyChapterToCaches(queryClient, result.chapter);
-            if (s.pending) void drain();
-            else setStatus("saved");
-            return;
-        }
-        if (result.outcome === "conflict") {
-            s.conflicted = true;
-            s.conflictChapter = result.current;
-            setStatus("conflict");
-            return;
-        }
-        // Failed: put the payload back (unless newer content arrived) and retry
-        s.pending = s.pending ?? payload;
-        setStatus("failed");
-        clearTimeout(s.retryTimer);
-        s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
-    }, [chapterId, queryClient]);
+            if (result.outcome === "ok") {
+                s.revision = result.chapter.revision ?? s.revision + 1;
+                s.lastSavedContent = payload.content;
+                applyChapterToCaches(queryClient, result.chapter);
+                if (s.pending) void drain();
+                else setStatus("saved");
+                return;
+            }
+            if (result.outcome === "conflict") {
+                s.conflicted = true;
+                s.conflictChapter = result.current;
+                setStatus("conflict");
+                return;
+            }
+            // Failed: put the payload back (unless newer content arrived) and retry
+            s.pending = s.pending ?? payload;
+            setStatus("failed");
+            clearTimeout(s.retryTimer);
+            s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
+        },
+        [chapterId, queryClient]
+    );
 
     const scheduleSave = useCallback(
         (content: string, wordCount: number) => {

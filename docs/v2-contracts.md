@@ -6,15 +6,15 @@ Editor-independent contracts for the v2 build. The editor-specific serialisation
 
 A chapter document is a sequence of **blocks**; inline text carries **marks**.
 
-| Block | Notes |
-| --- | --- |
-| `paragraph` | Inline children with marks |
-| `heading` | Levels 1–3 only |
-| `bulletList` / `orderedList` | Items contain paragraphs |
-| `horizontalRule` | — |
-| `image` | `src` (server asset URL — never data URLs), `alt`, optional `caption` |
-| `sceneBeat` | See §2 |
-| `suggestion` | Transient ghost-text continuation (`suggestion-v2`); exports nothing, counts zero words. Keep converts it to paragraphs in one undo step; a serialised in-flight ghost rehydrates as `done`. |
+| Block                        | Notes                                                                                                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `paragraph`                  | Inline children with marks                                                                                                                                                                   |
+| `heading`                    | Levels 1–3 only                                                                                                                                                                              |
+| `bulletList` / `orderedList` | Items contain paragraphs                                                                                                                                                                     |
+| `horizontalRule`             | —                                                                                                                                                                                            |
+| `image`                      | `src` (server asset URL — never data URLs), `alt`, optional `caption`                                                                                                                        |
+| `sceneBeat`                  | See §2                                                                                                                                                                                       |
+| `suggestion`                 | Transient ghost-text continuation (`suggestion-v2`); exports nothing, counts zero words. Keep converts it to paragraphs in one undo step; a serialised in-flight ghost rehydrates as `done`. |
 
 Marks: `bold`, `italic`, `underline`. Nothing else. No tables, code, layout, collab, hashtags, page breaks (page breaks are a print concern; EPUB/PDF derive breaks from headings).
 
@@ -57,10 +57,17 @@ Data-driven; built-ins defined in code, overrides in DB.
 
 ```ts
 type ActionId =
-    | 'continue' | 'rework' | 'expand' | 'shorten'
-    | 'summarise_chapter' | 'brainstorm' | 'scene_beat'
-    | 'extract_entries' | 'propose_updates'
-    | 'ask' | 'check_continuity';
+    | "continue"
+    | "rework"
+    | "expand"
+    | "shorten"
+    | "summarise_chapter"
+    | "brainstorm"
+    | "scene_beat"
+    | "extract_entries"
+    | "propose_updates"
+    | "ask"
+    | "check_continuity";
 // Deviation log: split_chapters was dropped — ingestion splits chapters
 // rule-based server-side with a human review step; no AI action needed.
 // Writing-process additions (2026-09): `ask` (free-form instruction over a
@@ -71,10 +78,16 @@ type ActionId =
 type ActionDef = {
     id: ActionId;
     label: string;
-    voiceApplies: boolean;            // §8 — true only for prose actions
-    contextNeeds: ContextKey[];       // e.g. 'selection', 'recentProse', 'matchedEntries', 'summaries', 'command'
+    voiceApplies: boolean; // §8 — true only for prose actions
+    contextNeeds: ContextKey[]; // e.g. 'selection', 'recentProse', 'matchedEntries', 'summaries', 'command'
     defaultTemplate: PromptMessage[]; // {{variable}} slots drawn from contextNeeds — unknown variables are validation errors
-    defaultParams: { temperature: number; maxTokens: number; topP?: number; frequencyPenalty?: number; presencePenalty?: number };
+    defaultParams: {
+        temperature: number;
+        maxTokens: number;
+        topP?: number;
+        frequencyPenalty?: number;
+        presencePenalty?: number;
+    };
 };
 ```
 
@@ -140,15 +153,15 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 12. Schema change summary
 
-| Table | Change | When |
-| --- | --- | --- |
-| `chapters` | + `revision`, `updatedAt`, `summarySourceRevision` | Phase 3 |
-| `stories` | + `aiInstructions` | Phase 4 |
-| `aiSettings` | + `defaultProvider`, `defaultModelId`; key redaction at API layer | Phase 2 |
-| `actionOverrides` | new | Phase 2 (storage), Phase 8 (UI) |
-| `sceneBeats` | retired (dropped) | Phase 5 |
-| `prompts` | retired in favour of registry + overrides | Phase 8 |
-| — | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format | Phase 3 |
+| Table             | Change                                                                                            | When                            |
+| ----------------- | ------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                | Phase 3                         |
+| `stories`         | + `aiInstructions`                                                                                | Phase 4                         |
+| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                 | Phase 2                         |
+| `actionOverrides` | new                                                                                               | Phase 2 (storage), Phase 8 (UI) |
+| `sceneBeats`      | retired (dropped)                                                                                 | Phase 5                         |
+| `prompts`         | retired in favour of registry + overrides                                                         | Phase 8                         |
+| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format | Phase 3                         |
 
 ## Appendix A — editor choice & serialisation (decided 2026-09-05)
 
@@ -170,11 +183,19 @@ TipTap's genuine advantages — cross-app HTML clipboard fidelity, prosemirror-m
 **Serialisation shape** (supersedes §2's `beatId` — the node's identity is its Lexical key at runtime; no serialised id is needed since state is self-contained and paste-clones are independent):
 
 ```json
-{ "type": "scene-beat-v2", "version": 1,
-  "command": "…", "status": "idle|generating|done|accepted",
-  "takes": ["…"], "activeTake": 0, "streaming": "…",
-  "generatedText": "…", "collapsed": false,
-  "povCharacter": "…", "povType": "…" }
+{
+    "type": "scene-beat-v2",
+    "version": 1,
+    "command": "…",
+    "status": "idle|generating|done|accepted",
+    "takes": ["…"],
+    "activeTake": 0,
+    "streaming": "…",
+    "generatedText": "…",
+    "collapsed": false,
+    "povCharacter": "…",
+    "povType": "…"
+}
 ```
 
 Takes model (writing-process review): every completed generation appends to `takes` — regeneration and backend failures never destroy a draft. In-flight tokens stream into `streaming` (durable, outside undo); completion commits `streaming` as a new take. `generatedText` is the legacy single-draft field, folded in as take one on read and cleared on first new take. Accept inserts the ACTIVE take; "Accept & tidy" also removes the beat. Multiple takes may be accepted in sequence for cherry-picking in the prose.
@@ -191,3 +212,5 @@ Fields are declared via `createState` with `flat: true` (project-wide decision);
 - Interactive controls inside decorators need **native** keydown `stopPropagation` via ref (React synthetic handlers run after Lexical's root listener).
 - Export runs from serialised JSON (no live editor), data-driven serialiser tables, unknown block types fall back to inline children.
 - Behavioural verify checks (headless browser) are kept in the real project — every trap found was silent.
+- **Orphaned-stream recovery**: a reload mid-generation, or an undo reviving a deleted beat still marked `generating`, leaves streamed text with no owning request. `$commitStreamingAsTake` folds it into the takes list on mount (SceneBeatComponent recovery effect) so no partial is ever invisible or lost.
+- **Accepted risk (undo during generation)**: streamed tokens are history-merged; a writer edit made mid-stream becomes the entry those tokens merge into, so undoing it also rewinds streamed text (tokens keep appending from the rewound prefix — the committed take may carry a gap). A true fix means streaming outside the editor state, which trades away mid-stream durability; the recovery path above bounds the damage to that one interaction.

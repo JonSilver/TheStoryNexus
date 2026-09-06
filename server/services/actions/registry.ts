@@ -65,7 +65,8 @@ const PROSE_RULES =
     "Don't use overtly flowery language.\n" +
     "Do not end a scene with a tidy resolution or moral lesson.";
 
-const CONTEXT_PREAMBLE = "This section contains essential lore and background details for the story: {{matched_entries}}";
+const CONTEXT_PREAMBLE =
+    "This section contains essential lore and background details for the story: {{matched_entries}}";
 
 export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
     scene_beat: {
@@ -173,14 +174,15 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "ask",
         label: "Ask (free-form on selection)",
         voiceApplies: true,
-        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "user_message"],
+        contextNeeds: ["selection", "recent_prose", "pov", "story_language", "user_message", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
                     "You are an expert fiction editor working on a passage at the writer's direction. Contextual awareness — the preceding text: {{recent_prose}}\nApply the writer's instruction to the passage. Preserve the established tense, style and POV ({{pov}}) unless the instruction says otherwise. Use {{story_language}} spelling and grammar. Return ONLY the revised passage — no commentary, no quotation marks around it."
             },
-            { role: "user", content: "The passage:\n{{selection}}\n\nThe instruction: {{user_message}}" }
+            { role: "user", content: "The passage:\n{{selection}}\n\nThe instruction: {{user_message}}" },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 0.9, maxTokens: 8192 }
     },
