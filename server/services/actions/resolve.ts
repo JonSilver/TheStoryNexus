@@ -90,7 +90,11 @@ export const resolveAction = (actionId: ActionId, storyId: string | null, overri
             presencePenalty:
                 (pick("presencePenalty", inRange(-2, 2)) as number | undefined) ?? def.defaultParams.presencePenalty
         },
-        modelRef: (pick("modelRef", value => typeof value === "string" && value.includes("::")) as string | undefined) ?? undefined
+        modelRef:
+            (pick(
+                "modelRef",
+                value => typeof value === "string" && /^(openai|openrouter|gemini|local)::.+$/.test(value)
+            ) as string | undefined) ?? undefined
     };
 };
 

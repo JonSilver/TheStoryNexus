@@ -332,8 +332,12 @@ router.post("/preview", async (req, res) => {
             : null);
 
     // The inspector must show EXACTLY what generation would send — identical
-    // budget arithmetic, including the output cap and voice cost
-    const contextLimit = model ? contextLimitFor(settings, model.provider, model.modelId) : 16384;
+    // budget arithmetic AND identical failure modes
+    if (!model) {
+        res.status(422).json({ error: "No model configured — add a provider key in Settings" });
+        return;
+    }
+    const contextLimit = contextLimitFor(settings, model.provider, model.modelId);
     const maxTokens = Math.min(resolved.params.maxTokens, Math.floor(contextLimit / 2));
     const voiceSize = resolved.def.voiceApplies ? countTokens(await voiceFor(storyId)) : 0;
     const templateSize = countTokens(resolved.template.map(m => m.content).join("\n")) + voiceSize;
@@ -356,10 +360,15 @@ router.post("/preview", async (req, res) => {
         assembled.context,
         resolved.def.voiceApplies ? assembled.voice : undefined
     );
+    const promptTokens = countTokens(messages.map(m => m.content).join("\n"));
+    if (promptTokens + maxTokens > contextLimit) {
+        res.status(422).json({ error: "Assembled prompt exceeds the model's context window" });
+        return;
+    }
     res.json({
         model,
         params: { ...resolved.params, maxTokens },
-        promptTokens: countTokens(messages.map(m => m.content).join("\n")),
+        promptTokens,
         messages
     });
 });

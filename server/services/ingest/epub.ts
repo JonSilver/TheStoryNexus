@@ -16,10 +16,29 @@ const XHTML_MEDIA_TYPES = ["application/xhtml+xml", "text/html", "application/xm
 
 const XHTML_NAME = /\.x?html?$/i;
 
-const readText = async (zip: Zip, entryPath: string): Promise<string> => {
+// Decompression is streamed against a budget: JSZip exposes no uncompressed
+// size up front, so the only zip-bomb guard that works is aborting mid-stream
+export const MAX_EXPANDED_ENTRY_BYTES = 8 * 1024 * 1024;
+
+const readText = (zip: Zip, entryPath: string, budget = { remaining: MAX_EXPANDED_ENTRY_BYTES }): Promise<string> => {
     const file = zip.file(entryPath);
-    if (!file) throw new Error(`Missing EPUB entry: ${entryPath}`);
-    return file.async("string");
+    if (!file) return Promise.reject(new Error(`Missing EPUB entry: ${entryPath}`));
+    return new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        const stream = file.nodeStream();
+        stream.on("data", (chunk: Buffer) => {
+            budget.remaining -= chunk.length;
+            if (budget.remaining < 0) {
+                stream.pause();
+                reject(new Error("EPUB content exceeds the expansion limit"));
+                return;
+            }
+            chunks.push(chunk);
+        });
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+        stream.resume();
+    });
 };
 
 /** Hrefs are OPF-relative, URL-encoded and may carry a fragment. */
@@ -62,9 +81,12 @@ export const parseEpub = async (buffer: Buffer): Promise<{ title: string; text: 
     const candidates = spinePaths(opf, baseDir).filter(entry => zip.file(entry) !== null);
     const documents = candidates.length > 0 ? candidates : archiveXhtmlPaths(zip);
 
-    // Sequential: concurrent expansion of every spine item multiplies peak memory
+    // Sequential with one shared budget across the whole spine: peak memory
+    // stays bounded and a crafted archive aborts instead of exhausting the
+    // process (32 MB expanded is far beyond any real manuscript)
+    const spineBudget = { remaining: 32 * 1024 * 1024 };
     const sections: string[] = [];
-    for (const entry of documents) sections.push(xhtmlToText(await readText(zip, entry)));
+    for (const entry of documents) sections.push(xhtmlToText(await readText(zip, entry, spineBudget)));
 
     return { title: tagText(opf, "title"), text: sections.filter(section => section.length > 0).join("\n\n") };
 };

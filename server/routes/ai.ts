@@ -54,24 +54,29 @@ const mergeProviderModels = (existing: AIModel[], provider: AIProviderId, fresh:
     ...fresh
 ];
 
-const refreshModels = async (settings: AISettingsRow, provider: AIProviderId): Promise<AISettingsRow> => {
+const refreshModels = async (
+    settings: AISettingsRow,
+    provider: AIProviderId
+): Promise<{ row: AISettingsRow; healedDefault: string | null }> => {
     const fresh = await fetchModelsForProvider(provider, settings);
     const availableModels = mergeProviderModels((settings.availableModels as AIModel[]) ?? [], provider, fresh);
     // First working provider becomes the global default automatically; a
-    // default that no longer exists in the refreshed list (renamed model,
-    // stale phantom) is re-selected rather than left dangling (§11)
+    // default that no longer exists anywhere is re-selected from whichever
+    // provider still has models rather than left dangling (§11)
     const defaultStillExists = availableModels.some(
         m => m.provider === settings.defaultProvider && m.id === settings.defaultModelId
     );
     const needsDefault = !settings.defaultProvider || !settings.defaultModelId || !defaultStillExists;
+    const replacement = fresh[0] ?? availableModels[0];
     const defaults =
-        needsDefault && fresh.length > 0 ? { defaultProvider: provider, defaultModelId: fresh[0].id } : {};
+        needsDefault && replacement ? { defaultProvider: replacement.provider, defaultModelId: replacement.id } : {};
     const [updated] = await db
         .update(schema.aiSettings)
         .set({ availableModels, lastModelsFetch: new Date(), ...defaults })
         .where(eq(schema.aiSettings.id, settings.id))
         .returning();
-    return updated;
+    const healed = needsDefault && replacement && settings.defaultModelId !== replacement.id;
+    return { row: updated, healedDefault: healed ? replacement.id : null };
 };
 
 router.get(
@@ -135,12 +140,12 @@ router.put(
             .set({ [providerKeyField(provider)]: key.trim() })
             .where(eq(schema.aiSettings.id, settings.id))
             .returning();
-        const [error, updated] = await attemptPromise(() => refreshModels(stored, provider));
-        if (error) {
-            res.status(422).json({ error: `Key stored but model fetch failed: ${error.message}` });
+        const [error, refreshed] = await attemptPromise(() => refreshModels(stored, provider));
+        if (error || !refreshed) {
+            res.status(422).json({ error: `Key stored but model fetch failed: ${error?.message}` });
             return;
         }
-        res.json(redactSettings(updated));
+        res.json({ ...redactSettings(refreshed.row), healedDefault: refreshed.healedDefault });
     })
 );
 
@@ -160,12 +165,12 @@ router.put(
             .set({ localApiUrl: candidate })
             .where(eq(schema.aiSettings.id, settings.id))
             .returning();
-        const [error, updated] = await attemptPromise(() => refreshModels(stored, "local"));
-        if (error) {
-            res.status(422).json({ error: `URL stored but connection failed: ${error.message}` });
+        const [error, refreshed] = await attemptPromise(() => refreshModels(stored, "local"));
+        if (error || !refreshed) {
+            res.status(422).json({ error: `URL stored but connection failed: ${error?.message}` });
             return;
         }
-        res.json(redactSettings(updated));
+        res.json({ ...redactSettings(refreshed.row), healedDefault: refreshed.healedDefault });
     })
 );
 
@@ -178,12 +183,12 @@ router.post(
             return;
         }
         const settings = await getOrCreateSettings();
-        const [error, updated] = await attemptPromise(() => refreshModels(settings, provider));
-        if (error) {
-            res.status(422).json({ error: `Model fetch failed: ${error.message}` });
+        const [error, refreshed] = await attemptPromise(() => refreshModels(settings, provider));
+        if (error || !refreshed) {
+            res.status(422).json({ error: `Model fetch failed: ${error?.message}` });
             return;
         }
-        res.json(redactSettings(updated));
+        res.json({ ...redactSettings(refreshed.row), healedDefault: refreshed.healedDefault });
     })
 );
 

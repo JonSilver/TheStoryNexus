@@ -106,14 +106,15 @@ export async function* streamCompletion(request: GenerationRequest, settings: Pr
 
     const client = openAICompatibleClient(provider, settings);
     const model = provider === "local" ? modelId.replace(/^local\//, "") : modelId;
-    // Newer OpenAI models reject max_tokens
-    const omitMaxTokens = provider === "openai" && /^(gpt-5|o1|o3)/.test(model);
+    // Newer OpenAI models reject max_tokens but accept max_completion_tokens,
+    // so the budgeted output cap always reaches the provider
+    const modernOpenAI = provider === "openai" && /^(gpt-5|o1|o3)/.test(model);
     const stream = await client.chat.completions.create(
         {
             model,
             messages: messages.map(m => ({ role: m.role, content: m.content })),
             temperature,
-            ...(omitMaxTokens ? {} : { max_tokens: maxTokens }),
+            ...(modernOpenAI ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
             ...(topP !== undefined && { top_p: topP }),
             ...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
             ...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),

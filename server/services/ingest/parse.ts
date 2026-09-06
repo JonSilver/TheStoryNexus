@@ -6,6 +6,7 @@
  * HTTP status so the route can distinguish "wrong sort of file" from "server broke".
  */
 import { attemptPromise } from "@jfdi/attempt";
+import JSZip from "jszip";
 import mammoth from "mammoth";
 import path from "node:path";
 import { parseEpub } from "./epub.js";
@@ -47,7 +48,32 @@ const normaliseText = (text: string): string =>
         .replace(/\n{3,}/g, "\n\n")
         .trim();
 
+// DOCX is a zip: measure its expanded size (streamed, aborting at the cap)
+// BEFORE handing it to mammoth, which offers no expansion bound of its own
+const assertZipExpansion = async (buffer: Buffer, capBytes: number): Promise<void> => {
+    const [zipError, zip] = await attemptPromise(() => JSZip.loadAsync(buffer));
+    if (zipError || !zip) throw ingestError("Could not read the .docx file: not a valid archive", 422);
+    const budget = { remaining: capBytes };
+    for (const file of Object.values(zip.files)) {
+        if (file.dir) continue;
+        await new Promise<void>((resolve, reject) => {
+            const stream = file.nodeStream();
+            stream.on("data", (chunk: Buffer) => {
+                budget.remaining -= chunk.length;
+                if (budget.remaining < 0) {
+                    stream.pause();
+                    reject(ingestError("The .docx expands beyond the 64 MB safety limit", 413));
+                }
+            });
+            stream.on("error", () => reject(ingestError("Could not read the .docx file", 422)));
+            stream.on("end", () => resolve());
+            stream.resume();
+        });
+    }
+};
+
 const readDocx = async (buffer: Buffer): Promise<Source> => {
+    await assertZipExpansion(buffer, 64 * 1024 * 1024);
     const [error, result] = await attemptPromise(() => mammoth.extractRawText({ buffer }));
     if (error) throw ingestError(`Could not read the .docx file: ${error.message}`, 422);
     return { text: result.value };

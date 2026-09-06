@@ -81,8 +81,9 @@ router.put(
         }
 
         const table = schema.actionOverrides;
-        const scope = storyId ? and(eq(table.actionId, actionId), eq(table.storyId, storyId)) : and(eq(table.actionId, actionId), isNull(table.storyId));
-        const [existing] = await db.select().from(table).where(scope);
+        const scope = storyId
+            ? and(eq(table.actionId, actionId), eq(table.storyId, storyId))
+            : and(eq(table.actionId, actionId), isNull(table.storyId));
         const values = {
             template: template ?? null,
             temperature: temperature ?? null,
@@ -92,12 +93,18 @@ router.put(
             presencePenalty: presencePenalty ?? null,
             modelRef: modelRef ?? null
         };
-        const [row] = existing
-            ? await db.update(table).set(values).where(eq(table.id, existing.id)).returning()
-            : await db
-                  .insert(table)
-                  .values({ id: crypto.randomUUID(), actionId, storyId, createdAt: new Date(), ...values })
-                  .returning();
+        // Synchronous transaction makes the check-and-write atomic — the NULL
+        // storyId scope can't be enforced by the unique index (SQLite treats
+        // NULLs as distinct), so concurrent global saves must serialise here
+        const row = db.transaction(tx => {
+            const [existing] = tx.select().from(table).where(scope).all().slice(0, 1);
+            if (existing) return tx.update(table).set(values).where(eq(table.id, existing.id)).returning().get();
+            return tx
+                .insert(table)
+                .values({ id: crypto.randomUUID(), actionId, storyId, createdAt: new Date(), ...values })
+                .returning()
+                .get();
+        });
         res.json(row);
     })
 );

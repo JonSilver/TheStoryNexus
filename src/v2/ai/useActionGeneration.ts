@@ -69,11 +69,24 @@ export const useActionGeneration = () => {
     }, []);
 
     const reset = useCallback(() => {
-        abort();
+        // Deliberate teardown: unlike Stop, reset DISOWNS the run so a late
+        // rejection from its reader can't overwrite the idle state
+        const current = active.current;
+        active.current = null;
+        if (current) {
+            current.controller.abort();
+            void attemptPromise(() =>
+                fetch("/api/generate/abort", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ requestId: current.requestId })
+                })
+            );
+        }
         setPhase("idle");
         setText("");
         setError(null);
-    }, [abort]);
+    }, []);
 
     const run = useCallback(
         async (request: ActionRun): Promise<string> => {
@@ -101,7 +114,12 @@ export const useActionGeneration = () => {
             );
 
             if (fetchError || !response) {
-                if ((fetchError as Error)?.name !== "AbortError" && owns()) {
+                if (!owns()) return "";
+                active.current = null;
+                // AbortError = instant Stop before headers: end cleanly with
+                // no stranded streaming state; anything else is a real error
+                if ((fetchError as Error)?.name === "AbortError") setPhase("done");
+                else {
                     setPhase("error");
                     setError((fetchError as Error)?.message ?? "Request failed");
                 }

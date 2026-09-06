@@ -138,15 +138,17 @@ export const ToolbarPlugin = ({
                     <Icon className="h-4 w-4" />
                 </button>
             ))}
-            <button
-                type="button"
-                className={toolButton}
-                onClick={insertSceneBeat}
-                aria-label="Insert scene beat"
-                title="Insert scene beat"
-            >
-                <Sparkles className="h-4 w-4" />
-            </button>
+            {!hasSelection && (
+                <button
+                    type="button"
+                    className={toolButton}
+                    onClick={insertSceneBeat}
+                    aria-label="Insert scene beat"
+                    title="Insert scene beat"
+                >
+                    <Sparkles className="h-4 w-4" />
+                </button>
+            )}
             <AiActionButtons actions={actions} hasSelection={hasSelection} className={toolButton} />
 
             <div className="ml-auto flex shrink-0 items-center gap-0.5">

@@ -40,6 +40,7 @@ export const ExtractSheet = ({
     const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
     const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
     const [ticked, setTicked] = useState<Set<number>>(new Set());
+    const [approving, setApproving] = useState(false);
 
     const run = async () => {
         const actionId = mode === "updates" ? "propose_updates" : "extract_entries";
@@ -72,6 +73,8 @@ export const ExtractSheet = ({
     };
 
     const approveEntries = async () => {
+        if (approving) return;
+        setApproving(true);
         const chosen = (proposals ?? []).filter((_, i) => ticked.has(i));
         const results = await Promise.allSettled(
             chosen.map(proposal =>
@@ -208,7 +211,7 @@ export const ExtractSheet = ({
                         <button
                             type="button"
                             onClick={() => void approveEntries()}
-                            disabled={ticked.size === 0}
+                            disabled={ticked.size === 0 || approving}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
                             Add {ticked.size} to bible

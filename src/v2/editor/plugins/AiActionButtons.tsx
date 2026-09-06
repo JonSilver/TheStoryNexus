@@ -22,15 +22,17 @@ export const AiActionButtons = ({
     className: string;
 }) => (
     <>
-        <button
-            type="button"
-            className={className}
-            onClick={actions.onContinue}
-            aria-label="Continue writing"
-            title="Continue writing"
-        >
-            <Wand2 className="h-4 w-4" />
-        </button>
+        {!hasSelection && (
+            <button
+                type="button"
+                className={className}
+                onClick={actions.onContinue}
+                aria-label="Continue writing"
+                title="Continue writing"
+            >
+                <Wand2 className="h-4 w-4" />
+            </button>
+        )}
         {hasSelection &&
             SELECTION_ACTIONS.map(([actionId, label, Icon]) => (
                 <button
