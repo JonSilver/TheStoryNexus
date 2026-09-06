@@ -1,9 +1,20 @@
-import { ArrowLeft, BookOpenCheck, ClipboardPaste, FileScan, ScanSearch, ShieldQuestion, Trash2 } from "lucide-react";
+import {
+    ArrowLeft,
+    BookOpenCheck,
+    ClipboardPaste,
+    FileScan,
+    Plus,
+    ScanSearch,
+    ShieldQuestion,
+    Trash2
+} from "lucide-react";
 import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
+import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { LorebookEntry } from "@/types/story";
 import type { ScreenProps } from "../V2App";
+import { EntryEditor } from "../bible/EntryEditor";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { takeNudgeHandoff } from "../bible/nameNudges";
 import { useV2Store } from "../state/useV2Store";
@@ -29,6 +40,8 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const deleteEntry = useDeleteLorebookMutation();
+    const { data: story } = useStoryQuery(currentStoryId ?? "");
+    const [editing, setEditing] = useState<LorebookEntry | null | "new">(null);
     // Arriving via the editor's nudge chip auto-opens a focused extraction —
     // the chip says "Add to bible", so landing here must actually start adding
     const [focusNames] = useState(takeNudgeHandoff);
@@ -59,6 +72,9 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="text-lg font-semibold">Story Bible</h1>
+                <button type="button" onClick={() => setEditing("new")} aria-label="New entry" className="ml-auto">
+                    <Plus className="h-5 w-5" />
+                </button>
             </header>
 
             <div className="flex gap-2 overflow-x-auto border-b p-3">
@@ -89,7 +105,12 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                         <ul className="divide-y">
                             {group.items.map(entry => (
                                 <li key={entry.id} className="flex items-start gap-2 px-4 py-2">
-                                    <div className="min-w-0 flex-1">
+                                    <button
+                                        type="button"
+                                        className="min-w-0 flex-1 text-left"
+                                        onClick={() => setEditing(entry)}
+                                        aria-label={`Edit ${entry.name}`}
+                                    >
                                         <p className="font-medium">
                                             {entry.name}
                                             {entry.level !== "story" && (
@@ -104,7 +125,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                                                 aka: {entry.tags.join(", ")}
                                             </p>
                                         )}
-                                    </div>
+                                    </button>
                                     {entry.level === "story" && (
                                         <button
                                             type="button"
@@ -125,6 +146,14 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                 ))}
             </div>
 
+            {editing && (
+                <EntryEditor
+                    entry={editing === "new" ? null : editing}
+                    storyId={currentStoryId}
+                    seriesId={story?.seriesId ?? null}
+                    onClose={() => setEditing(null)}
+                />
+            )}
             {flow && (
                 <ExtractSheet
                     mode={flow}

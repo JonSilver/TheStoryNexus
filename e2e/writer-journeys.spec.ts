@@ -207,3 +207,22 @@ test("series: join from story details, grouped in Stories, bible inherits", asyn
     await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Journey — series" })).toBeVisible();
 });
+
+test("bible entries: manual create and edit, no AI required", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — manual bible", "One");
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible (AI extraction)" }).click();
+
+    await page.getByRole("button", { name: "New entry" }).click();
+    await page.getByLabel("Entry name").fill("Mrs Jennings");
+    await page.getByLabel("Description").fill("A good-humoured meddler.");
+    await page.getByLabel("Tags").fill("the meddler");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("A good-humoured meddler.")).toBeVisible();
+    await expect(page.getByText("aka: the meddler")).toBeVisible();
+
+    await page.getByRole("button", { name: "Edit Mrs Jennings" }).click();
+    await page.getByLabel("Description").fill("A good-humoured meddler with a sharp eye.");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("A good-humoured meddler with a sharp eye.")).toBeVisible();
+});

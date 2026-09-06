@@ -46,7 +46,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
         const title = newTitle.trim();
         if (!title) return;
         createStory.mutate(
-            { id: randomUUID(), title, author: "", language: "English", synopsis: "" },
+            { id: randomUUID(), title, author: "", language: "British English", synopsis: "" },
             {
                 onSuccess: story => {
                     setNewTitle("");

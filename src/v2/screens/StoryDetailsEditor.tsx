@@ -16,13 +16,25 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
     const { data: allSeries } = useSeriesQuery();
     const updateStory = useUpdateStoryMutation();
     const createSeries = useCreateSeriesMutation();
-    const [draft, setDraft] = useState<{ title: string; synopsis: string } | null>(null);
+    const [draft, setDraft] = useState<{ title: string; synopsis: string; author: string; language: string } | null>(
+        null
+    );
 
     useEffect(() => setDraft(null), [storyId]);
     if (!story) return null;
 
-    const value = draft ?? { title: story.title, synopsis: story.synopsis ?? "" };
-    const dirty = draft !== null && (value.title !== story.title || value.synopsis !== (story.synopsis ?? ""));
+    const value = draft ?? {
+        title: story.title,
+        synopsis: story.synopsis ?? "",
+        author: story.author ?? "",
+        language: story.language ?? "British English"
+    };
+    const dirty =
+        draft !== null &&
+        (value.title !== story.title ||
+            value.synopsis !== (story.synopsis ?? "") ||
+            value.author !== (story.author ?? "") ||
+            value.language !== (story.language ?? ""));
 
     const setSeries = (selected: string) => {
         if (selected === NEW_SERIES) {
@@ -59,6 +71,23 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
                     value={value.synopsis}
                     onChange={e => setDraft({ ...value, synopsis: e.target.value })}
                 />
+                <div className="flex gap-2">
+                    <input
+                        className="min-w-0 flex-1 rounded-md border bg-background px-3 py-2"
+                        aria-label="Author"
+                        placeholder="Author"
+                        value={value.author}
+                        onChange={e => setDraft({ ...value, author: e.target.value })}
+                    />
+                    <input
+                        className="min-w-0 flex-1 rounded-md border bg-background px-3 py-2"
+                        aria-label="Language"
+                        placeholder="Language (e.g. British English)"
+                        title="Steers spelling and grammar in AI actions ({{story_language}})"
+                        value={value.language}
+                        onChange={e => setDraft({ ...value, language: e.target.value })}
+                    />
+                </div>
                 <label className="flex items-center gap-2">
                     <span className="shrink-0 text-muted-foreground">Series</span>
                     <select
@@ -88,7 +117,15 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
                         disabled={updateStory.isPending || !value.title.trim()}
                         onClick={() =>
                             updateStory.mutate(
-                                { id: storyId, data: { title: value.title.trim(), synopsis: value.synopsis } },
+                                {
+                                    id: storyId,
+                                    data: {
+                                        title: value.title.trim(),
+                                        synopsis: value.synopsis,
+                                        author: value.author.trim(),
+                                        language: value.language.trim() || "British English"
+                                    }
+                                },
                                 { onSuccess: () => setDraft(null) }
                             )
                         }

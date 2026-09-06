@@ -73,7 +73,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "scene_beat",
         label: "Scene Beat",
         voiceApplies: true,
-        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command", "guidance"],
+        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command", "story_language", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
@@ -81,7 +81,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             {
                 role: "user",
                 content:
-                    "Write in {{pov}}\n{{command}}\nDo not add a conclusion. Do not end the scene with a tidy resolution or moral lesson."
+                    "Write in {{pov}}, using {{story_language}} spelling and grammar conventions.\n{{command}}\nDo not add a conclusion. Do not end the scene with a tidy resolution or moral lesson."
             },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
@@ -91,7 +91,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "continue",
         label: "Continue Writing",
         voiceApplies: true,
-        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "guidance"],
+        contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
@@ -99,7 +99,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             {
                 role: "user",
                 content:
-                    "Continue the scene directly from where the text above leaves off, in {{pov}}. Match the established tense, style and tone. Do not repeat the existing text, do not summarise it, and do not add a conclusion."
+                    "Continue the scene directly from where the text above leaves off, in {{pov}}, using {{story_language}} spelling and grammar conventions. Match the established tense, style and tone. Do not repeat the existing text, do not summarise it, and do not add a conclusion."
             },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
