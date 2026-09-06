@@ -34,6 +34,8 @@ export interface ActionOverrideRow {
     temperature: number | null;
     maxTokens: number | null;
     topP: number | null;
+    frequencyPenalty: number | null;
+    presencePenalty: number | null;
     modelRef: string | null;
 }
 
@@ -82,7 +84,11 @@ export const resolveAction = (actionId: ActionId, storyId: string | null, overri
             maxTokens: Math.floor(
                 (pick("maxTokens", inRange(64, 65536)) as number | undefined) ?? def.defaultParams.maxTokens
             ),
-            topP: (pick("topP", inRange(0, 1)) as number | undefined) ?? def.defaultParams.topP
+            topP: (pick("topP", inRange(0, 1)) as number | undefined) ?? def.defaultParams.topP,
+            frequencyPenalty:
+                (pick("frequencyPenalty", inRange(-2, 2)) as number | undefined) ?? def.defaultParams.frequencyPenalty,
+            presencePenalty:
+                (pick("presencePenalty", inRange(-2, 2)) as number | undefined) ?? def.defaultParams.presencePenalty
         },
         modelRef: (pick("modelRef", value => typeof value === "string" && value.includes("::")) as string | undefined) ?? undefined
     };

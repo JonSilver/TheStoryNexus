@@ -30,6 +30,8 @@ const overrideSchema = z.object({
     temperature: z.number().min(0).max(2).nullable().optional(),
     maxTokens: z.number().int().min(64).max(65536).nullable().optional(),
     topP: z.number().min(0).max(1).nullable().optional(),
+    frequencyPenalty: z.number().min(-2).max(2).nullable().optional(),
+    presencePenalty: z.number().min(-2).max(2).nullable().optional(),
     modelRef: z
         .string()
         .regex(/^(openai|openrouter|gemini|local)::.+$/)
@@ -64,7 +66,8 @@ router.put(
             res.status(400).json({ error: "Invalid override", details: parsed.error.issues });
             return;
         }
-        const { actionId, storyId, template, temperature, maxTokens, topP, modelRef } = parsed.data;
+        const { actionId, storyId, template, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, modelRef } =
+            parsed.data;
 
         if (template) {
             const result = validateTemplate(template as PromptMessage[], BUILTIN_ACTIONS[actionId].contextNeeds);
@@ -85,6 +88,8 @@ router.put(
             temperature: temperature ?? null,
             maxTokens: maxTokens ?? null,
             topP: topP ?? null,
+            frequencyPenalty: frequencyPenalty ?? null,
+            presencePenalty: presencePenalty ?? null,
             modelRef: modelRef ?? null
         };
         const [row] = existing

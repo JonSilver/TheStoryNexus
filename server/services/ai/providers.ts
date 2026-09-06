@@ -30,6 +30,9 @@ export interface GenerationRequest {
     messages: PromptMessage[];
     temperature: number;
     maxTokens: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
     signal: AbortSignal;
 }
 
@@ -76,7 +79,8 @@ const convertGeminiMessages = (messages: PromptMessage[], supportsSystemInstruct
 };
 
 export async function* streamCompletion(request: GenerationRequest, settings: ProviderSettings): AsyncGenerator<string> {
-    const { provider, modelId, messages, temperature, maxTokens, signal } = request;
+    const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, signal } =
+        request;
 
     if (provider === "gemini") {
         if (!settings.geminiKey) throw new Error("gemini API key not set");
@@ -90,6 +94,9 @@ export async function* streamCompletion(request: GenerationRequest, settings: Pr
                 ...(supportsSystemInstruction && systemInstruction && { systemInstruction }),
                 temperature,
                 maxOutputTokens: maxTokens,
+                ...(topP !== undefined && { topP }),
+                ...(frequencyPenalty !== undefined && { frequencyPenalty }),
+                ...(presencePenalty !== undefined && { presencePenalty }),
                 abortSignal: signal
             }
         });
@@ -107,6 +114,9 @@ export async function* streamCompletion(request: GenerationRequest, settings: Pr
             messages: messages.map(m => ({ role: m.role, content: m.content })),
             temperature,
             ...(omitMaxTokens ? {} : { max_tokens: maxTokens }),
+            ...(topP !== undefined && { top_p: topP }),
+            ...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
+            ...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
             stream: true
         },
         { signal }

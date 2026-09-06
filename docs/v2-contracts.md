@@ -68,13 +68,13 @@ type ActionDef = {
     voiceApplies: boolean;            // §8 — true only for prose actions
     contextNeeds: ContextKey[];       // e.g. 'selection', 'recentProse', 'matchedEntries', 'summaries', 'command'
     defaultTemplate: PromptMessage[]; // {{variable}} slots drawn from contextNeeds — unknown variables are validation errors
-    defaultParams: { temperature: number; maxTokens: number; topP?: number };
+    defaultParams: { temperature: number; maxTokens: number; topP?: number; frequencyPenalty?: number; presencePenalty?: number };
 };
 ```
 
 `voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm. `false`: summarise_chapter, extract_entries, propose_updates.
 
-Overrides table `actionOverrides { id, actionId, storyId | null, template?, params?, modelRef? }` — `storyId: null` = global. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
+Overrides table `actionOverrides { id, actionId, storyId | null, template?, temperature?, maxTokens?, topP?, frequencyPenalty?, presencePenalty?, modelRef? }` — `storyId: null` = global. Unset samplers are not sent to the provider (the model server's own tuning applies); knobs outside the OpenAI-compatible surface (top_k, min_p, repeat_penalty, mirostat) are the model server's job — e.g. an Ollama Modelfile. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
 
 ## 6. Generation API
 

@@ -71,6 +71,13 @@
       "when": 1788616582459,
       "tag": "0009_graceful_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788690298543,
+      "tag": "0010_clever_purifiers",
+      "breakpoints": true
     }
   ]
 }

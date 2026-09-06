@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { PromptMessage } from "@/types/story";
+import { OverrideParamFields, type OverrideParams } from "./OverrideParamFields";
 import {
     type ActionDefinition,
     type OverrideRow,
@@ -27,16 +28,26 @@ export const OverrideEditor = ({
     const saveOverride = useSaveOverride();
     const resetOverride = useResetOverride();
     const [messages, setMessages] = useState<PromptMessage[]>(override?.template ?? def.defaultTemplate);
-    const [temperature, setTemperature] = useState(override?.temperature ?? def.defaultParams.temperature);
-    const [maxTokens, setMaxTokens] = useState(override?.maxTokens ?? def.defaultParams.maxTokens);
+    const [params, setParams] = useState<OverrideParams>({
+        temperature: override?.temperature ?? def.defaultParams.temperature,
+        maxTokens: override?.maxTokens ?? def.defaultParams.maxTokens,
+        topP: override?.topP ?? def.defaultParams.topP ?? null,
+        frequencyPenalty: override?.frequencyPenalty ?? def.defaultParams.frequencyPenalty ?? null,
+        presencePenalty: override?.presencePenalty ?? def.defaultParams.presencePenalty ?? null,
+        modelRef: override?.modelRef ?? null
+    });
 
     const save = async () => {
         const ok = await saveOverride({
             actionId: def.id,
             storyId,
             template: messages,
-            temperature,
-            maxTokens
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            topP: params.topP,
+            frequencyPenalty: params.frequencyPenalty,
+            presencePenalty: params.presencePenalty,
+            modelRef: params.modelRef
         });
         if (ok) onClose();
     };
@@ -109,31 +120,7 @@ export const OverrideEditor = ({
                         + message
                     </button>
 
-                    <div className="flex gap-4 text-sm">
-                        <label className="flex items-center gap-2">
-                            Temperature
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                max="2"
-                                className="w-20 rounded-md border bg-background px-2 py-1"
-                                value={temperature}
-                                onChange={e => setTemperature(Number(e.target.value))}
-                            />
-                        </label>
-                        <label className="flex items-center gap-2">
-                            Max tokens
-                            <input
-                                type="number"
-                                step="256"
-                                min="64"
-                                className="w-24 rounded-md border bg-background px-2 py-1"
-                                value={maxTokens}
-                                onChange={e => setMaxTokens(Number(e.target.value))}
-                            />
-                        </label>
-                    </div>
+                    <OverrideParamFields params={params} onChange={setParams} />
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">

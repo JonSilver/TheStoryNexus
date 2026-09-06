@@ -100,7 +100,16 @@ const streamToClient = async (
     requestId: string,
     abortController: AbortController,
     settings: Settings,
-    request: { provider: AIProviderId; modelId: string; messages: PromptMessage[]; temperature: number; maxTokens: number }
+    request: {
+        provider: AIProviderId;
+        modelId: string;
+        messages: PromptMessage[];
+        temperature: number;
+        maxTokens: number;
+        topP?: number;
+        frequencyPenalty?: number;
+        presencePenalty?: number;
+    }
 ) => {
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -281,6 +290,9 @@ router.post("/action", async (req, res) => {
         modelId: model.modelId,
         messages,
         temperature: resolved.params.temperature,
+        topP: resolved.params.topP,
+        frequencyPenalty: resolved.params.frequencyPenalty,
+        presencePenalty: resolved.params.presencePenalty,
         maxTokens
     });
 });

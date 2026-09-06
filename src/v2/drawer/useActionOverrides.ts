@@ -10,7 +10,13 @@ export interface ActionDefinition {
     voiceApplies: boolean;
     contextNeeds: string[];
     defaultTemplate: PromptMessage[];
-    defaultParams: { temperature: number; maxTokens: number; topP?: number };
+    defaultParams: {
+        temperature: number;
+        maxTokens: number;
+        topP?: number;
+        frequencyPenalty?: number;
+        presencePenalty?: number;
+    };
 }
 
 export interface OverrideRow {
@@ -21,6 +27,8 @@ export interface OverrideRow {
     temperature: number | null;
     maxTokens: number | null;
     topP: number | null;
+    frequencyPenalty: number | null;
+    presencePenalty: number | null;
     modelRef: string | null;
 }
 
@@ -31,6 +39,8 @@ export interface OverridePayload {
     temperature?: number | null;
     maxTokens?: number | null;
     topP?: number | null;
+    frequencyPenalty?: number | null;
+    presencePenalty?: number | null;
     modelRef?: string | null;
 }
 
