@@ -5,15 +5,23 @@ import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
 import { useActionGeneration } from "../ai/useActionGeneration";
-import { type EntryProposal, type UpdateProposal, parseEntryProposals, parseUpdateProposals } from "./parseProposals";
+import {
+    type ContinuityIssue,
+    type EntryProposal,
+    type UpdateProposal,
+    parseContinuityIssues,
+    parseEntryProposals,
+    parseUpdateProposals
+} from "./parseProposals";
 import { randomUUID } from "@/utils/crypto";
 
-export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates";
+export type BibleFlowMode = "extract-chapter" | "extract-paste" | "updates" | "continuity";
 
 const TITLES: Record<BibleFlowMode, string> = {
     "extract-chapter": "Extract entries from this chapter",
     "extract-paste": "Extract entries from pasted text",
-    updates: "Scan chapter for entry updates"
+    updates: "Scan chapter for entry updates",
+    continuity: "Check chapter continuity against the bible"
 };
 
 /**
@@ -39,11 +47,13 @@ export const ExtractSheet = ({
     const [pasted, setPasted] = useState("");
     const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
     const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
+    const [issues, setIssues] = useState<ContinuityIssue[] | null>(null);
     const [ticked, setTicked] = useState<Set<number>>(new Set());
     const [approving, setApproving] = useState(false);
 
     const run = async () => {
-        const actionId = mode === "updates" ? "propose_updates" : "extract_entries";
+        const actionId =
+            mode === "updates" ? "propose_updates" : mode === "continuity" ? "check_continuity" : "extract_entries";
         const text = await generation.run({
             actionId,
             storyId,
@@ -51,6 +61,12 @@ export const ExtractSheet = ({
             editorContext: mode === "extract-paste" ? { userMessage: pasted } : {}
         });
         if (!text) return;
+        if (mode === "continuity") {
+            const parsed = parseContinuityIssues(text);
+            setIssues(parsed);
+            if (!parsed.length) toast.success("No continuity issues found");
+            return;
+        }
         if (mode === "updates") {
             const parsed = parseUpdateProposals(text);
             setUpdates(parsed);
@@ -117,7 +133,7 @@ export const ExtractSheet = ({
 
     const busy = generation.phase === "streaming";
     const needsPaste = mode === "extract-paste" && proposals === null;
-    const showRun = proposals === null && updates === null;
+    const showRun = proposals === null && updates === null && issues === null;
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label={TITLES[mode]}>
@@ -176,6 +192,17 @@ export const ExtractSheet = ({
                             </span>
                         </label>
                     ))}
+
+                    {issues?.map((issue, index) => (
+                        <div key={index} className="space-y-1 rounded-md border border-amber-500/40 p-2">
+                            <p className="font-medium">{issue.name}</p>
+                            <p>{issue.issue}</p>
+                            {issue.evidence && (
+                                <p className="text-xs italic text-muted-foreground">“{issue.evidence}”</p>
+                            )}
+                        </div>
+                    ))}
+                    {issues?.length === 0 && <p className="text-muted-foreground">Nothing conflicts. Carry on.</p>}
 
                     {updates?.map(proposal => {
                         const existing = entries.find(e => e.name.toLowerCase() === proposal.name.toLowerCase());

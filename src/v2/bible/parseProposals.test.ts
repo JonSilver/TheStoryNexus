@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEntryProposals, parseUpdateProposals } from "./parseProposals";
+import { parseContinuityIssues, parseEntryProposals, parseUpdateProposals } from "./parseProposals";
 
 describe("parseEntryProposals", () => {
     it("parses a clean JSON array", () => {
@@ -43,5 +43,20 @@ describe("parseUpdateProposals", () => {
 
     it("returns empty for empty array responses", () => {
         expect(parseUpdateProposals("[]")).toEqual([]);
+    });
+});
+
+describe("parseContinuityIssues", () => {
+    it("parses issues and tolerates missing evidence", () => {
+        const text = '[{"name":"Quill","issue":"Eyes were blue in ch1, green here.","evidence":"his green eyes"},{"name":"X","issue":"y"}]';
+        expect(parseContinuityIssues(text)).toEqual([
+            { name: "Quill", issue: "Eyes were blue in ch1, green here.", evidence: "his green eyes" },
+            { name: "X", issue: "y", evidence: "" }
+        ]);
+    });
+
+    it("returns empty for clean chapters", () => {
+        expect(parseContinuityIssues("[]")).toEqual([]);
+        expect(parseContinuityIssues("No issues found.")).toEqual([]);
     });
 });

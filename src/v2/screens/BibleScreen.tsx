@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ClipboardPaste, FileScan, ScanSearch, Trash2 } from "lucide-react";
+import { ArrowLeft, ClipboardPaste, FileScan, ScanSearch, ShieldQuestion, Trash2 } from "lucide-react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
@@ -12,7 +12,8 @@ const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synop
 const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; needsChapter: boolean }> = [
     { mode: "extract-chapter", label: "Extract from chapter", icon: FileScan, needsChapter: true },
     { mode: "extract-paste", label: "Extract from pasted text", icon: ClipboardPaste, needsChapter: false },
-    { mode: "updates", label: "Scan for updates", icon: ScanSearch, needsChapter: true }
+    { mode: "updates", label: "Scan for updates", icon: ScanSearch, needsChapter: true },
+    { mode: "continuity", label: "Check continuity", icon: ShieldQuestion, needsChapter: true }
 ];
 
 const groupEntries = (entries: LorebookEntry[]) =>

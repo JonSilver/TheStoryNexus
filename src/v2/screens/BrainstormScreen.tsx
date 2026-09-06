@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { attemptPromise } from "@jfdi/attempt";
 import { toast } from "react-toastify";
-import { ArrowLeft, Loader2, Plus, Send, Square, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, NotebookPen, Plus, Send, Square, Trash2 } from "lucide-react";
+import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
 import {
     useBrainstormByStoryQuery,
     useCreateBrainstormMutation,
@@ -30,11 +31,12 @@ const chatMessage = (role: ChatMessage["role"], content: string): ChatMessage =>
  * assembled server-side like every other action.
  */
 export const BrainstormScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId } = useV2Store();
+    const { currentStoryId, lastChapterFor } = useV2Store();
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
     const createChat = useCreateBrainstormMutation();
     const updateChat = useUpdateBrainstormMutation();
     const deleteChat = useDeleteBrainstormMutation();
+    const createNote = useCreateNoteMutation();
     const generation = useActionGeneration();
     const [chatId, setChatId] = useState<string | null>(null);
     const [draft, setDraft] = useState("");
@@ -58,9 +60,12 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
             return;
         }
 
+        const chapterId = lastChapterFor(currentStoryId) ?? undefined;
         const reply = await generation.run({
             actionId: "brainstorm",
             storyId: currentStoryId,
+            // The chat has READ the story: summaries + current chapter go up
+            ...(chapterId ? { chapterId } : {}),
             editorContext: { chatHistory: historyText(chat.messages), userMessage }
         });
         const finalReply = reply || generation.text;
@@ -154,6 +159,24 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                         }`}
                     >
                         {message.content}
+                        {message.role === "assistant" && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    createNote.mutate({
+                                        storyId: currentStoryId,
+                                        title: message.content.slice(0, 60),
+                                        content: message.content,
+                                        type: "idea"
+                                    })
+                                }
+                                aria-label="Save as note"
+                                title="Save as note"
+                                className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                            >
+                                <NotebookPen className="h-3.5 w-3.5" /> Save as note
+                            </button>
+                        )}
                     </div>
                 ))}
                 {generation.phase === "streaming" && (

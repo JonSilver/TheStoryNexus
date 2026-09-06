@@ -14,6 +14,7 @@ A chapter document is a sequence of **blocks**; inline text carries **marks**.
 | `horizontalRule` | — |
 | `image` | `src` (server asset URL — never data URLs), `alt`, optional `caption` |
 | `sceneBeat` | See §2 |
+| `suggestion` | Transient ghost-text continuation (`suggestion-v2`); exports nothing, counts zero words. Keep converts it to paragraphs in one undo step; a serialised in-flight ghost rehydrates as `done`. |
 
 Marks: `bold`, `italic`, `underline`. Nothing else. No tables, code, layout, collab, hashtags, page breaks (page breaks are a print concern; EPUB/PDF derive breaks from headings).
 
@@ -58,9 +59,14 @@ Data-driven; built-ins defined in code, overrides in DB.
 type ActionId =
     | 'continue' | 'rework' | 'expand' | 'shorten'
     | 'summarise_chapter' | 'brainstorm' | 'scene_beat'
-    | 'extract_entries' | 'propose_updates';
+    | 'extract_entries' | 'propose_updates'
+    | 'ask' | 'check_continuity';
 // Deviation log: split_chapters was dropped — ingestion splits chapters
 // rule-based server-side with a human review step; no AI action needed.
+// Writing-process additions (2026-09): `ask` (free-form instruction over a
+// selection — returns only the revised passage) and `check_continuity`
+// (chapter vs bible, temp 0.2, JSON [{name, issue, evidence}] parsed
+// tolerantly client-side; empty array = clean).
 
 type ActionDef = {
     id: ActionId;
@@ -72,7 +78,9 @@ type ActionDef = {
 };
 ```
 
-`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm. `false`: summarise_chapter, extract_entries, propose_updates.
+`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm, ask. `false`: summarise_chapter, extract_entries, propose_updates, check_continuity.
+
+**Guidance** (`editorContext.guidance`, ≤5,000 chars): an optional free-text writer instruction accepted by scene_beat, continue, rework, expand and shorten. Appended as a final user message ("Additional instruction from the writer — follow it: …"). Powers refine-with-guidance on takes, ghost suggestions and action sheets.
 
 Overrides table `actionOverrides { id, actionId, storyId | null, template?, temperature?, maxTokens?, topP?, frequencyPenalty?, presencePenalty?, modelRef? }` — `storyId: null` = global. Unset samplers are not sent to the provider (the model server's own tuning applies); knobs outside the OpenAI-compatible surface (top_k, min_p, repeat_penalty, mirostat) are the model server's job — e.g. an Ollama Modelfile. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
 
@@ -111,6 +119,7 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 - `chapters` gains `revision` (int, ++ per content save), `updatedAt`, `summarySourceRevision`.
 - Chapter content PUT carries `expectedRevision`; mismatch → 409 + current row; client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome.
 - Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled in UI; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
+- **Auto-summarise** (writing-process review): after 90s of editor idle following document changes, the client refetches the chapter and — if the summary is stale and the chapter has ≥150 words — runs `summarise_chapter` silently and PUTs `{summary, summarySourceRevision}` pinned to the revision the summary was generated from. Failures are silent (next idle window retries); a concurrent edit simply leaves the summary stale for the next pass.
 
 ## 10. Token budgeting
 

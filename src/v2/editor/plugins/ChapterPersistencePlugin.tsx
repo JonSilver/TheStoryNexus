@@ -13,12 +13,12 @@ import { countWords } from "@/utils/textUtils";
 export const ChapterPersistencePlugin = ({
     onDocument
 }: {
-    onDocument: (serialised: string, wordCount: number) => void;
+    onDocument: (serialised: string, wordCount: number, text: string) => void;
 }) => {
     const handleChange = (editorState: EditorState) => {
         const serialised = JSON.stringify(editorState.toJSON());
-        const wordCount = editorState.read(() => countWords($getRoot().getTextContent()));
-        onDocument(serialised, wordCount);
+        const text = editorState.read(() => $getRoot().getTextContent());
+        onDocument(serialised, countWords(text), text);
     };
 
     return <OnChangePlugin onChange={handleChange} ignoreSelectionChange ignoreHistoryMergeTagChange={false} />;

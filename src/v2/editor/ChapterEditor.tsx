@@ -8,7 +8,8 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { HeadingNode } from "@lexical/rich-text";
 import { debounce } from "lodash";
-import { Component, type ReactNode, useCallback, useRef, useState } from "react";
+import { X } from "lucide-react";
+import { Component, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { Chapter } from "@/types/story";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
@@ -21,6 +22,9 @@ import { ChapterPersistencePlugin } from "./plugins/ChapterPersistencePlugin";
 import { SceneBeatShortcutPlugin } from "./plugins/SceneBeatShortcutPlugin";
 import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
+import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
+import { findUnmatchedNames } from "../bible/nameNudges";
+import { useAutoSummarise } from "./useAutoSummarise";
 import { useChapterSaver } from "./useChapterSaver";
 
 const theme = {
@@ -67,20 +71,34 @@ class ContentGuard extends Component<{ children: ReactNode }, { failed: boolean 
     }
 }
 
-const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
+const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => {
     const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.revision ?? 0, chapter.content);
     const [wordCount, setWordCount] = useState(chapter.wordCount ?? 0);
     const { scrollFor, setScroll } = useV2Store();
     const scrollerRef = useRef<HTMLDivElement | null>(null);
     const persistScroll = useRef(debounce((chapterId: string, top: number) => setScroll(chapterId, top), 500)).current;
     const actions = useEditorActions(chapter);
+    const { noteActivity } = useAutoSummarise(chapter);
+    const { data: bibleEntries } = useHierarchicalLorebookQuery(chapter.storyId);
+    const [nudgeNames, setNudgeNames] = useState<string[]>([]);
+    const { dismissedNudges, dismissNudges } = useV2Store();
+    const detectNames = useRef(
+        debounce((text: string, known: string[], dismissed: string[]) => {
+            const found = findUnmatchedNames(text, known).filter(name => !dismissed.includes(name.toLowerCase()));
+            setNudgeNames(found);
+        }, 8000)
+    ).current;
+    useEffect(() => () => detectNames.cancel(), [detectNames]);
 
     const onDocument = useCallback(
-        (serialised: string, words: number) => {
+        (serialised: string, words: number, text: string) => {
             setWordCount(words);
             scheduleSave(serialised, words);
+            noteActivity();
+            const known = (bibleEntries ?? []).flatMap(e => [e.name, ...((e.tags as string[]) ?? [])]);
+            detectNames(text, known, dismissedNudges(chapter.storyId));
         },
-        [scheduleSave]
+        [scheduleSave, noteActivity, bibleEntries, detectNames, dismissedNudges, chapter.storyId]
     );
 
     const restoreScroll = useCallback(
@@ -102,6 +120,33 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
                     actions={actions.toolbarActions}
                 />
                 <ActionSheet {...actions.sheetProps} />
+                {nudgeNames.length > 0 && (
+                    <div className="flex items-center gap-2 border-b bg-primary/5 px-3 py-1.5 text-xs">
+                        <span className="min-w-0 truncate">
+                            New name{nudgeNames.length > 1 ? "s" : ""} spotted: <b>{nudgeNames.join(", ")}</b>
+                        </span>
+                        {onOpenBible && (
+                            <button
+                                type="button"
+                                onClick={onOpenBible}
+                                className="shrink-0 rounded-md border px-2 py-0.5"
+                            >
+                                Add to bible
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            aria-label="Dismiss"
+                            className="ml-auto shrink-0 text-muted-foreground"
+                            onClick={() => {
+                                dismissNudges(chapter.storyId, nudgeNames);
+                                setNudgeNames([]);
+                            }}
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                )}
                 {status === "conflict" && (
                     <div className="flex items-center justify-between border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
                         <span>This chapter was changed on another device. Saving is paused.</span>
@@ -139,7 +184,7 @@ const EditorSurface = ({ chapter }: { chapter: Chapter }) => {
     );
 };
 
-export const ChapterEditor = ({ chapter }: { chapter: Chapter }) => (
+export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => (
     <ContentGuard key={chapter.id}>
         <LexicalComposer
             initialConfig={{
@@ -152,7 +197,7 @@ export const ChapterEditor = ({ chapter }: { chapter: Chapter }) => (
                 }
             }}
         >
-            <EditorSurface chapter={chapter} />
+            <EditorSurface chapter={chapter} onOpenBible={onOpenBible} />
         </LexicalComposer>
     </ContentGuard>
 );

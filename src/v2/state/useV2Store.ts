@@ -9,6 +9,7 @@ interface V2State {
     currentStoryId: string | null;
     lastChapterByStory: Record<string, string>;
     scrollByChapter: Record<string, number>;
+    dismissedNudgesByStory: Record<string, string[]>;
 }
 
 const STORAGE_KEY = "v2-state";
@@ -20,10 +21,11 @@ const load = (): V2State => {
         return {
             currentStoryId: typeof parsed.currentStoryId === "string" ? parsed.currentStoryId : null,
             lastChapterByStory: parsed.lastChapterByStory ?? {},
-            scrollByChapter: parsed.scrollByChapter ?? {}
+            scrollByChapter: parsed.scrollByChapter ?? {},
+            dismissedNudgesByStory: parsed.dismissedNudgesByStory ?? {}
         };
     } catch {
-        return { currentStoryId: null, lastChapterByStory: {}, scrollByChapter: {} };
+        return { currentStoryId: null, lastChapterByStory: {}, scrollByChapter: {}, dismissedNudgesByStory: {} };
     }
 };
 
@@ -59,11 +61,23 @@ export const useV2Store = () => {
         setState({ scrollByChapter: { ...store.state.scrollByChapter, [chapterId]: scrollTop } });
     }, []);
 
+    const dismissNudges = useCallback((storyId: string, names: string[]) => {
+        const existing = store.state.dismissedNudgesByStory[storyId] ?? [];
+        setState({
+            dismissedNudgesByStory: {
+                ...store.state.dismissedNudgesByStory,
+                [storyId]: [...new Set([...existing, ...names.map(n => n.toLowerCase())])]
+            }
+        });
+    }, []);
+
     return {
         ...state,
         setCurrentStory,
         setLastChapter,
         setScroll,
+        dismissNudges,
+        dismissedNudges: (storyId: string): string[] => state.dismissedNudgesByStory[storyId] ?? [],
         lastChapterFor: (storyId: string): string | null => state.lastChapterByStory[storyId] ?? null,
         scrollFor: (chapterId: string): number => state.scrollByChapter[chapterId] ?? 0
     };

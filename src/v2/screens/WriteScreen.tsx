@@ -72,7 +72,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
             </header>
             <div className="min-h-0 flex-1">
                 {/* Keyed by id only: background refetches must not remount a live editor */}
-                <ChapterEditor key={chapter.id} chapter={chapter} />
+                <ChapterEditor key={chapter.id} chapter={chapter} onOpenBible={() => goTo("bible")} />
             </div>
         </div>
     );

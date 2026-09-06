@@ -68,3 +68,25 @@ export const parseUpdateProposals = (text: string): UpdateProposal[] =>
             reason: typeof item.reason === "string" ? item.reason : ""
         }))
         .filter(item => item.name.length > 0 && item.updatedDescription.length > 0);
+
+export interface ContinuityIssue {
+    name: string;
+    issue: string;
+    evidence: string;
+}
+
+export const parseContinuityIssues = (text: string): ContinuityIssue[] =>
+    (extractJsonArray(text) ?? [])
+        .filter(
+            (item): item is Record<string, unknown> =>
+                !!item &&
+                typeof item === "object" &&
+                typeof (item as Record<string, unknown>).name === "string" &&
+                typeof (item as Record<string, unknown>).issue === "string"
+        )
+        .map(item => ({
+            name: (item.name as string).trim(),
+            issue: (item.issue as string).trim(),
+            evidence: typeof item.evidence === "string" ? item.evidence : ""
+        }))
+        .filter(item => item.name.length > 0 && item.issue.length > 0);
