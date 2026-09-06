@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
 // Styles
 import "react-toastify/dist/ReactToastify.css";
@@ -38,6 +38,10 @@ ReactDOM.createRoot(rootElement).render(
                             <Routes>
                                 <Route path="/" element={<Workspace />} />
                                 <Route path="/v2" element={<V2App />} />
+                                {/* Dead-end guards: old links land somewhere real, never a blank page */}
+                                <Route path="/stories" element={<Navigate to="/v2" replace />} />
+                                <Route path="/series/:seriesId" element={<Navigate to="/series" replace />} />
+                                <Route path="*" element={<Navigate to="/v2" replace />} />
                                 <Route element={<MainLayout />}>
                                     <Route path="/stories/:storyId/read" element={<StoryReader />} />
                                     <Route path="/series" element={<SeriesListPage />} />

@@ -1,5 +1,6 @@
 import { ListItemNode, ListNode } from "@lexical/list";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
@@ -15,6 +16,7 @@ import type { Chapter } from "@/types/story";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
 import { findUnmatchedNames, setNudgeHandoff } from "../bible/nameNudges";
+import { blocksToMarkdown, parseSerialisedDocument } from "../export";
 import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
 import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
@@ -72,7 +74,21 @@ class ContentGuard extends Component<{ children: ReactNode }, { failed: boolean 
 }
 
 const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => {
+    const [editor] = useLexicalComposerContext();
     const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.revision ?? 0, chapter.content);
+
+    // The writer's conflicting draft is still on screen — it must be savable
+    // BEFORE Reload replaces it with the server copy
+    const downloadDraft = () => {
+        const serialised = JSON.stringify(editor.getEditorState().toJSON());
+        const markdown = blocksToMarkdown(parseSerialisedDocument(serialised));
+        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${chapter.title.replace(/[^\w-]+/g, "-")}-my-version.md`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
     const [wordCount, setWordCount] = useState(chapter.wordCount ?? 0);
     const { scrollFor, setScroll } = useV2Store();
     const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -155,8 +171,14 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                     </div>
                 )}
                 {status === "conflict" && (
-                    <div className="flex items-center justify-between border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
-                        <span>This chapter was changed on another device. Saving is paused.</span>
+                    <div className="flex flex-wrap items-center gap-2 border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+                        <span className="min-w-0 flex-1">
+                            This chapter was changed elsewhere. Saving is paused — Reload shows the other version, so
+                            download yours first.
+                        </span>
+                        <button type="button" className="rounded-md border px-2 py-1" onClick={downloadDraft}>
+                            Download my version
+                        </button>
                         <button
                             type="button"
                             className="rounded-md border px-2 py-1"

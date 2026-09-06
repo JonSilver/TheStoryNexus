@@ -10,6 +10,8 @@ interface V2State {
     lastChapterByStory: Record<string, string>;
     scrollByChapter: Record<string, number>;
     dismissedNudgesByStory: Record<string, string[]>;
+    /** Background summary refresh spends tokens without being asked — the writer can turn it off. */
+    autoSummarise: boolean;
 }
 
 const STORAGE_KEY = "v2-state";
@@ -22,10 +24,17 @@ const load = (): V2State => {
             currentStoryId: typeof parsed.currentStoryId === "string" ? parsed.currentStoryId : null,
             lastChapterByStory: parsed.lastChapterByStory ?? {},
             scrollByChapter: parsed.scrollByChapter ?? {},
-            dismissedNudgesByStory: parsed.dismissedNudgesByStory ?? {}
+            dismissedNudgesByStory: parsed.dismissedNudgesByStory ?? {},
+            autoSummarise: parsed.autoSummarise !== false
         };
     } catch {
-        return { currentStoryId: null, lastChapterByStory: {}, scrollByChapter: {}, dismissedNudgesByStory: {} };
+        return {
+            currentStoryId: null,
+            lastChapterByStory: {},
+            scrollByChapter: {},
+            dismissedNudgesByStory: {},
+            autoSummarise: true
+        };
     }
 };
 
@@ -77,6 +86,7 @@ export const useV2Store = () => {
         setLastChapter,
         setScroll,
         dismissNudges,
+        setAutoSummarise: (on: boolean) => setState({ autoSummarise: on }),
         dismissedNudges: (storyId: string): string[] => state.dismissedNudgesByStory[storyId] ?? [],
         lastChapterFor: (storyId: string): string | null => state.lastChapterByStory[storyId] ?? null,
         scrollFor: (chapterId: string): number => state.scrollByChapter[chapterId] ?? 0

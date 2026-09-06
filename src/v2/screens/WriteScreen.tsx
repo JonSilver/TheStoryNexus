@@ -23,11 +23,17 @@ const Spinner = () => (
 
 export const WriteScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, lastChapterFor, setLastChapter, setCurrentStory } = useV2Store();
-    const { data: story, isError: storyGone } = useStoryQuery(currentStoryId ?? "");
-    const { data: chapters, isLoading: chaptersLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
+    const { data: story, error: storyError } = useStoryQuery(currentStoryId ?? "");
+    const {
+        data: chapters,
+        isLoading: chaptersLoading,
+        isError: chaptersFailed,
+        refetch: refetchChapters
+    } = useChaptersByStoryQuery(currentStoryId ?? "");
 
-    // A remembered story that no longer exists (deleted elsewhere) must not
-    // strand the writer on an empty surface
+    // Only a definite 404 means the story is gone. A network blip or server
+    // restart must NOT clear the remembered story and eject the writer.
+    const storyGone = (storyError as { status?: number } | null)?.status === 404;
     useEffect(() => {
         if (currentStoryId && storyGone) {
             setCurrentStory(null);
@@ -48,6 +54,14 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
                 message="Pick a story to start writing."
                 actionLabel="Choose a story"
                 onAction={() => goTo("stories")}
+            />
+        );
+    if (chaptersFailed || (storyError && !storyGone))
+        return (
+            <Empty
+                message="Couldn't reach the server — your work is safe on disk."
+                actionLabel="Try again"
+                onAction={() => void refetchChapters()}
             />
         );
     if (chaptersLoading || (currentChapterId && chapterLoading)) return <Spinner />;

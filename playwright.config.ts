@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
-import path from "path";
 import fs from "fs";
 import os from "os";
+import path from "path";
 
 /**
  * E2E harness (contracts Appendix A: behavioural checks live in the real

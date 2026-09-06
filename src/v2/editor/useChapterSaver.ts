@@ -60,6 +60,16 @@ const inFlightSaves = new Map<string, Promise<void>>();
 export const hasInFlightSave = (chapterId: string) => inFlightSaves.has(chapterId);
 export const whenSavesSettle = (chapterId: string): Promise<void> => inFlightSaves.get(chapterId) ?? Promise.resolve();
 
+// Live saver instances by chapter, so chapter-based AI actions can force the
+// debounced save down to disk before the server reads the chapter — the
+// model must analyse what the writer sees, not a second-old version.
+const flushers = new Map<string, () => void>();
+
+export const flushChapterSave = async (chapterId: string): Promise<void> => {
+    flushers.get(chapterId)?.();
+    await whenSavesSettle(chapterId);
+};
+
 /**
  * Single-flight, coalescing, revision-aware chapter saver (contracts §9).
  * One save in flight per chapter; newer content replaces queued content;
@@ -149,22 +159,30 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
     // Flush on every mobile-real exit path; clean timers on unmount
     useEffect(() => {
         const s = internals.current;
+        flushers.set(chapterId, () => flush());
         const flushExiting = () => flush(true);
         const flushWhenHidden = () => {
             if (document.visibilityState === "hidden") flush(true);
         };
+        // Blur flushes while the page is still alive (an ordinary fetch, no
+        // keepalive body cap) — big chapters get their exit save in early,
+        // before pagehide can only offer the size-capped keepalive path
+        const flushAlive = () => flush();
+        window.addEventListener("blur", flushAlive);
         window.addEventListener("beforeunload", flushExiting);
         window.addEventListener("pagehide", flushExiting);
         document.addEventListener("visibilitychange", flushWhenHidden);
         return () => {
+            window.removeEventListener("blur", flushAlive);
             window.removeEventListener("beforeunload", flushExiting);
             window.removeEventListener("pagehide", flushExiting);
             document.removeEventListener("visibilitychange", flushWhenHidden);
+            if (flushers.get(chapterId) !== undefined) flushers.delete(chapterId);
             flush();
             clearTimeout(s.debounceTimer);
             clearTimeout(s.retryTimer);
         };
-    }, [flush]);
+    }, [flush, chapterId]);
 
     return { status, scheduleSave, flush, conflictChapter: internals.current.conflictChapter };
 };

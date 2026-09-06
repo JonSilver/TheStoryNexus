@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
+import { flushChapterSave } from "../editor/useChapterSaver";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 
 type ActionKind = "selection" | "continue" | "summarise" | "ask";
@@ -159,6 +160,9 @@ export const useEditorActions = (chapter: Chapter) => {
     const onSummarise = useCallback(() => {
         setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });
         void (async () => {
+            // The model must see what the writer sees: force the debounced
+            // save down before the server reads the chapter
+            await flushChapterSave(chapter.id);
             // Freshness is anchored to the revision the summary was GENERATED
             // from, not whatever revision exists when it is accepted
             const [, fresh] = await attemptPromise(async () => (await fetch(`/api/chapters/${chapter.id}`)).json());

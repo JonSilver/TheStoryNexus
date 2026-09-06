@@ -10,7 +10,7 @@ const importService = new StoryImportService();
 
 export const storyExportService = {
     /**
-     * Export a complete story with all related data
+     * Export a story with its chapters, lorebook, beats, chats, notes and overrides (images are not bundled)
      */
     exportStory: async (storyId: string): Promise<void> => {
         const [error, exportData] = await attemptPromise(() => exportService.exportStory(storyId));
@@ -26,7 +26,7 @@ export const storyExportService = {
     },
 
     /**
-     * Import a complete story with all related data
+     * Import a previously exported story
      * Returns the ID of the newly imported story
      */
     importStory: async (file: File): Promise<string> => {

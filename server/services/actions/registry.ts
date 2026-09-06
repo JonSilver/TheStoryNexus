@@ -212,7 +212,10 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
                 content:
                     'You extract story-bible entries from fiction text. Return ONLY a JSON array — no prose, no code fences — of objects shaped: {"name": string, "category": "character" | "location" | "item" | "event", "description": string, "tags": string[]}. Descriptions are 2-3 factual sentences grounded in the text. Tags are aliases, nicknames, or titles used for the entity in the text. Do not invent facts. Skip entities already well covered by these existing entries:\n{{matched_entries}}'
             },
-            { role: "user", content: "Extract entries from the following text:\n{{chapter_content}}\n{{user_message}}" },
+            {
+                role: "user",
+                content: "Extract entries from the following text:\n{{chapter_content}}\n{{user_message}}"
+            },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 0.3, maxTokens: 4096 }

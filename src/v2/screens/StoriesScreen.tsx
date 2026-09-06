@@ -12,7 +12,7 @@ import { ImportSheet } from "./ImportSheet";
 
 export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const { currentStoryId, setCurrentStory } = useV2Store();
-    const { data: stories, isLoading } = useStoriesQuery();
+    const { data: stories, isLoading, isError, refetch } = useStoriesQuery();
     const createStory = useCreateStoryMutation();
     const [newTitle, setNewTitle] = useState("");
     const [importing, setImporting] = useState(false);
@@ -60,7 +60,16 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                 </button>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto">
-                {isLoading ? (
+                {isError ? (
+                    <div className="flex flex-col items-center gap-3 p-8 text-center text-sm">
+                        <p className="text-muted-foreground">
+                            Couldn't reach the server — your stories are safe on disk.
+                        </p>
+                        <button type="button" className="rounded-md border px-3 py-1.5" onClick={() => void refetch()}>
+                            Try again
+                        </button>
+                    </div>
+                ) : isLoading ? (
                     <div className="flex justify-center p-8">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>

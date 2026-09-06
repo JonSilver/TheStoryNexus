@@ -1,8 +1,11 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { eq } from "drizzle-orm";
 import express from "express";
+import fs from "fs";
 import multer from "multer";
-import { db, schema } from "../db/client.js";
+import os from "os";
+import path from "path";
+import { db, rawSqlite, schema } from "../db/client.js";
 
 type ImportedSeries = typeof schema.series.$inferSelect;
 type ImportedStory = typeof schema.stories.$inferSelect;
@@ -17,6 +20,23 @@ type ImportedAiSetting = typeof schema.aiSettings.$inferSelect;
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
+// A copy of the .db file alone is NOT a snapshot in WAL mode — recent writing
+// can live entirely in the -wal file. The online backup API produces a
+// single consistent database file safe to copy while the app runs.
+router.get("/backup", async (_, res) => {
+    const backupPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "nexus-backup-")), "storynexus-backup.db");
+    const [error] = await attemptPromise(() => rawSqlite.backup(backupPath));
+    if (error) {
+        console.error("Backup failed:", error);
+        res.status(500).json({ error: "Backup failed" });
+        return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.download(backupPath, `storynexus-backup-${stamp}.db`, () => {
+        fs.rm(path.dirname(backupPath), { recursive: true, force: true }, () => undefined);
+    });
+});
+
 router.get("/export", async (_, res) => {
     const [error, tables] = await attemptPromise(() =>
         Promise.all([
@@ -28,7 +48,8 @@ router.get("/export", async (_, res) => {
             db.select().from(schema.aiChats),
             db.select().from(schema.sceneBeats),
             db.select().from(schema.notes),
-            db.select().from(schema.aiSettings)
+            db.select().from(schema.aiSettings),
+            db.select().from(schema.actionOverrides)
         ])
     );
 
@@ -38,7 +59,18 @@ router.get("/export", async (_, res) => {
         return;
     }
 
-    const [series, stories, chapters, prompts, lorebookEntries, aiChats, sceneBeats, notes, aiSettings] = tables;
+    const [
+        series,
+        stories,
+        chapters,
+        prompts,
+        lorebookEntries,
+        aiChats,
+        sceneBeats,
+        notes,
+        aiSettings,
+        actionOverrides
+    ] = tables;
     // API keys never leave the server, including via export
     const sanitisedAiSettings = aiSettings.map(({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...rest }) => rest);
     res.json({
@@ -53,7 +85,8 @@ router.get("/export", async (_, res) => {
             aiChats,
             sceneBeats,
             notes,
-            aiSettings: sanitisedAiSettings
+            aiSettings: sanitisedAiSettings,
+            actionOverrides
         }
     });
 });

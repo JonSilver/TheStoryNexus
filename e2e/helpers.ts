@@ -10,9 +10,7 @@ export type GenerationResponder = (request: { actionId: string; editorContext?: 
 
 const sseBody = (text: string): string => {
     const chunks = text.match(/.{1,20}/gs) ?? [];
-    const tokenEvents = chunks
-        .map(chunk => `event: token\ndata: ${JSON.stringify({ text: chunk })}\n\n`)
-        .join("");
+    const tokenEvents = chunks.map(chunk => `event: token\ndata: ${JSON.stringify({ text: chunk })}\n\n`).join("");
     return `${tokenEvents}event: finish\ndata: {"reason":"complete"}\n\n`;
 };
 

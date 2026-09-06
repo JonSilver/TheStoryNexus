@@ -118,7 +118,9 @@ export const NotesScreen = ({ goTo }: ScreenProps) => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => deleteNote.mutate(note.id)}
+                            onClick={() =>
+                                window.confirm(`Delete the note “${note.title}”?`) && deleteNote.mutate(note.id)
+                            }
                             aria-label={`Delete ${note.title}`}
                             className="mt-1 text-muted-foreground"
                         >

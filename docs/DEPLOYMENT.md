@@ -69,11 +69,11 @@ docker run -d \
 
 SQLite database is stored in `./data/storynexus.db` (mounted as volume).
 
-To backup:
+To backup, use the in-app backup (More → Backup → Download backup, or `GET /api/admin/backup`) — it produces a single consistent snapshot via SQLite's online backup API.
 
-```bash
-cp data/storynexus.db data/storynexus.db.backup
-```
+**Do NOT** copy `storynexus.db` alone while the app is running: the database runs in WAL mode, so recent writing can live entirely in `storynexus.db-wal` and a bare file copy silently omits it. If you must copy files, stop the app first and copy `storynexus.db`, `storynexus.db-wal` and `storynexus.db-shm` together.
+
+Images are stored separately under `data/assets/` — include that directory in any backup.
 
 ## Migration from Tauri App
 

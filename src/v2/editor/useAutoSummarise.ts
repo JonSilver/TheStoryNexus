@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
+import { useV2Store } from "../state/useV2Store";
 
 const IDLE_MS = 90_000;
 const MIN_WORDS = 150;
@@ -22,6 +23,9 @@ export const useAutoSummarise = (chapter: Chapter) => {
     const running = useRef(false);
     const failures = useRef(0);
     const queryClient = useQueryClient();
+    const { autoSummarise } = useV2Store();
+    const enabled = useRef(autoSummarise);
+    enabled.current = autoSummarise;
 
     const schedule = () => {
         clearTimeout(timer.current);
@@ -37,7 +41,7 @@ export const useAutoSummarise = (chapter: Chapter) => {
     };
 
     const refreshIfStale = async (chapterId: string) => {
-        if (running.current) return;
+        if (!enabled.current || running.current) return;
         const [error, response] = await attemptPromise(() => fetch(`/api/chapters/${chapterId}`));
         if (error || !response?.ok) return;
         const fresh: Chapter = await response.json();

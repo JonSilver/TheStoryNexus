@@ -76,7 +76,7 @@ const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
 };
 
 export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "notes" | "brainstorm") => void }) => {
-    const { currentStoryId } = useV2Store();
+    const { currentStoryId, autoSummarise, setAutoSummarise } = useV2Store();
 
     return (
         <div className="flex h-full flex-col overflow-y-auto">
@@ -125,8 +125,28 @@ export const MoreScreen = ({ goTo }: { goTo?: (tool: "bible" | "actions" | "note
                     AI Actions (advanced overrides)
                 </button>
             )}
+            <label className="flex items-center gap-3 border-t px-4 py-3 text-sm">
+                <input type="checkbox" checked={autoSummarise} onChange={e => setAutoSummarise(e.target.checked)} />
+                <span>
+                    Refresh chapter summaries automatically
+                    <span className="block text-xs text-muted-foreground">
+                        Runs the summarise action in the background after you pause — spends tokens on your configured
+                        model.
+                    </span>
+                </span>
+            </label>
             {currentStoryId && <StoryVoiceEditor storyId={currentStoryId} />}
             {currentStoryId && <ExportButtons storyId={currentStoryId} />}
+            <section className="border-t px-4 py-3">
+                <h2 className="mb-1 font-medium">Backup</h2>
+                <p className="mb-2 text-xs text-muted-foreground">
+                    A consistent snapshot of the whole database, safe to take while writing. Images under data/assets
+                    need copying separately.
+                </p>
+                <a href="/api/admin/backup" download className="inline-block rounded-md border px-3 py-1.5 text-sm">
+                    Download backup
+                </a>
+            </section>
             <ul className="divide-y border-t">
                 {LINKS.map(({ to, label, icon: Icon }) => (
                     <li key={to}>

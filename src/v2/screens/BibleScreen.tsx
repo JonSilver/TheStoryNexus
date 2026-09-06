@@ -107,7 +107,10 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                                     {entry.level === "story" && (
                                         <button
                                             type="button"
-                                            onClick={() => deleteEntry.mutate(entry.id)}
+                                            onClick={() =>
+                                                window.confirm(`Delete the bible entry “${entry.name}”?`) &&
+                                                deleteEntry.mutate(entry.id)
+                                            }
                                             aria-label={`Delete ${entry.name}`}
                                             className="mt-1 text-muted-foreground"
                                         >

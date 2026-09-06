@@ -13,6 +13,7 @@ import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { flushChapterSave } from "../editor/useChapterSaver";
 import { useV2Store } from "../state/useV2Store";
 
 const historyText = (messages: ChatMessage[]) =>
@@ -61,6 +62,7 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         }
 
         const chapterId = lastChapterFor(currentStoryId) ?? undefined;
+        if (chapterId) await flushChapterSave(chapterId);
         const reply = await generation.run({
             actionId: "brainstorm",
             storyId: currentStoryId,
@@ -132,7 +134,10 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => deleteChat.mutate(c.id)}
+                                onClick={() =>
+                                    window.confirm(`Delete “${c.title}” and its whole conversation?`) &&
+                                    deleteChat.mutate(c.id)
+                                }
                                 aria-label={`Delete ${c.title}`}
                                 className="text-muted-foreground"
                             >

@@ -41,8 +41,10 @@ export const generateEpub = async (story: Story, chapters: Chapter[]): Promise<B
             excludeFromToc: true,
             beforeToc: true
         },
+        // Position, not stored order: v2 orders from 0 and titles usually
+        // already say "Chapter N" — never emit "Chapter 0: Chapter 1"
         ...chapters.map((chapter, idx) => ({
-            title: `Chapter ${chapter.order}: ${chapter.title}`,
+            title: /^chapter\b/i.test(chapter.title.trim()) ? chapter.title : `Chapter ${idx + 1}: ${chapter.title}`,
             content: chapterHtmls[idx]
         }))
     ];

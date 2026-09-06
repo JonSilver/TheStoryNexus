@@ -6,6 +6,7 @@ import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { flushChapterSave } from "../editor/useChapterSaver";
 import { IssueList, ProposalList, UpdateList } from "./FlowResults";
 import {
     type ContinuityIssue,
@@ -58,6 +59,8 @@ export const ExtractSheet = ({
     const run = async () => {
         const actionId =
             mode === "updates" ? "propose_updates" : mode === "continuity" ? "check_continuity" : "extract_entries";
+        // Chapter modes read from the server — land any pending editor save first
+        if (mode !== "extract-paste" && chapterId) await flushChapterSave(chapterId);
         const text = await generation.run({
             actionId,
             storyId,
@@ -202,9 +205,7 @@ export const ExtractSheet = ({
                         />
                     )}
                     {issues && <IssueList issues={issues} />}
-                    {updates && (
-                        <UpdateList updates={updates} entries={entries} onApply={p => void applyUpdate(p)} />
-                    )}
+                    {updates && <UpdateList updates={updates} entries={entries} onApply={p => void applyUpdate(p)} />}
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">

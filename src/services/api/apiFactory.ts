@@ -12,7 +12,10 @@ export const fetchJSON = async <T>(url: string, options?: RequestInit): Promise<
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(error.error || `Request failed with status ${response.status}`);
+        // status carried so callers can tell "gone" (404) from "unreachable"
+        throw Object.assign(new Error(error.error || `Request failed with status ${response.status}`), {
+            status: response.status
+        });
     }
 
     return response.json();

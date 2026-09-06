@@ -46,10 +46,12 @@ export default createCrudRouter({
                             and(eq(schema.lorebookEntries.level, "story"), eq(schema.lorebookEntries.scopeId, storyId))
                         );
 
-                    const [chapters, sceneBeats, aiChats] = await Promise.all([
+                    const [chapters, sceneBeats, aiChats, notes, actionOverrides] = await Promise.all([
                         db.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)),
                         db.select().from(schema.sceneBeats).where(eq(schema.sceneBeats.storyId, storyId)),
-                        db.select().from(schema.aiChats).where(eq(schema.aiChats.storyId, storyId))
+                        db.select().from(schema.aiChats).where(eq(schema.aiChats.storyId, storyId)),
+                        db.select().from(schema.notes).where(eq(schema.notes.storyId, storyId)),
+                        db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.storyId, storyId))
                     ]);
 
                     return {
@@ -61,7 +63,9 @@ export default createCrudRouter({
                         chapters,
                         lorebookEntries,
                         sceneBeats,
-                        aiChats
+                        aiChats,
+                        notes,
+                        actionOverrides
                     };
                 });
 
