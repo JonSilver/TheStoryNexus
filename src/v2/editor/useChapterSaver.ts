@@ -1,5 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "failed" | "conflict";
@@ -56,6 +58,7 @@ const RETRY_MS = 5000;
  */
 export const useChapterSaver = (chapterId: string, initialRevision: number, initialContent: string) => {
     const [status, setStatus] = useState<SaveStatus>("idle");
+    const queryClient = useQueryClient();
     const internals = useRef({
         pending: null as SavePayload | null,
         inFlight: false,
@@ -81,6 +84,7 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         if (result.outcome === "ok") {
             s.revision = result.chapter.revision ?? s.revision + 1;
             s.lastSavedContent = payload.content;
+            applyChapterToCaches(queryClient, result.chapter);
             if (s.pending) void drain();
             else setStatus("saved");
             return;
@@ -96,7 +100,7 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         setStatus("failed");
         clearTimeout(s.retryTimer);
         s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
-    }, [chapterId]);
+    }, [chapterId, queryClient]);
 
     const scheduleSave = useCallback(
         (content: string, wordCount: number) => {

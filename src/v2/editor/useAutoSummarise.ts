@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { attemptPromise } from "@jfdi/attempt";
+import { useQueryClient } from "@tanstack/react-query";
+import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
 
@@ -17,6 +19,7 @@ const MIN_WORDS = 150;
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
+    const queryClient = useQueryClient();
 
     const noteActivity = () => {
         clearTimeout(timer.current);
@@ -42,13 +45,14 @@ export const useAutoSummarise = (chapter: Chapter) => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) return;
-                    void attemptPromise(() =>
-                        fetch(`/api/chapters/${chapterId}`, {
+                    void attemptPromise(async () => {
+                        const response = await fetch(`/api/chapters/${chapterId}`, {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ summary, summarySourceRevision: baseRevision })
-                        })
-                    );
+                        });
+                        if (response.ok) applyChapterToCaches(queryClient, await response.json());
+                    });
                 }
             }
         );

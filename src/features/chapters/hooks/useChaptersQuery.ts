@@ -42,18 +42,23 @@ export const useCreateChapterMutation = () => {
     });
 };
 
+// Push a server-returned chapter row into both caches. Anything that writes a
+// chapter outside a mutation (the v2 editor saver, background summarise) MUST
+// call this, or the next editor mount resurrects stale content and 409s.
+export const applyChapterToCaches = (queryClient: ReturnType<typeof useQueryClient>, chapter: Chapter) => {
+    queryClient.setQueryData(chaptersKeys.detail(chapter.id), chapter);
+    queryClient.setQueryData<Chapter[]>(chaptersKeys.byStory(chapter.storyId), old =>
+        old?.map(ch => (ch.id === chapter.id ? chapter : ch))
+    );
+};
+
 // Update chapter mutation
 export const useUpdateChapterMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: ({ id, data }: { id: string; data: Partial<Chapter> }) => chaptersApi.update(id, data),
-        onSuccess: updatedChapter => {
-            queryClient.setQueryData(chaptersKeys.detail(updatedChapter.id), updatedChapter);
-            queryClient.setQueryData<Chapter[]>(chaptersKeys.byStory(updatedChapter.storyId), old =>
-                old?.map(ch => (ch.id === updatedChapter.id ? updatedChapter : ch))
-            );
-        },
+        onSuccess: updatedChapter => applyChapterToCaches(queryClient, updatedChapter),
         onError: () => {
             toast.error("Failed to update chapter");
         }

@@ -130,10 +130,12 @@ const streamToClient = async (
     };
     armInactivityTimer();
 
+    const sent = { tokens: 0 };
     const [error] = await attemptPromise(async () => {
         const stream = streamCompletion({ ...request, signal: abortController.signal }, settings);
         for await (const token of stream) {
             armInactivityTimer();
+            sent.tokens += 1;
             sendEvent(res, "token", { text: token });
         }
     });
@@ -145,6 +147,13 @@ const streamToClient = async (
     else if (error)
         if ((error as Error).name === "AbortError" || abortController.signal.aborted) sendEvent(res, "aborted", {});
         else sendEvent(res, "error", { message: (error as Error).message || "Generation failed" });
+    // A clean stream with zero content is a failure, not a completion — thinking
+    // models can burn the whole token budget on hidden reasoning
+    else if (sent.tokens === 0 && !abortController.signal.aborted)
+        sendEvent(res, "error", {
+            message:
+                "The model produced no output — it may have spent its token budget on hidden reasoning. Raise max tokens for this action or use a non-thinking model."
+        });
     else sendEvent(res, "finish", { reason: abortController.signal.aborted ? "aborted" : "complete" });
 
     res.end();

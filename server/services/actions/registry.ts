@@ -165,7 +165,9 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             },
             { role: "user", content: "Summarise the following chapter content:\nChapter Content: {{chapter_content}}" }
         ],
-        defaultParams: { temperature: 1.0, maxTokens: 512 }
+        // 1024 not 512: headroom for thinking models whose hidden reasoning
+        // shares the completion budget with the actual summary
+        defaultParams: { temperature: 1.0, maxTokens: 1024 }
     },
     ask: {
         id: "ask",
