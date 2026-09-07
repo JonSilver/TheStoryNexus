@@ -14,7 +14,6 @@ import { countWords } from "../../src/utils/textUtils.js";
 import { db, schema } from "../db/client.js";
 import {
     MAX_MANUSCRIPT_BYTES,
-    type ParsedManuscript,
     ingestStatusOf,
     isSupportedManuscript,
     parseManuscript,
@@ -29,24 +28,28 @@ const router = express.Router();
 const PREVIEW_CHARS = 300;
 const UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
 
+const MAX_UPLOAD_FILES = 50;
+
 const uploadFailures: Record<string, { status: number; error: string }> = {
-    LIMIT_FILE_SIZE: { status: 413, error: "The file exceeds the 20 MB limit" },
-    LIMIT_FILE_COUNT: { status: 400, error: "Upload one file at a time" },
+    LIMIT_FILE_SIZE: { status: 413, error: "A file exceeds the 20 MB limit" },
+    LIMIT_FILE_COUNT: { status: 400, error: `Upload at most ${MAX_UPLOAD_FILES} files` },
     [UNSUPPORTED_MEDIA_TYPE]: { status: 415, error: "Only .txt, .md, .docx and .epub files are accepted" }
 };
 
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_MANUSCRIPT_BYTES, files: 1 },
+    limits: { fileSize: MAX_MANUSCRIPT_BYTES, files: MAX_UPLOAD_FILES },
     fileFilter: (_req, file, callback) =>
         isSupportedManuscript(file.originalname)
             ? callback(null, true)
             : callback(Object.assign(new Error(UNSUPPORTED_MEDIA_TYPE), { code: UNSUPPORTED_MEDIA_TYPE }))
 });
 
+// One field name, one-or-many files: multi-part stories arrive as separate
+// files (a file per chapter or per part), uploaded together in reading order
 const receiveUpload = (req: express.Request, res: express.Response) =>
     new Promise<void>((resolve, reject) => {
-        upload.single("file")(req, res, (error?: unknown) => (error ? reject(error) : resolve()));
+        upload.array("files", MAX_UPLOAD_FILES)(req, res, (error?: unknown) => (error ? reject(error) : resolve()));
     });
 
 /** User-facing failures answer with their own status; everything else is a genuine 500. */
@@ -63,12 +66,7 @@ const asyncHandler =
 // Compressed uploads (docx/epub) can expand far beyond the 20 MB file cap
 const MAX_EXPANDED_CHARS = 8_000_000;
 
-const analysisResponse = (res: express.Response, { title, text }: ParsedManuscript) => {
-    if (text.length > MAX_EXPANDED_CHARS) {
-        res.status(413).json({ error: "The manuscript is too large after extraction (8M character limit)" });
-        return;
-    }
-    const chapters = splitIntoChapters(text);
+const analysisResponse = (res: express.Response, title: string, chapters: SplitChapter[]) => {
     res.json({
         token: storeAnalysis(title, chapters),
         title,
@@ -89,11 +87,29 @@ router.post(
             res.status(failure?.status ?? 400).json({ error: failure?.error ?? uploadError.message });
             return;
         }
-        if (!req.file) {
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        if (files.length === 0) {
             res.status(400).json({ error: "No file uploaded" });
             return;
         }
-        analysisResponse(res, await parseManuscript(req.file.originalname, req.file.buffer));
+
+        const parsed = [];
+        for (const file of files) parsed.push(await parseManuscript(file.originalname, file.buffer));
+        const totalChars = parsed.reduce((sum, p) => sum + p.text.length, 0);
+        if (totalChars > MAX_EXPANDED_CHARS) {
+            res.status(413).json({ error: "The manuscript is too large after extraction (8M character limit)" });
+            return;
+        }
+
+        // Each file splits independently; a file that yields a single untitled
+        // chapter takes the file's own title (the common chapter-per-file case)
+        const chapters = parsed.flatMap(part => {
+            const split = splitIntoChapters(part.text);
+            return split.length === 1 && /^Chapter \d+$/.test(split[0].title)
+                ? [{ ...split[0], title: part.title }]
+                : split;
+        });
+        analysisResponse(res, parsed[0].title, chapters);
     })
 );
 
@@ -110,7 +126,8 @@ router.post(
             res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
             return;
         }
-        analysisResponse(res, parseManuscriptText(parsed.data.text, parsed.data.title));
+        const manuscript = parseManuscriptText(parsed.data.text, parsed.data.title);
+        analysisResponse(res, manuscript.title, splitIntoChapters(manuscript.text));
     })
 );
 

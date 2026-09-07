@@ -45,10 +45,14 @@ export const ImportSheet = ({
         setReview(result.chapters.map((chapter, index) => ({ ...chapter, index, included: true })));
     };
 
-    const analyseFile = async (file: File) => {
+    const analyseFiles = async (files: File[]) => {
         setBusy(true);
+        // Reading order by natural filename sort ("Chapter 2" before "Chapter 10")
+        const ordered = [...files].sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
+        );
         const body = new FormData();
-        body.append("file", file);
+        ordered.forEach(file => body.append("files", file));
         const [error, response] = await attemptPromise(() => fetch("/api/ingest/analyse", { method: "POST", body }));
         setBusy(false);
         if (error || !response?.ok) {
@@ -118,16 +122,18 @@ export const ImportSheet = ({
                         <>
                             <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3">
                                 <Upload className="h-4 w-4" />
-                                Upload .txt, .md, .docx or .epub
+                                Upload .txt, .md, .docx or .epub — several files welcome (one per chapter or part;
+                                ordered by filename)
                                 <input
                                     type="file"
                                     accept=".txt,.md,.docx,.epub"
+                                    multiple
                                     className="hidden"
                                     disabled={busy}
                                     onChange={e => {
-                                        const file = e.target.files?.[0];
+                                        const files = Array.from(e.target.files ?? []);
                                         e.target.value = "";
-                                        if (file && !busy) void analyseFile(file);
+                                        if (files.length > 0 && !busy) void analyseFiles(files);
                                     }}
                                 />
                             </label>
@@ -147,6 +153,7 @@ export const ImportSheet = ({
                                 value={title}
                                 onChange={e => setTitle(e.target.value)}
                                 placeholder="Story title"
+                                aria-label="Story title"
                             />
                             <p className="text-xs text-muted-foreground">
                                 {review.filter(c => c.included).length} of {review.length} chapters selected — untick to

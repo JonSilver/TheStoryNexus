@@ -331,3 +331,34 @@ test("reference panel: bible lookup and quick note without leaving the page", as
     await page.getByRole("button", { name: "Notes" }).click();
     await expect(page.getByText("Brandon should appear earlier.").first()).toBeVisible();
 });
+
+test("import: multiple files become one story in filename order", async ({ page }) => {
+    await page.goto("/v2");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Open the library" }).click();
+    await page.getByRole("button", { name: "Import" }).click();
+
+    // Deliberately unordered selection; "part 10" must sort after "part 2"
+    await page.locator('input[accept=".txt,.md,.docx,.epub"]').setInputFiles([
+        { name: "part 10.txt", mimeType: "text/plain", buffer: Buffer.from("The final reckoning arrived.") },
+        { name: "part 2.txt", mimeType: "text/plain", buffer: Buffer.from("The middle held its breath.") },
+        { name: "part 1.txt", mimeType: "text/plain", buffer: Buffer.from("It began on a Tuesday.") }
+    ]);
+
+    await expect(page.getByText("3 of 3 chapters selected")).toBeVisible();
+    const reviewTitles = await page.locator("input:not([type=checkbox])").evaluateAll(els =>
+        els
+            .filter(el => el.getAttribute("aria-label") !== "Story title")
+            .map(el => (el as HTMLInputElement).value)
+            .filter(v => /^part /.test(v))
+    );
+    if (reviewTitles.join("|") !== "part 1|part 2|part 10")
+        throw new Error(`Wrong review order: ${reviewTitles.join(", ")}`);
+    await page.getByRole("button", { name: /Create story \(3 chapters\)/ }).click();
+    await expect(page.getByPlaceholder("New chapter title (optional)")).toBeVisible();
+
+    // Order and per-file titles both honoured
+    const titles = await page.locator("li span.truncate").allTextContents();
+    const order = titles.filter(t => /^part /.test(t));
+    if (order.join("|") !== "part 1|part 2|part 10") throw new Error(`Wrong order: ${order.join(", ")}`);
+});
