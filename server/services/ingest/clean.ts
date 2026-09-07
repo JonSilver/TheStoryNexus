@@ -106,15 +106,27 @@ export const unwrapHardLines = (text: string): string => {
     const candidates = lines.filter(line => line.trim() !== "");
     if (candidates.length < 10 || continuing.length / candidates.length < 0.5) return text;
 
+    // Join a line onto the next ONLY when it looks like wrapped prose:
+    // long enough to have hit the wrap column, not a divider or heading.
+    // Short lines, scene dividers and headings keep their own line — welding
+    // them into kilometre-long lines corrupted structure downstream.
+    const structural = /^[ \t]*(?:[*\-–—_~•·][*\-–—_~•· \t]*|#{1,6}[ \t].*|chapter\b.*)$/i;
     return text
         .split(/\n{2,}/)
-        .map(paragraph =>
-            paragraph
-                .split("\n")
-                .map(line => line.trim())
-                .join(" ")
-                .trim()
-        )
+        .map(paragraph => {
+            const parts = paragraph.split("\n").map(line => line.trim());
+            return parts
+                .map((line, i) =>
+                    i < parts.length - 1 &&
+                    line.length >= WRAP_MIN &&
+                    !structural.test(line) &&
+                    !structural.test(parts[i + 1])
+                        ? `${line} `
+                        : `${line}\n`
+                )
+                .join("")
+                .trimEnd();
+        })
         .join("\n\n");
 };
 

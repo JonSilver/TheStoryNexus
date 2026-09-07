@@ -90,3 +90,36 @@ describe("cleanPlainText", () => {
         expect(cleaned).toContain("in all that time the sea");
     });
 });
+
+describe("pathological input (the spin that took the server down)", () => {
+    it("splits a huge unwrapped separator-heavy text in bounded time", async () => {
+        const { splitIntoChapters } = await import("./split.js");
+        const hugeSeparatorLine = "*** ".repeat(20_000);
+        const prose = "A perfectly ordinary paragraph of story prose that runs along nicely. ".repeat(40);
+        const text = [prose, hugeSeparatorLine, prose, hugeSeparatorLine, prose].join("\n\n");
+        const start = Date.now();
+        const chapters = splitIntoChapters(cleanPlainText(text));
+        expect(Date.now() - start).toBeLessThan(2_000);
+        expect(chapters.length).toBeGreaterThan(0);
+    });
+
+    it("unwrap keeps scene dividers and headings on their own lines", () => {
+        const wrapped = [
+            "He reached for the telephone before the second wave hit the wall and",
+            "the glass in the lamp-room rattled loose in its ancient iron frame."
+        ];
+        const text = [
+            "The keeper had watched the harbour for thirty years and in all that",
+            "time the sea had never once looked the way it looked on the morning.",
+            "* * *",
+            ...wrapped,
+            ...wrapped,
+            ...wrapped,
+            ...wrapped,
+            ...wrapped
+        ].join("\n");
+        const result = unwrapHardLines(text);
+        expect(result).toContain("\n* * *\n");
+        expect(result).toContain("that time the sea");
+    });
+});

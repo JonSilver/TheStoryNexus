@@ -86,7 +86,16 @@ const HEADING_PATTERNS: readonly { pattern: RegExp; group: number; kind: Heading
 ];
 
 /** Three or more repeated punctuation marks alone on a line: `* * *`, `---`, `~~~`, `• • •`. */
-const SEPARATOR = /^[ \t]*(?:[*\-–—_~•·]+[ \t]*){3,}$/;
+// Linear-time by construction: the old nested-quantifier form
+// ((?:X+\s*){3,}) backtracked catastrophically on long near-miss lines.
+const SEPARATOR_CHARS = /^[ \t]*[*\-–—_~•·][*\-–—_~•· \t]*$/;
+const SEPARATOR_MAX_LINE = 200;
+const SEPARATOR = {
+    test: (line: string): boolean =>
+        line.length <= SEPARATOR_MAX_LINE &&
+        SEPARATOR_CHARS.test(line) &&
+        (line.match(/[*\-–—_~•·]/g)?.length ?? 0) >= 3
+};
 
 const cleanTitle = (title: string): string =>
     title
