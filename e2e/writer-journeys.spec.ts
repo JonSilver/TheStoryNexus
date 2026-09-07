@@ -415,8 +415,8 @@ test("bible merge: two duplicates become one reviewed entry", async ({ page }) =
     }
 
     await page.getByRole("button", { name: "Merge duplicates" }).click();
-    await page.getByLabel("Entry to keep").selectOption({ label: "Colonel Brandon (character)" });
-    await page.getByLabel("Duplicate entry").selectOption({ label: "Brandon (character)" });
+    // The pair is proposed automatically — one tap selects both
+    await page.getByRole("button", { name: /Colonel Brandon \+ Brandon/ }).click();
     await page.getByRole("button", { name: "Merge with AI" }).click();
     await expect(page.getByLabel("Merged description")).toHaveValue(/pianoforte badly/);
     await page.getByRole("button", { name: "Save merged entry" }).click();

@@ -18,6 +18,7 @@ import type { ScreenProps } from "../V2App";
 import { EntryEditor } from "../bible/EntryEditor";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { MergeSheet } from "../bible/MergeSheet";
+import { entryMatches } from "../bible/duplicates";
 import { takeNudgeHandoff } from "../bible/nameNudges";
 import { useV2Store } from "../state/useV2Store";
 
@@ -34,7 +35,7 @@ const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; 
 const groupEntries = (entries: LorebookEntry[]) =>
     CATEGORY_ORDER.map(category => ({
         category,
-        items: entries.filter(e => e.category === category)
+        items: entries.filter(e => e.category === category).sort((a, b) => a.name.localeCompare(b.name))
     })).filter(group => group.items.length > 0);
 
 export const BibleScreen = ({ goTo }: ScreenProps) => {
@@ -45,6 +46,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const [editing, setEditing] = useState<LorebookEntry | null | "new">(null);
     const [merging, setMerging] = useState(false);
+    const [search, setSearch] = useState("");
     // Arriving via the editor's nudge chip auto-opens a focused extraction —
     // the chip says "Add to bible", so landing here must actually start adding
     const [focusNames] = useState(takeNudgeHandoff);
@@ -66,7 +68,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
 
     const chapterId =
         lastChapterFor(currentStoryId) ?? [...(chapters ?? [])].sort((a, b) => a.order - b.order)[0]?.id ?? null;
-    const groups = groupEntries(entries ?? []);
+    const groups = groupEntries((entries ?? []).filter(e => entryMatches(e, search)));
 
     return (
         <div className="flex h-full flex-col">
@@ -103,8 +105,20 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                 ))}
             </div>
 
+            <div className="border-b px-4 py-2">
+                <input
+                    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                    placeholder="Search the bible…"
+                    aria-label="Search bible entries"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
+            </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-                {groups.length === 0 && (
+                {groups.length === 0 && search.trim() !== "" && (
+                    <p className="p-8 text-center text-sm text-muted-foreground">Nothing matches “{search}”.</p>
+                )}
+                {groups.length === 0 && search.trim() === "" && (
                     <p className="p-8 text-center text-sm text-muted-foreground">
                         No entries yet — try “Extract from whole story” above to build your bible in one pass.
                     </p>

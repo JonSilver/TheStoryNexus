@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useDeleteLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { MergePicker } from "./MergePicker";
 import { type EntryProposal, parseEntryProposals } from "./parseProposals";
 
 /**
@@ -19,6 +20,14 @@ export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onC
     const deleteEntry = useDeleteLorebookMutation();
     const [keepId, setKeepId] = useState("");
     const [duplicateId, setDuplicateId] = useState("");
+
+    // First tap fills Keep, second fills Duplicate; tapping a pick unpicks it
+    const pick = (entry: LorebookEntry) => {
+        if (entry.id === keepId) return (setKeepId(duplicateId ? duplicateId : ""), setDuplicateId(""));
+        if (entry.id === duplicateId) return setDuplicateId("");
+        if (!keepId) return setKeepId(entry.id);
+        setDuplicateId(entry.id);
+    };
     const [merged, setMerged] = useState<EntryProposal | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -94,42 +103,24 @@ export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onC
                 <div className="space-y-2 overflow-y-auto px-4 pb-4 text-sm">
                     {!merged ? (
                         <>
-                            <label className="block">
-                                <span className="text-xs text-muted-foreground">Keep</span>
-                                <select
-                                    className="mt-0.5 w-full rounded-md border bg-background px-2 py-1.5"
-                                    aria-label="Entry to keep"
-                                    value={keepId}
-                                    onChange={e => setKeepId(e.target.value)}
-                                >
-                                    <option value="">Choose…</option>
-                                    {entries.map(e => (
-                                        <option key={e.id} value={e.id}>
-                                            {e.name} ({e.category})
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label className="block">
-                                <span className="text-xs text-muted-foreground">
-                                    Duplicate to fold in (deleted after)
-                                </span>
-                                <select
-                                    className="mt-0.5 w-full rounded-md border bg-background px-2 py-1.5"
-                                    aria-label="Duplicate entry"
-                                    value={duplicateId}
-                                    onChange={e => setDuplicateId(e.target.value)}
-                                >
-                                    <option value="">Choose…</option>
-                                    {entries
-                                        .filter(e => e.id !== keepId)
-                                        .map(e => (
-                                            <option key={e.id} value={e.id}>
-                                                {e.name} ({e.category})
-                                            </option>
-                                        ))}
-                                </select>
-                            </label>
+                            <MergePicker
+                                entries={entries}
+                                keep={keep ?? null}
+                                duplicate={duplicate ?? null}
+                                onPick={pick}
+                                onPickPair={(a, b) => {
+                                    setKeepId(a.id);
+                                    setDuplicateId(b.id);
+                                }}
+                                onSwap={() => {
+                                    setKeepId(duplicateId);
+                                    setDuplicateId(keepId);
+                                }}
+                                onClear={() => {
+                                    setKeepId("");
+                                    setDuplicateId("");
+                                }}
+                            />
                             {busy && (
                                 <p className="flex items-center gap-2 text-muted-foreground">
                                     <Loader2 className="h-4 w-4 animate-spin" /> Merging…
