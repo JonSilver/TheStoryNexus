@@ -19,6 +19,7 @@ import { findUnmatchedNames, setNudgeHandoff } from "../bible/nameNudges";
 import { blocksToMarkdown, parseSerialisedDocument } from "../export";
 import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
+import { ReferencePanel } from "./components/ReferencePanel";
 import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
 import { ImageNode } from "./nodes/ImageNode";
 import { SceneBeatNode } from "./nodes/SceneBeatNode";
@@ -104,6 +105,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     const { noteActivity } = useAutoSummarise(chapter);
     const { data: bibleEntries } = useHierarchicalLorebookQuery(chapter.storyId);
     const [nudgeNames, setNudgeNames] = useState<string[]>([]);
+    const [referenceOpen, setReferenceOpen] = useState(false);
     const { dismissedNudges, dismissNudges } = useV2Store();
     const detectNames = useRef(
         debounce((text: string, known: string[], dismissed: string[]) => {
@@ -138,12 +140,13 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
 
     return (
         <ChapterContextProvider value={{ storyId: chapter.storyId, chapterId: chapter.id }}>
-            <div className="flex h-full min-h-0 flex-col">
+            <div className="relative flex h-full min-h-0 flex-col">
                 <ToolbarPlugin
                     saveStatus={status}
                     wordCount={wordCount}
                     storyId={chapter.storyId}
                     actions={actions.toolbarActions}
+                    onToggleReference={() => setReferenceOpen(open => !open)}
                 />
                 <ActionSheet {...actions.sheetProps} />
                 {nudgeNames.length > 0 && (
@@ -216,6 +219,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                 <SelectionContextMenu actions={actions.toolbarActions} />
                 <HistoryPlugin />
                 <ChapterPersistencePlugin onDocument={onDocument} />
+                {referenceOpen && <ReferencePanel storyId={chapter.storyId} onClose={() => setReferenceOpen(false)} />}
             </div>
         </ChapterContextProvider>
     );

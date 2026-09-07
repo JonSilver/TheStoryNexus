@@ -99,7 +99,10 @@ export const createCrudRouter = <
             const data = {
                 id: req.body.id || crypto.randomUUID(),
                 ...bodyWithoutReserved,
-                createdAt: new Date()
+                createdAt: new Date(),
+                // Tables with an updatedAt column (NOT NULL on notes) need it
+                // stamped server-side — clients don't send timestamps
+                ...("updatedAt" in table ? { updatedAt: new Date() } : {})
             };
             const result = await db.insert(table).values(data).returning();
             const created = Array.isArray(result) ? result[0] : result;
@@ -113,7 +116,8 @@ export const createCrudRouter = <
         asyncHandler(async (req, res) => {
             const { id: _id, createdAt: _createdAt, ...updates } = req.body;
             const column = table.id;
-            const result = await db.update(table).set(updates).where(eq(column, req.params.id)).returning();
+            const stamped = { ...updates, ...("updatedAt" in table ? { updatedAt: new Date() } : {}) };
+            const result = await db.update(table).set(stamped).where(eq(column, req.params.id)).returning();
             const updated = Array.isArray(result) ? result[0] : result;
             if (!updated) {
                 res.status(404).json({ error: `${name} not found` });

@@ -70,7 +70,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
     return (
         <div className="flex h-full flex-col">
             <header className="flex items-center border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <h1 className="text-lg font-semibold">Stories</h1>
+                <h1 className="text-lg font-semibold">Library</h1>
                 <label className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm">
                     JSON
                     <input

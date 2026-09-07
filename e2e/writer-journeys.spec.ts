@@ -111,7 +111,6 @@ test("brainstorm: reply appears and survives a reload", async ({ page }) => {
     await mockGeneration(page, () => "What if the ferry never existed at all?");
 
     await createStoryAndChapter(page, "Journey — brainstorm", "One");
-    await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await page.getByRole("button", { name: "New chat" }).click();
     await page.getByPlaceholder("Bounce an idea around…").fill("Give me a twist");
@@ -119,7 +118,6 @@ test("brainstorm: reply appears and survives a reload", async ({ page }) => {
     await expect(page.getByText("What if the ferry never existed at all?")).toBeVisible();
 
     await page.reload();
-    await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await page.getByRole("button", { name: /^Chat 1/ }).click();
     await expect(page.getByText("What if the ferry never existed at all?")).toBeVisible();
@@ -127,7 +125,8 @@ test("brainstorm: reply appears and survives a reload", async ({ page }) => {
 
 test("import: pasted manuscript becomes a story with chapters", async ({ page }) => {
     await page.goto("/v2");
-    await page.getByRole("button", { name: "Stories" }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Open the library" }).click();
     await page.getByRole("button", { name: "Import" }).click();
     await page
         .getByPlaceholder("Paste your manuscript here…")
@@ -146,7 +145,8 @@ test("export: markdown download contains the chapter text", async ({ page }) => 
     await createStoryAndChapter(page, "Journey — export", "One");
     await typeInEditor(page, "Exportable sentence about the tide.");
     await waitForSaved(page);
-    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByText("Export", { exact: true }).click();
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Markdown" }).click();
     const download = await downloadPromise;
@@ -172,14 +172,15 @@ test("whole-story extraction: every chapter feeds one review list", async ({ pag
     await createStoryAndChapter(page, "Journey — sweep", "One");
     await typeInEditor(page, "Elinor considered the matter carefully.");
     await waitForSaved(page);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Chapters" }).click();
     await page.getByPlaceholder("New chapter title (optional)").fill("Two");
     await page.getByRole("button", { name: "Add" }).click();
     await typeInEditor(page, "Willoughby arrived without warning.");
     await waitForSaved(page);
 
-    await page.getByRole("button", { name: "More", exact: true }).click();
-    await page.getByRole("button", { name: "Story Bible (AI extraction)" }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
     await page.getByRole("button", { name: "Extract from whole story" }).click();
     await page.getByRole("button", { name: "Run" }).click();
 
@@ -195,23 +196,24 @@ test("whole-story extraction: every chapter feeds one review list", async ({ pag
 
 test("series: join from story details, grouped in Stories, bible inherits", async ({ page }) => {
     await createStoryAndChapter(page, "Journey — series", "One");
-    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByText("Details, series & voice").click();
 
     page.once("dialog", dialog => void dialog.accept("The Dashwood Saga"));
     await page.getByLabel("Series").selectOption("__new__");
     await expect(page.getByText("joined the new series")).toBeVisible();
     await expect(page.getByText("Series bible entries are included")).toBeVisible();
 
-    // Stories screen groups under the series heading
-    await page.getByRole("button", { name: "Stories" }).click();
+    // The library groups under the series heading
+    await page.getByRole("button", { name: "Switch story" }).click();
     await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Journey — series" })).toBeVisible();
 });
 
 test("bible entries: manual create and edit, no AI required", async ({ page }) => {
     await createStoryAndChapter(page, "Journey — manual bible", "One");
-    await page.getByRole("button", { name: "More", exact: true }).click();
-    await page.getByRole("button", { name: "Story Bible (AI extraction)" }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
 
     await page.getByRole("button", { name: "New entry" }).click();
     await page.getByLabel("Entry name").fill("Mrs Jennings");
@@ -229,6 +231,7 @@ test("bible entries: manual create and edit, no AI required", async ({ page }) =
 
 test("chapter details: POV, outline and summary are editable and stick", async ({ page }) => {
     await createStoryAndChapter(page, "Journey — chapter details", "One");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Chapters" }).click();
     await page.getByRole("button", { name: "Edit One details" }).click();
     await page.getByLabel("Chapter POV type").selectOption("First Person");
@@ -237,6 +240,7 @@ test("chapter details: POV, outline and summary are editable and stick", async (
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await page.reload();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Chapters" }).click();
     await page.getByRole("button", { name: "Edit One details" }).click();
     await expect(page.getByLabel("Chapter POV type")).toHaveValue("First Person");
@@ -258,7 +262,6 @@ test("selection right-click shows the app's own menu, not the browser's", async 
 test("brainstorm reply becomes a chapter outline", async ({ page }) => {
     await mockGeneration(page, () => "The storm should arrive in chapter two.");
     await createStoryAndChapter(page, "Journey — bridge", "One");
-    await page.getByRole("button", { name: "More", exact: true }).click();
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await page.getByRole("button", { name: "New chat" }).click();
     await page.getByPlaceholder("Bounce an idea around…").fill("When should the storm arrive?");
@@ -269,6 +272,7 @@ test("brainstorm reply becomes a chapter outline", async ({ page }) => {
     await page.getByRole("button", { name: "New chapter from this" }).click();
     await expect(page.getByText("created with this as its outline")).toBeVisible();
 
+    await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Chapters" }).click();
     await page.getByRole("button", { name: "Edit The Storm details" }).click();
     await expect(page.getByLabel("Outline")).toHaveValue("The storm should arrive in chapter two.");
@@ -298,4 +302,32 @@ test("context menu clipboard: cut, copy and paste round-trip", async ({ page, co
     await page.getByRole("menuitem", { name: "Paste" }).click();
     await expect(editorLocator(page)).toContainText("Words to carry elsewhere.");
     await expect(editorLocator(page)).not.toContainText("placeholder");
+});
+
+test("reference panel: bible lookup and quick note without leaving the page", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — reference", "One");
+    // Seed one bible entry via the hub
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "New entry" }).click();
+    await page.getByLabel("Entry name").fill("Colonel Brandon");
+    await page.getByLabel("Description").fill("Steady, quiet, thirty-five.");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    // Back to writing; the panel answers without navigation
+    await page.getByRole("button", { name: "Write" }).click();
+    await page.getByRole("button", { name: "Reference panel" }).click();
+    await page.getByLabel("Search the bible").fill("brandon");
+    await page.getByText("Colonel Brandon").click();
+    await expect(page.getByText("Steady, quiet, thirty-five.")).toBeVisible();
+    // The manuscript is still there behind the panel
+    await expect(editorLocator(page)).toBeVisible();
+
+    await page.getByRole("textbox", { name: "Quick note" }).fill("Brandon should appear earlier.");
+    await page.getByRole("button", { name: "Save quick note" }).click();
+    await page.getByRole("button", { name: "Close reference panel" }).click();
+
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Notes" }).click();
+    await expect(page.getByText("Brandon should appear earlier.").first()).toBeVisible();
 });

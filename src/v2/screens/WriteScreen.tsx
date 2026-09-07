@@ -37,7 +37,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
     useEffect(() => {
         if (currentStoryId && storyGone) {
             setCurrentStory(null);
-            goTo("stories");
+            goTo("library");
         }
     }, [currentStoryId, storyGone, setCurrentStory, goTo]);
 
@@ -53,7 +53,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
             <Empty
                 message="Pick a story to start writing."
                 actionLabel="Choose a story"
-                onAction={() => goTo("stories")}
+                onAction={() => goTo("library")}
             />
         );
     if (chaptersFailed || (storyError && !storyGone))

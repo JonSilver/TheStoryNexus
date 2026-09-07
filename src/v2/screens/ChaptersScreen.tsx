@@ -46,7 +46,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                 <button
                     type="button"
                     className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("stories")}
+                    onClick={() => goTo("library")}
                 >
                     Choose a story
                 </button>

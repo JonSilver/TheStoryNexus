@@ -29,7 +29,9 @@ export const editorLocator = (page: Page) => page.locator('div[contenteditable="
 
 export const createStoryAndChapter = async (page: Page, storyTitle: string, chapterTitle: string) => {
     await page.goto("/v2");
-    await page.getByRole("button", { name: "Stories" }).click();
+    // Fresh context has no current story: the Story tab offers the library
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Open the library" }).click();
     await page.getByPlaceholder("New story title").fill(storyTitle);
     await page.getByRole("button", { name: "Create" }).click();
     // Creating a story lands on Chapters

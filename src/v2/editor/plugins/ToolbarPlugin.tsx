@@ -13,7 +13,7 @@ import {
     SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
-import { Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
+import { BookOpenText, Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 import type { SaveStatus } from "../useChapterSaver";
@@ -39,12 +39,14 @@ export const ToolbarPlugin = ({
     saveStatus,
     wordCount,
     storyId,
-    actions
+    actions,
+    onToggleReference
 }: {
     saveStatus: SaveStatus;
     wordCount: number;
     storyId: string;
     actions: ToolbarActions;
+    onToggleReference: () => void;
 }) => {
     const [editor] = useLexicalComposerContext();
     const [canUndo, setCanUndo] = useState(false);
@@ -158,6 +160,15 @@ export const ToolbarPlugin = ({
                         {SAVE_LABELS[saveStatus] && ` · ${SAVE_LABELS[saveStatus]}`}
                     </span>
                 )}
+                <button
+                    type="button"
+                    className={toolButton}
+                    onClick={onToggleReference}
+                    aria-label="Reference panel"
+                    title="Bible lookup & quick notes"
+                >
+                    <BookOpenText className="h-4 w-4" />
+                </button>
                 <ToolbarMoreMenu
                     editor={editor}
                     block={block}
