@@ -9,6 +9,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import JSZip from "jszip";
 import mammoth from "mammoth";
 import path from "node:path";
+import { cleanPlainText } from "./clean.js";
 import { parseEpub } from "./epub.js";
 import { detectHeadings } from "./split.js";
 
@@ -114,7 +115,10 @@ export const parseManuscript = async (filename: string, buffer: Buffer): Promise
     if (buffer.length > MAX_MANUSCRIPT_BYTES) throw ingestError("The file exceeds the 20 MB limit", 413);
 
     const source = await PARSERS[extension as SupportedExtension](buffer);
-    const normalised = normaliseText(source.text);
+    // Plain-text formats often arrive as archived email/usenet posts —
+    // structured formats (docx/epub) skip the message-hygiene pass
+    const plain = extension === "txt" || extension === "md";
+    const normalised = normaliseText(plain ? cleanPlainText(source.text) : source.text);
     if (!normalised) throw ingestError("No readable text was found in that file", 422);
 
     const leading = withLeadingTitle(normalised);
@@ -125,7 +129,7 @@ export const parseManuscript = async (filename: string, buffer: Buffer): Promise
 };
 
 export const parseManuscriptText = (text: string, title?: string): ParsedManuscript => {
-    const normalised = normaliseText(text ?? "");
+    const normalised = normaliseText(cleanPlainText(text ?? ""));
     if (!normalised) throw ingestError("No text was supplied");
 
     const leading = withLeadingTitle(normalised);
