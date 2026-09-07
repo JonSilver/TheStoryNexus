@@ -127,7 +127,7 @@ test("import: pasted manuscript becomes a story with chapters", async ({ page })
     await page.goto("/v2");
     await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Open the library" }).click();
-    await page.getByRole("button", { name: "Import" }).click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
     await page
         .getByPlaceholder("Paste your manuscript here…")
         .fill("Chapter 1\n\nThe tide was wrong that morning.\n\nChapter 2\n\nBy noon the harbour was empty.");
@@ -336,7 +336,7 @@ test("import: multiple files become one story in filename order", async ({ page 
     await page.goto("/v2");
     await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Open the library" }).click();
-    await page.getByRole("button", { name: "Import" }).click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
 
     // Deliberately unordered selection; "part 10" must sort after "part 2"
     await page.locator('input[accept=".txt,.md,.docx,.epub"]').setInputFiles([
