@@ -8,6 +8,7 @@ import {
 } from "@/features/notes/hooks/useNotesQuery";
 import type { Note } from "@/types/story";
 import type { ScreenProps } from "../V2App";
+import { MarkdownView } from "../components/MarkdownView";
 import { useV2Store } from "../state/useV2Store";
 
 const NOTE_TYPES = ["idea", "research", "todo", "other"] as const;
@@ -18,6 +19,8 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
     const [title, setTitle] = useState(note?.title ?? "");
     const [content, setContent] = useState(note?.content ?? "");
     const [type, setType] = useState<Note["type"]>(note?.type ?? "idea");
+    // Existing notes open in reading mode — markdown rendered, not raw
+    const [previewing, setPreviewing] = useState(Boolean(note?.content));
 
     const save = () => {
         const data = { title: title.trim() || "Untitled", content, type };
@@ -52,12 +55,34 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
                             </option>
                         ))}
                     </select>
-                    <textarea
-                        className="min-h-40 w-full resize-y rounded-md border bg-background p-2 text-sm"
-                        placeholder="Write your note…"
-                        value={content}
-                        onChange={e => setContent(e.target.value)}
-                    />
+                    <div className="flex gap-1 text-xs">
+                        <button
+                            type="button"
+                            onClick={() => setPreviewing(false)}
+                            className={`rounded-md border px-2 py-1 ${previewing ? "" : "bg-accent"}`}
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPreviewing(true)}
+                            className={`rounded-md border px-2 py-1 ${previewing ? "bg-accent" : ""}`}
+                        >
+                            Preview
+                        </button>
+                    </div>
+                    {previewing ? (
+                        <div className="min-h-40 rounded-md border p-3 text-sm">
+                            <MarkdownView>{content || "*Nothing yet.*"}</MarkdownView>
+                        </div>
+                    ) : (
+                        <textarea
+                            className="min-h-40 w-full resize-y rounded-md border bg-background p-2 text-sm"
+                            placeholder="Write your note… (markdown supported)"
+                            value={content}
+                            onChange={e => setContent(e.target.value)}
+                        />
+                    )}
                 </div>
                 <footer className="flex gap-2 border-t p-3">
                     <button

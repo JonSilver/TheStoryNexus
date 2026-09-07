@@ -27,6 +27,7 @@ import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
+import { MarkdownView } from "../components/MarkdownView";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { useV2Store } from "../state/useV2Store";
 
@@ -231,11 +232,17 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                 {chat.messages.map(message => (
                     <div
                         key={message.id}
-                        className={`max-w-[85%] whitespace-pre-wrap rounded-lg p-3 text-sm ${
-                            message.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted"
+                        className={`max-w-[85%] rounded-lg p-3 text-sm ${
+                            message.role === "user"
+                                ? "ml-auto whitespace-pre-wrap bg-primary text-primary-foreground"
+                                : "bg-muted"
                         }`}
                     >
-                        {message.content}
+                        {message.role === "assistant" ? (
+                            <MarkdownView>{message.content}</MarkdownView>
+                        ) : (
+                            message.content
+                        )}
                         {message.role === "assistant" && (
                             <button
                                 type="button"

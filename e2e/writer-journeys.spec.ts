@@ -108,19 +108,21 @@ test("nudge chip: Add to bible actually adds entries", async ({ page }) => {
 });
 
 test("brainstorm: reply appears and survives a reload", async ({ page }) => {
-    await mockGeneration(page, () => "What if the ferry never existed at all?");
+    await mockGeneration(page, () => "**What if** the ferry never existed at all?");
 
     await createStoryAndChapter(page, "Journey — brainstorm", "One");
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await page.getByRole("button", { name: "New chat" }).click();
     await page.getByPlaceholder("Bounce an idea around…").fill("Give me a twist");
     await page.getByRole("button", { name: "Send" }).click();
-    await expect(page.getByText("What if the ferry never existed at all?")).toBeVisible();
+    // Markdown renders as markup, not raw asterisks
+    await expect(page.locator("strong", { hasText: "What if" })).toBeVisible();
+    await expect(page.getByText("the ferry never existed at all?")).toBeVisible();
 
     await page.reload();
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await page.getByRole("button", { name: /^Chat 1/ }).click();
-    await expect(page.getByText("What if the ferry never existed at all?")).toBeVisible();
+    await expect(page.getByText("the ferry never existed at all?")).toBeVisible();
 });
 
 test("import: pasted manuscript becomes a story with chapters", async ({ page }) => {
