@@ -18,7 +18,10 @@ export const fetchJSON = async <T>(url: string, options?: RequestInit): Promise<
         });
     }
 
-    return response.json();
+    // 204/empty responses are legitimate (deletes) — json() on them throws
+    if (response.status === 204) return undefined as T;
+    const raw = await response.text();
+    return raw ? (JSON.parse(raw) as T) : (undefined as T);
 };
 
 // Helper for form data uploads (no Content-Type header - browser sets multipart boundary)
@@ -34,5 +37,8 @@ export const uploadFile = async <T>(url: string, file: File): Promise<T> => {
         const message = error.details ? `${error.error}: ${error.details}` : error.error || "Upload failed";
         throw new Error(message);
     }
-    return response.json();
+    // 204/empty responses are legitimate (deletes) — json() on them throws
+    if (response.status === 204) return undefined as T;
+    const raw = await response.text();
+    return raw ? (JSON.parse(raw) as T) : (undefined as T);
 };

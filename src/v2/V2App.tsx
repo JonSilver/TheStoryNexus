@@ -8,6 +8,7 @@ import { BrainstormScreen } from "./screens/BrainstormScreen";
 import { ChaptersScreen } from "./screens/ChaptersScreen";
 import { EmbeddedPage } from "./screens/EmbeddedPage";
 import { NotesScreen } from "./screens/NotesScreen";
+import { ReadScreen } from "./screens/ReadScreen";
 import { StoriesScreen } from "./screens/StoriesScreen";
 import { StoryHubScreen } from "./screens/StoryHubScreen";
 import { WriteScreen } from "./screens/WriteScreen";
@@ -36,6 +37,7 @@ export type V2Tool =
     | "library"
     | "actions"
     | "notes"
+    | "read"
     | "providers"
     | "serieslist"
     | "guidepage";
@@ -45,6 +47,7 @@ const SUB_SCREENS = {
     bible: { Screen: BibleScreen, parent: "story" },
     library: { Screen: StoriesScreen, parent: "story" },
     notes: { Screen: NotesScreen, parent: "story" },
+    read: { Screen: ReadScreen, parent: "story" },
     actions: { Screen: ActionsScreen, parent: "settings" }
 } as const;
 

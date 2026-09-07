@@ -34,7 +34,8 @@ export const ACTION_IDS = [
     "extract_entries",
     "propose_updates",
     "ask",
-    "check_continuity"
+    "check_continuity",
+    "merge_entries"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -185,6 +186,21 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 0.9, maxTokens: 8192 }
+    },
+    merge_entries: {
+        id: "merge_entries",
+        label: "Merge Bible Entries",
+        voiceApplies: false,
+        contextNeeds: ["user_message"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You merge duplicate story-bible entries. Given two entries describing the same entity, produce ONE combined entry that keeps every distinct fact, prefers the more specific name, and unions the aliases. Resolve contradictions in favour of the more detailed entry and note genuine conflicts in the description as "(conflicting: …)". Return ONLY a JSON array containing exactly one object — no prose, no code fences — shaped: {"name": string, "category": string, "description": string, "tags": string[]}.'
+            },
+            { role: "user", content: "The two entries to merge:\n{{user_message}}" }
+        ],
+        defaultParams: { temperature: 0.2, maxTokens: 2048 }
     },
     check_continuity: {
         id: "check_continuity",

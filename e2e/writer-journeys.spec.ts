@@ -364,3 +364,65 @@ test("import: multiple files become one story in filename order", async ({ page 
     const order = titles.filter(t => /^part /.test(t));
     if (order.join("|") !== "part 1|part 2|part 10") throw new Error(`Wrong order: ${order.join(", ")}`);
 });
+
+test("read: the whole story renders inside the shell", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — read", "One");
+    await typeInEditor(page, "A sentence destined for the reader.");
+    await waitForSaved(page);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Read" }).click();
+    await expect(page.getByText("A sentence destined for the reader.")).toBeVisible();
+    // Still in the shell: bottom nav present, back returns to the hub
+    await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByRole("button", { name: "Chapters" })).toBeVisible();
+});
+
+test("delete story: confirmed, gone from the library", async ({ page }) => {
+    await createStoryAndChapter(page, "Journey — doomed", "One");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    page.once("dialog", dialog => void dialog.accept());
+    await page.getByRole("button", { name: "Delete this story…" }).click();
+    await expect(page.getByPlaceholder("New story title")).toBeVisible();
+    await expect(page.getByText("Journey — doomed")).toHaveCount(0);
+});
+
+test("bible merge: two duplicates become one reviewed entry", async ({ page }) => {
+    await mockGeneration(page, request =>
+        request.actionId === "merge_entries"
+            ? JSON.stringify([
+                  {
+                      name: "Colonel Brandon",
+                      category: "character",
+                      description: "Steady and quiet; owns Delaford; plays the pianoforte badly.",
+                      tags: ["the colonel", "Brandon"]
+                  }
+              ])
+            : "unused"
+    );
+    await createStoryAndChapter(page, "Journey — merge", "One");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+
+    for (const [name, desc] of [
+        ["Colonel Brandon", "Steady and quiet; owns Delaford."],
+        ["Brandon", "Plays the pianoforte badly."]
+    ]) {
+        await page.getByRole("button", { name: "New entry" }).click();
+        await page.getByLabel("Entry name").fill(name);
+        await page.getByLabel("Description").fill(desc);
+        await page.getByRole("button", { name: "Save" }).click();
+    }
+
+    await page.getByRole("button", { name: "Merge duplicates" }).click();
+    await page.getByLabel("Entry to keep").selectOption({ label: "Colonel Brandon (character)" });
+    await page.getByLabel("Duplicate entry").selectOption({ label: "Brandon (character)" });
+    await page.getByRole("button", { name: "Merge with AI" }).click();
+    await expect(page.getByLabel("Merged description")).toHaveValue(/pianoforte badly/);
+    await page.getByRole("button", { name: "Save merged entry" }).click();
+
+    // Sheet closes; one entry remains, carrying facts from both
+    await expect(page.getByRole("textbox", { name: "Merged description" })).toHaveCount(0);
+    await expect(page.getByText("plays the pianoforte badly", { exact: false }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Edit Brandon", exact: true })).toHaveCount(0);
+});

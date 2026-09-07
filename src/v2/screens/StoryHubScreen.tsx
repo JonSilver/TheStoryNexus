@@ -6,13 +6,13 @@ import {
     Library,
     ListOrdered,
     NotebookPen,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Trash2
 } from "lucide-react";
-import { Link } from "react-router";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
 import { useV2Store } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
@@ -25,11 +25,31 @@ import { StoryVoiceEditor } from "./StoryVoiceEditor";
  * away — not a dumping ground.
  */
 export const StoryHubScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId } = useV2Store();
+    const { currentStoryId, setCurrentStory } = useV2Store();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
+    const deleteStory = useDeleteStoryMutation();
+
+    const removeStory = () => {
+        if (!story) return;
+        const summary = `${chapters?.length ?? 0} chapter${(chapters?.length ?? 0) === 1 ? "" : "s"}, ${(chapters ?? [])
+            .reduce((sum, c) => sum + (c.wordCount ?? 0), 0)
+            .toLocaleString()} words`;
+        if (
+            !window.confirm(
+                `Delete “${story.title}” (${summary})?\nChapters, bible entries, notes and chats go with it. This cannot be undone.`
+            )
+        )
+            return;
+        deleteStory.mutate(story.id, {
+            onSuccess: () => {
+                setCurrentStory(null);
+                goTo("library");
+            }
+        });
+    };
 
     if (!currentStoryId)
         return (
@@ -56,6 +76,7 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
         },
         { label: "Story Bible", detail: `${entries?.length ?? 0}`, icon: BookOpenText, onClick: () => goTo("bible") },
         { label: "Notes", detail: "", icon: NotebookPen, onClick: () => goTo("notes") },
+        { label: "Read", detail: "", icon: BookOpen, onClick: () => goTo("read") },
         { label: "Switch story", detail: "", icon: Library, onClick: () => goTo("library") }
     ];
 
@@ -79,13 +100,6 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
                         </button>
                     </li>
                 ))}
-                <li>
-                    <Link to={`/stories/${currentStoryId}/read`} className={rowClass}>
-                        <BookOpen className="h-5 w-5 text-muted-foreground" />
-                        <span className="flex-1">Read</span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </Link>
-                </li>
             </ul>
 
             <details className="border-b">
@@ -110,6 +124,15 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
                 </summary>
                 <ExportButtons storyId={currentStoryId} />
             </details>
+
+            <button
+                type="button"
+                onClick={removeStory}
+                disabled={deleteStory.isPending}
+                className="mt-auto flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-destructive disabled:opacity-50"
+            >
+                <Trash2 className="h-4 w-4" /> Delete this story…
+            </button>
         </div>
     );
 };
