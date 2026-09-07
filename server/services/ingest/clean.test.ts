@@ -123,3 +123,37 @@ describe("pathological input (the spin that took the server down)", () => {
         expect(result).toContain("that time the sea");
     });
 });
+
+describe("stripGutenbergWrapper", () => {
+    it("removes licence boilerplate outside the START/END markers", async () => {
+        const { stripGutenbergWrapper } = await import("./clean.js");
+        const text = [
+            "The Project Gutenberg eBook of Sense and Sensibility",
+            "",
+            "This eBook is for the use of anyone anywhere in the United States...",
+            "Title: Sense and Sensibility",
+            "Author: Jane Austen",
+            "",
+            "*** START OF THE PROJECT GUTENBERG EBOOK SENSE AND SENSIBILITY ***",
+            "",
+            "CHAPTER I.",
+            "",
+            "The family of Dashwood had long been settled in Sussex.",
+            "",
+            "*** END OF THE PROJECT GUTENBERG EBOOK SENSE AND SENSIBILITY ***",
+            "",
+            "Updated editions will replace the previous one..."
+        ].join("\n");
+        const result = stripGutenbergWrapper(text);
+        expect(result.startsWith("CHAPTER I.")).toBe(true);
+        expect(result).toContain("settled in Sussex");
+        expect(result).not.toContain("Project Gutenberg");
+        expect(result).not.toContain("Updated editions");
+    });
+
+    it("leaves texts without markers untouched", async () => {
+        const { stripGutenbergWrapper } = await import("./clean.js");
+        const text = "An ordinary manuscript with three stars *** in dialogue.";
+        expect(stripGutenbergWrapper(text)).toBe(text);
+    });
+});

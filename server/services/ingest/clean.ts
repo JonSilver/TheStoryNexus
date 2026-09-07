@@ -130,4 +130,19 @@ export const unwrapHardLines = (text: string): string => {
         .join("\n\n");
 };
 
-export const cleanPlainText = (text: string): string => unwrapHardLines(stripSignature(stripMessageHeaders(text)));
+/**
+ * Project Gutenberg wraps every text in licence boilerplate between exact
+ * *** START/END OF THE PROJECT GUTENBERG EBOOK ... *** markers. Everything
+ * outside the markers is legal apparatus, not the book — including the
+ * pseudo-chapter of front matter that otherwise imports as "Chapter 1".
+ */
+export const stripGutenbergWrapper = (text: string): string => {
+    const start = /^\s*\*{3}\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*\*{3}\s*$/im.exec(text);
+    const end = /^\s*\*{3}\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*\*{3}\s*$/im.exec(text);
+    const from = start ? start.index + start[0].length : 0;
+    const to = end ? end.index : text.length;
+    return start || end ? text.slice(from, to).trim() : text;
+};
+
+export const cleanPlainText = (text: string): string =>
+    unwrapHardLines(stripSignature(stripMessageHeaders(stripGutenbergWrapper(text))));

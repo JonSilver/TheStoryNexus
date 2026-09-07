@@ -9,7 +9,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import JSZip from "jszip";
 import mammoth from "mammoth";
 import path from "node:path";
-import { cleanPlainText } from "./clean.js";
+import { cleanPlainText, stripGutenbergWrapper } from "./clean.js";
 import { parseEpub } from "./epub.js";
 import { detectHeadings } from "./split.js";
 
@@ -118,7 +118,7 @@ export const parseManuscript = async (filename: string, buffer: Buffer): Promise
     // Plain-text formats often arrive as archived email/usenet posts —
     // structured formats (docx/epub) skip the message-hygiene pass
     const plain = extension === "txt" || extension === "md";
-    const normalised = normaliseText(plain ? cleanPlainText(source.text) : source.text);
+    const normalised = normaliseText(plain ? cleanPlainText(source.text) : stripGutenbergWrapper(source.text));
     if (!normalised) throw ingestError("No readable text was found in that file", 422);
 
     const leading = withLeadingTitle(normalised);

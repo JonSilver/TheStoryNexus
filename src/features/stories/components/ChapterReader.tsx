@@ -28,9 +28,11 @@ export function ChapterReader({ chapter, chapterNumber }: ChapterReaderProps) {
     return (
         <article className="chapter-reader">
             <div className="mb-6 border-b pb-4">
-                <h2 className="mb-1 text-xl font-semibold uppercase tracking-wide text-muted-foreground">
-                    Chapter {chapterNumber}
-                </h2>
+                {!/^chapter\b/i.test(chapter.title.trim()) && (
+                    <h2 className="mb-1 text-xl font-semibold uppercase tracking-wide text-muted-foreground">
+                        Chapter {chapterNumber}
+                    </h2>
+                )}
                 <h3 className="text-3xl font-bold">{chapter.title}</h3>
             </div>
             <div
