@@ -24,7 +24,7 @@ export default createCrudRouter({
         router.post("/:id/background-summary", (req, res) => {
             res.json(claimBackgroundSummary(req.params.id));
         });
-        if (process.env.STORYNEXUS_E2E === "1")
+        if (process.env.STORYNEXUS_E2E === "1" && process.env.NODE_ENV !== "production")
             router.delete("/background-summary-budget", (_req, res) => {
                 resetBackgroundBudget();
                 res.status(204).end();
@@ -57,18 +57,18 @@ export default createCrudRouter({
                 // background summary is pinned to its own revision, so it only
                 // needs the summary it set out to replace to be still in place
                 const guard = resolution.summaryGuard;
-                const precondition: SQL = guard
-                    ? and(
+                const preconditions: SQL[] = guard
+                    ? [
                           eq(schema.chapters.summaryLocked, false),
                           guard.expectedSourceRevision === null
                               ? isNull(schema.chapters.summarySourceRevision)
                               : eq(schema.chapters.summarySourceRevision, guard.expectedSourceRevision)
-                      )!
-                    : eq(schema.chapters.saveVersion, current.saveVersion);
+                      ]
+                    : [eq(schema.chapters.saveVersion, current.saveVersion)];
                 const [updated] = await db
                     .update(schema.chapters)
                     .set(resolution.updates)
-                    .where(and(eq(schema.chapters.id, req.params.id), precondition))
+                    .where(and(eq(schema.chapters.id, req.params.id), ...preconditions))
                     .returning();
                 if (!updated && guard) {
                     res.status(409).json({ error: "The summary changed while this one was being generated" });

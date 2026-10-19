@@ -41,6 +41,8 @@ const str = (value: unknown, fallback = ""): string => (typeof value === "string
 const optStr = (value: unknown): string | null => (typeof value === "string" ? value : null);
 const optNum = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
 const num = (value: unknown, fallback: number): number => optNum(value) ?? fallback;
+const optCount = (value: unknown): number | null =>
+    Number.isInteger(value) && (value as number) >= 0 ? (value as number) : null;
 const strings = (value: unknown): string[] =>
     Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 
@@ -95,8 +97,12 @@ export const buildStoryImport = (
             summary: optStr(chapter.summary),
             order: num(chapter.order, index),
             content: rewriteAssetUrls(str(chapter.content), oldStoryId, newStoryId),
-            revision: num(chapter.revision, 0),
-            summarySourceRevision: optNum(chapter.summarySourceRevision),
+            revision: optCount(chapter.revision) ?? 0,
+            // A summary can't be fresher than the prose it summarises
+            summarySourceRevision: (() => {
+                const source = optCount(chapter.summarySourceRevision);
+                return source !== null && source <= (optCount(chapter.revision) ?? 0) ? source : null;
+            })(),
             // The base small edits accumulate against — without it a restore forgets them
             revisionText: optStr(chapter.revisionText),
             summaryLocked: chapter.summaryLocked === true,

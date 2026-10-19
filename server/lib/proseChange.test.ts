@@ -59,8 +59,22 @@ describe("significance", () => {
         expect(isSignificantChange(`${opening} ${ending}`, `${ending} ${opening}`)).toBe(true);
     });
 
-    it("stops counting at the cap", () => {
-        expect(changedWordCount(words(1000, "a"), words(1000, "b"), 50)).toBe(50);
+    it("gives up past the cap", () => {
+        expect(changedWordCount(words(1000, "a"), words(1000, "b"), 50)).toBeNull();
+    });
+
+    it("stays fast on a whole novel in one chapter", () => {
+        const novel = Array.from({ length: 160_000 }, (_, i) => `w${i % 5000}`).join(" ");
+        const rewritten = Array.from({ length: 160_000 }, (_, i) => `w${(i * 7) % 5000}`).join(" ");
+        const edited = `${novel} and a few more words`;
+        for (const [after, expected] of [
+            [rewritten, true],
+            [edited, false]
+        ] as const) {
+            const started = performance.now();
+            expect(isSignificantChange(novel, after)).toBe(expected);
+            expect(performance.now() - started).toBeLessThan(500);
+        }
     });
 
     it("a few typed words are not significant", () => {

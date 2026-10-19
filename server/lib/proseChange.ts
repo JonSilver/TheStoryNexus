@@ -30,19 +30,34 @@ export const proseOf = (content: string): string | null => {
 
 const words = (text: string): string[] => text.toLowerCase().match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) ?? [];
 
+// The diff runs synchronously inside the save request: bounded in time, and
+// a measurement that can't finish counts as significant (SOP 6 — an unknown
+// defaults towards keeping summaries honest, not towards silence)
+const DIFF_BUDGET_MS = 50;
+
+/** Words in one text and not the other, ignoring order — a lower bound on the edit distance, in linear time. */
+const unorderedDistance = (a: string[], b: string[]): number => {
+    const counts = new Map<string, number>();
+    a.forEach(word => counts.set(word, (counts.get(word) ?? 0) + 1));
+    b.forEach(word => counts.set(word, (counts.get(word) ?? 0) - 1));
+    return [...counts.values()].reduce((sum, n) => sum + Math.abs(n), 0);
+};
+
 /**
  * Words inserted plus words deleted along the shortest word-level edit path —
- * order-aware, so a moved paragraph counts. Stops counting at `cap`: the diff
- * runs synchronously in the save request, and past the threshold the exact
- * figure is irrelevant.
+ * order-aware, so a moved paragraph counts. Null when the measurement passes
+ * `cap` or its time budget.
  */
-export const changedWordCount = (before: string, after: string, cap = Number.MAX_SAFE_INTEGER): number => {
-    const edits = diffArrays(words(before), words(after), { maxEditLength: cap });
-    if (!edits) return cap;
-    return edits.reduce((sum, part) => sum + (part.added || part.removed ? part.count : 0), 0);
+export const changedWordCount = (before: string, after: string, cap = Number.MAX_SAFE_INTEGER): number | null => {
+    const edits = diffArrays(words(before), words(after), { maxEditLength: cap, timeout: DIFF_BUDGET_MS });
+    return edits ? edits.reduce((sum, part) => sum + (part.added || part.removed ? part.count : 0), 0) : null;
 };
 
 export const isSignificantChange = (before: string, after: string): boolean => {
-    const threshold = Math.max(MIN_CHANGED_WORDS, Math.ceil(words(before).length * MIN_CHANGED_FRACTION));
-    return changedWordCount(before, after, threshold) >= threshold;
+    const a = words(before);
+    const b = words(after);
+    const threshold = Math.max(MIN_CHANGED_WORDS, Math.ceil(a.length * MIN_CHANGED_FRACTION));
+    if (unorderedDistance(a, b) >= threshold) return true;
+    const changed = changedWordCount(before, after, threshold - 1);
+    return changed === null || changed >= threshold;
 };

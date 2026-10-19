@@ -264,3 +264,38 @@ test("a summary the chapter has outgrown is labelled out of date", async ({ page
     await details();
     await expect(page.getByText(/Out of date/)).toBeVisible();
 });
+
+test("a background summary the server can't be asked about is reported, not dropped", async ({ page }) => {
+    const calls = await countSummaries(page);
+    await page.route("**/api/chapters/*/background-summary", route =>
+        route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+    );
+    await page.clock.install();
+    await createStoryAndChapter(page, "Cost — claim fails", "One");
+    await writeAndSettle(page, PROSE);
+    await page.clock.runFor(100_000);
+    await expect(page.getByText(/couldn't reach the app's server/)).toBeVisible();
+    expect(calls).toHaveLength(0);
+});
+
+test("leaving a chapter mid-save never runs its summary behind the writer's back", async ({ page }) => {
+    const calls = await countSummaries(page);
+    await page.clock.install();
+    await createStoryAndChapter(page, "Cost — left mid-save", "First");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByPlaceholder("New chapter title (optional)").fill("Second");
+    await page.getByRole("button", { name: "Add" }).click();
+    await expect(editorLocator(page)).toBeVisible();
+
+    await page.getByLabel("Chapter", { exact: true }).selectOption({ label: "First" });
+    await editorLocator(page).click();
+    await page.keyboard.insertText(PROSE);
+    // Switch away before the debounced save: the exit save settles after this editor has gone
+    await page.getByLabel("Chapter", { exact: true }).selectOption({ label: "Second" });
+    await page.clock.runFor(300_000);
+    expect(calls).toHaveLength(0);
+
+    await page.getByLabel("Chapter", { exact: true }).selectOption({ label: "First" });
+    await expect(editorLocator(page)).toContainText("harbour lights");
+});

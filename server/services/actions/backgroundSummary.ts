@@ -16,7 +16,10 @@ const MIN_WORDS = 150;
 // allows one extra hour's allowance
 const budget = createRunWindow(HOURLY_LIMIT, HOUR_MS);
 
-export type BackgroundClaim = { due: true; revision: number } | { due: false; reason: string };
+/** A due claim names exactly what it claimed: the result is pinned to it, and lands only over that summary. */
+export type BackgroundClaim =
+    | { due: true; storyId: string; revision: number; summarySourceRevision: number | null }
+    | { due: false; reason: string };
 
 export const claimBackgroundSummary = (chapterId: string, now = Date.now()): BackgroundClaim =>
     db.transaction(tx => {
@@ -34,7 +37,12 @@ export const claimBackgroundSummary = (chapterId: string, now = Date.now()): Bac
             .set({ autoSummaryRevision: chapter.revision })
             .where(eq(schema.chapters.id, chapterId))
             .run();
-        return { due: true, revision: chapter.revision };
+        return {
+            due: true,
+            storyId: chapter.storyId,
+            revision: chapter.revision,
+            summarySourceRevision: chapter.summarySourceRevision
+        };
     });
 
 /** E2E seam: the window is process state shared by every test in a run. */

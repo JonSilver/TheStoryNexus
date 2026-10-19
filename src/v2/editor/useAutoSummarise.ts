@@ -7,12 +7,16 @@ import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
 import { useV2Store } from "../state/useV2Store";
 
+type BackgroundClaim =
+    | { due: true; storyId: string; revision: number; summarySourceRevision: number | null }
+    | { due: false; reason: string };
+
 const IDLE_MS = 90_000;
 const FAILURE_TOAST = "auto-summarise-failure";
 
-const reportFailure = (reason: string) =>
+const reportFailure = (reason: string, next = "It won't try again until the chapter changes substantially.") =>
     toast.error(
-        `Background chapter summaries aren't working: ${reason} It won't try again until the chapter changes substantially. Turn this off in Settings if you don't need it.`,
+        `Background chapter summaries aren't working: ${reason} ${next} Turn this off in Settings if you don't need it.`,
         { toastId: FAILURE_TOAST, autoClose: false }
     );
 
@@ -29,6 +33,7 @@ const reportFailure = (reason: string) =>
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
+    const alive = useRef(true);
     // Significant changes THIS device saved: another device's edit, arriving
     // while this one only reads, never makes this one spend
     const local = useRef({ chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false });
@@ -41,29 +46,32 @@ export const useAutoSummarise = (chapter: Chapter) => {
 
     const refreshIfDue = async (chapterId: string) => {
         if (!enabled.current || running.current) return;
-        const [error, response] = await attemptPromise(() => fetch(`/api/chapters/${chapterId}`));
-        if (error || !response?.ok) return;
-        const fresh: Chapter = await response.json();
-        const revision = fresh.revision ?? 0;
         if (local.current.chapterId !== chapterId || !local.current.pending) return;
-        // One ask per local significant change, whatever the answer
-        local.current.pending = false;
-        if (fresh.summaryLocked || (fresh.summarySourceRevision ?? -1) === revision) return;
-
         running.current = true;
         const [claimError, claim] = await attemptPromise(async () => {
-            const claimed = await fetch(`/api/chapters/${chapterId}/background-summary`, { method: "POST" });
-            if (!claimed.ok) throw new Error(`HTTP ${claimed.status}`);
-            return (await claimed.json()) as { due: boolean };
+            const response = await fetch(`/api/chapters/${chapterId}/background-summary`, { method: "POST" });
+            if (!response.ok) throw new Error(`the app's server answered ${response.status}.`);
+            return (await response.json()) as BackgroundClaim;
         });
-        // Unanswerable claim: spend nothing; the next significant change asks again
-        if (claimError || !claim?.due) {
+        if (claimError || !claim) {
+            running.current = false;
+            // Still pending: the writer's next pause asks again — no retry loop while idle
+            reportFailure(
+                `couldn't reach the app's server — ${(claimError as Error)?.message ?? "no answer."}`,
+                "It will ask again after your next pause in writing."
+            );
+            return;
+        }
+        // One ask per local significant change, whatever the answer
+        local.current.pending = false;
+        if (!claim.due) {
             running.current = false;
             return;
         }
+        const { storyId, revision, summarySourceRevision } = claim;
         const chunks: string[] = [];
         streamAction(
-            { actionId: "summarise_chapter", storyId: fresh.storyId, chapterId },
+            { actionId: "summarise_chapter", storyId, chapterId },
             {
                 onToken: token => chunks.push(token),
                 onDone: error => {
@@ -81,7 +89,7 @@ export const useAutoSummarise = (chapter: Chapter) => {
                                 body: JSON.stringify({
                                     summary,
                                     summarySourceRevision: revision,
-                                    backgroundSummary: { expectedSourceRevision: fresh.summarySourceRevision ?? null }
+                                    backgroundSummary: { expectedSourceRevision: summarySourceRevision }
                                 })
                             })
                         );
@@ -91,7 +99,9 @@ export const useAutoSummarise = (chapter: Chapter) => {
                             reportFailure("a summary was generated but couldn't be saved.");
                             return;
                         }
-                        applyChapterToCaches(queryClient, await put.json());
+                        const [parseError, saved] = await attemptPromise(() => put.json() as Promise<Chapter>);
+                        // The summary is stored either way; an unreadable echo only means the next fetch syncs the cache
+                        if (!parseError && saved) applyChapterToCaches(queryClient, saved);
                     })();
                 }
             }
@@ -100,6 +110,8 @@ export const useAutoSummarise = (chapter: Chapter) => {
 
     const schedule = () => {
         clearTimeout(timer.current);
+        // A save that settles after the editor closed must not arm a timer nothing will clear
+        if (!alive.current) return;
         timer.current = setTimeout(() => void refreshIfDue(chapter.id), IDLE_MS);
     };
 
@@ -119,7 +131,13 @@ export const useAutoSummarise = (chapter: Chapter) => {
         }
     };
 
-    useEffect(() => () => clearTimeout(timer.current), [chapter.id]);
+    useEffect(() => {
+        alive.current = true;
+        return () => {
+            alive.current = false;
+            clearTimeout(timer.current);
+        };
+    }, [chapter.id]);
 
     return { noteActivity, noteSaved };
 };
