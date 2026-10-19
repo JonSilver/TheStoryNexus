@@ -52,6 +52,17 @@ describe("significance", () => {
         expect(changedWordCount("a b c", "a b d")).toBe(2);
     });
 
+    it("sees a moved paragraph even though no word changed", () => {
+        const opening = words(100, "dawn");
+        const ending = `alice dies ${words(98, "dusk")}`;
+        expect(changedWordCount(`${opening} ${ending}`, `${ending} ${opening}`)).toBe(200);
+        expect(isSignificantChange(`${opening} ${ending}`, `${ending} ${opening}`)).toBe(true);
+    });
+
+    it("stops counting at the cap", () => {
+        expect(changedWordCount(words(1000, "a"), words(1000, "b"), 50)).toBe(50);
+    });
+
     it("a few typed words are not significant", () => {
         const base = words(400);
         expect(isSignificantChange(base, `${base} and then a few more words`)).toBe(false);

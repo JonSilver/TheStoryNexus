@@ -97,6 +97,8 @@ export const buildStoryImport = (
             content: rewriteAssetUrls(str(chapter.content), oldStoryId, newStoryId),
             revision: num(chapter.revision, 0),
             summarySourceRevision: optNum(chapter.summarySourceRevision),
+            // The base small edits accumulate against — without it a restore forgets them
+            revisionText: optStr(chapter.revisionText),
             summaryLocked: chapter.summaryLocked === true,
             outline: chapter.outline ?? null,
             wordCount: num(chapter.wordCount, 0),

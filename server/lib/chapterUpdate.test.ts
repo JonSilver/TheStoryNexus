@@ -26,10 +26,10 @@ describe("resolveChapterUpdate", () => {
         });
     });
 
-    it("refuses a content save with no expectedSaveVersion — no silent last-write-wins", () => {
-        expect(resolveChapterUpdate(current(), { content: doc("x") }, now).outcome).toBe("invalid");
+    it("a content save with no expectedSaveVersion conflicts — no silent last-write-wins, no retry loop", () => {
+        expect(resolveChapterUpdate(current(), { content: doc("x") }, now).outcome).toBe("conflict");
         expect(resolveChapterUpdate(current(), { content: doc("x"), expectedRevision: 2 }, now).outcome).toBe(
-            "invalid"
+            "conflict"
         );
     });
 

@@ -10,7 +10,7 @@ import { isSignificantChange, proseOf, sameDocument } from "./proseChange.js";
  *   work due.
  * A save of an identical document writes nothing.
  */
-type ChapterUpdateBody = Record<string, unknown> & { expectedSaveVersion?: unknown };
+type ChapterUpdateBody = Record<string, unknown> & { expectedSaveVersion?: unknown; backgroundSummary?: unknown };
 
 interface CurrentChapter {
     saveVersion: number;
@@ -23,17 +23,48 @@ export type ChapterUpdateResolution =
     | { outcome: "conflict" }
     | { outcome: "invalid"; error: string }
     | { outcome: "unchanged" }
-    | { outcome: "apply"; updates: Record<string, unknown> };
+    | { outcome: "apply"; updates: Record<string, unknown>; summaryGuard?: SummaryGuard };
 
-const SERVER_MANAGED = new Set(["id", "createdAt", "revision", "saveVersion", "revisionText", "expectedRevision"]);
+/**
+ * A background summary may only land on the summary it set out to replace:
+ * never on one the writer saved or locked while the model was running.
+ */
+export interface SummaryGuard {
+    expectedSourceRevision: number | null;
+}
+
+const SERVER_MANAGED = new Set([
+    "id",
+    "createdAt",
+    "revision",
+    "saveVersion",
+    "revisionText",
+    "autoSummaryRevision",
+    "expectedRevision"
+]);
+
+const parseSummaryGuard = (value: unknown): SummaryGuard | null | "invalid" => {
+    if (value === undefined) return null;
+    const expected = (value as { expectedSourceRevision?: unknown } | null)?.expectedSourceRevision;
+    return expected === null || typeof expected === "number" ? { expectedSourceRevision: expected } : "invalid";
+};
 
 export const resolveChapterUpdate = (
     current: CurrentChapter,
     body: ChapterUpdateBody,
     now: Date
 ): ChapterUpdateResolution => {
-    const { expectedSaveVersion, ...rest } = body;
+    const { expectedSaveVersion, backgroundSummary, ...rest } = body;
     const updates = Object.fromEntries(Object.entries(rest).filter(([key]) => !SERVER_MANAGED.has(key)));
+    const summaryGuard = parseSummaryGuard(backgroundSummary);
+    if (summaryGuard === "invalid")
+        return { outcome: "invalid", error: "backgroundSummary needs expectedSourceRevision" };
+    if (summaryGuard) {
+        const keys = Object.keys(updates);
+        if (keys.some(key => key !== "summary" && key !== "summarySourceRevision"))
+            return { outcome: "invalid", error: "A background summary write may only set the summary" };
+        return { outcome: "apply", updates: { ...updates, updatedAt: now }, summaryGuard };
+    }
 
     if (!Object.prototype.hasOwnProperty.call(updates, "content"))
         return Object.keys(updates).length === 0
@@ -41,12 +72,11 @@ export const resolveChapterUpdate = (
             : { outcome: "apply", updates: { ...updates, updatedAt: now } };
 
     if (typeof updates.content !== "string") return { outcome: "invalid", error: "content must be a string" };
-    if (typeof expectedSaveVersion !== "number")
-        return {
-            outcome: "invalid",
-            error: "This page is out of date and can't save safely — reload it."
-        };
-    if (expectedSaveVersion !== current.saveVersion) return { outcome: "conflict" };
+    // No version (a tab still running an older build): treat as a conflict, so
+    // the client locks and offers the draft for download instead of retrying
+    // a rejected save forever while the writer keeps typing
+    if (typeof expectedSaveVersion !== "number" || expectedSaveVersion !== current.saveVersion)
+        return { outcome: "conflict" };
 
     const { content, ...others } = updates as Record<string, unknown> & { content: string };
     if (sameDocument(current.content, content)) {

@@ -8,54 +8,32 @@ import { streamAction } from "../ai/streamAction";
 import { useV2Store } from "../state/useV2Store";
 
 const IDLE_MS = 90_000;
-const MIN_WORDS = 150;
-const HOURLY_LIMIT = 6;
-const HOUR_MS = 60 * 60_000;
-const BUDGET_KEY = "storynexus-auto-summary-runs";
+const FAILURE_TOAST = "auto-summarise-failure";
 
-// Revisions already tried, per chapter — across editor remounts, so leaving
-// and reopening a chapter never buys another attempt at the same revision
-const attempted = new Map<string, number>();
-
-const recentRuns = (now: number): number[] => {
-    try {
-        const stored = JSON.parse(localStorage.getItem(BUDGET_KEY) ?? "[]");
-        return Array.isArray(stored)
-            ? stored.filter((t): t is number => typeof t === "number" && now - t < HOUR_MS)
-            : [];
-    } catch {
-        return [];
-    }
-};
-
-const takeFromBudget = (): boolean => {
-    const now = Date.now();
-    const runs = recentRuns(now);
-    if (runs.length >= HOURLY_LIMIT) return false;
-    try {
-        localStorage.setItem(BUDGET_KEY, JSON.stringify([...runs, now]));
-    } catch {
-        // Unwritable storage would make the cap unenforceable — refuse rather than run unmetered
-        return false;
-    }
-    return true;
-};
+const reportFailure = (reason: string) =>
+    toast.error(
+        `Background chapter summaries aren't working: ${reason} It won't try again until the chapter changes substantially. Turn this off in Settings if you don't need it.`,
+        { toastId: FAILURE_TOAST, autoClose: false }
+    );
 
 /**
- * Background summary freshness, under a strict cost limit. A summary is
- * generated only when ALL hold: the writer made a significant prose change
- * (a new revision — see server/lib/proseChange.ts) in THIS sitting, the editor
- * has then been idle, the summary is stale and not writer-locked, this
- * revision has never been tried, and the hourly budget has room. Opening or
- * reading a chapter never costs a generation; a failure is reported once and
- * not retried until the prose changes significantly again.
+ * Background summary freshness under a strict cost limit. The client asks
+ * only when THIS device saved a significant prose change (a new revision —
+ * see server/lib/proseChange.ts) and the writer has since been idle; opening
+ * or reading a chapter, here or with edits arriving from elsewhere, never asks. The server then decides,
+ * before anything is spent (server/services/actions/backgroundSummary.ts): stale, unlocked, long
+ * enough, never attempted for this revision on any device, and within the
+ * app-wide hourly limit — otherwise it spends nothing. A failure is reported
+ * once and not retried until the prose changes significantly again.
  */
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
-    const openedAt = useRef({ chapterId: chapter.id, revision: chapter.revision ?? 0 });
-    if (openedAt.current.chapterId !== chapter.id)
-        openedAt.current = { chapterId: chapter.id, revision: chapter.revision ?? 0 };
+    // Significant changes THIS device saved: another device's edit, arriving
+    // while this one only reads, never makes this one spend
+    const local = useRef({ chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false });
+    if (local.current.chapterId !== chapter.id)
+        local.current = { chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false };
     const queryClient = useQueryClient();
     const { autoSummarise } = useV2Store();
     const enabled = useRef(autoSummarise);
@@ -67,22 +45,22 @@ export const useAutoSummarise = (chapter: Chapter) => {
         if (error || !response?.ok) return;
         const fresh: Chapter = await response.json();
         const revision = fresh.revision ?? 0;
-        const editedThisSitting = openedAt.current.chapterId === chapterId && revision > openedAt.current.revision;
-        const stale = (fresh.summarySourceRevision ?? -1) !== revision;
-        if (
-            !editedThisSitting ||
-            !stale ||
-            fresh.summaryLocked ||
-            (fresh.wordCount ?? 0) < MIN_WORDS ||
-            attempted.get(chapterId) === revision
-        )
-            return;
-        // Over budget: the summary stays stale (it's labelled as possibly
-        // outdated wherever it's used) until a later change finds room
-        if (!takeFromBudget()) return;
+        if (local.current.chapterId !== chapterId || !local.current.pending) return;
+        // One ask per local significant change, whatever the answer
+        local.current.pending = false;
+        if (fresh.summaryLocked || (fresh.summarySourceRevision ?? -1) === revision) return;
 
-        attempted.set(chapterId, revision);
         running.current = true;
+        const [claimError, claim] = await attemptPromise(async () => {
+            const claimed = await fetch(`/api/chapters/${chapterId}/background-summary`, { method: "POST" });
+            if (!claimed.ok) throw new Error(`HTTP ${claimed.status}`);
+            return (await claimed.json()) as { due: boolean };
+        });
+        // Unanswerable claim: spend nothing; the next significant change asks again
+        if (claimError || !claim?.due) {
+            running.current = false;
+            return;
+        }
         const chunks: string[] = [];
         streamAction(
             { actionId: "summarise_chapter", storyId: fresh.storyId, chapterId },
@@ -92,34 +70,56 @@ export const useAutoSummarise = (chapter: Chapter) => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) {
-                        toast.error(
-                            `Background chapter summaries aren't working: ${
-                                error ?? "the model returned an empty summary"
-                            } It won't try again until the chapter changes substantially. Turn this off in Settings if you don't need it.`,
-                            { toastId: "auto-summarise-failure", autoClose: false }
-                        );
+                        reportFailure(error ?? "the model returned an empty summary.");
                         return;
                     }
-                    void attemptPromise(async () => {
-                        const response = await fetch(`/api/chapters/${chapterId}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ summary, summarySourceRevision: revision })
-                        });
-                        if (!response.ok) return;
-                        applyChapterToCaches(queryClient, await response.json());
-                    });
+                    void (async () => {
+                        const [putError, put] = await attemptPromise(() =>
+                            fetch(`/api/chapters/${chapterId}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    summary,
+                                    summarySourceRevision: revision,
+                                    backgroundSummary: { expectedSourceRevision: fresh.summarySourceRevision ?? null }
+                                })
+                            })
+                        );
+                        // 409: the writer saved or locked a summary meanwhile — theirs wins, by design
+                        if (put?.status === 409) return;
+                        if (putError || !put?.ok) {
+                            reportFailure("a summary was generated but couldn't be saved.");
+                            return;
+                        }
+                        applyChapterToCaches(queryClient, await put.json());
+                    })();
                 }
             }
         );
     };
 
-    const noteActivity = () => {
+    const schedule = () => {
         clearTimeout(timer.current);
         timer.current = setTimeout(() => void refreshIfDue(chapter.id), IDLE_MS);
     };
 
+    /** Typing defers a pending summary until the writer pauses. */
+    const noteActivity = () => {
+        if (local.current.pending) schedule();
+    };
+
+    /** The saver's response: a revision bump here is this device's significant change. */
+    const noteSaved = (saved: Chapter) => {
+        if (saved.id !== local.current.chapterId) return;
+        const revision = saved.revision ?? 0;
+        if (revision > local.current.knownRevision) {
+            local.current.knownRevision = revision;
+            local.current.pending = true;
+            schedule();
+        }
+    };
+
     useEffect(() => () => clearTimeout(timer.current), [chapter.id]);
 
-    return { noteActivity };
+    return { noteActivity, noteSaved };
 };

@@ -133,10 +133,10 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 
 - `chapters` carries two counters (decision 2026-10-19 — a revision per content save made every keystroke burst "change" the chapter and made paid background work due):
     - `saveVersion` — optimistic concurrency. ++ whenever a content save's document differs from the stored one, compared **structurally** (parsed JSON, key order irrelevant — never by serialised string). A save of an identical document writes nothing.
-    - `revision` — **significant** prose change only: words added or removed (case/punctuation-insensitive, scene beats and ghosts excluded) since the last revision reach max(50, 5% of the chapter). Small edits accumulate against the pinned base (`revisionText`, server-only, never sent to clients or backups) until they cross it.
-- Chapter content PUT must carry `expectedSaveVersion` (absent → 400; mismatch → 409 + current row); client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome. The client skips a save whose document equals the last saved one (structural comparison).
-- Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled in UI; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
-- **Auto-summarise** — every generation costs the writer money, so it runs only when ALL hold: the writer made a significant change (new `revision`) while the chapter was open, 90s of editor idle followed, the summary is stale and not writer-locked, the chapter has ≥150 words, that revision has never been attempted (remembered across editor remounts), and fewer than 6 background summaries ran in the past hour (per browser). Opening or reading a chapter never triggers one. A failure is reported once (persistent toast) and not retried until a further significant change. The summary PUT is pinned to the revision it was generated from.
+    - `revision` — **significant** prose change only: words inserted plus deleted along the word-level edit path (order-aware, so a moved paragraph counts; case/punctuation-insensitive; scene beats and ghosts excluded) since the last revision reach max(50, 5% of the chapter). Small edits accumulate against the pinned base (`revisionText` — never sent to the client; carried in backups so a restore doesn't forget accumulated edits) until they cross it.
+- Chapter content PUT must carry `expectedSaveVersion` (absent or mismatched → 409 + current row — a tab running an older build locks and offers its draft rather than retrying forever); client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome. The client skips a save whose document equals the last saved one (structural comparison).
+- Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled "Out of date" in Chapter details; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
+- **Auto-summarise** — every generation costs the writer money. The client asks only after THIS device saved a significant change (its save returned a new `revision`) and 90s of editor idle followed; opening or reading never asks, including when another device's edits arrive. The **server** decides (`POST /api/chapters/:id/background-summary`, atomic): stale, not writer-locked, ≥150 words, this revision never attempted on any device (`autoSummaryRevision`), and fewer than 6 background summaries app-wide in the rolling hour — otherwise nothing is spent. A failure is reported once (persistent toast) and not retried until a further significant change. The result PUT carries `backgroundSummary.expectedSourceRevision` and lands only if the summary is still the one it set out to replace and unlocked (409 otherwise — the writer's summary wins); a failed save of a generated summary is reported.
 
 ## 10. Token budgeting
 
@@ -157,15 +157,16 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 12. Schema change summary
 
-| Table             | Change                                                                                            | When                            |
-| ----------------- | ------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                | Phase 3                         |
-| `stories`         | + `aiInstructions`                                                                                | Phase 4                         |
-| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                 | Phase 2                         |
-| `actionOverrides` | new                                                                                               | Phase 2 (storage), Phase 8 (UI) |
-| `sceneBeats`      | retired (dropped)                                                                                 | Phase 5                         |
-| `prompts`         | retired in favour of registry + overrides                                                         | Phase 8                         |
-| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format | Phase 3                         |
+| Table             | Change                                                                                             | When                            |
+| ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                 | Phase 3                         |
+| `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only | 2026-10-19                      |
+| `stories`         | + `aiInstructions`                                                                                 | Phase 4                         |
+| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                  | Phase 2                         |
+| `actionOverrides` | new                                                                                                | Phase 2 (storage), Phase 8 (UI) |
+| `sceneBeats`      | retired (dropped)                                                                                  | Phase 5                         |
+| `prompts`         | retired in favour of registry + overrides                                                          | Phase 8                         |
+| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format  | Phase 3                         |
 
 ## Appendix A — editor choice & serialisation (decided 2026-09-05)
 

@@ -111,6 +111,12 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
                             setLocked(true);
                         }}
                     />
+                    {chapter.summary && (chapter.summarySourceRevision ?? -1) !== (chapter.revision ?? 0) && (
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                            Out of date — the chapter has changed substantially since this summary was written. Edit it
+                            here, or use … → Summarise chapter in the editor.
+                        </p>
+                    )}
                     <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         <input
                             type="checkbox"

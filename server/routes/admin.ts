@@ -64,7 +64,7 @@ router.get("/export", async (_, res) => {
         tables: {
             series,
             stories,
-            chapters: chapters.map(({ revisionText: _revisionText, ...chapter }) => chapter),
+            chapters,
             lorebookEntries,
             aiChats,
             notes,

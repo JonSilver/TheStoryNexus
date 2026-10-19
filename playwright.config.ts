@@ -32,6 +32,7 @@ export default defineConfig({
             reuseExistingServer: false,
             env: {
                 NODE_ENV: "development",
+                STORYNEXUS_E2E: "1",
                 PORT: String(E2E_API_PORT),
                 DATABASE_PATH: path.join(dataDir, "e2e.db")
             }

@@ -93,8 +93,15 @@ export const flushChapterSave = async (chapterId: string): Promise<void> => {
  * One save in flight per chapter; newer content replaces queued content;
  * 409 halts saving until the caller reloads; failures retry.
  */
-export const useChapterSaver = (chapterId: string, initialSaveVersion: number, initialContent: string) => {
+export const useChapterSaver = (
+    chapterId: string,
+    initialSaveVersion: number,
+    initialContent: string,
+    onSaved?: (chapter: Chapter) => void
+) => {
     const [status, setStatus] = useState<SaveStatus>("idle");
+    const onSavedRef = useRef(onSaved);
+    onSavedRef.current = onSaved;
     const queryClient = useQueryClient();
     const internals = useRef({
         pending: null as SavePayload | null,
@@ -132,6 +139,7 @@ export const useChapterSaver = (chapterId: string, initialSaveVersion: number, i
                 s.saveVersion = result.chapter.saveVersion ?? s.saveVersion;
                 s.lastSavedDocument = payload.doc;
                 applyChapterToCaches(queryClient, result.chapter);
+                onSavedRef.current?.(result.chapter);
                 if (s.pending) void drain();
                 else setStatus("saved");
                 return;

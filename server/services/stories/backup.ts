@@ -31,8 +31,7 @@ export const exportStoryBackup = async (storyId: string) => {
         type: "story" as const,
         exportDate: new Date().toISOString(),
         story,
-        // The change-measurement base is rebuilt on demand; carrying it would double the prose
-        chapters: chapters.map(({ revisionText: _revisionText, ...chapter }) => chapter),
+        chapters,
         lorebookEntries,
         aiChats,
         notes,

@@ -55,6 +55,8 @@ export const chapters = sqliteTable(
         saveVersion: integer("saveVersion").notNull().default(0),
         // Prose at the last revision: the base significance is measured against
         revisionText: text("revisionText"),
+        // Last revision a background summary was attempted for — at most one paid attempt per revision
+        autoSummaryRevision: integer("autoSummaryRevision"),
         updatedAt: integer("updatedAt", { mode: "timestamp" }),
         summarySourceRevision: integer("summarySourceRevision"),
         // Writer-authored summary: auto-summarise must never overwrite it
