@@ -1,14 +1,7 @@
 import { Loader2, Upload } from "lucide-react";
 import { useState } from "react";
-import { toast } from "react-toastify";
-import { useAnalyseFiles, useAnalyseText, useCommitImport } from "@/features/ingest/hooks/useIngest";
-import type { AnalysedChapter, ManuscriptAnalysis } from "@/services/api/client";
 import { BottomSheet } from "../components/BottomSheet";
-
-interface ReviewChapter extends AnalysedChapter {
-    index: number;
-    included: boolean;
-}
+import { useManuscriptImport } from "./useManuscriptImport";
 
 /**
  * Bring-your-novel flow (contracts Phase 7): upload or paste → server
@@ -22,36 +15,8 @@ export const ImportSheet = ({
     onImported: (storyId: string) => void;
 }) => {
     const [pasted, setPasted] = useState("");
-    const [analysis, setAnalysis] = useState<ManuscriptAnalysis | null>(null);
-    const [review, setReview] = useState<ReviewChapter[]>([]);
-    const [title, setTitle] = useState("");
-
-    const applyAnalysis = (result: ManuscriptAnalysis) => {
-        setAnalysis(result);
-        setTitle(result.title);
-        setReview(result.chapters.map((chapter, index) => ({ ...chapter, index, included: true })));
-    };
-
-    const analyseFiles = useAnalyseFiles();
-    const analyseText = useAnalyseText();
-    const commitImport = useCommitImport();
-    const busy = analyseFiles.isPending || analyseText.isPending || commitImport.isPending;
-
-    const commit = () => {
-        if (!analysis) return;
-        const chapters = review.filter(c => c.included).map(c => ({ index: c.index, title: c.title }));
-        commitImport.mutate(
-            { token: analysis.token, title: title.trim() || "Imported story", chapters },
-            {
-                onSuccess: ({ storyId, chapterCount }) => {
-                    toast.success(
-                        `Imported ${chapterCount} chapters — Story Bible → Extract from whole story builds your bible, and Story → Details, series & voice → Derive from my writing drafts your story's voice`
-                    );
-                    onImported(storyId);
-                }
-            }
-        );
-    };
+    const manuscript = useManuscriptImport(onImported);
+    const { analysis, review, title, setTitle, busy, commit } = manuscript;
 
     return (
         <BottomSheet
@@ -63,7 +28,7 @@ export const ImportSheet = ({
                     {!analysis ? (
                         <button
                             type="button"
-                            onClick={() => analyseText.mutate(pasted, { onSuccess: applyAnalysis })}
+                            onClick={() => manuscript.analyseText(pasted)}
                             disabled={busy || !pasted.trim()}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
@@ -73,10 +38,10 @@ export const ImportSheet = ({
                         <button
                             type="button"
                             onClick={commit}
-                            disabled={busy || review.every(c => !c.included)}
+                            disabled={busy || manuscript.includedCount === 0}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
-                            {busy ? "Creating…" : `Create story (${review.filter(c => c.included).length} chapters)`}
+                            {busy ? "Creating…" : `Create story (${manuscript.includedCount} chapters)`}
                         </button>
                     )}
                     <button type="button" onClick={onClose} className="ml-auto rounded-md border px-4 py-2 text-sm">
@@ -100,7 +65,7 @@ export const ImportSheet = ({
                             onChange={e => {
                                 const files = Array.from(e.target.files ?? []);
                                 e.target.value = "";
-                                if (files.length > 0 && !busy) analyseFiles.mutate(files, { onSuccess: applyAnalysis });
+                                if (files.length > 0 && !busy) manuscript.analyseFiles(files);
                             }}
                         />
                     </label>
@@ -123,33 +88,21 @@ export const ImportSheet = ({
                         aria-label="Story title"
                     />
                     <p className="text-xs text-muted-foreground">
-                        {review.filter(c => c.included).length} of {review.length} chapters selected — untick to drop,
-                        edit titles freely.
+                        {manuscript.includedCount} of {review.length} chapters selected — untick to drop, edit titles
+                        freely.
                     </p>
                     {review.map(chapter => (
                         <div key={chapter.index} className="flex items-start gap-2 rounded-md border p-2">
                             <input
                                 type="checkbox"
                                 checked={chapter.included}
-                                onChange={() =>
-                                    setReview(current =>
-                                        current.map(c =>
-                                            c.index === chapter.index ? { ...c, included: !c.included } : c
-                                        )
-                                    )
-                                }
+                                onChange={() => manuscript.toggleChapter(chapter.index)}
                             />
                             <div className="min-w-0 flex-1">
                                 <input
                                     className="w-full rounded-md border bg-background px-2 py-1"
                                     value={chapter.title}
-                                    onChange={e =>
-                                        setReview(current =>
-                                            current.map(c =>
-                                                c.index === chapter.index ? { ...c, title: e.target.value } : c
-                                            )
-                                        )
-                                    }
+                                    onChange={e => manuscript.renameChapter(chapter.index, e.target.value)}
                                 />
                                 <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                                     {chapter.wordCount} words · {chapter.preview}
