@@ -16,6 +16,7 @@ interface V2State {
 }
 
 const STORAGE_KEY = "v2-state";
+const SCROLL_MEMORY = 100;
 
 const load = (): V2State => {
     try {
@@ -46,7 +47,11 @@ const store = {
 
 const setState = (update: Partial<V2State>) => {
     store.state = { ...store.state, ...update };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store.state));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store.state));
+    } catch {
+        // Private mode or full storage: UI state lasts this session only — nothing the writer made is at stake
+    }
     store.listeners.forEach(listener => listener());
 };
 
@@ -74,7 +79,10 @@ export const useV2Store = () => {
     }, []);
 
     const setScroll = useCallback((chapterId: string, scrollTop: number) => {
-        setState({ scrollByChapter: { ...store.state.scrollByChapter, [chapterId]: scrollTop } });
+        // The most recent chapters only — kept forever, this grew with every chapter ever opened
+        const { [chapterId]: _previous, ...others } = store.state.scrollByChapter;
+        const recent = Object.entries(others).slice(-(SCROLL_MEMORY - 1));
+        setState({ scrollByChapter: { ...Object.fromEntries(recent), [chapterId]: scrollTop } });
     }, []);
 
     const dismissNudges = useCallback((storyId: string, names: string[]) => {

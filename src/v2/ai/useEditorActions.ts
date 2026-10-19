@@ -103,9 +103,6 @@ export const useEditorActions = (chapter: Chapter) => {
             }
             savedSelection.current = info.clone;
             savedSelectionText.current = info.text;
-            // The saved selection is positional: freeze the document while the
-            // sheet is up so accept can't land on shifted or deleted nodes
-            editor.setEditable(false);
             attempts.clear();
             setActive({ id: actionId, title: label, kind: "selection" });
             runAttempt(actionId, { ...baseContext(), selection: info.text, recentProse: docTextTail() });
@@ -127,7 +124,6 @@ export const useEditorActions = (chapter: Chapter) => {
         }
         savedSelection.current = info.clone;
         savedSelectionText.current = info.text;
-        editor.setEditable(false);
         attempts.clear();
         setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
         setAskPending(true);
@@ -173,9 +169,13 @@ export const useEditorActions = (chapter: Chapter) => {
         });
     }, [editor]);
 
+    // Each sheet session; Discard ends it, so work it started late (after a save flush, say) never runs
+    const session = useRef(0);
+
     const onSummarise = useCallback(() => {
         attempts.clear();
         setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });
+        const mine = ++session.current;
         void (async () => {
             // The model must see what the writer sees: force the debounced
             // save down before the server reads the chapter
@@ -189,20 +189,21 @@ export const useEditorActions = (chapter: Chapter) => {
                     staleTime: 0
                 })
             );
+            if (session.current !== mine) return;
             summariseBaseRevision.current = fresh?.revision ?? chapter.revision ?? 0;
             runAttempt("summarise_chapter");
         })();
     }, [attempts, runAttempt, chapter.id, chapter.revision, queryClient]);
 
     const close = useCallback(() => {
+        session.current += 1;
         setActive(null);
         setAskPending(false);
         savedSelection.current = null;
         lastRun.current = null;
         attempts.clear();
-        editor.setEditable(true);
         generation.reset();
-    }, [generation, editor, attempts]);
+    }, [generation, attempts]);
 
     const insertParagraphsAtEnd = (text: string) => {
         const paragraphs = text
@@ -255,6 +256,10 @@ export const useEditorActions = (chapter: Chapter) => {
     }, [active, attempts.current, editor, close]);
 
     return {
+        // The saved selection is positional: the document stays frozen while a
+        // selection sheet is up, so accept can't land on shifted or deleted nodes
+        locksEditor: active?.kind === "selection" || active?.kind === "ask",
+        sheetOpen: active !== null,
         toolbarActions: { onContinue, onSummarise, onSelectionAction, onAsk },
         sheetProps: {
             title: active?.title ?? "",
