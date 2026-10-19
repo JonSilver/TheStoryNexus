@@ -1,5 +1,6 @@
 import { AlertTriangle, Info, Lightbulb } from "lucide-react";
 import { Children, isValidElement, type JSX, type ReactNode } from "react";
+import { Link } from "react-router";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type ElementProps<T extends keyof JSX.IntrinsicElements> = JSX.IntrinsicElements[T];
@@ -49,7 +50,13 @@ const mdxComponents = {
         <blockquote className="border-l-4 border-primary pl-4 py-2 my-4 text-muted-foreground" {...props} />
     ),
     strong: (props: ElementProps<"strong">) => <strong className="font-semibold" {...props} />,
-    a: (props: ElementProps<"a">) => <a className="text-primary underline hover:no-underline" {...props} />,
+    a: ({ href, ...props }: ElementProps<"a">) =>
+        // In-app paths navigate within the app (history entry, no reload); external links stay plain
+        href?.startsWith("/") ? (
+            <Link to={href} className="text-primary underline hover:no-underline" {...props} />
+        ) : (
+            <a href={href} className="text-primary underline hover:no-underline" {...props} />
+        ),
     // Handle GitHub alert divs from remark-github-blockquote-alert
     div: ({ className, children, ...props }: ElementProps<"div">) => {
         // Check for markdown-alert classes
