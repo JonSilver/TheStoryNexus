@@ -10,7 +10,6 @@ import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLoreb
 import { ideaNote, useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
-import type { ScreenProps } from "../V2App";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
@@ -30,7 +29,8 @@ import { useCorrectMissingChat } from "./useCorrectMissingChat";
  * up as chat_history/user_message; matched bible entries and story voice are
  * assembled server-side like every other action.
  */
-export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
+export const BrainstormScreen = () => {
+    const { goTo, goBack, navigate } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { lastChapterFor } = uiState;
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
@@ -41,7 +41,6 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
     const generation = useActionGeneration();
     // The open chat lives in the URL: back/forward and refresh keep it
     const { chatId } = useRouteParams();
-    const { navigate } = useNav();
     const openChat = (id: string) => navigate(`${pathFor("brainstorm", currentStoryId)}/${encodeURIComponent(id)}`);
     const [extracting, setExtracting] = useState<string | null>(null);
     const { data: bibleEntries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);

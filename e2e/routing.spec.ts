@@ -58,6 +58,13 @@ test("refresh keeps the writer on the same chapter, and a copied link opens it",
     const other = await context.newPage();
     await other.goto(secondChapterUrl);
     await expect(editorLocator(other)).toContainText("Text in the second chapter.");
+
+    // A link to a chapter that no longer exists opens a real one, and the address says which
+    const storyWrite = secondChapterUrl.replace(/\/write\/[^/]+$/, "/write");
+    await other.goto(`${storyWrite}/no-such-chapter`);
+    await expect(editorLocator(other)).toBeVisible();
+    await expect(other).not.toHaveURL(/no-such-chapter/);
+    await expect(other).toHaveURL(/\/write\/[^/]+$/);
 });
 
 test("a brainstorm chat has its own URL", async ({ page }) => {

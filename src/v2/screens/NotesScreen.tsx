@@ -7,12 +7,12 @@ import {
     useUpdateNoteMutation
 } from "@/features/notes/hooks/useNotesQuery";
 import type { Note } from "@/types/story";
-import type { ScreenProps } from "../V2App";
 import { BottomSheet } from "../components/BottomSheet";
 import { useGuardedClose } from "../components/Dialogs";
 import { useConfirm } from "../components/Dialogs";
 import { MarkdownView } from "../components/MarkdownView";
 import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
+import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 
 const NOTE_TYPES = ["idea", "research", "todo", "other"] as const;
@@ -103,26 +103,33 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
     );
 };
 
-export const NotesScreen = ({ goTo, goBack }: ScreenProps) => {
+export const NotesScreen = () => {
+    const { goTo, goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { data: notes } = useNotesByStoryQuery(currentStoryId ?? "");
     const deleteNote = useDeleteNoteMutation();
     const confirm = useConfirm();
-    const [editing, setEditing] = useState<Note | null | "new">(null);
+    // The id, not a copy: the editor sees the note as it is now, and closes if it's gone
+    const [editingId, setEditingId] = useState<string | null | "new">(null);
+    const editing = (notes ?? []).find(n => n.id === editingId) ?? null;
 
     if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     return (
         <div className="flex h-full flex-col">
             <ScreenHeader title="Notes" onBack={() => goBack("story")}>
-                <button type="button" onClick={() => setEditing("new")} aria-label="New note">
+                <button type="button" onClick={() => setEditingId("new")} aria-label="New note">
                     <Plus className="h-5 w-5" />
                 </button>
             </ScreenHeader>
             <ul className="min-h-0 flex-1 divide-y overflow-y-auto">
                 {(notes ?? []).map(note => (
                     <li key={note.id} className="flex items-start gap-2 px-4 py-3">
-                        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setEditing(note)}>
+                        <button
+                            type="button"
+                            className="min-w-0 flex-1 text-left"
+                            onClick={() => setEditingId(note.id)}
+                        >
                             <p className="font-medium">
                                 {note.title} <span className="text-xs text-muted-foreground">({note.type})</span>
                             </p>
@@ -150,12 +157,8 @@ export const NotesScreen = ({ goTo, goBack }: ScreenProps) => {
                     <li className="p-8 text-center text-sm text-muted-foreground">No notes yet.</li>
                 )}
             </ul>
-            {editing && (
-                <NoteEditor
-                    note={editing === "new" ? null : editing}
-                    storyId={currentStoryId}
-                    onClose={() => setEditing(null)}
-                />
+            {(editingId === "new" || editing) && (
+                <NoteEditor note={editing} storyId={currentStoryId} onClose={() => setEditingId(null)} />
             )}
         </div>
     );

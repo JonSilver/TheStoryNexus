@@ -96,8 +96,7 @@ export const useChapterSaver = (
         lastSavedDocument: parseDocument(initialContent),
         conflicted: false,
         debounceTimer: 0 as ReturnType<typeof setTimeout> | 0,
-        retryTimer: 0 as ReturnType<typeof setTimeout> | 0,
-        conflictChapter: null as Chapter | null
+        retryTimer: 0 as ReturnType<typeof setTimeout> | 0
     });
 
     const drain = useCallback(
@@ -132,7 +131,6 @@ export const useChapterSaver = (
             }
             if (result.outcome === "conflict") {
                 s.conflicted = true;
-                s.conflictChapter = result.current;
                 setStatus("conflict");
                 return;
             }
@@ -197,5 +195,5 @@ export const useChapterSaver = (
         };
     }, [flush, chapterId]);
 
-    return { status, scheduleSave, flush, conflictChapter: internals.current.conflictChapter };
+    return { status, scheduleSave, flush };
 };

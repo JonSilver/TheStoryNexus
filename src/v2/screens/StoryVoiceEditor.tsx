@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
@@ -30,11 +30,6 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
         keepDraft(storyId, next);
         setDraftState(next);
     };
-
-    useEffect(() => {
-        setDraftState(readDraft(storyId));
-        setDerived(false);
-    }, [storyId]);
 
     if (!story) return null;
     const value = draft ?? story.aiInstructions ?? "";

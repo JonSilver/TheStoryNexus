@@ -1,13 +1,12 @@
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { Navigate } from "react-router";
 import { useChapterQuery, useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import type { ScreenProps } from "../V2App";
 import { EmptyState } from "../components/ScreenParts";
 import { ChapterEditor } from "../editor/ChapterEditor";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
-import { uiState, useCurrentStoryId, useUiState } from "../state/useV2Store";
+import { useCurrentStoryId, useUiState } from "../state/useV2Store";
 
 const Spinner = () => (
     <div className="flex h-full items-center justify-center">
@@ -15,13 +14,14 @@ const Spinner = () => (
     </div>
 );
 
-export const WriteScreen = ({ goTo }: ScreenProps) => {
+export const WriteScreen = () => {
+    const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
     const rememberedChapter = useUiState(state =>
         currentStoryId ? (state.lastChapterByStory[currentStoryId] ?? null) : null
     );
-    const { setLastChapter, setCurrentStory } = uiState;
-    const { data: story, error: storyError } = useStoryQuery(currentStoryId ?? "");
+    // A missing story (404) never reaches here: the story route says so first
+    const { data: story, isError: storyFailed } = useStoryQuery(currentStoryId ?? "");
     const {
         data: chapters,
         isLoading: chaptersLoading,
@@ -29,30 +29,12 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
         refetch: refetchChapters
     } = useChaptersByStoryQuery(currentStoryId ?? "");
 
-    // Only a definite 404 means the story is gone. A network blip or server
-    // restart must NOT clear the remembered story and eject the writer.
-    const storyGone = (storyError as { status?: number } | null)?.status === 404;
-    useEffect(() => {
-        if (currentStoryId && storyGone) {
-            setCurrentStory(null);
-            goTo("library");
-        }
-    }, [currentStoryId, storyGone, setCurrentStory, goTo]);
-
     // The URL's chapter wins; otherwise resume the last one, else the first
     const route = useRouteParams();
-    const { navigate } = useNav();
     const resumeId = route.chapterId ?? rememberedChapter;
     const orderedChapters = chapters ?? [];
     const currentChapterId =
         resumeId && orderedChapters.some(c => c.id === resumeId) ? resumeId : (orderedChapters[0]?.id ?? null);
-
-    // Keep the URL naming the chapter actually shown (fills it in, or corrects a
-    // stale/unknown id) without adding a history entry
-    useEffect(() => {
-        if (!route.storyId || !currentChapterId || route.chapterId === currentChapterId) return;
-        navigate(pathFor("write", route.storyId, currentChapterId), { replace: true });
-    }, [route.storyId, route.chapterId, currentChapterId, navigate]);
 
     const { data: chapter, isLoading: chapterLoading } = useChapterQuery(currentChapterId ?? "");
 
@@ -64,7 +46,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
                 onAction={() => goTo("library")}
             />
         );
-    if (chaptersFailed || (storyError && !storyGone))
+    if (chaptersFailed || storyFailed)
         return (
             <EmptyState
                 message="Couldn't reach the server — your work is safe on disk."
@@ -81,6 +63,9 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
                 onAction={() => goTo("chapters")}
             />
         );
+    // The URL names the chapter actually shown: filled in, or a stale/unknown id corrected, without a history entry
+    if (route.storyId && route.chapterId !== currentChapterId)
+        return <Navigate replace to={pathFor("write", route.storyId, currentChapterId)} />;
     if (!chapter) return <Spinner />;
 
     return (
@@ -91,10 +76,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
                     <select
                         className="max-w-[70vw] truncate bg-transparent text-sm font-medium outline-none"
                         value={chapter.id}
-                        onChange={e => {
-                            setLastChapter(currentStoryId, e.target.value);
-                            goTo("write");
-                        }}
+                        onChange={e => goTo("write", { chapterId: e.target.value })}
                         aria-label="Chapter"
                     >
                         {orderedChapters.map(c => (

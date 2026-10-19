@@ -67,9 +67,8 @@ const TAB_FOR: Record<V2Tool, (typeof TABS)[number]["id"]> = {
 };
 
 const Screen = ({ tool }: { tool: keyof typeof SCREENS }) => {
-    const { goTo, goBack } = useNav();
     const Component = SCREENS[tool];
-    return <Component goTo={goTo} goBack={goBack} />;
+    return <Component />;
 };
 
 /** Full pages hosted inside the shell; the frame supplies the only back control. */
@@ -115,11 +114,11 @@ const StoryScope = () => {
         [storyId, params.chapterId, params.chatId]
     );
 
+    // Remembered for "/" and for resuming each story's chapter — however the writer got here
     useEffect(() => {
-        if (storyId && uiState.get().currentStoryId !== storyId) uiState.setCurrentStory(storyId);
-    }, [storyId]);
-    useEffect(() => {
-        if (storyId && params.chapterId) uiState.setLastChapter(storyId, params.chapterId);
+        if (!storyId) return;
+        if (uiState.get().currentStoryId !== storyId) uiState.setCurrentStory(storyId);
+        if (params.chapterId) uiState.setLastChapter(storyId, params.chapterId);
     }, [storyId, params.chapterId]);
 
     if ((error as { status?: number } | null)?.status === 404) return <StoryNotFound />;
@@ -216,10 +215,4 @@ export default function V2App() {
             </nav>
         </div>
     );
-}
-
-export interface ScreenProps {
-    goTo: (tool: V2Tool) => void;
-    /** History-back when arrived from inside the app; else the given parent screen. */
-    goBack: (fallback: V2Tool) => void;
 }

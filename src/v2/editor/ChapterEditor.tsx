@@ -166,8 +166,6 @@ export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOp
     // initialise from content that save is about to supersede — hold until it
     // settles and the cache-synced chapter prop arrives.
     const [settling, setSettling] = useState(() => hasInFlightSave(chapter.id));
-    // Chapter switches don't remount this component, so re-check per chapter
-    useEffect(() => setSettling(hasInFlightSave(chapter.id)), [chapter.id]);
     useEffect(() => {
         if (!settling) return undefined;
         const live = { current: true };
