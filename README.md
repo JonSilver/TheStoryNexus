@@ -16,18 +16,20 @@ I didn't like Tauri because I wanted a web app that could run on any device with
 
 The code quality has been improved significantly too, and I'm gradually ripping out custom code in favor of established libraries and patterns.
 
-I'm also in the process of reworking the UI/UX to be more of a writer's workspace.
+The UI is a writer-first workspace: the manuscript in front, AI machinery behind it.
 
 ## Key Features
 
-- **Story Management**: Create and organize your stories with chapters, outlines, and summaries
-- **Rich Text Editor**: Write and edit your stories using a powerful Lexical-based editor
-- **AI Integration**: Generate content using AI models from OpenAI, Google Gemini, OpenRouter, or locally hosted models
-- **Custom Prompts**: Create and manage custom prompts to guide AI generation
-- **Scene Beats Addon to Editor**: Press alt (option for mac) + s in editor to open Scene Beat AI command
-- **Lorebook**: Maintain a database of characters, locations, items, events, and notes for your story
-- **Local-First**: All your data is stored locally in a SQLite database
-- **Data Migration**: Import data from previous IndexedDB-based versions or export your current database
+- **Stories, chapters and series**: chapters with outlines, POV and summaries; stories grouped into series that share a bible
+- **Writer-first editor**: Lexical-based, autosaving, with AI woven in rather than bolted on
+- **Scene beats with takes**: describe a beat (Alt/Option+S or `/`), generate as many takes as you like, flip between them and accept the best — no generation is ever lost
+- **Inline Continue, selection actions and Ask**: greyed ghost continuations you keep or dismiss; rework/expand/shorten/free-form instructions on a selection, from the toolbar or the right-click menu
+- **Story bible**: characters, locations, items and more at story, series or global level; extract entries from a chapter, pasted text or the whole story; merge duplicates; continuity checking
+- **Brainstorm**: a critical development-editor chat that has read your story; replies become notes, bible entries or chapter outlines
+- **Import your manuscript**: .txt, .md, .docx or .epub, single or multi-file, with automatic chapter splitting and clean-up of email/usenet headers and Project Gutenberg boilerplate
+- **AI actions, not prompts**: built-in actions with optional per-action overrides (model, sampler settings, template), globally or per story; per-story voice and framing
+- **AI providers**: OpenAI, Google Gemini, OpenRouter, or local models (Ollama, LM Studio)
+- **Local-first**: everything lives in a SQLite database on your own machine
 
 ## Technology Stack
 
@@ -36,7 +38,7 @@ I'm also in the process of reworking the UI/UX to be more of a writer's workspac
 - **State Management**: TanStack Query v5
 - **Routing**: React Router v7
 - **Database**: SQLite with Drizzle ORM
-- **Text Editor**: Lexical v0.24.0
+- **Text Editor**: Lexical (0.50+)
 - **UI Components**: Shadcn UI, Lucide React icons
 - **Notifications**: React Toastify
 - **Development**: tsx watch (backend), Vite HMR (frontend), concurrently
@@ -168,7 +170,6 @@ The script automatically bumps the version, pushes to GitHub, and opens the rele
 
 ![App Screenshot](screenshots/Home.jpg)
 ![App Screenshot](screenshots/Stories.jpg)
-![App Screenshot](screenshots/Prompts.jpg)
 ![App Screenshot](screenshots/Lorebook.jpg)
 ![App Screenshot](screenshots/CreateChapter.jpg)
 ![App Screenshot](screenshots/Editor.jpg)
@@ -181,56 +182,32 @@ The script automatically bumps the version, pushes to GitHub, and opens the rele
 
 - `server/` - Express.js API server
     - `db/` - Database schema, client, migrations, and seeding
-    - `routes/` - API route handlers (stories, chapters, prompts, lorebook, etc.)
+    - `routes/` - API route handlers (stories, chapters, series, lorebook, notes, brainstorm, ai, actions, generate, ingest, assets, admin)
+    - `services/` - Action registry and context assembly, AI providers, manuscript ingest, backups
     - `index.ts` - Server entry point
 
 ### Frontend
 
-- `src/features/` - Feature modules (stories, chapters, prompts, ai, lorebook, brainstorm, notes)
-    - `*/hooks/` - TanStack Query hooks for data fetching
-    - `*/pages/` - Route components
-    - `*/components/` - Feature-specific UI components
-- `src/components/` - Reusable UI components
-- `src/Lexical/` - Text editor implementation (custom Lexical editor)
-- `src/services/` - Services (AI, database, export utilities, API client)
+- `src/v2/` - The app: shell, screens, editor (Lexical composition, nodes, plugins), AI actions, bible flows, export
+- `src/features/` - TanStack Query hooks per domain, plus the settings, series, guide and reader pages
+- `src/components/` - Shared UI components (Shadcn)
+- `src/services/` - API client and AI settings facade
 - `src/types/` - TypeScript type definitions
 - `src/lib/` - Utility functions and helpers
 
 ## Data Management
 
-### Database Export/Import
+### Backup (whole database)
 
-Export and import your entire database from the AI Settings page:
+**Settings → Backup → Download backup** produces a consistent snapshot of the entire database using SQLite's online backup API — safe to take while you're writing. Images live separately under `data/assets/`; copy that directory too. Don't copy `storynexus.db` on its own while the app is running: the database runs in WAL mode and recent writing may only exist in `storynexus.db-wal`.
 
-**Export**: Downloads a JSON file containing all your data (stories, chapters, prompts, lorebook entries, etc.)
+### Story backup (JSON)
 
-**Import**: Replaces all current data with data from a JSON file. System prompts are preserved.
+**Story → Export → JSON (backup)** downloads one story with its chapters, story bible, notes, brainstorm chats, per-story AI overrides and images. Restore it from **Story → Switch story → JSON**; it comes back as a new story titled "… (Imported)", restored all-or-nothing.
 
-Migration workflow:
+### Series backup (JSON)
 
-1. Export from old IndexedDB-based version (if migrating)
-2. Import into new SQLite-based version
-3. System prompts automatically initialized on first run
-
-### Prompts Export/Import
-
-Export and import individual prompts from the Prompts Manager UI:
-
-**Export**: Downloads non-system prompts only (system prompts excluded)
-
-**Import**: Validates and creates imported prompts as non-system (editable). Duplicate names get `(Imported)` suffix. New IDs and timestamps generated.
-
-Format:
-
-```json
-{
-    "version": "1.0",
-    "type": "prompts",
-    "prompts": [
-        /* array of prompt objects */
-    ]
-}
-```
+**Settings → Series** exports and imports a whole series: its series-level bible plus a complete backup of every story in it.
 
 # Roadmap/TODO
 

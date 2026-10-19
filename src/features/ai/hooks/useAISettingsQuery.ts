@@ -59,8 +59,8 @@ export const useUpdateLocalApiUrlMutation = () => {
             queryClient.setQueryData(aiSettingsKeys.modelsByProvider("local"), models);
             toast.success("Local API URL updated");
         },
-        onError: () => {
-            toast.error("Failed to update local API URL");
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to update local API URL");
         }
     });
 };
@@ -95,7 +95,10 @@ export const useRefreshModelsMutation = () => {
         onSuccess: ({ provider, models }) => {
             queryClient.invalidateQueries({ queryKey: aiSettingsKeys.settings() });
             queryClient.setQueryData(aiSettingsKeys.modelsByProvider(provider), models);
-            toast.success(`${providerName(provider)} models refreshed`);
+            const healed = (aiService.getSettings() as (AISettings & { healedDefault?: string | null }) | null)
+                ?.healedDefault;
+            if (healed) toast.info(`Default model was unavailable — switched to ${healed}`);
+            else toast.success(`${providerName(provider)} models refreshed`);
         },
         onError: (_, provider) => {
             toast.error(`Failed to refresh ${providerName(provider)} models`);

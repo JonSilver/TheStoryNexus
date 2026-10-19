@@ -2,7 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 @layer base {
+    /* Native select popups ignore most page CSS; color-scheme plus explicit
+       colours on option is the full extent of what browsers allow */
+    select,
+    option {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+    }
     :root {
+        /* Native controls (select popups, scrollbars) follow the theme —
+           without this, dark mode gets light option lists with light text */
+        color-scheme: light;
         --background: 0 0% 100%;
         --foreground: 224 71.4% 4.1%;
         --card: 0 0% 100%;
@@ -38,6 +48,7 @@
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
     .dark {
+        color-scheme: dark;
         --background: 193 100% 7%;
         --foreground: 186 8% 85%;
         --card: 193 100% 10%;

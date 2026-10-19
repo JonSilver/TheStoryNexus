@@ -30,7 +30,7 @@ const SeriesListPage = () => {
         if (!event.target.files || event.target.files.length === 0) return;
 
         const file = event.target.files[0];
-        const [error, newSeriesId] = await attemptPromise(async () => await seriesImportService.importSeries(file));
+        const [error] = await attemptPromise(async () => await seriesImportService.importSeries(file));
 
         if (error) {
             console.error("Failed to import series:", error);
@@ -40,9 +40,6 @@ const SeriesListPage = () => {
 
         toast.success("Series imported successfully");
         queryClient.invalidateQueries({ queryKey: ["series"] });
-
-        // Navigate to the new series
-        if (newSeriesId) navigate(`/series/${newSeriesId}`);
 
         // Reset the input
         event.target.value = "";
@@ -77,7 +74,7 @@ const SeriesListPage = () => {
                         key={series.id}
                         series={series}
                         onDelete={() => handleDelete(series.id)}
-                        onClick={() => navigate(`/series/${series.id}`)}
+                        onClick={() => navigate("/")}
                     />
                 ))}
             </div>

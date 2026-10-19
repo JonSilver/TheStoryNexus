@@ -1,0 +1,62 @@
+# The Story Bible
+
+The story bible is what the app knows about your world: characters, locations, items, events. Its job is to arrive in the AI's context at the right moment, without you fetching it.
+
+**More → Story Bible** shows every entry available to the current story, grouped by category.
+
+## How entries reach the AI
+
+Each entry has a **name** and any number of **aliases** (nicknames, titles, other spellings). Before any AI action runs, the server scans the text involved — the chapter, your scene beat command, your selection, the brainstorm conversation — for those names and aliases. Whatever matches is added to the prompt.
+
+The matching is stricter than a plain search, deliberately:
+
+- **Word boundaries only.** An entry called _Ash_ matches "Ash turned away", not "ashtray".
+- **Case and accents are normalised**, so "MIRIAM" and "Miriam" are the same person.
+- **Possessives count.** "Miriam's coat" matches _Miriam_.
+- **Multi-word aliases match as phrases**, so "The Blue Hour" works as a name.
+- **Disabled entries are skipped** entirely.
+
+When more entries match than the model's context window can take, they're ranked — story entries before series before global, then by how often they appear — and the tail is dropped. Ranking is deterministic: the same chapter always yields the same context.
+
+> [!TIP]
+> Aliases are the highest-value field in the bible. If your narrator calls someone "the sergeant" for three chapters, add _the sergeant_ as an alias or those chapters won't match the entry at all.
+
+## Three levels
+
+| Level      | Reaches                   | Good for                                                  |
+| ---------- | ------------------------- | --------------------------------------------------------- |
+| **Story**  | One story                 | People, places and things unique to this book             |
+| **Series** | Every story in the series | Recurring cast, shared geography, series-wide history     |
+| **Global** | Everything you write      | Your standing world-building, house rules, universal lore |
+
+A story sees all three at once. If the same name exists at more than one level, all of them match, and the most specific one goes into the prompt first.
+
+## Extracting entries from your writing
+
+You don't have to type the bible up front. Three buttons run along the top of the Story Bible screen.
+
+### Extract from chapter
+
+Reads the chapter you're currently writing and proposes entries — characters, locations, items and events — with a description and aliases drawn from the text. It's told about your existing entries and asked to skip what's already covered.
+
+Tap **Run**, wait, then work through the proposals. Every one arrives ticked; untick anything you don't want, and tap **Add _n_ to bible**. They're saved as story-level entries.
+
+### Extract from pasted text
+
+The same thing over text you paste in — an old draft, a character sketch, notes from elsewhere. Useful for seeding a bible for work written before you got here.
+
+### Scan for updates
+
+Compares the current chapter against your existing entries and proposes revisions where the facts have moved on: someone's changed job, a location has burned down, a relationship has shifted.
+
+Each proposal shows the old description struck through, the replacement, and a one-line reason. **Apply** updates that entry; anything you leave alone stays as it was.
+
+> [!IMPORTANT]
+> Nothing the AI proposes is ever saved on its own. Extraction and update scans only run when you press the button, and they only write to the bible when you approve each entry. Your bible can't drift behind your back.
+
+## Tidying up
+
+The bin icon beside a story-level entry deletes it. Series and global entries aren't deletable from this screen — they belong to more than the story you're in, so you change them where they live.
+
+> [!NOTE]
+> During the v2 rebuild, adding and editing entries by hand — and managing series and global entries — still happens in the v1 workspace, linked at the bottom of the **More** screen. Extraction, matching and everything the AI sees are already v2.

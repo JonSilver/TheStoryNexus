@@ -62,18 +62,11 @@ export const useCreateLorebookMutation = () => {
 
     return useMutation({
         mutationFn: lorebookApi.create,
-        onSuccess: newEntry => {
-            // Invalidate based on entry level
-            if (newEntry.level === "global") queryClient.invalidateQueries({ queryKey: lorebookKeys.global() });
-            else if (newEntry.level === "series" && newEntry.scopeId)
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.series(newEntry.scopeId) });
-            else if (newEntry.level === "story" && newEntry.scopeId) {
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.story(newEntry.scopeId) });
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.hierarchical(newEntry.scopeId) });
-            }
-
-            // Also invalidate list query
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.lists() });
+        onSuccess: () => {
+            // Level-scoped invalidation missed every story's hierarchical view
+            // for series/global entries — they stayed invisible until an
+            // unrelated refetch. Invalidate all lorebook queries.
+            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
 
             toast.success("Lorebook entry created successfully");
         },
@@ -107,28 +100,11 @@ export const useDeleteLorebookMutation = () => {
 
     return useMutation({
         mutationFn: lorebookApi.delete,
-        onMutate: async id => {
-            // Get entry before deletion to know which queries to invalidate
-            const entry = queryClient.getQueryData<LorebookEntry>(lorebookKeys.detail(id));
-            return { entry };
-        },
-        onSuccess: (_, __, context) => {
-            const entry = context?.entry;
-
-            if (entry) 
-                // Invalidate level-based queries
-                if (entry.level === "global") queryClient.invalidateQueries({ queryKey: lorebookKeys.global() });
-                else if (entry.level === "series" && entry.scopeId)
-                    queryClient.invalidateQueries({ queryKey: lorebookKeys.series(entry.scopeId) });
-                else if (entry.level === "story" && entry.scopeId) {
-                    queryClient.invalidateQueries({ queryKey: lorebookKeys.story(entry.scopeId) });
-                    queryClient.invalidateQueries({ queryKey: lorebookKeys.hierarchical(entry.scopeId) });
-                }
-            
-
-            // Always invalidate lists as fallback
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.lists() });
-
+        onSuccess: () => {
+            // Scoped invalidation keyed off the detail cache never worked —
+            // nothing populates it, so deletions left ghosts on screen.
+            // Invalidate ALL lorebook queries: simple and actually works.
+            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
             toast.success("Lorebook entry deleted successfully");
         },
         onError: (error: Error) => {

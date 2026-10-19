@@ -1,5 +1,8 @@
+import { attempt } from "@jfdi/attempt";
 import type { InferSelectModel } from "drizzle-orm";
 import epubModule from "epub-gen-memory";
+import { parseSerialisedDocument } from "../../src/v2/export/blocks.js";
+import { blocksToHtml, escapeHtmlText } from "../../src/v2/export/toHtml.js";
 import type { schema } from "../db/client.js";
 
 const epub = epubModule.default || epubModule;
@@ -7,52 +10,41 @@ const epub = epubModule.default || epubModule;
 type Story = InferSelectModel<typeof schema.stories>;
 type Chapter = InferSelectModel<typeof schema.chapters>;
 
-/**
- * Converts Lexical JSON content to HTML
- */
-const convertLexicalToHtml = (jsonContent: string): string => {
-    const editorState = JSON.parse(jsonContent);
-    if (!editorState.root?.children) return "";
-
-    const processNode = (node: { type?: string; text?: string; tag?: string; children?: unknown[] }): string => {
-        if (node.type === "text") return node.text || "";
-        if (node.type === "linebreak") return "<br>";
-        if (node.type === "paragraph") {
-            const childrenHtml = node.children?.map(processNode).join("") || "";
-            return `<p>${childrenHtml}</p>`;
-        }
-        if (node.type === "heading" && node.tag) {
-            const childrenHtml = node.children?.map(processNode).join("") || "";
-            return `<${node.tag}>${childrenHtml}</${node.tag}>`;
-        }
-        if (node.children) return node.children.map(processNode).join("");
-        return "";
-    };
-
-    return editorState.root.children.map(processNode).join("");
+// v2 canonical converter: correct headings/lists/marks, fully escaped output.
+// epub-gen-memory downloads images to embed them and only accepts absolute
+// URLs, so relative asset paths are pointed back at this server.
+const convertLexicalToHtml = (jsonContent: string, chapterTitle: string): string => {
+    const [error, html] = attempt(() => blocksToHtml(parseSerialisedDocument(jsonContent)));
+    // Silently exporting an empty chapter would discard prose without a trace
+    if (error || html === undefined)
+        throw new Error(`Chapter "${chapterTitle}" could not be converted: ${error?.message}`);
+    const port = process.env.PORT || 3000;
+    return html.split('src="/api/assets/').join(`src="http://127.0.0.1:${port}/api/assets/`);
 };
 
 /**
  * Generates an EPUB file from story and chapters
  */
 export const generateEpub = async (story: Story, chapters: Chapter[]): Promise<Buffer> => {
-    const chapterHtmls = chapters.map(chapter => convertLexicalToHtml(chapter.content));
+    const chapterHtmls = chapters.map(chapter => convertLexicalToHtml(chapter.content, chapter.title));
 
     const epubChapters = [
         {
             title: "",
             content: `
                 <div class="cover-page">
-                    <h1 class="cover-title">${story.title}</h1>
-                    <p class="cover-author">by ${story.author}</p>
-                    ${story.synopsis ? `<div class="cover-synopsis"><p><strong>Synopsis</strong></p><p>${story.synopsis}</p></div>` : ""}
+                    <h1 class="cover-title">${escapeHtmlText(story.title)}</h1>
+                    <p class="cover-author">by ${escapeHtmlText(story.author)}</p>
+                    ${story.synopsis ? `<div class="cover-synopsis"><p><strong>Synopsis</strong></p><p>${escapeHtmlText(story.synopsis)}</p></div>` : ""}
                 </div>
             `,
             excludeFromToc: true,
             beforeToc: true
         },
+        // Position, not stored order: v2 orders from 0 and titles usually
+        // already say "Chapter N" — never emit "Chapter 0: Chapter 1"
         ...chapters.map((chapter, idx) => ({
-            title: `Chapter ${chapter.order}: ${chapter.title}`,
+            title: /^chapter\b/i.test(chapter.title.trim()) ? chapter.title : `Chapter ${idx + 1}: ${chapter.title}`,
             content: chapterHtmls[idx]
         }))
     ];

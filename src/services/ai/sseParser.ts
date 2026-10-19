@@ -1,0 +1,69 @@
+/**
+ * Incremental parser for the server's generation SSE stream
+ * (event: token | error | finish | aborted). Buffers across chunk
+ * boundaries, tolerates CRLF, and treats stream end without a terminal
+ * frame as an error — truncated output must never pass as success.
+ */
+export interface SSEHandlers {
+    onToken: (text: string) => void;
+    onComplete: () => void;
+    onError: (error: Error) => void;
+}
+
+export interface SSEParser {
+    push: (chunk: string) => void;
+    end: () => void;
+}
+
+export const createSSEParser = ({ onToken, onComplete, onError }: SSEHandlers): SSEParser => {
+    const state = { buffer: "", terminated: false };
+
+    const dispatchFrame = (frame: string): void => {
+        if (state.terminated) return;
+        const eventMatch = frame.match(/^event: (.+?)\r?$/m);
+        const dataMatch = frame.match(/^data: (.+?)\r?$/m);
+        if (!eventMatch) return;
+
+        const data = (() => {
+            if (!dataMatch) return {};
+            try {
+                return JSON.parse(dataMatch[1]);
+            } catch {
+                return null;
+            }
+        })();
+        if (data === null) return;
+
+        switch (eventMatch[1]) {
+            case "token":
+                if (data?.text) onToken(data.text);
+                return;
+            case "error":
+                state.terminated = true;
+                onError(new Error(data?.message || "Generation failed"));
+                return;
+            case "finish":
+            case "aborted":
+                state.terminated = true;
+                onComplete();
+                return;
+            default:
+                return;
+        }
+    };
+
+    return {
+        push: (chunk: string) => {
+            if (state.terminated) return;
+            state.buffer += chunk;
+            const frames = state.buffer.split(/\r?\n\r?\n/);
+            state.buffer = frames.pop() ?? "";
+            frames.forEach(dispatchFrame);
+        },
+        end: () => {
+            if (state.terminated) return;
+            if (state.buffer.trim()) dispatchFrame(state.buffer);
+            if (!state.terminated) onError(new Error("Generation stream ended unexpectedly"));
+        }
+    };
+};

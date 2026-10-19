@@ -69,11 +69,11 @@ docker run -d \
 
 SQLite database is stored in `./data/storynexus.db` (mounted as volume).
 
-To backup:
+To backup, use the in-app backup (More → Backup → Download backup, or `GET /api/admin/backup`) — it produces a single consistent snapshot via SQLite's online backup API.
 
-```bash
-cp data/storynexus.db data/storynexus.db.backup
-```
+**Do NOT** copy `storynexus.db` alone while the app is running: the database runs in WAL mode, so recent writing can live entirely in `storynexus.db-wal` and a bare file copy silently omits it. If you must copy files, stop the app first and copy `storynexus.db`, `storynexus.db-wal` and `storynexus.db-shm` together.
+
+Images are stored separately under `data/assets/` — include that directory in any backup.
 
 ## Migration from Tauri App
 
@@ -112,6 +112,28 @@ cp data/storynexus.db data/storynexus.db.backup
     ```
 
 Example: `http://192.168.1.100:3000`
+
+## Local AI Models (LM Studio / OpenAI-compatible)
+
+AI generation runs on the **server**, so the local model URL configured in Settings must be reachable from wherever the Story Nexus server runs — not from your phone or browser.
+
+- **Bare-metal server + LM Studio on the same machine**: the default `http://localhost:1234/v1` works.
+- **Docker on Linux, LM Studio on the host**: `localhost` inside the container is the container itself. Add a host gateway and use it:
+
+    ```yaml
+    # docker-compose.yml
+    services:
+        app:
+            extra_hosts:
+                - "host.docker.internal:host-gateway"
+    ```
+
+    Then set the local API URL to `http://host.docker.internal:1234/v1`.
+
+- **Docker Desktop (Mac/Windows)**: `http://host.docker.internal:1234/v1` works out of the box.
+- **Model server on another LAN machine**: use that machine's LAN IP, e.g. `http://192.168.1.50:1234/v1`, and make sure the model server listens on the network, not just loopback.
+
+Saving the URL in Settings tests the connection and fetches the model list; a failure there means the server can't reach the model host.
 
 ## Troubleshooting
 

@@ -1,14 +1,12 @@
-import { AlertTriangle, ArrowLeft, ChevronRight, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
-import { API_URLS } from "@/constants/urls";
 import { ProviderCard } from "@/features/ai/components/ProviderCard";
 import {
     useAISettingsQuery,
@@ -18,11 +16,9 @@ import {
     useUpdateDefaultModelMutation,
     useUpdateLocalApiUrlMutation
 } from "@/features/ai/hooks/useAISettingsQuery";
-import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
     const navigate = useNavigate();
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
     const [localApiUrlInput, setLocalApiUrlInput] = useState("");
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -34,17 +30,12 @@ export default function SettingsPage() {
     const refreshModelsMutation = useRefreshModelsMutation();
     const deleteDemoMutation = useDeleteDemoDataMutation();
 
-    const toggleSection = (section: string) => {
-        setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
-
-    if (isLoadingSettings) 
+    if (isLoadingSettings)
         return (
             <div className="p-8 flex justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
-    
 
     const allModels = settings?.availableModels || [];
     const openaiModels = allModels.filter(m => m.provider === "openai");
@@ -71,7 +62,7 @@ export default function SettingsPage() {
                         title="OpenAI Configuration"
                         keyLabel="OpenAI API Key"
                         keyPlaceholder="Enter your OpenAI API key"
-                        storedKey={settings?.openaiKey}
+                        hasStoredKey={Boolean(settings?.hasOpenaiKey)}
                         models={openaiModels}
                         defaultModel={settings?.defaultOpenAIModel}
                         isKeyMutating={updateKeyMutation.isPending}
@@ -88,7 +79,7 @@ export default function SettingsPage() {
                         title="OpenRouter Configuration"
                         keyLabel="OpenRouter API Key"
                         keyPlaceholder="Enter your OpenRouter API key"
-                        storedKey={settings?.openrouterKey}
+                        hasStoredKey={Boolean(settings?.hasOpenrouterKey)}
                         models={openrouterModels}
                         defaultModel={settings?.defaultOpenRouterModel}
                         isKeyMutating={updateKeyMutation.isPending}
@@ -105,7 +96,7 @@ export default function SettingsPage() {
                         title="Google Gemini Configuration"
                         keyLabel="Gemini API Key"
                         keyPlaceholder="Enter your Gemini API key"
-                        storedKey={settings?.geminiKey}
+                        hasStoredKey={Boolean(settings?.hasGeminiKey)}
                         models={geminiModels}
                         defaultModel={settings?.defaultGeminiModel}
                         isKeyMutating={updateKeyMutation.isPending}
@@ -137,51 +128,34 @@ export default function SettingsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Models from LM Studio</span>
-                            </div>
-
-                            <Collapsible
-                                open={openSections.localAdvanced}
-                                onOpenChange={() => toggleSection("localAdvanced")}
-                            >
-                                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                                    <ChevronRight
-                                        className={cn(
-                                            "h-4 w-4 transition-transform",
-                                            openSections.localAdvanced && "transform rotate-90"
-                                        )}
+                            <div className="grid gap-2">
+                                <Label htmlFor="local-api-url">Server URL (OpenAI-compatible)</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="local-api-url"
+                                        type="text"
+                                        placeholder="e.g. http://192.168.1.47:11434/v1 (Ollama) or http://localhost:1234/v1 (LM Studio)"
+                                        value={currentLocalUrl}
+                                        onChange={e => setLocalApiUrlInput(e.target.value)}
                                     />
-                                    Advanced Settings
-                                </CollapsibleTrigger>
-                                <CollapsibleContent className="mt-2 space-y-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="local-api-url">Local API URL</Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                id="local-api-url"
-                                                type="text"
-                                                placeholder={API_URLS.LOCAL_AI_DEFAULT}
-                                                value={currentLocalUrl}
-                                                onChange={e => setLocalApiUrlInput(e.target.value)}
-                                            />
-                                            <Button
-                                                onClick={() => updateLocalUrlMutation.mutate(currentLocalUrl)}
-                                                disabled={updateLocalUrlMutation.isPending || !currentLocalUrl.trim()}
-                                            >
-                                                {updateLocalUrlMutation.isPending ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    "Save"
-                                                )}
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            The URL of your local LLM server. Default is {API_URLS.LOCAL_AI_DEFAULT}
-                                        </p>
-                                    </div>
-                                </CollapsibleContent>
-                            </Collapsible>
+                                    <Button
+                                        onClick={() => updateLocalUrlMutation.mutate(currentLocalUrl)}
+                                        disabled={updateLocalUrlMutation.isPending || !currentLocalUrl.trim()}
+                                    >
+                                        {updateLocalUrlMutation.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            "Save & test"
+                                        )}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Ollama: <code>http://&lt;host&gt;:11434/v1</code> · LM Studio:{" "}
+                                    <code>http://&lt;host&gt;:1234/v1</code>. The URL must be reachable from the machine
+                                    running The Story Nexus <em>server</em> — not from this browser. Saving tests the
+                                    connection and loads the model list.
+                                </p>
+                            </div>
 
                             {localModels.length > 0 && (
                                 <div className="space-y-2">

@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Series table
 export const series = sqliteTable(
@@ -25,6 +25,7 @@ export const stories = sqliteTable(
         author: text("author").notNull(),
         language: text("language").notNull(),
         synopsis: text("synopsis"),
+        aiInstructions: text("aiInstructions"), // per-story voice/framing, injected into prose actions only
         seriesId: text("seriesId").references(() => series.id, { onDelete: "set null" }),
         createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
         isDemo: integer("isDemo", { mode: "boolean" })
@@ -48,6 +49,11 @@ export const chapters = sqliteTable(
         summary: text("summary"),
         order: integer("order").notNull(),
         content: text("content").notNull(),
+        revision: integer("revision").notNull().default(0),
+        updatedAt: integer("updatedAt", { mode: "timestamp" }),
+        summarySourceRevision: integer("summarySourceRevision"),
+        // Writer-authored summary: auto-summarise must never overwrite it
+        summaryLocked: integer("summaryLocked", { mode: "boolean" }).notNull().default(false),
         outline: text("outline", { mode: "json" }), // JSON: { content: string, lastUpdated: Date }
         wordCount: integer("wordCount").notNull().default(0),
         povCharacter: text("povCharacter"),
@@ -83,33 +89,6 @@ export const aiChats = sqliteTable(
     })
 );
 
-// Prompts table
-export const prompts = sqliteTable(
-    "prompts",
-    {
-        id: text("id").primaryKey(),
-        name: text("name").notNull(),
-        description: text("description"),
-        promptType: text("promptType").notNull(), // 'scene_beat' | 'gen_summary' | 'selection_specific' | 'continue_writing' | 'other' | 'brainstorm'
-        messages: text("messages", { mode: "json" }).notNull(), // JSON: PromptMessage[]
-        allowedModels: text("allowedModels", { mode: "json" }).notNull(), // JSON: AllowedModel[]
-        storyId: text("storyId").references(() => stories.id, { onDelete: "cascade" }),
-        isSystem: integer("isSystem", { mode: "boolean" }),
-        temperature: integer("temperature"),
-        maxTokens: integer("maxTokens"),
-        top_p: integer("top_p"),
-        top_k: integer("top_k"),
-        repetition_penalty: integer("repetition_penalty"),
-        min_p: integer("min_p"),
-        createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
-    },
-    table => ({
-        nameIdx: index("prompt_name_idx").on(table.name),
-        promptTypeIdx: index("prompt_type_idx").on(table.promptType),
-        storyIdIdx: index("prompt_story_id_idx").on(table.storyId)
-    })
-);
-
 // AI Settings table
 export const aiSettings = sqliteTable("aiSettings", {
     id: text("id").primaryKey(),
@@ -123,8 +102,36 @@ export const aiSettings = sqliteTable("aiSettings", {
     defaultOpenAIModel: text("defaultOpenAIModel"),
     defaultOpenRouterModel: text("defaultOpenRouterModel"),
     defaultGeminiModel: text("defaultGeminiModel"),
+    defaultProvider: text("defaultProvider"), // 'openai' | 'openrouter' | 'gemini' | 'local'
+    defaultModelId: text("defaultModelId"),
     createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
 });
+
+// Per-action prompt/param overrides (v2 action registry storage; storyId null = global)
+export const actionOverrides = sqliteTable(
+    "actionOverrides",
+    {
+        id: text("id").primaryKey(),
+        actionId: text("actionId").notNull(),
+        storyId: text("storyId").references(() => stories.id, { onDelete: "cascade" }),
+        template: text("template", { mode: "json" }), // JSON: PromptMessage[]
+        temperature: real("temperature"),
+        maxTokens: integer("maxTokens"),
+        topP: real("topP"),
+        frequencyPenalty: real("frequencyPenalty"),
+        presencePenalty: real("presencePenalty"),
+        modelRef: text("modelRef"), // "provider::modelId"
+        createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
+    },
+    table => ({
+        actionIdx: index("action_override_action_idx").on(table.actionId),
+        storyIdx: index("action_override_story_idx").on(table.storyId),
+        // One override per (action, story) scope; SQLite treats NULLs as
+        // distinct so global (storyId NULL) uniqueness is enforced by the
+        // upsert logic in routes/actions.ts
+        scopeUnique: uniqueIndex("action_override_scope_unique").on(table.actionId, table.storyId)
+    })
+);
 
 // Lorebook Entries table
 export const lorebookEntries = sqliteTable(
@@ -148,31 +155,6 @@ export const lorebookEntries = sqliteTable(
         levelScopeIdx: index("lorebook_level_scope_idx").on(table.level, table.scopeId),
         categoryIdx: index("lorebook_category_idx").on(table.category),
         nameIdx: index("lorebook_name_idx").on(table.name)
-    })
-);
-
-// Scene Beats table
-export const sceneBeats = sqliteTable(
-    "sceneBeats",
-    {
-        id: text("id").primaryKey(),
-        storyId: text("storyId")
-            .notNull()
-            .references(() => stories.id, { onDelete: "cascade" }),
-        chapterId: text("chapterId")
-            .notNull()
-            .references(() => chapters.id, { onDelete: "cascade" }),
-        command: text("command").notNull(),
-        povType: text("povType"), // 'First Person' | 'Third Person Limited' | 'Third Person Omniscient'
-        povCharacter: text("povCharacter"),
-        generatedContent: text("generatedContent"),
-        accepted: integer("accepted", { mode: "boolean" }),
-        metadata: text("metadata", { mode: "json" }), // JSON: metadata object
-        createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
-    },
-    table => ({
-        storyIdIdx: index("scenebeat_story_id_idx").on(table.storyId),
-        chapterIdIdx: index("scenebeat_chapter_id_idx").on(table.chapterId)
     })
 );
 

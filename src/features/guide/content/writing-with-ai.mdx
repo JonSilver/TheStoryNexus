@@ -1,0 +1,76 @@
+# Writing with AI
+
+Every AI action works the same way: it streams into a sheet, you read it, and **nothing touches your chapter until you accept it**. There are no prompts to pick, no models to choose and no context toggles to get wrong — the app assembles the context for you.
+
+## Continue writing
+
+Tap the **wand** in the toolbar. The app sends the chapter so far, plus the relevant story bible entries and earlier chapter summaries, and streams the next stretch of prose into a sheet.
+
+- **Stop** ends the stream early and keeps whatever arrived.
+- **Insert** adds the text to the end of the chapter as new paragraphs, in one undo step.
+- **Discard** throws it away.
+
+## Rework, Expand, Shorten
+
+Select some text and three more buttons appear in the toolbar:
+
+| Action      | What it does                                   |
+| ----------- | ---------------------------------------------- |
+| **Rework**  | Rephrases, keeping the meaning, style and tone |
+| **Expand**  | Adds detail, atmosphere and texture            |
+| **Shorten** | Tightens it without losing anything essential  |
+
+Each one streams a rewrite into the sheet. **Replace selection** swaps your selection for it; **Discard** leaves the chapter untouched. Your original is never overwritten in place, and the editor is held read-only while the sheet is open so the selection can't drift out from under the result.
+
+> [!TIP]
+> These actions see the prose leading up to your selection as well as the selection itself, so a reworked line still fits what came before it.
+
+## Summarise the chapter
+
+The **document icon** in the toolbar summarises the chapter you're in — a few hundred words, third person, plot and character beats only. **Save summary** stores it against the chapter.
+
+Summaries earn their keep later: when you write **chapter five**, the summaries of chapters one to four go into the context, nearest first, so the AI knows what's already happened without you pasting anything.
+
+> [!NOTE]
+> The app tracks whether a summary still matches the chapter it came from. If you've edited the chapter since, the summary is still used — continuity beats a gap — but it's passed to the AI flagged as _may be outdated_. Re-summarise when a chapter changes substantially.
+
+## Scene beats
+
+A scene beat is a note to the AI, living inline in your chapter: _what should happen here_. Insert one three ways:
+
+1. Tap the **sparkles** button in the toolbar.
+2. Type **`/`** on its own at the start of an empty line, then tap **Scene Beat** in the bar that appears.
+3. Press **Alt+S** (**Option+S** on a Mac).
+
+Then:
+
+- **Type the beat** — "She finally admits she recognised him at the funeral; he doesn't take it well."
+- **Generate** streams prose into the beat. **Stop** ends it early.
+- **Accept** drops the prose into the chapter as ordinary paragraphs just after the beat — one undo reverts the whole thing. **Reject** clears it and leaves no trace.
+- After accepting, the button becomes **Regenerate**, so a beat stays as a reusable instruction.
+- The **chevron** collapses a beat out of the way; the **bin** deletes it (and stops any generation in progress).
+
+Scene beats are scaffolding, not manuscript: they never appear in an export and never count towards your word count.
+
+### See exactly what's being sent
+
+The **eye** icon on a scene beat opens **What gets sent** — the resolved messages, verbatim, exactly as the model will receive them, along with the model being used, the approximate prompt token count, and the temperature and max-tokens settings. Nothing is generated; it's a look, not a run.
+
+Use it when a beat produces something odd. Usually the answer is visible right there: a bible entry that didn't match, or a summary that's out of date.
+
+## Your story's voice
+
+**More → Story voice & framing** is a free-text box, up to 2,000 characters, attached to the current story:
+
+> Past tense, third person limited. Dry wit, short sentences. Never name the narrator.
+
+Every prose action follows it — Continue, Rework, Expand, Shorten, scene beats and Brainstorm. It is deliberately kept out of the mechanical actions: summarising, bible extraction and update proposals don't see it, so your style rules can't warp the app's bookkeeping.
+
+> [!TIP]
+> **Facts belong in the bible; voice belongs here.** If you find yourself writing "Miriam is a retired diver" into the voice box, that's a bible entry.
+
+## Brainstorm
+
+**More → Brainstorm** is a chat that already knows your story. Tap **+** for a new chat, then talk to it — the matched bible entries and your story voice ride along with every message, so you don't have to explain the setting each time.
+
+Enter sends, Shift+Enter starts a new line, and the square button stops a reply mid-flow. Chats are saved per story, so you can come back to a thread; the bin removes one.

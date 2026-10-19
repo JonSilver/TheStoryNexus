@@ -15,6 +15,15 @@ import type {
 } from "@/types/story";
 import { fetchJSON, uploadFile } from "./apiFactory";
 
+export interface StoryImportResult {
+    success: boolean;
+    storyId: string;
+    title: string;
+    imported: Record<string, number>;
+    /** Image files from the backup that could not be restored. */
+    assetsFailed: string[];
+}
+
 // Stories API
 export const storiesApi = {
     getAll: () => fetchJSON<Story[]>("/stories"),
@@ -25,7 +34,7 @@ export const storiesApi = {
         fetchJSON<Story>(`/stories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/stories/${id}`, { method: "DELETE" }),
     exportStory: (id: string) => fetchJSON<StoryExport>(`/stories/${id}/export`),
-    importStory: (file: File) => uploadFile<Story>("/stories/import", file)
+    importStory: (file: File) => uploadFile<StoryImportResult>("/stories/import", file)
 };
 
 // Series API
@@ -94,7 +103,12 @@ export const promptsApi = {
 export const aiApi = {
     getSettings: () => fetchJSON<AISettings>("/ai/settings"),
     updateSettings: (id: string, data: Partial<AISettings>) =>
-        fetchJSON<AISettings>(`/ai/settings/${id}`, { method: "PUT", body: JSON.stringify(data) })
+        fetchJSON<AISettings>(`/ai/settings/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    setKey: (provider: string, key: string) =>
+        fetchJSON<AISettings>(`/ai/keys/${provider}`, { method: "PUT", body: JSON.stringify({ key }) }),
+    setLocalUrl: (url: string) =>
+        fetchJSON<AISettings>("/ai/local-url", { method: "PUT", body: JSON.stringify({ url }) }),
+    refreshModels: (provider: string) => fetchJSON<AISettings>(`/ai/models/refresh/${provider}`, { method: "POST" })
 };
 
 // Brainstorm (AI Chats) API

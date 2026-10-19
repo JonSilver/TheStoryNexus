@@ -7,13 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GuideProvider, mdxComponents } from "../components/mdx";
 import AdvancedGuide from "../content/advanced.mdx";
 import BasicsGuide from "../content/basics.mdx";
-import BrainstormGuide from "../content/brainstorm.mdx";
-import LorebookGuide from "../content/lorebook.mdx";
-import PromptGuide from "../content/prompts.mdx";
+import BibleGuide from "../content/bible.mdx";
+import WritingWithAiGuide from "../content/writing-with-ai.mdx";
+
+const SECTIONS = [
+    { value: "basics", label: "Getting Started", Content: BasicsGuide },
+    { value: "writing-with-ai", label: "Writing with AI", Content: WritingWithAiGuide },
+    { value: "bible", label: "Story Bible", Content: BibleGuide },
+    { value: "advanced", label: "Advanced", Content: AdvancedGuide }
+] as const;
 
 export default function GuidePage() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("basics");
+    const [activeTab, setActiveTab] = useState<string>(SECTIONS[0].value);
 
     return (
         <div className="container mx-auto py-8 max-w-5xl">
@@ -29,48 +35,26 @@ export default function GuidePage() {
                 <CardHeader>
                     <CardTitle>Welcome to The Story Nexus</CardTitle>
                     <CardDescription>
-                        Your comprehensive guide to using this AI-powered story writing application
+                        Writing in front, machinery behind — how to get the most out of it
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="basics" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid grid-cols-5 mb-8">
-                            <TabsTrigger value="basics">Basics Guide</TabsTrigger>
-                            <TabsTrigger value="advanced">Advanced Guide</TabsTrigger>
-                            <TabsTrigger value="lorebook">Lorebook Guide</TabsTrigger>
-                            <TabsTrigger value="prompts">Prompt Guide</TabsTrigger>
-                            <TabsTrigger value="brainstorm">Brainstorm Guide</TabsTrigger>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid grid-cols-2 sm:grid-cols-4 mb-8 h-auto">
+                            {SECTIONS.map(({ value, label }) => (
+                                <TabsTrigger key={value} value={value}>
+                                    {label}
+                                </TabsTrigger>
+                            ))}
                         </TabsList>
 
-                        <TabsContent value="basics" className="space-y-4">
-                            <GuideProvider>
-                                <BasicsGuide components={mdxComponents} />
-                            </GuideProvider>
-                        </TabsContent>
-
-                        <TabsContent value="advanced" className="space-y-4">
-                            <GuideProvider>
-                                <AdvancedGuide components={mdxComponents} />
-                            </GuideProvider>
-                        </TabsContent>
-
-                        <TabsContent value="lorebook" className="space-y-4">
-                            <GuideProvider>
-                                <LorebookGuide components={mdxComponents} />
-                            </GuideProvider>
-                        </TabsContent>
-
-                        <TabsContent value="prompts" className="space-y-4">
-                            <GuideProvider>
-                                <PromptGuide components={mdxComponents} />
-                            </GuideProvider>
-                        </TabsContent>
-
-                        <TabsContent value="brainstorm" className="space-y-4">
-                            <GuideProvider>
-                                <BrainstormGuide components={mdxComponents} />
-                            </GuideProvider>
-                        </TabsContent>
+                        {SECTIONS.map(({ value, Content }) => (
+                            <TabsContent key={value} value={value} className="space-y-4">
+                                <GuideProvider>
+                                    <Content components={mdxComponents} />
+                                </GuideProvider>
+                            </TabsContent>
+                        ))}
                     </Tabs>
                 </CardContent>
             </Card>

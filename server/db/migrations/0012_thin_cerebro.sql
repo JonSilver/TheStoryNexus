@@ -1,0 +1,1 @@
+ALTER TABLE `chapters` ADD `summaryLocked` integer DEFAULT false NOT NULL;

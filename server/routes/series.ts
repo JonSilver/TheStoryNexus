@@ -1,18 +1,14 @@
 import { attemptPromise } from "@jfdi/attempt";
-import type { InferSelectModel } from "drizzle-orm";
 import { and, eq } from "drizzle-orm";
 import { type Request, type Response, Router } from "express";
 import multer from "multer";
-import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
-import { aiChats, chapters, lorebookEntries, sceneBeats, series, stories } from "../db/schema.js";
+import { lorebookEntries, series, stories } from "../db/schema.js";
+import { writeStoryAssets } from "../services/assets/storage.js";
+import { commitSeriesImport, exportSeriesBackup } from "../services/stories/backup.js";
+import { type SeriesBackup, buildSeriesImport } from "../services/stories/portable.js";
 
-type ImportedChapter = InferSelectModel<typeof chapters>;
-type ImportedLorebookEntry = InferSelectModel<typeof lorebookEntries>;
-type ImportedSceneBeat = InferSelectModel<typeof sceneBeats>;
-type ImportedAiChat = InferSelectModel<typeof aiChats>;
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 const seriesRouter = Router();
 
@@ -51,11 +47,12 @@ seriesRouter.post(
     "/",
     asyncHandler(async (req, res) => {
         const newSeries = {
-            id: nanoid(),
+            id: crypto.randomUUID(),
             name: req.body.name,
             description: req.body.description,
             createdAt: new Date(),
-            isDemo: req.body.isDemo || false
+            // Internal flag — only demo seeding sets it, never a request body
+            isDemo: false
         };
         await db.insert(series).values(newSeries);
         res.status(201).json(newSeries);
@@ -127,68 +124,25 @@ seriesRouter.get(
     })
 );
 
-// GET /series/:id/export - Export series with all stories and lorebook
+// GET /series/:id/export - Export series with its bible and complete member-story backups
 seriesRouter.get(
     "/:id/export",
     asyncHandler(async (req, res) => {
-        const seriesId = req.params.id;
-
-        const [seriesResult] = await db.select().from(series).where(eq(series.id, seriesId));
-        if (!seriesResult) {
+        const backup = await exportSeriesBackup(req.params.id);
+        if (!backup) {
             res.status(404).json({ error: "Series not found" });
             return;
         }
-
-        // Fetch series-level lorebook entries
-        const seriesLorebook = await db
-            .select()
-            .from(lorebookEntries)
-            .where(and(eq(lorebookEntries.level, "series"), eq(lorebookEntries.scopeId, seriesId)));
-
-        // Fetch all stories in series
-        const seriesStories = await db.select().from(stories).where(eq(stories.seriesId, seriesId));
-
-        // Export each story with full data
-        const storyExports = await Promise.all(
-            seriesStories.map(async story => {
-                const [storyChapters, storyLorebook, storySceneBeats, storyAiChats] = await Promise.all([
-                    db.select().from(chapters).where(eq(chapters.storyId, story.id)),
-                    db
-                        .select()
-                        .from(lorebookEntries)
-                        .where(and(eq(lorebookEntries.level, "story"), eq(lorebookEntries.scopeId, story.id))),
-                    db.select().from(sceneBeats).where(eq(sceneBeats.storyId, story.id)),
-                    db.select().from(aiChats).where(eq(aiChats.storyId, story.id))
-                ]);
-
-                return {
-                    version: "1.0",
-                    type: "story",
-                    exportDate: new Date().toISOString(),
-                    story,
-                    series: seriesResult,
-                    chapters: storyChapters,
-                    lorebookEntries: storyLorebook,
-                    sceneBeats: storySceneBeats,
-                    aiChats: storyAiChats
-                };
-            })
+        // Browsers hitting this via <a download> need a filename
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${backup.series.name.replace(/[^\w-]+/g, "-")}.series.json"`
         );
-
-        const exportData = {
-            version: "1.0",
-            type: "series",
-            exportDate: new Date().toISOString(),
-            series: seriesResult,
-            lorebookEntries: seriesLorebook,
-            stories: storyExports
-        };
-
-        res.json(exportData);
+        res.json(backup);
     })
 );
 
-// POST /series/import - Import series with all stories
+// POST /series/import - Import series with all stories, atomically
 seriesRouter.post(
     "/import",
     upload.single("file"),
@@ -198,128 +152,37 @@ seriesRouter.post(
             return;
         }
 
-        const fileBuffer = req.file.buffer;
         const [parseError, seriesData] = await attemptPromise(() =>
-            Promise.resolve(JSON.parse(fileBuffer.toString("utf-8")))
+            Promise.resolve(JSON.parse(req.file!.buffer.toString("utf-8")))
         );
-
         if (parseError) {
             res.status(400).json({ error: "Invalid JSON file", details: parseError.message });
             return;
         }
-
-        if (!seriesData.type || seriesData.type !== "series" || !seriesData.series) {
+        if (seriesData?.type !== "series" || !seriesData.series || typeof seriesData.series.name !== "string") {
             res.status(400).json({ error: "Invalid series data format" });
             return;
         }
 
-        const newSeriesId = nanoid();
+        const newSeriesId = crypto.randomUUID();
+        const rows = buildSeriesImport(seriesData as SeriesBackup, newSeriesId, () => crypto.randomUUID(), new Date());
 
-        // Create new series
-        const newSeries = {
-            ...seriesData.series,
-            id: newSeriesId,
-            name: `${seriesData.series.name} (Imported)`,
-            createdAt: new Date()
-        };
-        await db.insert(series).values(newSeries);
-
-        // Import series-level lorebook entries
-        if (seriesData.lorebookEntries?.length) {
-            const newEntries = seriesData.lorebookEntries
-                .map((entry: ImportedLorebookEntry) => {
-                    // Validate entry
-                    if (entry.level && entry.level !== "series") {
-                        console.warn(`Skipping non-series entry ${entry.name}`);
-                        return null;
-                    }
-
-                    return {
-                        ...entry,
-                        id: nanoid(),
-                        level: "series",
-                        scopeId: newSeriesId,
-                        storyId: "", // Temporary for Phase 1
-                        createdAt: new Date()
-                    };
-                })
-                .filter((entry: ImportedLorebookEntry): entry is NonNullable<typeof entry> => entry !== null);
-
-            if (newEntries.length > 0) await db.insert(lorebookEntries).values(newEntries);
+        const [error] = await attemptPromise(async () => commitSeriesImport(rows));
+        if (error) {
+            console.error("Error importing series:", error);
+            res.status(500).json({ error: "Failed to import series — nothing was created", details: error.message });
+            return;
         }
 
-        // Import stories
-        const importedStoryIds = [];
-        for (const storyExport of seriesData.stories || []) {
-            const newStoryId = nanoid();
-            importedStoryIds.push(newStoryId);
-
-            const newStory = {
-                ...storyExport.story,
-                id: newStoryId,
-                seriesId: newSeriesId,
-                createdAt: new Date()
-            };
-            await db.insert(stories).values(newStory);
-
-            // Import chapters
-            if (storyExport.chapters?.length) {
-                const newChapters = storyExport.chapters.map((chapter: ImportedChapter) => ({
-                    ...chapter,
-                    id: nanoid(),
-                    storyId: newStoryId,
-                    createdAt: new Date()
-                }));
-                await db.insert(chapters).values(newChapters);
-            }
-
-            // Import story-level lorebook entries
-            if (storyExport.lorebookEntries?.length) {
-                const newEntries = storyExport.lorebookEntries
-                    .map((entry: ImportedLorebookEntry) => ({
-                        ...entry,
-                        id: nanoid(),
-                        level: "story",
-                        scopeId: newStoryId,
-                        storyId: newStoryId, // Temporary for Phase 1
-                        createdAt: new Date()
-                    }))
-                    .filter((entry: ImportedLorebookEntry): entry is NonNullable<typeof entry> => entry !== null);
-
-                if (newEntries.length > 0) await db.insert(lorebookEntries).values(newEntries);
-            }
-
-            // Import scene beats
-            if (storyExport.sceneBeats?.length) {
-                const newSceneBeats = storyExport.sceneBeats.map((sceneBeat: ImportedSceneBeat) => ({
-                    ...sceneBeat,
-                    id: nanoid(),
-                    storyId: newStoryId,
-                    createdAt: new Date()
-                }));
-                await db.insert(sceneBeats).values(newSceneBeats);
-            }
-
-            // Import AI chats
-            if (storyExport.aiChats?.length) {
-                const newChats = storyExport.aiChats.map((chat: ImportedAiChat) => ({
-                    ...chat,
-                    id: nanoid(),
-                    storyId: newStoryId,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                }));
-                await db.insert(aiChats).values(newChats);
-            }
-        }
+        const assetsFailed: string[] = [];
+        for (const story of rows.stories)
+            assetsFailed.push(...(await writeStoryAssets(story.rows.story.id, story.assets)));
 
         res.json({
             success: true,
             seriesId: newSeriesId,
-            imported: {
-                stories: importedStoryIds.length,
-                lorebookEntries: seriesData.lorebookEntries?.length || 0
-            }
+            imported: { stories: rows.stories.length, lorebookEntries: rows.lorebookEntries.length },
+            assetsFailed
         });
     })
 );

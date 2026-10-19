@@ -14,6 +14,8 @@ sqlite.pragma("journal_mode = WAL");
 
 // Create Drizzle instance
 export const db = drizzle(sqlite, { schema });
+// Raw handle exposed for the online-backup endpoint only
+export const rawSqlite = sqlite;
 
 // Export schema for use in queries
 export { schema };

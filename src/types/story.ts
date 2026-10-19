@@ -11,6 +11,7 @@ export interface Story extends BaseEntity {
     author: string;
     language: string;
     synopsis?: string;
+    aiInstructions?: string; // per-story voice/framing, injected into prose actions only
     seriesId?: string;
 }
 
@@ -27,6 +28,11 @@ export interface Chapter extends BaseEntity {
     summary?: string;
     order: number;
     content: string;
+    revision?: number; // server-managed; always present on reads, omitted from creates
+    updatedAt?: Date;
+    summarySourceRevision?: number;
+    /** Writer-authored summary — auto-summarise leaves it alone. */
+    summaryLocked?: boolean;
     outline?: ChapterOutline;
     wordCount: number;
     povCharacter?: string;
@@ -123,9 +129,9 @@ export interface AIModel {
 }
 
 export interface AISettings extends BaseEntity {
-    openaiKey?: string;
-    openrouterKey?: string;
-    geminiKey?: string;
+    hasOpenaiKey?: boolean;
+    hasOpenrouterKey?: boolean;
+    hasGeminiKey?: boolean;
     availableModels: AIModel[];
     lastModelsFetch?: Date;
     localApiUrl?: string;
@@ -133,6 +139,8 @@ export interface AISettings extends BaseEntity {
     defaultOpenAIModel?: string;
     defaultOpenRouterModel?: string;
     defaultGeminiModel?: string;
+    defaultProvider?: AIProvider;
+    defaultModelId?: string;
 }
 
 // Note types
