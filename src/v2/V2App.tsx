@@ -1,6 +1,6 @@
 import { BookOpen, Lightbulb, PenLine, Settings } from "lucide-react";
 import { lazy } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActionsScreen } from "./screens/ActionsScreen";
 import { AppSettingsScreen } from "./screens/AppSettingsScreen";
 import { BibleScreen } from "./screens/BibleScreen";
@@ -54,13 +54,29 @@ const SUB_SCREENS = {
 // Former full-page routes hosted inside the shell — nothing the app links
 // to may strand the writer on a navless page
 const EMBEDS = {
-    providers: { title: "AI providers & models", parent: "settings", Page: SettingsPage },
-    serieslist: { title: "Series", parent: "settings", Page: SeriesListPage },
-    guidepage: { title: "Guide", parent: "settings", Page: GuidePage }
+    providers: { title: "AI providers & models", parent: "settings", render: () => <SettingsPage /> },
+    serieslist: {
+        title: "Series",
+        parent: "settings",
+        render: (goTo: (tool: V2Tool) => void) => <SeriesListPage onOpenSeries={() => goTo("library")} />
+    },
+    guidepage: { title: "Guide", parent: "settings", render: () => <GuidePage /> }
 } as const;
 
+const ALL_TOOLS = new Set<string>([...TOOLS.map(t => t.id), ...Object.keys(SUB_SCREENS), ...Object.keys(EMBEDS)]);
+
+/** Old standalone URLs redirect here with ?tool=… so they land on the right screen, inside the app. */
+const initialTool = (): V2Tool => {
+    const requested = new URLSearchParams(window.location.search).get("tool");
+    return requested && ALL_TOOLS.has(requested) ? (requested as V2Tool) : "write";
+};
+
 export default function V2App() {
-    const [tool, setTool] = useState<V2Tool>("write");
+    const [tool, setTool] = useState<V2Tool>(initialTool);
+    // The ?tool= handoff is one-shot: drop it so a refresh doesn't re-open that screen
+    useEffect(() => {
+        if (window.location.search) window.history.replaceState(null, "", "/");
+    }, []);
     const sub = tool in SUB_SCREENS ? SUB_SCREENS[tool as keyof typeof SUB_SCREENS] : null;
     const embed = tool in EMBEDS ? EMBEDS[tool as keyof typeof EMBEDS] : null;
     const ActiveScreen = sub ? sub.Screen : (TOOLS.find(t => t.id === tool) ?? TOOLS[0]).Screen;
@@ -71,7 +87,7 @@ export default function V2App() {
             <main className="min-h-0 flex-1">
                 {embed ? (
                     <EmbeddedPage title={embed.title} onBack={() => setTool(embed.parent)}>
-                        <embed.Page />
+                        {embed.render(setTool)}
                     </EmbeddedPage>
                 ) : (
                     <ActiveScreen goTo={setTool} />

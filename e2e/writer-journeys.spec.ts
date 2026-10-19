@@ -233,6 +233,13 @@ test("series: join from story details, grouped in Stories, bible inherits", asyn
     await page.getByRole("button", { name: "Story Bible" }).click();
     await expect(page.getByText("The Dashwood family seat in Sussex.")).toBeVisible();
     await expect(page.getByText("(series)")).toBeVisible();
+
+    // A series card in Settings → Series opens the library, inside the app
+    await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("button", { name: "Series", exact: true }).click();
+    await page.getByText("The Dashwood Saga", { exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
 });
 
 test("bible entries: manual create and edit, no AI required", async ({ page }) => {
@@ -448,4 +455,32 @@ test("bible merge: two duplicates become one reviewed entry", async ({ page }) =
     await expect(page.getByRole("textbox", { name: "Merged description" })).toHaveCount(0);
     await expect(page.getByText("plays the pianoforte badly", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Edit Brandon", exact: true })).toHaveCount(0);
+});
+
+test("settings screens stay inside the app: one back button, never out of it", async ({ page }) => {
+    await page.goto("/v2");
+    await page.getByRole("button", { name: "Settings" }).click();
+
+    for (const [row, title] of [
+        ["AI providers & models", "AI providers & models"],
+        ["Guide", "Guide"],
+        ["Series", "Series"]
+    ] as const) {
+        await page.getByRole("button", { name: row, exact: true }).click();
+        await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+        // Exactly one back control — the app's own — and it returns to Settings
+        await expect(page.getByRole("button", { name: "Back" })).toHaveCount(1);
+        await page.getByRole("button", { name: "Back" }).click();
+        await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+        expect(new URL(page.url()).pathname).toBe("/");
+    }
+});
+
+test("old standalone page URLs open the right screen inside the app", async ({ page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { name: "AI providers & models" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
+    await page.goto("/guide");
+    await expect(page.getByRole("heading", { name: "Guide", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
 });

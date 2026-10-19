@@ -2,7 +2,6 @@ import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,8 +12,7 @@ import { useDeleteSeriesMutation, useSeriesQuery } from "../hooks/useSeriesQuery
 
 const seriesImportService = new SeriesImportService();
 
-const SeriesListPage = () => {
-    const navigate = useNavigate();
+const SeriesListPage = ({ onOpenSeries }: { onOpenSeries?: () => void }) => {
     const queryClient = useQueryClient();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -48,9 +46,8 @@ const SeriesListPage = () => {
     if (isLoading) return <div>Loading series...</div>;
 
     return (
-        <div className="container mx-auto p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Series</h1>
+        <div className="container mx-auto p-4 sm:p-6">
+            <div className="mb-6 flex justify-end">
                 <div className="flex gap-2">
                     <label htmlFor="import-series" aria-label="Import series">
                         <Button variant="outline" asChild>
@@ -74,7 +71,7 @@ const SeriesListPage = () => {
                         key={series.id}
                         series={series}
                         onDelete={() => handleDelete(series.id)}
-                        onClick={() => navigate("/")}
+                        onClick={() => onOpenSeries?.()}
                     />
                 ))}
             </div>

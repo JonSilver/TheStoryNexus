@@ -1,6 +1,5 @@
-import { AlertTriangle, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,6 @@ import {
 } from "@/features/ai/hooks/useAISettingsQuery";
 
 export default function SettingsPage() {
-    const navigate = useNavigate();
     const [localApiUrlInput, setLocalApiUrlInput] = useState("");
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -46,16 +44,8 @@ export default function SettingsPage() {
     const currentLocalUrl = localApiUrlInput || settings?.localApiUrl || "";
 
     return (
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
             <div className="max-w-2xl mx-auto">
-                <div className="flex items-center mb-8">
-                    <Button variant="ghost" className="gap-2" onClick={() => navigate(-1)}>
-                        <ArrowLeft className="h-4 w-4" />
-                        Back
-                    </Button>
-                    <h1 className="text-3xl font-bold ml-4">Settings</h1>
-                </div>
-
                 <div className="space-y-6">
                     <ProviderCard
                         provider="openai"

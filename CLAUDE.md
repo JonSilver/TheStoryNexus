@@ -26,7 +26,7 @@ Each rule below exists because its absence shipped a real defect. Do not relax t
 8. **Multiplier check.** When a change multiplies entities — import creating fifty chapters — sweep every per-entity flow for a batch path before shipping. (Whole-story extraction was only built after the user hit per-chapter tedium.)
 9. **Docs are change surface.** Grep README/docs/guide for claims touched by any change; a stale claim is a defect and a dangerous one (backup instructions) is a serious defect. The in-app guide counts.
 10. **Curate, don't just implement.** After each feature, ask what journey it completes and what adjacent dead-end it exposes; propose the follow-on rather than waiting for the user to trip over it. Keep the task list honest about product gaps, not just build steps.
-11. **Problem reports are UX reports first.** When the writer says something went wrong, the first question is *what did the app show them, and was that good enough?*, not *whose fault is it?* Something outside the app misbehaving (model server, network, provider) explains the cause; it never excuses a silent, slow or vague experience. Lead the answer with the app's failure and the fix; put the environment's part second, as context. (A model-server swap produced a two-minute silent spinner, and the first response was a diagnosis of the server.)
+11. **Problem reports are UX reports first.** When the writer says something went wrong, the first question is _what did the app show them, and was that good enough?_, not _whose fault is it?_ Something outside the app misbehaving (model server, network, provider) explains the cause; it never excuses a silent, slow or vague experience. Lead the answer with the app's failure and the fix; put the environment's part second, as context. (A model-server swap produced a two-minute silent spinner, and the first response was a diagnosis of the server.)
 
 ## Project Overview
 
@@ -71,17 +71,17 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 
 ```
 /            — the app (V2App): stateful shell, tools switched in-component
-/series      — series listing
-/stories/:storyId/read — reader (renders via the v2 export pipeline, no Lexical)
-/settings    — AI provider configuration
-/guide       — user guide
+/settings, /series, /guide, /stories/:id/read
+             — redirect to /?tool=… and open that screen inside the app
 (everything else redirects to /)
 ```
+
+Every screen the app links to renders inside the shell (bottom nav present). Full pages such as AI settings, Series and the Guide are hosted via `EmbeddedPage`, which supplies the only back control — embedded pages must never add their own navigation.
 
 ### Frontend layout
 
 - `src/v2/` — the app. `V2App.tsx` shell; `screens/` (Write, Chapters, Stories, Bible, Brainstorm, Notes, Actions, More, Import, Export); `editor/` (Lexical composition, nodes, plugins, saver, auto-summarise); `ai/` (streamAction SSE client, useActionGeneration, ActionSheet, editor actions, ContextInspector); `bible/` (extraction flows, name nudges); `export/` (document JSON → blocks → md/html/txt renderers + undecided-draft detection); `drawer/` (action override editor); `state/useV2Store.ts` (localStorage UI state).
-- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Legacy v1 feature components are gone; the survivors outside hooks are the routed pages (series list, settings, guide, reader).
+- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Legacy v1 feature components are gone; the survivors outside hooks are the pages the shell embeds (AI settings, series list, guide).
 - `src/services/api/` — fetch client; `src/services/ai/AIService.ts` — settings facade ONLY (generation goes through v2 streamAction).
 
 ### Server layout

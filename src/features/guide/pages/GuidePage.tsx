@@ -1,7 +1,4 @@
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GuideProvider, mdxComponents } from "../components/mdx";
@@ -18,19 +15,10 @@ const SECTIONS = [
 ] as const;
 
 export default function GuidePage() {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<string>(SECTIONS[0].value);
 
     return (
-        <div className="container mx-auto py-8 max-w-5xl">
-            <div className="flex items-center mb-8">
-                <Button variant="ghost" className="gap-2" onClick={() => navigate(-1)}>
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                </Button>
-                <h1 className="text-3xl font-bold ml-4">The Story Nexus Guide</h1>
-            </div>
-
+        <div className="container mx-auto max-w-5xl px-4 py-4 sm:py-8">
             <Card>
                 <CardHeader>
                     <CardTitle>Welcome to The Story Nexus</CardTitle>
