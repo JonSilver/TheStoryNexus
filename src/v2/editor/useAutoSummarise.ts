@@ -9,57 +9,80 @@ import { useV2Store } from "../state/useV2Store";
 
 const IDLE_MS = 90_000;
 const MIN_WORDS = 150;
-const MAX_CONSECUTIVE_FAILURES = 3;
+const HOURLY_LIMIT = 6;
+const HOUR_MS = 60 * 60_000;
+const BUDGET_KEY = "storynexus-auto-summary-runs";
+
+// Revisions already tried, per chapter — across editor remounts, so leaving
+// and reopening a chapter never buys another attempt at the same revision
+const attempted = new Map<string, number>();
+
+const recentRuns = (now: number): number[] => {
+    try {
+        const stored = JSON.parse(localStorage.getItem(BUDGET_KEY) ?? "[]");
+        return Array.isArray(stored)
+            ? stored.filter((t): t is number => typeof t === "number" && now - t < HOUR_MS)
+            : [];
+    } catch {
+        return [];
+    }
+};
+
+const takeFromBudget = (): boolean => {
+    const now = Date.now();
+    const runs = recentRuns(now);
+    if (runs.length >= HOURLY_LIMIT) return false;
+    try {
+        localStorage.setItem(BUDGET_KEY, JSON.stringify([...runs, now]));
+    } catch {
+        // Unwritable storage would make the cap unenforceable — refuse rather than run unmetered
+        return false;
+    }
+    return true;
+};
 
 /**
- * Background summary freshness (writing-process review W4): when saves have
- * settled and the editor has been idle, a stale summary regenerates silently
- * via the summarise action (which respects its per-action model override).
- * The freshness fields (summarySourceRevision vs revision) both trigger the
- * run and prevent loops. Failures are surfaced (persistently, once): a
- * broken background job the writer can't see is a silent data-quality bug.
+ * Background summary freshness, under a strict cost limit. A summary is
+ * generated only when ALL hold: the writer made a significant prose change
+ * (a new revision — see server/lib/proseChange.ts) in THIS sitting, the editor
+ * has then been idle, the summary is stale and not writer-locked, this
+ * revision has never been tried, and the hourly budget has room. Opening or
+ * reading a chapter never costs a generation; a failure is reported once and
+ * not retried until the prose changes significantly again.
  */
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
-    const failures = useRef(0);
+    const openedAt = useRef({ chapterId: chapter.id, revision: chapter.revision ?? 0 });
+    if (openedAt.current.chapterId !== chapter.id)
+        openedAt.current = { chapterId: chapter.id, revision: chapter.revision ?? 0 };
     const queryClient = useQueryClient();
     const { autoSummarise } = useV2Store();
     const enabled = useRef(autoSummarise);
     enabled.current = autoSummarise;
 
-    const schedule = () => {
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => void refreshIfStale(chapter.id), IDLE_MS);
-    };
-
-    // Real editor activity forgives past failures; internal re-arms don't —
-    // a permanently broken summarise path must not fire a paid generation
-    // every 90s for as long as the editor sits idle
-    const noteActivity = () => {
-        failures.current = 0;
-        schedule();
-    };
-
-    const refreshIfStale = async (chapterId: string) => {
+    const refreshIfDue = async (chapterId: string) => {
         if (!enabled.current || running.current) return;
         const [error, response] = await attemptPromise(() => fetch(`/api/chapters/${chapterId}`));
         if (error || !response?.ok) return;
         const fresh: Chapter = await response.json();
-        const stale = (fresh.summarySourceRevision ?? -1) !== (fresh.revision ?? 0);
-        // A hand-written summary is never overwritten by background work
-        if (fresh.summaryLocked || !stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
+        const revision = fresh.revision ?? 0;
+        const editedThisSitting = openedAt.current.chapterId === chapterId && revision > openedAt.current.revision;
+        const stale = (fresh.summarySourceRevision ?? -1) !== revision;
+        if (
+            !editedThisSitting ||
+            !stale ||
+            fresh.summaryLocked ||
+            (fresh.wordCount ?? 0) < MIN_WORDS ||
+            attempted.get(chapterId) === revision
+        )
+            return;
+        // Over budget: the summary stays stale (it's labelled as possibly
+        // outdated wherever it's used) until a later change finds room
+        if (!takeFromBudget()) return;
 
-        // A run that fails, or lands while the content has already moved on,
-        // must not strand the summary stale until the next edit — re-arm,
-        // but give up after repeated failures until the writer types again
-        const rearmAfterFailure = () => {
-            failures.current += 1;
-            if (failures.current < MAX_CONSECUTIVE_FAILURES) schedule();
-        };
-
+        attempted.set(chapterId, revision);
         running.current = true;
-        const baseRevision = fresh.revision ?? 0;
         const chunks: string[] = [];
         streamAction(
             { actionId: "summarise_chapter", storyId: fresh.storyId, chapterId },
@@ -69,40 +92,34 @@ export const useAutoSummarise = (chapter: Chapter) => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) {
-                        // Background work must never fail silently: one persistent,
-                        // de-duplicated warning that says what broke and what to do
                         toast.error(
                             `Background chapter summaries aren't working: ${
                                 error ?? "the model returned an empty summary"
-                            } Turn this off in Settings if you don't need it.`,
+                            } It won't try again until the chapter changes substantially. Turn this off in Settings if you don't need it.`,
                             { toastId: "auto-summarise-failure", autoClose: false }
                         );
-                        rearmAfterFailure();
                         return;
                     }
-                    failures.current = 0;
                     void attemptPromise(async () => {
                         const response = await fetch(`/api/chapters/${chapterId}`, {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ summary, summarySourceRevision: baseRevision })
+                            body: JSON.stringify({ summary, summarySourceRevision: revision })
                         });
                         if (!response.ok) return;
-                        const updated: Chapter = await response.json();
-                        applyChapterToCaches(queryClient, updated);
-                        // Content moved while summarising — not a failure, still stale
-                        if ((updated.summarySourceRevision ?? -1) !== (updated.revision ?? 0)) schedule();
+                        applyChapterToCaches(queryClient, await response.json());
                     });
                 }
             }
         );
     };
 
-    useEffect(() => {
-        noteActivity();
-        return () => clearTimeout(timer.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chapter.id]);
+    const noteActivity = () => {
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => void refreshIfDue(chapter.id), IDLE_MS);
+    };
+
+    useEffect(() => () => clearTimeout(timer.current), [chapter.id]);
 
     return { noteActivity };
 };

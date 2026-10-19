@@ -131,10 +131,12 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 
 ## 9. Revisions, saves, summary freshness
 
-- `chapters` gains `revision` (int, ++ per content save), `updatedAt`, `summarySourceRevision`.
-- Chapter content PUT carries `expectedRevision`; mismatch → 409 + current row; client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome.
+- `chapters` carries two counters (decision 2026-10-19 — a revision per content save made every keystroke burst "change" the chapter and made paid background work due):
+    - `saveVersion` — optimistic concurrency. ++ whenever a content save's document differs from the stored one, compared **structurally** (parsed JSON, key order irrelevant — never by serialised string). A save of an identical document writes nothing.
+    - `revision` — **significant** prose change only: words added or removed (case/punctuation-insensitive, scene beats and ghosts excluded) since the last revision reach max(50, 5% of the chapter). Small edits accumulate against the pinned base (`revisionText`, server-only, never sent to clients or backups) until they cross it.
+- Chapter content PUT must carry `expectedSaveVersion` (absent → 400; mismatch → 409 + current row); client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome. The client skips a save whose document equals the last saved one (structural comparison).
 - Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled in UI; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
-- **Auto-summarise** (writing-process review): after 90s of editor idle following document changes, the client refetches the chapter and — if the summary is stale and the chapter has ≥150 words — runs `summarise_chapter` silently and PUTs `{summary, summarySourceRevision}` pinned to the revision the summary was generated from. Failures are silent (next idle window retries); a concurrent edit simply leaves the summary stale for the next pass.
+- **Auto-summarise** — every generation costs the writer money, so it runs only when ALL hold: the writer made a significant change (new `revision`) while the chapter was open, 90s of editor idle followed, the summary is stale and not writer-locked, the chapter has ≥150 words, that revision has never been attempted (remembered across editor remounts), and fewer than 6 background summaries ran in the past hour (per browser). Opening or reading a chapter never triggers one. A failure is reported once (persistent toast) and not retried until a further significant change. The summary PUT is pinned to the revision it was generated from.
 
 ## 10. Token budgeting
 

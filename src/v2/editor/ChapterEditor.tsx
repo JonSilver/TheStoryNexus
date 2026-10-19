@@ -77,7 +77,7 @@ class ContentGuard extends Component<{ children: ReactNode }, { failed: boolean 
 
 const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible?: () => void }) => {
     const [editor] = useLexicalComposerContext();
-    const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.revision ?? 0, chapter.content);
+    const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.saveVersion ?? 0, chapter.content);
 
     // A conflicted editor must not keep accepting words it will never save —
     // lock it so "typing works" and "nothing is saved" can't coexist
@@ -116,9 +116,9 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     useEffect(() => () => detectNames.cancel(), [detectNames]);
 
     const onDocument = useCallback(
-        (serialised: string, words: number, text: string) => {
+        (serialised: string, doc: unknown, words: number, text: string) => {
             setWordCount(words);
-            scheduleSave(serialised, words);
+            scheduleSave(serialised, doc, words);
             noteActivity();
             // No detection until the bible has actually loaded — an empty
             // known list would nudge about names that are already entries

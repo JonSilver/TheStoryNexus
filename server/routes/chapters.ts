@@ -6,7 +6,8 @@ import { parseJson } from "../lib/json.js";
 
 type Chapter = InferSelectModel<typeof schema.chapters>;
 
-const afterRead = (ch: Chapter) => ({
+// revisionText is the server's change-measurement base, not chapter data
+const afterRead = ({ revisionText: _revisionText, ...ch }: Chapter) => ({
     ...ch,
     outline: parseJson(ch.outline),
     notes: parseJson(ch.notes)
@@ -26,7 +27,15 @@ export default createCrudRouter({
                     res.status(404).json({ error: "Chapter not found" });
                     return;
                 }
-                const resolution = resolveChapterUpdate(current.revision, req.body, new Date());
+                const resolution = resolveChapterUpdate(current, req.body, new Date());
+                if (resolution.outcome === "invalid") {
+                    res.status(400).json({ error: resolution.error });
+                    return;
+                }
+                if (resolution.outcome === "unchanged") {
+                    res.json(afterRead(current));
+                    return;
+                }
                 if (resolution.outcome === "conflict") {
                     res.status(409).json({
                         error: "Chapter was modified elsewhere",
@@ -34,12 +43,14 @@ export default createCrudRouter({
                     });
                     return;
                 }
-                // Atomic optimistic concurrency: the revision predicate makes
+                // Atomic optimistic concurrency: the saveVersion predicate makes
                 // check-and-write one statement, so racing writers can't both pass
                 const [updated] = await db
                     .update(schema.chapters)
                     .set(resolution.updates)
-                    .where(and(eq(schema.chapters.id, req.params.id), eq(schema.chapters.revision, current.revision)))
+                    .where(
+                        and(eq(schema.chapters.id, req.params.id), eq(schema.chapters.saveVersion, current.saveVersion))
+                    )
                     .returning();
                 if (!updated) {
                     const [latest] = await db

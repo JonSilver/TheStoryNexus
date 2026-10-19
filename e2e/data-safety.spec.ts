@@ -70,11 +70,11 @@ test("a hand-written summary survives background auto-summarise", async ({ page 
     await expect(page.getByLabel("Keep this summary")).toBeChecked();
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // A later prose edit makes the summary stale — then the idle window passes
+    // A later substantial prose edit makes the summary stale — then the idle window passes
     await page.getByRole("button", { name: "Write" }).click();
     await editorLocator(page).click();
     await page.keyboard.press("Control+End");
-    await page.keyboard.type(" One more line.");
+    await page.keyboard.insertText(" The keeper climbed the stair again and watched the ships. ".repeat(10));
     await page.clock.runFor(2_000);
     await waitForSaved(page);
     await page.clock.runFor(120_000);
