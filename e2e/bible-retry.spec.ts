@@ -126,14 +126,10 @@ test("bible: whole-story finds appear as they arrive, and closing mid-run asks f
 
     // Chapter one's find is on screen while chapter two is still being read
     await expect(page.getByText("Found first.")).toBeVisible();
-    const asked: string[] = [];
-    page.once("dialog", dialog => {
-        asked.push(dialog.message());
-        void dialog.dismiss();
-    });
     await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
-    await expect.poll(() => asked.length).toBe(1);
-    expect(asked[0]).toContain("1 entry found so far");
+    const asked = page.getByRole("alertdialog");
+    await expect(asked).toContainText("1 entry found so far");
+    await asked.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByText("Found first.")).toBeVisible();
 });
 
@@ -159,8 +155,8 @@ test("bible: closing a whole-story run ends it — no chapters are paid for unse
     await expect(page.getByText("Found first.")).toBeVisible();
     await expect.poll(() => calls.length).toBe(2);
 
-    page.once("dialog", dialog => void dialog.accept());
     await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Close" }).click();
     await expect(page.getByText("Found first.")).toHaveCount(0);
     await page.waitForTimeout(1_500);
     expect(calls).toHaveLength(2);
@@ -221,12 +217,9 @@ test("bible: one reply naming the same entry twice offers it once — and closin
 
     // Unticking everything doesn't make the results free to throw away
     await page.getByRole("checkbox").first().uncheck();
-    const asked: string[] = [];
-    page.once("dialog", dialog => {
-        asked.push(dialog.message());
-        void dialog.dismiss();
-    });
     await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
-    await expect.poll(() => asked.length).toBe(1);
+    const asked = page.getByRole("alertdialog");
+    await expect(asked).toBeVisible();
+    await asked.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByText("A pilot.")).toBeVisible();
 });

@@ -10,6 +10,8 @@ import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { Chapter } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
+import { useConfirm } from "../components/Dialogs";
+import { NoStoryChosen } from "../components/ScreenParts";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ChapterDetailsSheet } from "./ChapterDetailsSheet";
 
@@ -21,6 +23,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const createChapter = useCreateChapterMutation();
     const updateChapter = useUpdateChapterMutation();
     const deleteChapter = useDeleteChapterMutation();
+    const confirm = useConfirm();
 
     const [details, setDetails] = useState<Chapter | null>(null);
 
@@ -33,26 +36,14 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
         updateChapter.mutate({ id: b.id, data: { order: a.order } });
     };
 
-    const remove = (id: string, title: string, words: number) => {
-        if (window.confirm(`Delete “${title}”${words ? ` (${words} words)` : ""}? This cannot be undone.`))
-            deleteChapter.mutate(id);
+    const remove = async (id: string, title: string, words: number) => {
+        const message = `Delete “${title}”${words ? ` (${words} words)` : ""}? This cannot be undone.`;
+        if (await confirm({ message, confirmLabel: "Delete" })) deleteChapter.mutate(id);
     };
     const [newTitle, setNewTitle] = useState("");
     const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
 
-    if (!currentStoryId)
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-muted-foreground">Pick a story first.</p>
-                <button
-                    type="button"
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("library")}
-                >
-                    Choose a story
-                </button>
-            </div>
-        );
+    if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     const create = () => {
         const title = newTitle.trim() || `Chapter ${ordered.length + 1}`;

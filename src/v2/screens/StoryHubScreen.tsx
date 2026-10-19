@@ -14,6 +14,7 @@ import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLoreb
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
+import { useConfirm } from "../components/Dialogs";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
 import { StoryDetailsEditor } from "./StoryDetailsEditor";
@@ -32,18 +33,15 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const deleteStory = useDeleteStoryMutation();
+    const confirm = useConfirm();
 
-    const removeStory = () => {
+    const removeStory = async () => {
         if (!story) return;
         const summary = `${chapters?.length ?? 0} chapter${(chapters?.length ?? 0) === 1 ? "" : "s"}, ${(chapters ?? [])
             .reduce((sum, c) => sum + (c.wordCount ?? 0), 0)
             .toLocaleString()} words`;
-        if (
-            !window.confirm(
-                `Delete “${story.title}” (${summary})?\nChapters, bible entries, notes and chats go with it. This cannot be undone.`
-            )
-        )
-            return;
+        const message = `Delete “${story.title}” (${summary})? Chapters, bible entries, notes and chats go with it. This cannot be undone.`;
+        if (!(await confirm({ message, confirmLabel: "Delete story" }))) return;
         deleteStory.mutate(story.id, {
             onSuccess: () => {
                 setCurrentStory(null);

@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 // Styles
 import "react-toastify/dist/ReactToastify.css";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { DialogsProvider } from "@/v2/components/Dialogs";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 import { ThemeProvider } from "./lib/theme-provider";
@@ -26,12 +27,14 @@ ReactDOM.createRoot(rootElement).render(
         <QueryProvider>
             <ThemeProvider defaultTheme="dark" storageKey="app-theme">
                 <BrowserRouter>
-                    <Suspense fallback={<PageLoadingFallback />}>
-                        <Routes>
-                            {/* The app owns all routing (#81) */}
-                            <Route path="/*" element={<V2App />} />
-                        </Routes>
-                    </Suspense>
+                    <DialogsProvider>
+                        <Suspense fallback={<PageLoadingFallback />}>
+                            <Routes>
+                                {/* The app owns all routing (#81) */}
+                                <Route path="/*" element={<V2App />} />
+                            </Routes>
+                        </Suspense>
+                    </DialogsProvider>
                     <ToastContainer />
                 </BrowserRouter>
             </ThemeProvider>

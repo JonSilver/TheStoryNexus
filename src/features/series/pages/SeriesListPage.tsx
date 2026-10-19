@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SeriesImportService } from "@/services/export/SeriesImportService";
+import { useConfirm } from "../../../v2/components/Dialogs";
 import { SeriesCard } from "../components/SeriesCard";
 import { SeriesForm } from "../components/SeriesForm";
 import { useDeleteSeriesMutation, useSeriesQuery } from "../hooks/useSeriesQuery";
@@ -18,9 +19,15 @@ const SeriesListPage = ({ onOpenSeries }: { onOpenSeries?: () => void }) => {
 
     const { data: seriesList, isLoading } = useSeriesQuery();
     const deleteMutation = useDeleteSeriesMutation();
+    const confirm = useConfirm();
 
     const handleDelete = async (id: string) => {
-        if (confirm("Delete this series? Stories will be orphaned but not deleted."))
+        if (
+            await confirm({
+                message: "Delete this series? Its stories stay, just no longer in a series.",
+                confirmLabel: "Delete"
+            })
+        )
             await deleteMutation.mutateAsync(id);
     };
 

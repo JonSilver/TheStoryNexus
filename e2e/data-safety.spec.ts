@@ -92,8 +92,9 @@ test("merge never offers series entries shared with other stories", async ({ pag
     await createStoryAndChapter(page, "Safety — merge scope", "One");
     await openStoryHub(page);
     await page.getByText("Details, series & voice").click();
-    page.once("dialog", dialog => void dialog.accept("Shared Saga"));
     await page.getByLabel("Series").selectOption("__new__");
+    await page.getByLabel("Series name").fill("Shared Saga");
+    await page.getByRole("button", { name: "Create" }).click();
     await expect(page.getByText("Series bible entries are included")).toBeVisible();
 
     await openStoryHub(page);
@@ -111,7 +112,7 @@ test("merge never offers series entries shared with other stories", async ({ pag
     await addEntry("The Colonel");
 
     await page.getByRole("button", { name: "Merge duplicates" }).click();
-    const sheet = page.getByRole("dialog", { name: "Merge entries" });
+    const sheet = page.getByRole("dialog", { name: "Merge duplicate entries" });
     await expect(sheet.getByText(/1 series\/global entry is shared/)).toBeVisible();
     await expect(sheet.getByRole("button", { name: /Colonel Brandon/ }).first()).toBeVisible();
     // The shared series entry is neither listed nor suggested as a pair
@@ -127,8 +128,9 @@ test("series backup round-trip restores the series bible and its stories", async
 
     await openStoryHub(page);
     await page.getByText("Details, series & voice").click();
-    page.once("dialog", dialog => void dialog.accept("Backup Saga"));
     await page.getByLabel("Series").selectOption("__new__");
+    await page.getByLabel("Series name").fill("Backup Saga");
+    await page.getByRole("button", { name: "Create" }).click();
     await expect(page.getByText("Series bible entries are included")).toBeVisible();
 
     await openStoryHub(page);

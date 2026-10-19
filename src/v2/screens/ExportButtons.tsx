@@ -2,6 +2,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { chaptersApi, storiesApi } from "@/services/api/client";
+import { useConfirm } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import {
     blocksToHtml,
@@ -37,15 +38,17 @@ const MIME: Record<ExportFormat, string> = { md: "text/markdown", txt: "text/pla
 /** Whole-story export through the v2 converters (headings actually work). */
 export const ExportButtons = ({ storyId }: { storyId: string }) => {
     const { lastChapterFor } = uiState;
+    const confirm = useConfirm();
     // Undecided takes and ghost suggestions are visible on screen but omitted
     // from every export — the writer must choose, not discover the hole later
-    const confirmUndecided = (chapters: Array<{ content: string }>): boolean => {
+    const confirmUndecided = async (chapters: Array<{ content: string }>): Promise<boolean> => {
         const undecided = chapters.reduce((sum, c) => sum + countUndecided(c.content), 0);
         return (
             undecided === 0 ||
-            window.confirm(
-                `${undecided} unaccepted AI draft${undecided === 1 ? "" : "s"} (scene-beat takes or pending suggestions) won't be included. Export anyway?`
-            )
+            confirm({
+                message: `${undecided} unaccepted AI draft${undecided === 1 ? "" : "s"} (scene-beat takes or pending suggestions) won't be included. Export anyway?`,
+                confirmLabel: "Export anyway"
+            })
         );
     };
 
@@ -56,7 +59,7 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
             if (openChapter) await flushChapterSave(openChapter);
             const [story, chapters] = await Promise.all([storiesApi.getById(storyId), chaptersApi.getByStory(storyId)]);
             const ordered = [...chapters].sort((a, b) => a.order - b.order);
-            if (!confirmUndecided(ordered)) return null;
+            if (!(await confirmUndecided(ordered))) return null;
             return { story, body: RENDERERS[format](ordered) };
         });
         if (error) {

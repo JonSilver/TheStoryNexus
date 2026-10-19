@@ -1,5 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -7,6 +7,8 @@ import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { BottomSheet } from "../components/BottomSheet";
+import { useConfirm } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { BIBLE_STOP_NOTE } from "./FlowResults";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
@@ -43,6 +45,7 @@ export const ExtractSheet = ({
     onClose: () => void;
 }) => {
     const generation = useActionGeneration();
+    const confirm = useConfirm();
     const createEntry = useCreateLorebookMutation();
     const updateEntry = useUpdateLorebookMutation();
     const [pasted, setPasted] = useState(initialText ?? "");
@@ -91,7 +94,7 @@ export const ExtractSheet = ({
     };
 
     // Found-but-unadded entries are paid-for work: closing asks before discarding them
-    const close = () => {
+    const close = async () => {
         const found = proposals?.length ?? 0;
         const reviewable = found + (updates?.length ?? 0) + (issues?.length ?? 0);
         const question = busy
@@ -101,7 +104,7 @@ export const ExtractSheet = ({
               : reviewable > 0
                 ? "Close and discard these results? Getting them again means running it again."
                 : null;
-        if (question && !window.confirm(question)) return;
+        if (question && !(await confirm({ message: question, confirmLabel: "Close" }))) return;
         onClose();
     };
 
@@ -170,59 +173,13 @@ export const ExtractSheet = ({
     const showRun = !results.hasResults;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
-            role="dialog"
-            aria-label={FLOW_TITLES[mode]}
-        >
-            <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
-                <header className="flex items-center justify-between px-4 py-3">
-                    <span className="min-w-0">
-                        <span className="block truncate font-medium">{FLOW_TITLES[mode]}</span>
-                        {chapterLabel && (
-                            <span className="block truncate text-xs text-muted-foreground">“{chapterLabel}”</span>
-                        )}
-                    </span>
-                    <button type="button" onClick={close} aria-label="Close">
-                        <X className="h-4 w-4" />
-                    </button>
-                </header>
-
-                <div className="min-h-[10rem] flex-1 space-y-3 overflow-y-auto px-4 pb-4 text-sm">
-                    {needsPaste && (
-                        <textarea
-                            className="min-h-40 w-full resize-y rounded-md border bg-background p-2"
-                            placeholder="Paste story text here…"
-                            value={pasted}
-                            onChange={e => setPasted(e.target.value)}
-                        />
-                    )}
-                    {busy && sweep.progress && (
-                        <p className="text-sm text-muted-foreground">
-                            Chapter {sweep.progress.current} of {sweep.progress.total}: “{sweep.progress.title}” —{" "}
-                            {sweep.progress.found} entr{sweep.progress.found === 1 ? "y" : "ies"} found so far
-                        </p>
-                    )}
-                    {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
-                    {(sweepFailure ?? (!busy && generation.error)) && (
-                        <p className="text-destructive" role="alert">
-                            {sweepFailure ?? generation.error}
-                        </p>
-                    )}
-
-                    {proposals && (
-                        <ProposalList
-                            proposals={proposals}
-                            entries={entries}
-                            ticked={ticked}
-                            onToggle={results.toggle}
-                        />
-                    )}
-                    {issues && <IssueList issues={issues} />}
-                    {updates && <UpdateList updates={updates} entries={entries} onApply={p => void applyUpdate(p)} />}
-                </div>
-
-                <footer className="flex gap-2 border-t p-3">
+        <BottomSheet
+            title={FLOW_TITLES[mode]}
+            subtitle={chapterLabel ? `“${chapterLabel}”` : undefined}
+            onClose={close}
+            bodyClassName="min-h-[10rem] space-y-3 px-4 pb-4 text-sm"
+            footer={
+                <>
                     {busy ? (
                         <button
                             type="button"
@@ -267,8 +224,35 @@ export const ExtractSheet = ({
                     <button type="button" onClick={close} className="rounded-md border px-4 py-2 text-sm">
                         Close
                     </button>
-                </footer>
-            </div>
-        </div>
+                </>
+            }
+        >
+            {needsPaste && (
+                <textarea
+                    className="min-h-40 w-full resize-y rounded-md border bg-background p-2"
+                    placeholder="Paste story text here…"
+                    value={pasted}
+                    onChange={e => setPasted(e.target.value)}
+                />
+            )}
+            {busy && sweep.progress && (
+                <p className="text-sm text-muted-foreground">
+                    Chapter {sweep.progress.current} of {sweep.progress.total}: “{sweep.progress.title}” —{" "}
+                    {sweep.progress.found} entr{sweep.progress.found === 1 ? "y" : "ies"} found so far
+                </p>
+            )}
+            {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
+            {(sweepFailure ?? (!busy && generation.error)) && (
+                <p className="text-destructive" role="alert">
+                    {sweepFailure ?? generation.error}
+                </p>
+            )}
+
+            {proposals && (
+                <ProposalList proposals={proposals} entries={entries} ticked={ticked} onToggle={results.toggle} />
+            )}
+            {issues && <IssueList issues={issues} />}
+            {updates && <UpdateList updates={updates} entries={entries} onApply={p => void applyUpdate(p)} />}
+        </BottomSheet>
     );
 };

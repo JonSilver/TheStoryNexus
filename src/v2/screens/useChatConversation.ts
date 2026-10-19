@@ -7,6 +7,7 @@ import { brainstormApi } from "@/services/api/client";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
+import { usePrompt } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import {
     type ChatOp,
@@ -262,8 +263,14 @@ export const useChatConversation = (
 export const useChapterFromReply = (storyId: string | null) => {
     const { data: storyChapters } = useChaptersByStoryQuery(storyId ?? "");
     const createChapter = useCreateChapterMutation();
-    return (content: string) => {
-        const title = window.prompt("Title for the new chapter", content.split("\n")[0].slice(0, 60))?.trim();
+    const prompt = usePrompt();
+    return async (content: string) => {
+        const title = await prompt({
+            title: "New chapter from this reply",
+            label: "Chapter title",
+            initial: content.split("\n")[0].slice(0, 60),
+            confirmLabel: "Create"
+        });
         if (!title || !storyId) return;
         createChapter.mutate(
             {

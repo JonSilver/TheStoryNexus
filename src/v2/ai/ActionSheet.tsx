@@ -1,6 +1,7 @@
 import { CornerDownRight, Loader2, RotateCcw, Square } from "lucide-react";
 import { useState } from "react";
 import type { GenerationStatus } from "@/services/ai/sseParser";
+import { BottomSheet } from "../components/BottomSheet";
 import { AttemptNav } from "./AttemptNav";
 import { GenerationProgress } from "./GenerationProgress";
 import type { GenerationPhase } from "./useActionGeneration";
@@ -62,78 +63,13 @@ export const ActionSheet = ({
         setRefineText("");
     };
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label={title}>
-            <div className="flex max-h-[75dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
-                <header className="flex items-center gap-2 px-4 py-3">
-                    <span className="font-medium">{title}</span>
-                    {phase === "streaming" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                </header>
-                <div className="min-h-[8rem] flex-1 overflow-y-auto whitespace-pre-wrap px-4 pb-3 text-sm leading-relaxed">
-                    {phase === "idle" && inputRequest ? (
-                        <textarea
-                            className="min-h-24 w-full resize-y rounded-md border bg-background p-2"
-                            placeholder={inputRequest.placeholder}
-                            value={draft}
-                            onChange={e => setDraft(e.target.value)}
-                            onKeyDown={e => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    submitDraft();
-                                }
-                            }}
-                        />
-                    ) : phase === "idle" ? (
-                        // Opened, not yet sent (a save is landing first): Discard here costs nothing
-                        <GenerationProgress status={{ phase: "waiting", elapsedMs: 0 }} />
-                    ) : phase === "streaming" ? (
-                        <>
-                            {text}
-                            <GenerationProgress status={status} className={text ? "mt-2" : ""} />
-                        </>
-                    ) : (
-                        <>
-                            {error && (
-                                <p className="mb-2 text-destructive">
-                                    {error}
-                                    {attemptCount > 0 &&
-                                        (attemptPartial
-                                            ? " What arrived is below."
-                                            : " Your earlier result is still here.")}
-                                </p>
-                            )}
-                            {text && attemptPartial && (
-                                <p className="mb-1 text-xs text-muted-foreground">
-                                    Incomplete — cut short before the end.
-                                </p>
-                            )}
-                            {text}
-                        </>
-                    )}
-                </div>
-                {phase !== "streaming" && attemptCount > 1 && onSelectAttempt && (
-                    <AttemptNav label="Attempt" index={attemptIndex} count={attemptCount} onSelect={onSelectAttempt} />
-                )}
-                {phase !== "streaming" && text && onRefine && (
-                    <div className="flex gap-2 px-3 pb-2">
-                        <input
-                            className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
-                            maxLength={5000}
-                            placeholder="Refine: e.g. darker, tighter, less dialogue…"
-                            value={refineText}
-                            onChange={e => setRefineText(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && submitRefine()}
-                        />
-                        <button
-                            type="button"
-                            onClick={submitRefine}
-                            disabled={!refineText.trim()}
-                            className="flex items-center gap-1 rounded-md border px-2 py-1 text-sm disabled:opacity-50"
-                        >
-                            <CornerDownRight className="h-4 w-4" /> Refine
-                        </button>
-                    </div>
-                )}
-                <footer className="flex gap-2 border-t p-3">
+        <BottomSheet
+            title={title}
+            onClose={onDiscard}
+            headerExtra={phase === "streaming" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            bodyClassName=""
+            footer={
+                <>
                     {phase === "idle" && inputRequest ? (
                         <>
                             <button
@@ -189,8 +125,72 @@ export const ActionSheet = ({
                             </button>
                         </>
                     )}
-                </footer>
+                </>
+            }
+        >
+            <div className="min-h-[8rem] whitespace-pre-wrap px-4 pb-3 text-sm leading-relaxed">
+                {phase === "idle" && inputRequest ? (
+                    <textarea
+                        className="min-h-24 w-full resize-y rounded-md border bg-background p-2"
+                        placeholder={inputRequest.placeholder}
+                        value={draft}
+                        onChange={e => setDraft(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                submitDraft();
+                            }
+                        }}
+                    />
+                ) : phase === "idle" ? (
+                    // Opened, not yet sent (a save is landing first): Discard here costs nothing
+                    <GenerationProgress status={{ phase: "waiting", elapsedMs: 0 }} />
+                ) : phase === "streaming" ? (
+                    <>
+                        {text}
+                        <GenerationProgress status={status} className={text ? "mt-2" : ""} />
+                    </>
+                ) : (
+                    <>
+                        {error && (
+                            <p className="mb-2 text-destructive">
+                                {error}
+                                {attemptCount > 0 &&
+                                    (attemptPartial
+                                        ? " What arrived is below."
+                                        : " Your earlier result is still here.")}
+                            </p>
+                        )}
+                        {text && attemptPartial && (
+                            <p className="mb-1 text-xs text-muted-foreground">Incomplete — cut short before the end.</p>
+                        )}
+                        {text}
+                    </>
+                )}
             </div>
-        </div>
+            {phase !== "streaming" && attemptCount > 1 && onSelectAttempt && (
+                <AttemptNav label="Attempt" index={attemptIndex} count={attemptCount} onSelect={onSelectAttempt} />
+            )}
+            {phase !== "streaming" && text && onRefine && (
+                <div className="flex gap-2 px-3 pb-2">
+                    <input
+                        className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
+                        maxLength={5000}
+                        placeholder="Refine: e.g. darker, tighter, less dialogue…"
+                        value={refineText}
+                        onChange={e => setRefineText(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && submitRefine()}
+                    />
+                    <button
+                        type="button"
+                        onClick={submitRefine}
+                        disabled={!refineText.trim()}
+                        className="flex items-center gap-1 rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+                    >
+                        <CornerDownRight className="h-4 w-4" /> Refine
+                    </button>
+                </div>
+            )}
+        </BottomSheet>
     );
 };
