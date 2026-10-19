@@ -68,11 +68,12 @@ export const MergeSheet = ({
                 userMessage: `Entry A (keep):\n${describe(keep)}\n\nEntry B (duplicate):\n${describe(duplicate)}`
             }
         });
-        // Failed or stopped: the error (if any) is on screen, earlier results stay
-        if (result.outcome !== "complete") return;
+        // A failed or stopped run still offers its merge if what arrived parses;
+        // otherwise the error (if any) is on screen and earlier results stay
+        if (result.outcome === "superseded" || !result.text.trim()) return;
         const [proposal] = parseEntryProposals(result.text);
         if (!proposal) {
-            toast.error("The merge reply couldn't be read — try again");
+            if (result.outcome === "complete") toast.error("The merge reply couldn't be read — try again");
             return;
         }
         // A different pair starts a fresh comparison; the same pair adds an attempt

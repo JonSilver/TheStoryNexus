@@ -26,7 +26,7 @@ Invariants:
 
 ## 2. Scene beat lifecycle
 
-Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`.
+Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`. Takes live in `takes[]`/`activeTake`; `incompleteTakes[]` marks takes cut short by a failure (kept, labelled).
 
 - **Streaming**: tokens accumulate in component state during generation (NOT written to the document per token — avoids undo-history pollution and save churn); committed to `generatedText` + `status: 'done'` in one transaction at completion or abort.
 - **Accept**: one transaction — insert `generatedText` as ordinary paragraph blocks after the node, set node `generatedText: ''`, `status: 'idle'`, `collapsed: true`. One undo step reverts the whole accept.

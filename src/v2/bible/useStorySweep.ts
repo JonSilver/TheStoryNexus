@@ -23,9 +23,10 @@ interface SweepResult {
 export const describeSweepFailures = ({ failures, gaveUp }: SweepResult, total: number): string | null => {
     const last = failures[failures.length - 1]?.error;
     if (!failures.length) return null;
+    const named = failures.map(f => `“${f.title}”`).join(", ");
     if (gaveUp)
-        return `Stopped after two chapters in a row failed — ${last} Fix that, then run again; anything found so far is below.`;
-    return `${failures.length} of ${total} chapters couldn't be read (${failures.map(f => `“${f.title}”`).join(", ")}) — ${last}`;
+        return `Stopped after two chapters in a row failed (${named}) — ${last} Fix that, then run again; anything found so far is below.`;
+    return `${failures.length} of ${total} chapters couldn't be read (${named}) — ${last}`;
 };
 
 // Two chapters failing in a row means the model or server is broken, not the
@@ -50,7 +51,8 @@ export const useStorySweep = (
         generation.abort();
     };
 
-    const run = async (): Promise<SweepResult> => {
+    /** `onFound` receives each chapter's new finds as they arrive, so nothing waits on the whole book. */
+    const run = async (onFound: (found: EntryProposal[]) => void): Promise<SweepResult> => {
         stopRequested.current = false;
         const seen = new Set<string>();
         const gathered: EntryProposal[] = [];
@@ -69,15 +71,16 @@ export const useStorySweep = (
             if (result.outcome === "failed") {
                 failures.push({ title: chapter.title, error: result.error ?? "failed" });
                 streak.failed += 1;
-                continue;
-            }
-            streak.failed = 0;
-            for (const proposal of parseEntryProposals(result.text)) {
+            } else streak.failed = 0;
+            // Whatever arrived is parsed — a reply can be complete before its stream fails
+            const found = parseEntryProposals(result.text).filter(proposal => {
                 const key = proposal.name.toLowerCase();
-                if (seen.has(key)) continue;
+                if (seen.has(key)) return false;
                 seen.add(key);
-                gathered.push(proposal);
-            }
+                return true;
+            });
+            gathered.push(...found);
+            if (found.length) onFound(found);
             setProgress(current => (current ? { ...current, found: gathered.length } : current));
         }
         setProgress(null);

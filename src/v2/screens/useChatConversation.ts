@@ -18,6 +18,33 @@ const chatMessage = (role: ChatMessage["role"], content: string): ChatMessage =>
     timestamp: new Date()
 });
 
+// A conversation the server refused to save is kept in this browser until it
+// is saved — leaving the screen or reloading must not lose a paid-for reply.
+// Memory backs it up where storage is unavailable (private browsing).
+const UNSAVED_PREFIX = "storynexus-unsaved-chat:";
+const unsavedInMemory = new Map<string, ChatMessage[]>();
+
+const readUnsaved = (chatId: string): ChatMessage[] | null => {
+    try {
+        const raw = localStorage.getItem(UNSAVED_PREFIX + chatId);
+        if (raw) return JSON.parse(raw) as ChatMessage[];
+    } catch {
+        // Unreadable storage: fall back to this session's copy
+    }
+    return unsavedInMemory.get(chatId) ?? null;
+};
+
+const writeUnsaved = (chatId: string, messages: ChatMessage[] | null) => {
+    if (messages) unsavedInMemory.set(chatId, messages);
+    else unsavedInMemory.delete(chatId);
+    try {
+        if (messages) localStorage.setItem(UNSAVED_PREFIX + chatId, JSON.stringify(messages));
+        else localStorage.removeItem(UNSAVED_PREFIX + chatId);
+    } catch {
+        // Storage unavailable or full: the in-memory copy still covers this session
+    }
+};
+
 /** A reply that produced text is kept — cut short by a failure, it's kept and labelled incomplete. */
 const replyFrom = (result: RunResult) =>
     result.text.trim() && result.outcome !== "superseded"
@@ -38,8 +65,15 @@ export const useChatConversation = (
     generation: ReturnType<typeof useActionGeneration>
 ) => {
     const updateChat = useUpdateBrainstormMutation();
-    const [unsaved, setUnsaved] = useState<{ chatId: string; messages: ChatMessage[] } | null>(null);
-    const messages = unsaved && chat && unsaved.chatId === chat.id ? unsaved.messages : (chat?.messages ?? []);
+    // Re-render after the browser-stored copy changes; the copy itself is the truth
+    const [, setStoredVersion] = useState(0);
+    const remember = (chatId: string, next: ChatMessage[] | null) => {
+        writeUnsaved(chatId, next);
+        setStoredVersion(v => v + 1);
+    };
+    const stored = chat ? readUnsaved(chat.id) : null;
+    const unsaved = chat && stored ? { chatId: chat.id, messages: stored } : null;
+    const messages = stored ?? chat?.messages ?? [];
 
     const runBrainstorm = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
         if (!storyId) return { text: "", outcome: "superseded" };
@@ -60,10 +94,10 @@ export const useChatConversation = (
             updateChat.mutateAsync({ id: chat.id, data: { messages: next } })
         );
         if (writeError) {
-            setUnsaved({ chatId: chat.id, messages: next });
+            remember(chat.id, next);
             return false;
         }
-        setUnsaved(null);
+        remember(chat.id, null);
         return true;
     };
 
@@ -130,7 +164,12 @@ export const useChatConversation = (
         void saveMessages(messages.map(m => (m.id === message.id ? { ...m, content: chosen } : m)));
     };
 
-    return { messages, unsaved, saveMessages, send, regenerate, retryLast, showVersion };
+    /** The writer chooses the saved version over the unsaved one. */
+    const discardUnsaved = () => {
+        if (chat) remember(chat.id, null);
+    };
+
+    return { messages, unsaved, saveMessages, discardUnsaved, send, regenerate, retryLast, showVersion };
 };
 
 /** Brainstormed material flows onward: a new chapter carries the reply as its outline, ready to write against. */

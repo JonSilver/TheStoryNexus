@@ -22,7 +22,8 @@ import {
     generatedTextState,
     $isSceneBeatNode,
     statusState,
-    takesState
+    takesState,
+    incompleteTakesState
 } from "../nodes/SceneBeatNode";
 import { useSceneBeatData } from "../useSceneBeatData";
 import { useSceneBeatGeneration } from "../useSceneBeatGeneration";
@@ -33,7 +34,7 @@ const stopKeydown = (e: KeyboardEvent) => e.stopPropagation();
 
 export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
-    const { command, status, takes, activeTake, streaming, collapsed } = useSceneBeatData(nodeKey);
+    const { command, status, takes, activeTake, incompleteTakes, streaming, collapsed } = useSceneBeatData(nodeKey);
     const { storyId, chapterId } = useChapterIdentity();
     const { generate, stop, mutate, abortActive, ownsRun, textBeforeNode, progress } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
@@ -100,6 +101,9 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
         mutate(node => {
             const remaining = takes.filter((_, i) => i !== index);
             $setState(node, takesState, remaining);
+            $setState(node, incompleteTakesState, prev =>
+                prev.filter(i => i !== index).map(i => (i > index ? i - 1 : i))
+            );
             // The displayed takes already include any folded legacy draft —
             // clear it, or an emptied takes list resurrects the deleted take
             $setState(node, generatedTextState, "");
@@ -171,6 +175,7 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                         <TakeViewer
                             takes={takes}
                             activeTake={activeTake}
+                            incompleteTakes={incompleteTakes}
                             onSelect={selectTake}
                             onDelete={deleteTake}
                             onAccept={removeBeat => accept(removeBeat)}

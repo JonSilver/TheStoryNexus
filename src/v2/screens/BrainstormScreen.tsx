@@ -167,14 +167,27 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                     </div>
                 )}
                 {unsaved?.chatId === chat.id && (
-                    <div className="space-y-2 text-sm" role="alert">
-                        <p className="text-destructive">This conversation isn't saved yet — the last write failed.</p>
+                    <div className="flex flex-wrap items-center gap-2 text-sm" role="alert">
+                        <p className="w-full text-destructive">
+                            This conversation isn't saved yet — the last write failed. It's kept on this device until it
+                            is.
+                        </p>
                         <button
                             type="button"
                             onClick={() => void conversation.saveMessages(unsaved.messages)}
                             className="flex items-center gap-1 rounded-md border px-3 py-1"
                         >
                             <RotateCcw className="h-3.5 w-3.5" /> Save again
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                window.confirm("Discard the unsaved messages and show the saved conversation?") &&
+                                conversation.discardUnsaved()
+                            }
+                            className="rounded-md border px-3 py-1"
+                        >
+                            Discard
                         </button>
                     </div>
                 )}

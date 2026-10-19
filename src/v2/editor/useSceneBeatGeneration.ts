@@ -81,7 +81,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             if (cancelRef.current) {
                 cancelRef.current();
                 cancelRef.current = null;
-                mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+                mutate(node => $commitStreamingAsTake(node, true), HISTORY_MERGE_TAG);
             }
             const requestId = randomUUID();
             const controller = new AbortController();
@@ -121,7 +121,8 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             const finish = (errorMessage?: string) => {
                 if (!owns()) return;
                 cancelRef.current = null;
-                mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+                // A take cut short by a failure is kept, and marked so it can't pass for a finished one
+                mutate(node => $commitStreamingAsTake(node, Boolean(errorMessage)), HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
             };
 

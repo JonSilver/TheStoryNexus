@@ -9,12 +9,7 @@ import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
-import {
-    type UpdateProposal,
-    parseContinuityIssues,
-    parseEntryProposals,
-    parseUpdateProposals
-} from "./parseProposals";
+import type { UpdateProposal } from "./parseProposals";
 import { useFlowResults } from "./useFlowResults";
 import { describeSweepFailures, useStorySweep } from "./useStorySweep";
 
@@ -58,8 +53,11 @@ export const ExtractSheet = ({
 
     const run = async () => {
         if (mode === "extract-story") {
-            const swept = await sweep.run();
-            const added = results.addProposals(swept.gathered);
+            const tally = { added: 0 };
+            const swept = await sweep.run(found => {
+                tally.added += results.addProposals(found);
+            });
+            const added = tally.added;
             setSweepFailure(describeSweepFailures(swept, chapters.length));
             if (!added && swept.failures.length === 0 && !sweep.wasStopped())
                 toast.info(proposals?.length ? "Nothing new found" : "Nothing extractable found in any chapter");
@@ -80,31 +78,27 @@ export const ExtractSheet = ({
                     : {})
             }
         });
-        // Failed or stopped: the error (if any) is on screen; structured replies
-        // cut short can't be parsed, so there's nothing partial to offer
-        if (result.outcome !== "complete") return;
-        const text = result.text;
-        const again = results.hasResults;
-        if (mode === "continuity") {
-            if (!results.addIssues(parseContinuityIssues(text)))
-                toast.success(again ? "Nothing new found" : "No continuity issues found");
-            return;
-        }
-        if (mode === "updates") {
-            if (!results.addUpdates(parseUpdateProposals(text)))
-                toast.info(again ? "Nothing new suggested" : "No entry updates suggested");
-            return;
-        }
-        const parsed = parseEntryProposals(text);
-        const added = results.addProposals(parsed);
-        if (!added)
-            toast.info(
-                !parsed.length && text.trim().length > 40
-                    ? "The reply couldn't be read as entries — the model may have run out of tokens. Try again or raise max tokens for this action."
-                    : again
-                      ? "Nothing new found"
-                      : "Nothing extractable found"
-            );
+        // A failed or stopped run still offers whatever parses from what arrived —
+        // a reply can be complete before its stream fails; the error stays on screen
+        if (result.outcome === "superseded" || !result.text.trim()) return;
+        const notice = results.offerReply(
+            mode === "continuity" ? "issues" : mode === "updates" ? "updates" : "entries",
+            result.text,
+            result.outcome === "failed"
+        );
+        if (notice) toast.info(notice);
+    };
+
+    // Found-but-unadded entries are paid-for work: closing asks before discarding them
+    const close = () => {
+        const found = proposals?.length ?? 0;
+        const question = busy
+            ? `Extraction is still running. Close and lose ${found ? `the ${found} entr${found === 1 ? "y" : "ies"} found so far` : "it"}?`
+            : ticked.size > 0
+              ? `Close without adding the ${ticked.size} ticked entr${ticked.size === 1 ? "y" : "ies"} to the bible?`
+              : null;
+        if (question && !window.confirm(question)) return;
+        onClose();
     };
 
     const approveEntries = async () => {
@@ -178,7 +172,7 @@ export const ExtractSheet = ({
                             <span className="block truncate text-xs text-muted-foreground">“{chapterLabel}”</span>
                         )}
                     </span>
-                    <button type="button" onClick={onClose} aria-label="Close">
+                    <button type="button" onClick={close} aria-label="Close">
                         <X className="h-4 w-4" />
                     </button>
                 </header>
@@ -259,7 +253,7 @@ export const ExtractSheet = ({
                             )}
                         </>
                     )}
-                    <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
+                    <button type="button" onClick={close} className="rounded-md border px-4 py-2 text-sm">
                         Close
                     </button>
                 </footer>

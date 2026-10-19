@@ -117,7 +117,11 @@ export const useActionGeneration = () => {
             setStatus({ phase: "waiting", elapsedMs: 0 });
 
             const chunks: string[] = [];
-            const outcome: { complete: boolean; streamError: string | null } = { complete: false, streamError: null };
+            const outcome: { complete: boolean; aborted: boolean; streamError: string | null } = {
+                complete: false,
+                aborted: false,
+                streamError: null
+            };
             // Only the request that still owns `active` may touch state —
             // a superseded run's late callbacks must not clobber its successor
             const owns = () => active.current?.requestId === requestId;
@@ -165,6 +169,9 @@ export const useActionGeneration = () => {
                 onComplete: () => {
                     outcome.complete = true;
                 },
+                onAborted: () => {
+                    outcome.aborted = true;
+                },
                 onError: streamError => {
                     outcome.streamError = streamError.message;
                 }
@@ -192,7 +199,7 @@ export const useActionGeneration = () => {
             if (!owns()) return superseded;
             active.current = null;
             // Stopped mid-stream: what arrived is the writer's to accept or discard
-            if ((readError as Error)?.name === "AbortError") {
+            if ((readError as Error)?.name === "AbortError" || outcome.aborted) {
                 setPhase("done");
                 return { text: chunks.join(""), outcome: "stopped" };
             }

@@ -29,6 +29,10 @@ const asIndex = (v: unknown): number => (typeof v === "number" && Number.isInteg
 /** Every completed generation survives as a take; regeneration never destroys a draft. */
 export const takesState = createState("takes", { parse: asStringArray });
 export const activeTakeState = createState("activeTake", { parse: asIndex });
+const asIndexList = (v: unknown): number[] =>
+    Array.isArray(v) ? v.filter((i): i is number => typeof i === "number" && Number.isInteger(i) && i >= 0) : [];
+/** Takes cut short by a failure (indexes into takes) — kept, and labelled. */
+export const incompleteTakesState = createState("incompleteTakes", { parse: asIndexList });
 /** In-flight tokens stream here — durable mid-generation, never clobbering takes. */
 export const streamingState = createState("streaming", { parse: asString });
 export const collapsedState = createState("collapsed", { parse: asBoolean });
@@ -41,6 +45,7 @@ export interface SceneBeatData {
     /** Completed generations, oldest first (legacy generatedText folds in as the first take). */
     takes: string[];
     activeTake: number;
+    incompleteTakes: number[];
     streaming: string;
     collapsed: boolean;
     povCharacter: string;
@@ -60,6 +65,7 @@ export class SceneBeatNode extends DecoratorNode<JSX.Element> {
                 { stateConfig: generatedTextState, flat: true },
                 { stateConfig: takesState, flat: true },
                 { stateConfig: activeTakeState, flat: true },
+                { stateConfig: incompleteTakesState, flat: true },
                 { stateConfig: streamingState, flat: true },
                 { stateConfig: collapsedState, flat: true },
                 { stateConfig: povCharacterState, flat: true },
@@ -102,7 +108,7 @@ export const $isSceneBeatNode = (node: LexicalNode | null | undefined): node is 
  * mid-generation or an undo reviving a deleted beat leaves streamed text
  * with no owning request; it must surface as a take, never vanish.
  */
-export const $commitStreamingAsTake = (node: SceneBeatNode) => {
+export const $commitStreamingAsTake = (node: SceneBeatNode, incomplete = false) => {
     const streamed = $getState(node, streamingState).trim();
     const legacy = $getState(node, generatedTextState);
     const stored = $getState(node, takesState);
@@ -112,6 +118,7 @@ export const $commitStreamingAsTake = (node: SceneBeatNode) => {
         $setState(node, takesState, next);
         $setState(node, activeTakeState, next.length - 1);
         $setState(node, generatedTextState, "");
+        if (incomplete) $setState(node, incompleteTakesState, prev => [...prev, next.length - 1]);
     }
     $setState(node, streamingState, "");
     $setState(node, statusState, streamed || takes.length > 0 ? "done" : "idle");
@@ -128,6 +135,7 @@ export const $readSceneBeat = (node: SceneBeatNode): SceneBeatData => {
         status: $getState(node, statusState),
         takes,
         activeTake,
+        incompleteTakes: $getState(node, incompleteTakesState),
         streaming: $getState(node, streamingState),
         collapsed: $getState(node, collapsedState),
         povCharacter: $getState(node, povCharacterState),
