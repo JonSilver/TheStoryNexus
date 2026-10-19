@@ -110,7 +110,7 @@ const fromLegacy = (stored: unknown): ChatOp[] => {
  * nothing. A change being saved carries `savingUntil`: other tabs neither
  * call it unsaved nor discard it meanwhile. Memory holds what storage can't.
  */
-export const PENDING_PREFIX = "storynexus-unsaved-chat:";
+const PENDING_PREFIX = "storynexus-unsaved-chat:";
 const SAVE_CLAIM_MS = 60_000;
 
 interface Stored {
@@ -133,15 +133,39 @@ const persistence = { refused: false };
 /** True once the browser has refused to store an unsaved change: it then lasts only until a reload. */
 export const storageRefused = () => persistence.refused;
 
-const store = (chatId: string, record: Stored) => {
+// Whatever shows pending changes re-renders when they change — in this tab, or another one
+const watchers = { listeners: new Set<() => void>(), version: 0 };
+const changed = () => {
+    watchers.version += 1;
+    watchers.listeners.forEach(listener => listener());
+};
+const onStorage = (event: StorageEvent) => {
+    if (event.key?.startsWith(PENDING_PREFIX)) changed();
+};
+
+/** For useSyncExternalStore: subscribe, with `pendingVersion` as the snapshot. */
+export const subscribePending = (listener: () => void) => {
+    if (watchers.listeners.size === 0) window.addEventListener("storage", onStorage);
+    watchers.listeners.add(listener);
+    return () => {
+        watchers.listeners.delete(listener);
+        if (watchers.listeners.size === 0) window.removeEventListener("storage", onStorage);
+    };
+};
+export const pendingVersion = () => watchers.version;
+
+// `quietly`: the one-off legacy migration runs inside reads (during render) and changes nothing visible
+const store = (chatId: string, record: Stored, quietly = false) => {
     inMemory.set(keyFor(chatId, record.op.id), record);
     // Refused: the in-memory copy covers this session, and the writer is warned
     if (!storage.setJSON(keyFor(chatId, record.op.id), record)) persistence.refused = true;
+    if (!quietly) changed();
 };
 
 const unstore = (key: string) => {
     inMemory.delete(key);
     storage.remove(key);
+    changed();
 };
 
 const migrateLegacy = (chatId: string) => {
@@ -162,7 +186,7 @@ const migrateLegacy = (chatId: string) => {
             : null;
     if (!changes) return;
     // Converted once into per-change keys, so the changes keep stable ids from here on
-    changes.forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }));
+    changes.forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }, true));
     storage.remove(PENDING_PREFIX + chatId);
 };
 

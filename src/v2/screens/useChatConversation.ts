@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "react-toastify";
 import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useCreateChapter } from "@/features/chapters/hooks/useChaptersQuery";
@@ -11,7 +11,6 @@ import { usePrompt } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import {
     type ChatOp,
-    PENDING_PREFIX,
     addPending,
     applyOps,
     claimPending,
@@ -20,8 +19,10 @@ import {
     op,
     readPending,
     readUnsaved,
+    pendingVersion,
     removePending,
-    storageRefused
+    storageRefused,
+    subscribePending
 } from "./chatOps";
 
 const historyText = (messages: ChatMessage[]) =>
@@ -87,19 +88,8 @@ export const useChatConversation = (
     };
     if (chat) know(chat);
     const queue = useRef<Promise<unknown>>(Promise.resolve());
-    // Re-render when this device's pending changes change — here, or in another tab
-    const [, setPendingVersion] = useState(0);
-    const refresh = () => {
-        if (alive.current) setPendingVersion(v => v + 1);
-    };
-    useEffect(() => {
-        const onStorage = (event: StorageEvent) => {
-            if (event.key?.startsWith(PENDING_PREFIX)) refresh();
-        };
-        window.addEventListener("storage", onStorage);
-        return () => window.removeEventListener("storage", onStorage);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    // Re-renders when this device's pending changes change — here, or in another tab
+    useSyncExternalStore(subscribePending, pendingVersion);
     const pendingOps = chat ? readPending(chat.id) : [];
     const messages = chat ? applyOps(chat.messages, pendingOps) : [];
     // Shown at once, but only "unsaved" once nobody is saving it
@@ -115,7 +105,6 @@ export const useChatConversation = (
     const commit = (chatId: string, ops: ChatOp[]): Promise<boolean> => {
         addPending(chatId, ops);
         claimPending(chatId, ops, true);
-        refresh();
         const run = queue.current.then(async () => {
             const all = readPending(chatId);
             claimPending(chatId, all, true);
@@ -143,7 +132,6 @@ export const useChatConversation = (
                     all.map(change => change.id)
                 );
             else claimPending(chatId, all, false);
-            refresh();
             return saved;
         });
         queue.current = run.catch(() => undefined);
@@ -242,7 +230,6 @@ export const useChatConversation = (
     const discardUnsaved = () => {
         if (!chat) return;
         dropUnsaved(chat.id);
-        refresh();
     };
 
     return {

@@ -40,7 +40,7 @@ test("scene beat: generate, second take, navigate, accept into prose", async ({ 
     // A second take must never destroy the first
     await page.getByRole("button", { name: "New take" }).click();
     await expect(page.getByText(takes[1])).toBeVisible();
-    await expect(page.getByText("2/2")).toBeVisible();
+    await expect(page.getByText("Take 2 of 2")).toBeVisible();
     await page.getByRole("button", { name: "Previous take" }).click();
     await expect(page.getByText(takes[0])).toBeVisible();
 

@@ -25,7 +25,7 @@ export const ProposalList = ({
 }) => (
     <>
         {proposals.map((proposal, index) => (
-            <label key={index} className="flex items-start gap-2 rounded-md border p-2">
+            <label key={proposal.name.toLowerCase()} className="flex items-start gap-2 rounded-md border p-2">
                 <input type="checkbox" checked={ticked.has(index)} onChange={() => onToggle(index)} />
                 <span>
                     <span className="font-medium">{proposal.name}</span>{" "}

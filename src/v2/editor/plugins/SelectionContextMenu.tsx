@@ -1,18 +1,9 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, FORMAT_TEXT_COMMAND } from "lexical";
-import {
-    Bold,
-    ClipboardPaste,
-    Copy,
-    Italic,
-    Maximize2,
-    MessageSquareQuote,
-    Minimize2,
-    RefreshCw,
-    Scissors
-} from "lucide-react";
+import { Bold, ClipboardPaste, Copy, Italic, MessageSquareQuote, Scissors } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { SELECTION_ACTIONS } from "../../ai/selectionActions";
 import type { ToolbarActions } from "./AiActionButtons";
 
 interface MenuState {
@@ -118,9 +109,11 @@ export const SelectionContextMenu = ({ actions }: { actions: ToolbarActions }) =
     };
 
     const entries: Array<{ label: string; icon: typeof Copy; onSelect: () => void } | { divider: true }> = [
-        { label: "Rework", icon: RefreshCw, onSelect: () => actions.onSelectionAction("rework", "Rework") },
-        { label: "Expand", icon: Maximize2, onSelect: () => actions.onSelectionAction("expand", "Expand") },
-        { label: "Shorten", icon: Minimize2, onSelect: () => actions.onSelectionAction("shorten", "Shorten") },
+        ...SELECTION_ACTIONS.map(({ actionId, label, icon }) => ({
+            label,
+            icon,
+            onSelect: () => actions.onSelectionAction(actionId)
+        })),
         { label: "Ask…", icon: MessageSquareQuote, onSelect: actions.onAsk },
         { divider: true },
         { label: "Cut", icon: Scissors, onSelect: () => document.execCommand("cut") },

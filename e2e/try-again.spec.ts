@@ -79,7 +79,7 @@ test("continue: a failed ghost stays with try again; again keeps both continuati
     await expect(page.getByText("The first continuation.")).toBeVisible();
     await page.getByRole("button", { name: "Again" }).click();
     await expect(page.getByText("The second continuation.")).toBeVisible();
-    await expect(page.getByText("2/2")).toBeVisible();
+    await expect(page.getByText("Continuation 2 of 2")).toBeVisible();
     await page.getByRole("button", { name: "Previous continuation" }).click();
     await expect(page.getByText("The first continuation.")).toBeVisible();
 });

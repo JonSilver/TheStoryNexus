@@ -15,9 +15,10 @@ import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQ
 import { chaptersApi } from "@/services/api/client";
 import { chaptersKeys } from "@/services/api/queryKeys";
 import type { Chapter } from "@/types/story";
-import { $appendParagraphs } from "../editor/lexicalText";
+import { $appendParagraphs, $captureSelection, $textBefore } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { SELECTION_ACTIONS, type SelectionActionId } from "./selectionActions";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 import { useAttempts } from "./useAttempts";
 
@@ -35,8 +36,6 @@ const ACCEPT_LABELS: Record<ActionKind, string> = {
     summarise: "Save summary",
     ask: "Replace selection"
 };
-
-const RECENT_PROSE_CHAR_CAP = 100_000;
 
 /**
  * Wires the built-in AI actions (contracts Phase 4) to the editor: selection
@@ -75,14 +74,7 @@ export const useEditorActions = (chapter: Chapter) => {
         [runGeneration, chapter.storyId, chapter.id, record]
     );
 
-    const docTextTail = useCallback(
-        () =>
-            editor
-                .getEditorState()
-                .read(() => $getRoot().getTextContent())
-                .slice(-RECENT_PROSE_CHAR_CAP),
-        [editor]
-    );
+    const docTextTail = useCallback(() => editor.getEditorState().read(() => $textBefore(null)), [editor]);
 
     const baseContext = useCallback(
         // DB nulls must not reach the API's string validators
@@ -93,44 +85,40 @@ export const useEditorActions = (chapter: Chapter) => {
         [chapter.povCharacter, chapter.povType]
     );
 
+    /** Holds the writer's selection for the sheet to act on later; false (and says so) when there's none. */
+    const holdSelection = useCallback(() => {
+        const captured = editor.getEditorState().read($captureSelection);
+        if (!captured) {
+            toast.info("Select some text first");
+            return false;
+        }
+        savedSelection.current = captured.selection;
+        savedSelectionText.current = captured.text;
+        clearAttempts();
+        return true;
+    }, [editor, clearAttempts]);
+
     const onSelectionAction = useCallback(
-        (actionId: "rework" | "expand" | "shorten", label: string) => {
-            const info = editor.getEditorState().read(() => {
-                const selection = $getSelection();
-                if (!$isRangeSelection(selection) || selection.isCollapsed()) return null;
-                return { text: selection.getTextContent(), clone: selection.clone() };
-            });
-            if (!info) {
-                toast.info("Select some text first");
-                return;
-            }
-            savedSelection.current = info.clone;
-            savedSelectionText.current = info.text;
-            clearAttempts();
+        (actionId: SelectionActionId) => {
+            if (!holdSelection()) return;
+            const { label } = SELECTION_ACTIONS.find(action => action.actionId === actionId) ?? { label: actionId };
             setActive({ id: actionId, title: label, kind: "selection" });
-            runAttempt(actionId, { ...baseContext(), selection: info.text, recentProse: docTextTail() });
+            runAttempt(actionId, {
+                ...baseContext(),
+                selection: savedSelectionText.current,
+                recentProse: docTextTail()
+            });
         },
-        [editor, clearAttempts, runAttempt, baseContext, docTextTail]
+        [holdSelection, runAttempt, baseContext, docTextTail]
     );
 
     // Free-form instruction on a selection: capture first, ask the writer
     // what to do, then run the ask action with their instruction
     const onAsk = useCallback(() => {
-        const info = editor.getEditorState().read(() => {
-            const selection = $getSelection();
-            if (!$isRangeSelection(selection) || selection.isCollapsed()) return null;
-            return { text: selection.getTextContent(), clone: selection.clone() };
-        });
-        if (!info) {
-            toast.info("Select some text first");
-            return;
-        }
-        savedSelection.current = info.clone;
-        savedSelectionText.current = info.text;
-        clearAttempts();
+        if (!holdSelection()) return;
         setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
         setAskPending(true);
-    }, [editor, clearAttempts]);
+    }, [holdSelection]);
 
     const submitAsk = useCallback(
         (instruction: string) => {

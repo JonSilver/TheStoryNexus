@@ -1,4 +1,35 @@
-import { $createParagraphNode, $createTextNode, $getRoot, type LexicalNode, type ParagraphNode } from "lexical";
+import {
+    $createParagraphNode,
+    $createTextNode,
+    $getRoot,
+    $getSelection,
+    $isRangeSelection,
+    type LexicalNode,
+    type NodeKey,
+    type ParagraphNode,
+    type RangeSelection
+} from "lexical";
+
+/** The most preceding prose a request carries; the server's token budgeting trims further. */
+const RECENT_PROSE_CHAR_CAP = 100_000;
+
+/** The manuscript before a top-level node (the whole of it for null), blocks separated by blank lines. */
+export const $textBefore = (nodeKey: NodeKey | null): string => {
+    const children = $getRoot().getChildren();
+    const end = nodeKey === null ? children.length : children.findIndex(child => child.getKey() === nodeKey);
+    return children
+        .slice(0, end < 0 ? children.length : end)
+        .map(child => child.getTextContent())
+        .join("\n\n")
+        .slice(-RECENT_PROSE_CHAR_CAP);
+};
+
+/** The selected text with a copy of the selection to act on later, or null when nothing is selected. */
+export const $captureSelection = (): { text: string; selection: RangeSelection } | null => {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) return null;
+    return { text: selection.getTextContent(), selection: selection.clone() };
+};
 
 /** Generated prose as paragraphs: blank lines separate them; empty ones are dropped. */
 const $paragraphsFromText = (text: string): ParagraphNode[] =>
