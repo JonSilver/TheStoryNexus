@@ -4,7 +4,7 @@ import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 
 // Query keys (internal use only)
-const chaptersKeys = {
+export const chaptersKeys = {
     all: ["chapters"] as const,
     byStory: (storyId: string) => ["chapters", "story", storyId] as const,
     detail: (id: string) => ["chapters", id] as const

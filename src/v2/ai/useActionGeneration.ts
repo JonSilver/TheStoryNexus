@@ -1,34 +1,10 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
+import type { GenerationStatus } from "@/services/ai/sseParser";
+import { abortGeneration, streamGeneration } from "@/services/api/generation";
+import type { ActionEditorContext, ActionId } from "@/types/actions";
 import { randomUUID } from "@/utils/crypto";
-import { describeRequestFailure, describeStreamFailure } from "./requestFailure";
 
-export type ActionId =
-    | "continue"
-    | "rework"
-    | "expand"
-    | "shorten"
-    | "summarise_chapter"
-    | "brainstorm"
-    | "scene_beat"
-    | "extract_entries"
-    | "propose_updates"
-    | "ask"
-    | "check_continuity"
-    | "merge_entries"
-    | "derive_voice";
-
-export interface ActionEditorContext {
-    selection?: string;
-    recentProse?: string;
-    command?: string;
-    povCharacter?: string;
-    povType?: string;
-    userMessage?: string;
-    chatHistory?: string;
-    guidance?: string;
-}
+export type { ActionEditorContext, ActionId };
 
 export interface ActionRun {
     actionId: ActionId;
@@ -75,13 +51,7 @@ export const useActionGeneration = () => {
         const current = active.current;
         if (!current) return;
         current.controller.abort();
-        void attemptPromise(() =>
-            fetch("/api/generate/abort", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ requestId: current.requestId })
-            })
-        );
+        abortGeneration(current.requestId);
         // Deliberately NOT clearing active here: the aborted run still owns
         // its completion and must transition streaming → done itself. A
         // superseding run() disowns it by replacing active instead.
@@ -94,13 +64,7 @@ export const useActionGeneration = () => {
         active.current = null;
         if (current) {
             current.controller.abort();
-            void attemptPromise(() =>
-                fetch("/api/generate/abort", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ requestId: current.requestId })
-                })
-            );
+            abortGeneration(current.requestId);
         }
         setPhase("idle");
         setText("");
@@ -120,101 +84,40 @@ export const useActionGeneration = () => {
             setStatus({ phase: "waiting", elapsedMs: 0 });
 
             const chunks: string[] = [];
-            const outcome: { complete: boolean; aborted: boolean; streamError: string | null } = {
-                complete: false,
-                aborted: false,
-                streamError: null
-            };
             // Only the request that still owns `active` may touch state —
             // a superseded run's late callbacks must not clobber its successor
             const owns = () => active.current?.requestId === requestId;
-            const superseded: RunResult = { text: "", outcome: "superseded" };
-            const failed = (message: string): RunResult => {
-                setPhase("error");
-                setError(message);
-                return { text: chunks.join(""), outcome: "failed", error: message };
-            };
 
-            const [fetchError, response] = await attemptPromise(() =>
-                fetch("/api/generate/action", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ requestId, ...request }),
-                    signal: controller.signal
-                })
-            );
-
-            if (fetchError || !response) {
-                if (!owns()) return superseded;
-                active.current = null;
-                // AbortError = instant Stop before headers: end cleanly with
-                // no stranded streaming state; anything else is a real error
-                if ((fetchError as Error)?.name !== "AbortError") return failed(describeRequestFailure(fetchError));
-                setPhase("done");
-                return { text: "", outcome: "stopped" };
-            }
-            if (!response.ok) {
-                const body = await response.json().catch(() => ({}));
-                if (!owns()) return superseded;
-                active.current = null;
-                return failed(body.error || `Generation failed (${response.status})`);
-            }
-
-            const parser = createSSEParser({
-                onStatus: next => {
-                    if (owns()) setStatus(next);
-                },
-                onToken: token => {
-                    if (!owns()) return;
-                    chunks.push(token);
-                    setText(chunks.join(""));
-                },
-                onComplete: () => {
-                    outcome.complete = true;
-                },
-                onAborted: () => {
-                    outcome.aborted = true;
-                },
-                onError: streamError => {
-                    outcome.streamError = streamError.message;
-                }
-            });
-
-            const reader = response.body?.getReader();
-            if (!reader) {
-                if (!owns()) return superseded;
-                active.current = null;
-                return failed("No response stream");
-            }
-            const decoder = new TextDecoder();
-            const [readError] = await attemptPromise(async () => {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                        parser.push(decoder.decode());
-                        parser.end();
-                        break;
+            const ended = await streamGeneration(
+                { requestId, ...request },
+                {
+                    signal: controller.signal,
+                    onStatus: next => {
+                        if (owns()) setStatus(next);
+                    },
+                    onToken: token => {
+                        if (!owns()) return;
+                        chunks.push(token);
+                        setText(chunks.join(""));
                     }
-                    parser.push(decoder.decode(value, { stream: true }));
                 }
-            });
+            );
+            const text = chunks.join("");
 
             // Left mid-stream (the screen closed): what arrived is still the writer's — callers
             // that persist (Brainstorm) keep it; no state is touched on the unmounted hook
             if (!owns())
-                return unmounted.current && chunks.length ? { text: chunks.join(""), outcome: "stopped" } : superseded;
+                return unmounted.current && text ? { text, outcome: "stopped" } : { text: "", outcome: "superseded" };
             active.current = null;
-            // Stopped mid-stream: what arrived is the writer's to accept or discard
-            if ((readError as Error)?.name === "AbortError" || outcome.aborted) {
-                setPhase("done");
-                return { text: chunks.join(""), outcome: "stopped" };
+            if (ended.end === "failed") {
+                // A failure keeps whatever text arrived first — callers decide how to offer it
+                setPhase("error");
+                setError(ended.error);
+                return { text, outcome: "failed", error: ended.error };
             }
-            // A failure keeps whatever text arrived first — callers decide how to offer it
-            if (readError) return failed(describeStreamFailure(readError));
-            if (outcome.streamError) return failed(outcome.streamError);
-            if (!outcome.complete) return failed("The response ended unexpectedly.");
+            // Stopped mid-stream: what arrived is the writer's to accept or discard
             setPhase("done");
-            return { text: chunks.join(""), outcome: "complete" };
+            return { text, outcome: ended.end === "complete" ? "complete" : "stopped" };
         },
         [abort]
     );

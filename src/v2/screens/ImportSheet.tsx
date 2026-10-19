@@ -1,20 +1,7 @@
-import { attemptPromise } from "@jfdi/attempt";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "react-toastify";
-
-interface AnalysedChapter {
-    title: string;
-    wordCount: number;
-    preview: string;
-}
-
-interface Analysis {
-    token: string;
-    title: string;
-    chapters: AnalysedChapter[];
-}
+import { useAnalyseFiles, useAnalyseText, useCommitImport } from "@/features/ingest/hooks/useIngest";
+import type { AnalysedChapter, ManuscriptAnalysis } from "@/services/api/client";
 
 interface ReviewChapter extends AnalysedChapter {
     index: number;
@@ -32,77 +19,29 @@ export const ImportSheet = ({
     onClose: () => void;
     onImported: (storyId: string) => void;
 }) => {
-    const queryClient = useQueryClient();
     const [pasted, setPasted] = useState("");
-    const [busy, setBusy] = useState(false);
-    const [analysis, setAnalysis] = useState<Analysis | null>(null);
+    const [analysis, setAnalysis] = useState<ManuscriptAnalysis | null>(null);
     const [review, setReview] = useState<ReviewChapter[]>([]);
     const [title, setTitle] = useState("");
 
-    const applyAnalysis = (result: Analysis) => {
+    const applyAnalysis = (result: ManuscriptAnalysis) => {
         setAnalysis(result);
         setTitle(result.title);
         setReview(result.chapters.map((chapter, index) => ({ ...chapter, index, included: true })));
     };
 
-    const analyseFiles = async (files: File[]) => {
-        setBusy(true);
-        // Reading order by natural filename sort ("Chapter 2" before "Chapter 10")
-        const ordered = [...files].sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
-        );
-        const body = new FormData();
-        ordered.forEach(file => body.append("files", file));
-        const [error, response] = await attemptPromise(() => fetch("/api/ingest/analyse", { method: "POST", body }));
-        setBusy(false);
-        if (error || !response?.ok) {
-            const detail = response ? (await response.json().catch(() => ({})))?.error : undefined;
-            toast.error(detail || "Couldn't read that file");
-            return;
-        }
-        applyAnalysis(await response.json());
-    };
+    const analyseFiles = useAnalyseFiles();
+    const analyseText = useAnalyseText();
+    const commitImport = useCommitImport();
+    const busy = analyseFiles.isPending || analyseText.isPending || commitImport.isPending;
 
-    const analyseText = async () => {
-        setBusy(true);
-        const [error, response] = await attemptPromise(() =>
-            fetch("/api/ingest/analyse-text", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: pasted })
-            })
-        );
-        setBusy(false);
-        if (error || !response?.ok) {
-            toast.error("Couldn't analyse that text");
-            return;
-        }
-        applyAnalysis(await response.json());
-    };
-
-    const commit = async () => {
+    const commit = () => {
         if (!analysis) return;
-        setBusy(true);
         const chapters = review.filter(c => c.included).map(c => ({ index: c.index, title: c.title }));
-        const [error, response] = await attemptPromise(() =>
-            fetch("/api/ingest/commit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token: analysis.token, title: title.trim() || "Imported story", chapters })
-            })
+        commitImport.mutate(
+            { token: analysis.token, title: title.trim() || "Imported story", chapters },
+            { onSuccess: ({ storyId }) => onImported(storyId) }
         );
-        setBusy(false);
-        if (error || !response?.ok) {
-            const detail = response ? (await response.json().catch(() => ({})))?.error : undefined;
-            toast.error(detail || "Import failed — nothing was created");
-            return;
-        }
-        const { storyId, chapterCount } = await response.json();
-        void queryClient.invalidateQueries();
-        toast.success(
-            `Imported ${chapterCount} chapters — Story Bible → Extract from whole story builds your bible, and Story → Details, series & voice → Derive from my writing drafts your story's voice`
-        );
-        onImported(storyId);
     };
 
     return (
@@ -135,7 +74,8 @@ export const ImportSheet = ({
                                     onChange={e => {
                                         const files = Array.from(e.target.files ?? []);
                                         e.target.value = "";
-                                        if (files.length > 0 && !busy) void analyseFiles(files);
+                                        if (files.length > 0 && !busy)
+                                            analyseFiles.mutate(files, { onSuccess: applyAnalysis });
                                     }}
                                 />
                             </label>
@@ -200,7 +140,7 @@ export const ImportSheet = ({
                     {!analysis ? (
                         <button
                             type="button"
-                            onClick={() => void analyseText()}
+                            onClick={() => analyseText.mutate(pasted, { onSuccess: applyAnalysis })}
                             disabled={busy || !pasted.trim()}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
@@ -209,7 +149,7 @@ export const ImportSheet = ({
                     ) : (
                         <button
                             type="button"
-                            onClick={() => void commit()}
+                            onClick={commit}
                             disabled={busy || review.every(c => !c.included)}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >

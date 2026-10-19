@@ -1,4 +1,3 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     $getNodeByKey,
@@ -13,9 +12,9 @@ import {
 } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
+import type { GenerationStatus } from "@/services/ai/sseParser";
+import { abortGeneration, streamGeneration } from "@/services/api/generation";
 import { randomUUID } from "@/utils/crypto";
-import { describeRequestFailure, describeStreamFailure } from "../ai/requestFailure";
 import { useChapterIdentity } from "./ChapterContext";
 import {
     $commitStreamingAsTake,
@@ -87,13 +86,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             const controller = new AbortController();
             const cancel = () => {
                 controller.abort();
-                void attemptPromise(() =>
-                    fetch("/api/generate/abort", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ requestId })
-                    })
-                );
+                abortGeneration(requestId);
             };
             cancelRef.current = cancel;
             const owns = () => cancelRef.current === cancel;
@@ -126,67 +119,34 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 if (errorMessage) toast.error(errorMessage);
             };
 
-            const [fetchError, response] = await attemptPromise(() =>
-                fetch("/api/generate/action", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        requestId,
-                        actionId: "scene_beat",
-                        storyId,
-                        chapterId,
-                        editorContext: {
-                            command,
-                            recentProse: textBeforeNode(),
-                            ...pov,
-                            ...(guidance?.trim() ? { guidance: guidance.trim() } : {})
-                        }
-                    }),
-                    signal: controller.signal
-                })
-            );
-            if (fetchError || !response) {
-                finish((fetchError as Error)?.name === "AbortError" ? undefined : describeRequestFailure(fetchError));
-                return;
-            }
-            if (!response.ok || !response.body) {
-                const body = await response.json().catch(() => ({}));
-                finish(body.error || `Generation failed (${response.status})`);
-                return;
-            }
-
-            const parser = createSSEParser({
-                onStatus: next => {
-                    if (owns()) setProgress(next);
-                },
-                onToken: token => {
-                    if (!owns()) return;
-                    mutate(
-                        node => $setState(node, streamingState, prev => prev + token),
-                        [HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]
-                    );
-                },
-                onComplete: () => finish(),
-                onAborted: () => finish(undefined, true),
-                onError: error => finish(error.message)
-            });
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            const [readError] = await attemptPromise(async () => {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                        parser.push(decoder.decode());
-                        parser.end();
-                        break;
+            const ended = await streamGeneration(
+                {
+                    requestId,
+                    actionId: "scene_beat",
+                    storyId,
+                    chapterId,
+                    editorContext: {
+                        command,
+                        recentProse: textBeforeNode(),
+                        ...pov,
+                        ...(guidance?.trim() ? { guidance: guidance.trim() } : {})
                     }
-                    parser.push(decoder.decode(value, { stream: true }));
+                },
+                {
+                    signal: controller.signal,
+                    onStatus: next => {
+                        if (owns()) setProgress(next);
+                    },
+                    onToken: token => {
+                        if (!owns()) return;
+                        mutate(
+                            node => $setState(node, streamingState, prev => prev + token),
+                            [HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]
+                        );
+                    }
                 }
-            });
-            if (readError)
-                if ((readError as Error).name === "AbortError") finish(undefined, true);
-                else finish(describeStreamFailure(readError));
+            );
+            finish(ended.end === "failed" ? ended.error : undefined, ended.end === "stopped");
         },
         [mutate, editor, nodeKey, storyId, chapterId, textBeforeNode]
     );
