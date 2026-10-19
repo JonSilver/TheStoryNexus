@@ -42,6 +42,14 @@ export const useBrainstormByStoryQuery = (storyId: string) => {
     });
 };
 
+/** One chat by id — for links to a chat the story's list doesn't (yet) show. */
+export const useBrainstormChatQuery = (chatId: string | null | undefined, enabled: boolean) =>
+    useQuery({
+        queryKey: brainstormKeys.detail(chatId ?? ""),
+        queryFn: () => brainstormApi.getById(chatId ?? ""),
+        enabled: enabled && !!chatId
+    });
+
 // Create brainstorm chat mutation
 export const useCreateBrainstormMutation = () => {
     const queryClient = useQueryClient();

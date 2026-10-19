@@ -1,9 +1,9 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { attempt } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { isEqual } from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
+import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "failed" | "conflict";
@@ -32,28 +32,14 @@ const putChapterContent = async (
     expectedSaveVersion: number,
     exiting = false
 ): Promise<SaveResult> => {
-    const body = JSON.stringify({ content, wordCount, expectedSaveVersion });
-    const [error, response] = await attemptPromise(() =>
-        fetch(`/api/chapters/${chapterId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body,
-            // keepalive survives page teardown but caps the body (~64KB);
-            // larger saves fall back to a normal fetch and rely on the
-            // visibilitychange flush firing while the page is still alive
-            keepalive: exiting && new Blob([body]).size < KEEPALIVE_BODY_LIMIT
-        })
-    );
-    if (error || !response) return { outcome: "error", message: (error as Error)?.message ?? "Network error" };
-    if (response.status === 409) {
-        const body = await response.json().catch(() => ({}));
-        return { outcome: "conflict", current: body.current };
-    }
-    if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        return { outcome: "error", message: body.error || `Save failed (${response.status})` };
-    }
-    return { outcome: "ok", chapter: await response.json() };
+    // keepalive survives page teardown but caps the body (~64KB); larger saves
+    // rely on the visibilitychange flush firing while the page is still alive
+    const keepalive =
+        exiting && new Blob([JSON.stringify({ content, wordCount, expectedSaveVersion })]).size < KEEPALIVE_BODY_LIMIT;
+    const result = await chaptersApi.saveContent(chapterId, { content, wordCount }, expectedSaveVersion, keepalive);
+    if (result.ok) return { outcome: "ok", chapter: result.data };
+    if (result.status === 409) return { outcome: "conflict", current: (result.body as { current: Chapter }).current };
+    return { outcome: "error", message: result.error };
 };
 
 const DEBOUNCE_MS = 1000;

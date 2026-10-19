@@ -1,9 +1,9 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
+import { brainstormApi } from "@/services/api/client";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
@@ -42,19 +42,12 @@ const replyFrom = (result: RunResult) =>
 type WriteResult = { outcome: "ok" | "conflict"; chat: AIChat | null } | { outcome: "failed" } | { outcome: "gone" };
 
 const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<WriteResult> => {
-    const [error, response] = await attemptPromise(() =>
-        fetch(`/api/brainstorm/${chat.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages, expectedRevision: chat.revision ?? 0 })
-        })
-    );
-    if (response?.status === 404) return { outcome: "gone" };
-    if (error || !response || (!response.ok && response.status !== 409)) return { outcome: "failed" };
-    const [, body] = await attemptPromise(() => response.json());
-    return response.ok
-        ? { outcome: "ok", chat: body as AIChat }
-        : { outcome: "conflict", chat: (body as { current?: AIChat } | null)?.current ?? null };
+    const result = await brainstormApi.writeMessages(chat, messages);
+    if (result.ok) return { outcome: "ok", chat: result.data };
+    if (result.status === 404) return { outcome: "gone" };
+    if (result.status === 409)
+        return { outcome: "conflict", chat: (result.body as { current?: AIChat } | null)?.current ?? null };
+    return { outcome: "failed" };
 };
 
 // A conflict means another device wrote first: re-apply onto theirs and try again, a few times

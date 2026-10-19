@@ -1,9 +1,11 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useMutation } from "@tanstack/react-query";
 import { $createParagraphNode, $getRoot, $getSelection } from "lexical";
 import { Image as ImageIcon } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "react-toastify";
+import { assetsApi } from "@/services/api/client";
+import { orThrow } from "@/services/api/request";
 import { $createImageNode } from "../nodes/ImageNode";
 
 export const ImageUploadButton = ({
@@ -20,24 +22,26 @@ export const ImageUploadButton = ({
     const [editor] = useLexicalComposerContext();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const uploadAndInsertImage = async (file: File) => {
-        const body = new FormData();
-        body.append("file", file);
-        const [error, response] = await attemptPromise(() => fetch(`/api/assets/${storyId}`, { method: "POST", body }));
-        if (error || !response?.ok) {
-            const detail = response ? (await response.json().catch(() => ({})))?.error : undefined;
-            toast.error(detail || "Image upload failed");
-            return;
-        }
-        const { url } = await response.json();
-        onDone?.();
-        editor.update(() => {
-            // Focus moved to the file picker, so the editor selection is often
-            // gone by now — fall back to the end of the document
-            const selection = $getSelection() ?? $getRoot().selectEnd();
-            selection.insertNodes([$createImageNode(url, file.name.replace(/\.[^.]+$/, "")), $createParagraphNode()]);
+    const upload = useMutation({
+        mutationFn: async (file: File) => orThrow(await assetsApi.upload(storyId, file)),
+        onError: (error: Error) => toast.error(error.message || "Image upload failed")
+    });
+
+    const uploadAndInsertImage = (file: File) =>
+        upload.mutate(file, {
+            onSuccess: ({ url }) => {
+                onDone?.();
+                editor.update(() => {
+                    // Focus moved to the file picker, so the editor selection is often
+                    // gone by now — fall back to the end of the document
+                    const selection = $getSelection() ?? $getRoot().selectEnd();
+                    selection.insertNodes([
+                        $createImageNode(url, file.name.replace(/\.[^.]+$/, "")),
+                        $createParagraphNode()
+                    ]);
+                });
+            }
         });
-    };
 
     return (
         <>
@@ -59,7 +63,7 @@ export const ImageUploadButton = ({
                 onChange={e => {
                     const file = e.target.files?.[0];
                     e.target.value = "";
-                    if (file) void uploadAndInsertImage(file);
+                    if (file) uploadAndInsertImage(file);
                 }}
             />
         </>

@@ -1,15 +1,11 @@
-import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
+import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
 import { useV2Store } from "../state/useV2Store";
-
-type BackgroundClaim =
-    | { due: true; storyId: string; revision: number; summarySourceRevision: number | null }
-    | { due: false; reason: string };
 
 const IDLE_MS = 90_000;
 const FAILURE_TOAST = "auto-summarise-failure";
@@ -48,20 +44,17 @@ export const useAutoSummarise = (chapter: Chapter) => {
         if (!enabled.current || running.current) return;
         if (local.current.chapterId !== chapterId || !local.current.pending) return;
         running.current = true;
-        const [claimError, claim] = await attemptPromise(async () => {
-            const response = await fetch(`/api/chapters/${chapterId}/background-summary`, { method: "POST" });
-            if (!response.ok) throw new Error(`the app's server answered ${response.status}.`);
-            return (await response.json()) as BackgroundClaim;
-        });
-        if (claimError || !claim) {
+        const claimed = await chaptersApi.claimBackgroundSummary(chapterId);
+        if (!claimed.ok) {
             running.current = false;
             // Still pending: the writer's next pause asks again — no retry loop while idle
             reportFailure(
-                `couldn't reach the app's server — ${(claimError as Error)?.message ?? "no answer."}`,
+                `couldn't reach the app's server — ${claimed.error}`,
                 "It will ask again after your next pause in writing."
             );
             return;
         }
+        const claim = claimed.data;
         // One ask per local significant change, whatever the answer
         local.current.pending = false;
         if (!claim.due) {
@@ -82,26 +75,15 @@ export const useAutoSummarise = (chapter: Chapter) => {
                         return;
                     }
                     void (async () => {
-                        const [putError, put] = await attemptPromise(() =>
-                            fetch(`/api/chapters/${chapterId}`, {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    summary,
-                                    summarySourceRevision: revision,
-                                    backgroundSummary: { expectedSourceRevision: summarySourceRevision }
-                                })
-                            })
+                        const saved = await chaptersApi.saveBackgroundSummary(
+                            chapterId,
+                            summary,
+                            revision,
+                            summarySourceRevision
                         );
                         // 409: the writer saved or locked a summary meanwhile — theirs wins, by design
-                        if (put?.status === 409) return;
-                        if (putError || !put?.ok) {
-                            reportFailure("a summary was generated but couldn't be saved.");
-                            return;
-                        }
-                        const [parseError, saved] = await attemptPromise(() => put.json() as Promise<Chapter>);
-                        // The summary is stored either way; an unreadable echo only means the next fetch syncs the cache
-                        if (!parseError && saved) applyChapterToCaches(queryClient, saved);
+                        if (saved.ok) applyChapterToCaches(queryClient, saved.data);
+                        else if (saved.status !== 409) reportFailure("a summary was generated but couldn't be saved.");
                     })();
                 }
             }

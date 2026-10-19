@@ -4,7 +4,7 @@ import { storiesApi } from "@/services/api/client";
 import type { Story } from "@/types/story";
 
 // Query keys
-const storiesKeys = {
+export const storiesKeys = {
     all: ["stories"] as const,
     detail: (id: string) => ["stories", id] as const
 };

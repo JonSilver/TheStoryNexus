@@ -13,7 +13,8 @@ import {
 } from "lexical";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
+import { chaptersKeys, useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
+import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
@@ -46,6 +47,7 @@ const RECENT_PROSE_CHAR_CAP = 100_000;
 export const useEditorActions = (chapter: Chapter) => {
     const [editor] = useLexicalComposerContext();
     const queryClient = useQueryClient();
+    const updateChapter = useUpdateChapterMutation();
     const generation = useActionGeneration();
     const [active, setActive] = useState<ActiveAction | null>(null);
     const savedSelection = useRef<RangeSelection | null>(null);
@@ -180,11 +182,17 @@ export const useEditorActions = (chapter: Chapter) => {
             await flushChapterSave(chapter.id);
             // Freshness is anchored to the revision the summary was GENERATED
             // from, not whatever revision exists when it is accepted
-            const [, fresh] = await attemptPromise(async () => (await fetch(`/api/chapters/${chapter.id}`)).json());
+            const [, fresh] = await attemptPromise(() =>
+                queryClient.fetchQuery({
+                    queryKey: chaptersKeys.detail(chapter.id),
+                    queryFn: () => chaptersApi.getById(chapter.id),
+                    staleTime: 0
+                })
+            );
             summariseBaseRevision.current = fresh?.revision ?? chapter.revision ?? 0;
             runAttempt("summarise_chapter");
         })();
-    }, [attempts, runAttempt, chapter.id, chapter.revision]);
+    }, [attempts, runAttempt, chapter.id, chapter.revision, queryClient]);
 
     const close = useCallback(() => {
         setActive(null);
@@ -211,24 +219,16 @@ export const useEditorActions = (chapter: Chapter) => {
         paragraphs[paragraphs.length - 1]?.selectEnd();
     };
 
-    const saveSummary = async (summary: string) => {
+    const saveSummary = (summary: string) => {
         const sourceRevision = summariseBaseRevision.current;
         if (sourceRevision === null) {
             toast.error("Couldn't save summary");
             return;
         }
-        const [saveError, saveResponse] = await attemptPromise(() =>
-            fetch(`/api/chapters/${chapter.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ summary, summarySourceRevision: sourceRevision, summaryLocked: false })
-            })
+        updateChapter.mutate(
+            { id: chapter.id, data: { summary, summarySourceRevision: sourceRevision, summaryLocked: false } },
+            { onSuccess: () => toast.success("Summary saved") }
         );
-        if (saveError || !saveResponse?.ok) toast.error("Couldn't save summary");
-        else {
-            applyChapterToCaches(queryClient, await saveResponse.json());
-            toast.success("Summary saved");
-        }
     };
 
     const onAccept = useCallback(() => {
@@ -248,7 +248,7 @@ export const useEditorActions = (chapter: Chapter) => {
                 { tag: HISTORY_PUSH_TAG }
             );
         else if (kind === "continue") editor.update(() => insertParagraphsAtEnd(text), { tag: HISTORY_PUSH_TAG });
-        else void saveSummary(text);
+        else saveSummary(text);
 
         close();
         // eslint-disable-next-line react-hooks/exhaustive-deps
