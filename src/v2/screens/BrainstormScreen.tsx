@@ -1,6 +1,5 @@
 import { ArrowLeft, Plus, RotateCcw, Send, Square, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "react-toastify";
 import {
     useBrainstormByStoryQuery,
     useCreateBrainstormMutation,
@@ -59,12 +58,9 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
         if (!chat || !currentStoryId || !draft.trim() || generation.phase === "streaming") return;
         const userMessage = draft.trim();
         setDraft("");
-        if (!(await conversation.send(userMessage))) {
-            if (!conversation.isMounted()) return;
-            setDraft(userMessage); // give the message back rather than losing it
-            toast.error("Couldn't save your message — try again");
-            return;
-        }
+        // Unconfirmed: the message stays in the conversation, marked unsaved — not back in the draft,
+        // which would send it twice if the save had in fact landed
+        if (!(await conversation.send(userMessage))) return;
         requestAnimationFrame(() => scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight }));
     };
 
@@ -177,6 +173,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                 )}
                 {unsaved?.chatId === chat.id && (
                     <UnsavedBanner
+                        deviceOnly={unsaved.deviceOnly}
                         onSave={() => void conversation.saveAgain()}
                         onDiscard={conversation.discardUnsaved}
                     />

@@ -250,3 +250,28 @@ test("brainstorm: unsaved changes to a chat deleted elsewhere are dropped, and t
     await expect(page.getByText(/That chat was deleted, so its unsaved changes were dropped/)).toBeVisible();
     await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
 });
+
+test("brainstorm: a message whose save landed but whose answer was lost is never sent twice", async ({ page }) => {
+    await script(page, [{ text: "One reply." }]);
+    await createStoryAndChapter(page, "Keep — message lost answer", "One");
+    await openNewChat(page);
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", async route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        if (writes.count !== 1) return route.fallback();
+        // The server saves the message; the answer never arrives
+        await route.fetch();
+        return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+    });
+    await send(page, "Asked once");
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+    await expect(page.getByPlaceholder("Bounce an idea around…")).toHaveValue("");
+
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByText("One reply.")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Asked once")).toHaveCount(1);
+});

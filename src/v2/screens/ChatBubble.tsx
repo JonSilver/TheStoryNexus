@@ -83,10 +83,21 @@ export const ChatBubble = ({
 };
 
 /** A conversation the server hasn't accepted yet — kept on this device until it does. */
-export const UnsavedBanner = ({ onSave, onDiscard }: { onSave: () => void; onDiscard: () => void }) => (
+export const UnsavedBanner = ({
+    onSave,
+    onDiscard,
+    deviceOnly
+}: {
+    onSave: () => void;
+    onDiscard: () => void;
+    /** The browser refused to store it: it survives only until this page is closed or reloaded. */
+    deviceOnly: boolean;
+}) => (
     <div className="flex flex-wrap items-center gap-2 text-sm" role="alert">
         <p className="w-full text-destructive">
-            This conversation isn't saved yet — the last write failed. It's kept on this device until it is.
+            {deviceOnly
+                ? "This conversation isn't saved yet — and this browser won't let the app keep it, so don't reload or close this page until Save again works."
+                : "This conversation isn't saved yet — the last write failed. It's kept on this device until it is."}
         </p>
         <button type="button" onClick={onSave} className="flex items-center gap-1 rounded-md border px-3 py-1">
             <RotateCcw className="h-3.5 w-3.5" /> Save again

@@ -19,7 +19,8 @@ import {
     op,
     readPending,
     readUnsaved,
-    removePending
+    removePending,
+    storageRefused
 } from "./chatOps";
 
 const historyText = (messages: ChatMessage[]) =>
@@ -108,15 +109,16 @@ export const useChatConversation = (
     const pendingOps = chat ? readPending(chat.id) : [];
     const messages = chat ? applyOps(chat.messages, pendingOps) : [];
     // Shown at once, but only "unsaved" once nobody is saving it
-    const unsaved = chat && readUnsaved(chat.id).length ? { chatId: chat.id } : null;
+    const unsaved = chat && readUnsaved(chat.id).length ? { chatId: chat.id, deviceOnly: storageRefused() } : null;
 
     /**
      * Saves this device's pending changes plus `ops`, one write at a time.
-     * The new changes are stored on the device before the save starts.
-     * `keep` — on failure, keep them pending (Save again); otherwise drop
-     * them (the writer still has them, e.g. the draft message).
+     * The new changes are stored on the device before the save starts and
+     * stay pending (Save again) until a save is confirmed — a failure can't
+     * tell "not saved" from "saved but the answer was lost", so dropping or
+     * re-sending would risk loss or duplicates.
      */
-    const commit = (chatId: string, ops: ChatOp[], keep = true): Promise<boolean> => {
+    const commit = (chatId: string, ops: ChatOp[]): Promise<boolean> => {
         addPending(chatId, ops);
         claimPending(chatId, ops, true);
         refresh();
@@ -146,14 +148,7 @@ export const useChatConversation = (
                     chatId,
                     all.map(change => change.id)
                 );
-            else {
-                if (!keep)
-                    removePending(
-                        chatId,
-                        ops.map(change => change.id)
-                    );
-                claimPending(chatId, all, false);
-            }
+            else claimPending(chatId, all, false);
             refresh();
             return saved;
         });
@@ -193,12 +188,16 @@ export const useChatConversation = (
         if (alive.current) generation.reset();
     };
 
-    /** False when the writer's own message couldn't be saved — nothing was sent to the model. */
+    /**
+     * False when the writer's message couldn't be confirmed saved: it stays in
+     * the conversation as unsaved (Save again, then Try again) and nothing is
+     * sent to the model.
+     */
     const send = async (text: string): Promise<boolean> => {
         if (!chat) return false;
         const question = chatMessage("user", text);
         const history = messages;
-        if (!(await commit(chat.id, [op({ type: "append", message: question, after: null })], false))) return false;
+        if (!(await commit(chat.id, [op({ type: "append", message: question, after: null })]))) return false;
         await answer(history, question);
         return true;
     };
@@ -231,7 +230,15 @@ export const useChatConversation = (
 
     const showVersion = (message: ChatMessage, index: number) => {
         if (!chat || message.versions?.[index] === undefined) return;
-        void commit(chat.id, [op({ type: "show", messageId: message.id, index, basedOn: message.shownBy ?? null })]);
+        void commit(chat.id, [
+            op({
+                type: "show",
+                messageId: message.id,
+                index,
+                versionId: message.versionIds?.[index] ?? null,
+                basedOn: message.shownBy ?? null
+            })
+        ]);
     };
 
     /** Writes what this device still holds unsaved. */

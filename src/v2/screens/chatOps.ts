@@ -12,7 +12,15 @@ export type ChatOp =
     | { id: string; type: "append"; message: ChatMessage; after: string | null }
     | { id: string; type: "addVersion"; messageId: string; text: string; interrupted: boolean }
     // `basedOn`: the change that had set the shown version when this choice was made
-    | { id: string; type: "show"; messageId: string; index: number; basedOn: string | null };
+    // `versionId` names the version (positions move when versions are added elsewhere); `index` for ones with no id
+    | {
+          id: string;
+          type: "show";
+          messageId: string;
+          index: number;
+          versionId: string | null;
+          basedOn: string | null;
+      };
 
 type OpInput = ChatOp extends infer O ? (O extends ChatOp ? Omit<O, "id"> : never) : never;
 
@@ -50,11 +58,12 @@ const APPLY: { [K in ChatOp["type"]]: (messages: ChatMessage[], op: Extract<Chat
             };
         }),
     // Only over the choice it replaced: if anyone (or this very change) has chosen since, theirs stands
-    show: (messages, { id, messageId, index, basedOn }) =>
+    show: (messages, { id, messageId, index, versionId, basedOn }) =>
         update(messages, messageId, message => {
-            const chosen = versionsOf(message)[index];
-            if (chosen === undefined || (message.shownBy ?? null) !== basedOn) return message;
-            return { ...message, content: chosen, shownVersion: index, shownBy: id };
+            const at = versionId ? (message.versionIds ?? []).indexOf(versionId) : index;
+            const chosen = versionsOf(message)[at];
+            if (at < 0 || chosen === undefined || (message.shownBy ?? null) !== basedOn) return message;
+            return { ...message, content: chosen, shownVersion: at, shownBy: id };
         })
 };
 
@@ -88,7 +97,8 @@ const fromLegacy = (stored: unknown): ChatOp[] => {
         const shown = message.shownVersion;
         if (shown === undefined || shown === showing) return added;
         const basedOn = added.length ? added[added.length - 1].id : (before.shownBy ?? null);
-        return [...added, op({ type: "show", messageId: message.id, index: shown, basedOn })];
+        const versionId = shown >= known ? added[shown - known].id : null;
+        return [...added, op({ type: "show", messageId: message.id, index: shown, versionId, basedOn })];
     });
 };
 
@@ -127,12 +137,18 @@ const storageKeys = (): string[] => {
     }
 };
 
+const persistence = { refused: false };
+
+/** True once the browser has refused to store an unsaved change: it then lasts only until a reload. */
+export const storageRefused = () => persistence.refused;
+
 const store = (chatId: string, record: Stored) => {
     inMemory.set(keyFor(chatId, record.op.id), record);
     try {
         localStorage.setItem(keyFor(chatId, record.op.id), JSON.stringify(record));
     } catch {
-        // Storage unavailable or full: the in-memory copy still covers this session
+        // Storage unavailable or full: the in-memory copy covers this session, and the writer is warned
+        persistence.refused = true;
     }
 };
 

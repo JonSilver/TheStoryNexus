@@ -58,18 +58,36 @@ describe("applyOps", () => {
 
     it("choosing a version is by position, so it means the same version everywhere", () => {
         const two = applyOps(base, [op({ type: "addVersion", messageId: "a1", text: "B", interrupted: false })]);
-        const choice = op({ type: "show", messageId: "a1", index: 0, basedOn: two[1].shownBy ?? null });
+        const choice = op({
+            type: "show",
+            messageId: "a1",
+            index: 0,
+            versionId: null,
+            basedOn: two[1].shownBy ?? null
+        });
         expect(applyOps(two, [choice])[1]).toMatchObject({ content: "A1", shownVersion: 0 });
     });
 
     it("a retried choice that already landed never overrides a newer choice made since", () => {
         const regen = op({ type: "addVersion", messageId: "a1", text: "B", interrupted: false });
         const two = applyOps(base, [regen]);
-        const mine = op({ type: "show", messageId: "a1", index: 0, basedOn: regen.id });
+        const mine = op({ type: "show", messageId: "a1", index: 0, versionId: null, basedOn: regen.id });
         const landed = applyOps(two, [mine]);
-        const theirs = op({ type: "show", messageId: "a1", index: 1, basedOn: mine.id });
+        const theirs = op({ type: "show", messageId: "a1", index: 1, versionId: null, basedOn: mine.id });
         const newer = applyOps(landed, [theirs]);
         expect(applyOps(newer, [mine])[1]).toMatchObject({ content: "B", shownVersion: 1 });
+    });
+});
+
+describe("choosing a version", () => {
+    it("names the version, so a regeneration saved elsewhere meanwhile can't shift the choice", () => {
+        const base = [msg("u1", "Q1"), msg("a1", "A1")];
+        const mine = op({ type: "addVersion", messageId: "a1", text: "Mine", interrupted: false });
+        const theirs = op({ type: "addVersion", messageId: "a1", text: "Theirs", interrupted: false });
+        const choose = op({ type: "show", messageId: "a1", index: 1, versionId: mine.id, basedOn: mine.id });
+        // Theirs reached the server first, so mine lands at position 2 — the choice still means mine
+        const merged = applyOps(applyOps(base, [theirs]), [mine, choose])[1];
+        expect(merged.content).toBe("Mine");
     });
 });
 
@@ -91,8 +109,8 @@ describe("pending changes", () => {
     });
 
     it("adds and removes by id, so one tab's save never drops another tab's change", () => {
-        const mine = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
-        const theirs = op({ type: "show", messageId: "a1", index: 1, basedOn: null });
+        const mine = op({ type: "show", messageId: "a1", index: 0, versionId: null, basedOn: null });
+        const theirs = op({ type: "show", messageId: "a1", index: 1, versionId: null, basedOn: null });
         addPending("c1", [mine]);
         addPending("c1", [theirs]);
         removePending("c1", [mine.id]);
@@ -114,8 +132,8 @@ describe("pending changes", () => {
     });
 
     it("a change another tab is saving is neither unsaved nor discardable meanwhile", () => {
-        const saving = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
-        const waiting = op({ type: "show", messageId: "a1", index: 1, basedOn: null });
+        const saving = op({ type: "show", messageId: "a1", index: 0, versionId: null, basedOn: null });
+        const waiting = op({ type: "show", messageId: "a1", index: 1, versionId: null, basedOn: null });
         addPending("c1", [saving, waiting]);
         claimPending("c1", [saving], true);
         expect(readUnsaved("c1").map(change => change.id)).toEqual([waiting.id]);
@@ -124,7 +142,7 @@ describe("pending changes", () => {
     });
 
     it("keeps changes storage couldn't take", () => {
-        const kept = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
+        const kept = op({ type: "show", messageId: "a1", index: 0, versionId: null, basedOn: null });
         const setItem = localStorage.setItem;
         localStorage.setItem = () => {
             throw new Error("QuotaExceededError");
