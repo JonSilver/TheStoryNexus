@@ -11,7 +11,7 @@ import {
     escapeHtmlText,
     parseSerialisedDocument
 } from "../export";
-import { useV2Store } from "../state/useV2Store";
+import { uiState } from "../state/useV2Store";
 
 type ExportFormat = "md" | "txt" | "html";
 
@@ -36,7 +36,7 @@ const MIME: Record<ExportFormat, string> = { md: "text/markdown", txt: "text/pla
 
 /** Whole-story export through the v2 converters (headings actually work). */
 export const ExportButtons = ({ storyId }: { storyId: string }) => {
-    const { lastChapterFor } = useV2Store();
+    const { lastChapterFor } = uiState;
     // Undecided takes and ghost suggestions are visible on screen but omitted
     // from every export — the writer must choose, not discover the hole later
     const confirmUndecided = (chapters: Array<{ content: string }>): boolean => {

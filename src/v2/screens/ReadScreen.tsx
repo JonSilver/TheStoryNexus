@@ -3,11 +3,11 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { ChapterReader } from "@/features/stories/components/ChapterReader";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
-import { useV2Store } from "../state/useV2Store";
+import { useCurrentStoryId } from "../state/useV2Store";
 
 /** Reading mode inside the shell: the whole story as one continuous scroll. */
 export const ReadScreen = ({ goBack }: ScreenProps) => {
-    const { currentStoryId } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
 

@@ -15,6 +15,7 @@ import {
 } from "lexical";
 import { BookOpenText, Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { countWords } from "@/utils/textUtils";
 import { $createSceneBeatNode } from "../nodes/SceneBeatNode";
 import type { SaveStatus } from "../useChapterSaver";
 import { AiActionButtons, type ToolbarActions } from "./AiActionButtons";
@@ -37,13 +38,14 @@ const toolButton =
  */
 export const ToolbarPlugin = ({
     saveStatus,
-    wordCount,
+    initialWordCount,
     storyId,
     actions,
     onToggleReference
 }: {
     saveStatus: SaveStatus;
-    wordCount: number;
+    /** The stored count, shown until the editor reports its own. */
+    initialWordCount: number;
     storyId: string;
     actions: ToolbarActions;
     onToggleReference: () => void;
@@ -156,7 +158,7 @@ export const ToolbarPlugin = ({
             <div className="ml-auto flex shrink-0 items-center gap-0.5">
                 {!hasSelection && (
                     <span className="px-1 text-xs text-muted-foreground" data-save-status={saveStatus}>
-                        {wordCount.toLocaleString()}
+                        <LiveWordCount initial={initialWordCount} />
                         {SAVE_LABELS[saveStatus] && ` · ${SAVE_LABELS[saveStatus]}`}
                     </span>
                 )}
@@ -180,4 +182,15 @@ export const ToolbarPlugin = ({
             </div>
         </div>
     );
+};
+
+/**
+ * Subscribes to the editor's text itself, so a changing count re-renders only
+ * this span — not the editor surface, its toolbar and every plugin.
+ */
+const LiveWordCount = ({ initial }: { initial: number }) => {
+    const [editor] = useLexicalComposerContext();
+    const [count, setCount] = useState(initial);
+    useEffect(() => editor.registerTextContentListener(text => setCount(countWords(text))), [editor]);
+    return <>{count.toLocaleString()}</>;
 };

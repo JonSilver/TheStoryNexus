@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { useRouteParams } from "../routeParams";
 
 /**
@@ -55,37 +55,30 @@ const setState = (update: Partial<V2State>) => {
     store.listeners.forEach(listener => listener());
 };
 
-/** Read at call time, outside React — e.g. to build a URL right after setCurrentStory. */
-export const getV2State = (): V2State => store.state;
-
 const subscribe = (listener: () => void) => {
     store.listeners.add(listener);
     return () => store.listeners.delete(listener);
 };
 
-export const useV2Store = () => {
-    const stored = useSyncExternalStore(subscribe, () => store.state);
-    // Inside a story URL, the URL — not the remembered last story — says which story this is
-    const route = useRouteParams();
-    const state = route.storyId ? { ...stored, currentStoryId: route.storyId } : stored;
-
-    const setCurrentStory = useCallback((storyId: string | null) => setState({ currentStoryId: storyId }), []);
-
-    const setLastChapter = useCallback((storyId: string, chapterId: string) => {
+/**
+ * Actions and readers — module-level, so stable by construction: hooks and
+ * effects can call them without listing them as dependencies.
+ */
+export const uiState = {
+    get: (): V2State => store.state,
+    setCurrentStory: (storyId: string | null) => setState({ currentStoryId: storyId }),
+    setLastChapter: (storyId: string, chapterId: string) =>
         setState({
             currentStoryId: storyId,
             lastChapterByStory: { ...store.state.lastChapterByStory, [storyId]: chapterId }
-        });
-    }, []);
-
-    const setScroll = useCallback((chapterId: string, scrollTop: number) => {
+        }),
+    setScroll: (chapterId: string, scrollTop: number) => {
         // The most recent chapters only — kept forever, this grew with every chapter ever opened
         const { [chapterId]: _previous, ...others } = store.state.scrollByChapter;
         const recent = Object.entries(others).slice(-(SCROLL_MEMORY - 1));
         setState({ scrollByChapter: { ...Object.fromEntries(recent), [chapterId]: scrollTop } });
-    }, []);
-
-    const dismissNudges = useCallback((storyId: string, names: string[]) => {
+    },
+    dismissNudges: (storyId: string, names: string[]) => {
         const existing = store.state.dismissedNudgesByStory[storyId] ?? [];
         setState({
             dismissedNudgesByStory: {
@@ -93,17 +86,19 @@ export const useV2Store = () => {
                 [storyId]: [...new Set([...existing, ...names.map(n => n.toLowerCase())])]
             }
         });
-    }, []);
+    },
+    setAutoSummarise: (on: boolean) => setState({ autoSummarise: on }),
+    dismissedNudges: (storyId: string): string[] => store.state.dismissedNudgesByStory[storyId] ?? [],
+    lastChapterFor: (storyId: string): string | null => store.state.lastChapterByStory[storyId] ?? null,
+    scrollFor: (chapterId: string): number => store.state.scrollByChapter[chapterId] ?? 0
+};
 
-    return {
-        ...state,
-        setCurrentStory,
-        setLastChapter,
-        setScroll,
-        dismissNudges,
-        setAutoSummarise: (on: boolean) => setState({ autoSummarise: on }),
-        dismissedNudges: (storyId: string): string[] => state.dismissedNudgesByStory[storyId] ?? [],
-        lastChapterFor: (storyId: string): string | null => state.lastChapterByStory[storyId] ?? null,
-        scrollFor: (chapterId: string): number => state.scrollByChapter[chapterId] ?? 0
-    };
+/** One slice of UI state; the component re-renders only when that slice changes (keep selectors to plain reads). */
+export const useUiState = <T>(select: (state: V2State) => T): T =>
+    useSyncExternalStore(subscribe, () => select(store.state));
+
+/** The story the writer is in: the URL's, else the remembered one. */
+export const useCurrentStoryId = (): string | null => {
+    const remembered = useUiState(state => state.currentStoryId);
+    return useRouteParams().storyId ?? remembered;
 };

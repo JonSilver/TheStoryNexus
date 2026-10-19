@@ -1,14 +1,11 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
-    $createParagraphNode,
-    $createTextNode,
     $getNodeByKey,
     $getRoot,
     $setState,
     HISTORY_MERGE_TAG,
     HISTORY_PUSH_TAG,
     SKIP_SCROLL_INTO_VIEW_TAG,
-    type LexicalNode,
     type NodeKey
 } from "lexical";
 import { Check, CornerDownRight, RotateCcw, X } from "lucide-react";
@@ -17,6 +14,7 @@ import type { GenerationStatus } from "@/services/ai/sseParser";
 import { GenerationProgress } from "../../ai/GenerationProgress";
 import { streamAction } from "../../ai/streamAction";
 import { useChapterIdentity } from "../ChapterContext";
+import { $insertParagraphsAfter } from "../lexicalText";
 import {
     ghostStatusState,
     $isGhostSuggestionNode,
@@ -191,21 +189,8 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
             () => {
                 const node = $getNodeByKey(nodeKey);
                 if (!$isGhostSuggestionNode(node)) return;
-                const paragraphs = $readGhost(node)
-                    .text.split(/\n{2,}/)
-                    .map(p => p.trim())
-                    .filter(Boolean)
-                    .map(p => {
-                        const paragraph = $createParagraphNode();
-                        paragraph.append($createTextNode(p));
-                        return paragraph;
-                    });
-                paragraphs.reduce<LexicalNode>((prev, p) => {
-                    prev.insertAfter(p);
-                    return p;
-                }, node);
+                $insertParagraphsAfter(node, $readGhost(node).text);
                 node.remove();
-                paragraphs[paragraphs.length - 1]?.selectEnd();
             },
             { tag: HISTORY_PUSH_TAG }
         );

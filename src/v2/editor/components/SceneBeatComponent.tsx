@@ -1,19 +1,11 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import {
-    $createParagraphNode,
-    $createTextNode,
-    $getNodeByKey,
-    $setState,
-    HISTORY_MERGE_TAG,
-    HISTORY_PUSH_TAG,
-    type LexicalNode,
-    type NodeKey
-} from "lexical";
+import { $getNodeByKey, $setState, HISTORY_MERGE_TAG, HISTORY_PUSH_TAG, type LexicalNode, type NodeKey } from "lexical";
 import { ChevronDown, ChevronRight, Sparkles, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { ContextInspector } from "../../ai/ContextInspector";
 import { GenerationProgress } from "../../ai/GenerationProgress";
 import { useChapterIdentity } from "../ChapterContext";
+import { $insertParagraphsAfter } from "../lexicalText";
 import {
     activeTakeState,
     collapsedState,
@@ -63,20 +55,7 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
 
     const insertActiveTake = (node: ReturnType<typeof $getNodeByKey> & LexicalNode) => {
         const text = takes[Math.min(activeTake, takes.length - 1)] ?? "";
-        const paragraphs = text
-            .split(/\n{2,}/)
-            .map(p => p.trim())
-            .filter(Boolean)
-            .map(p => {
-                const paragraph = $createParagraphNode();
-                paragraph.append($createTextNode(p));
-                return paragraph;
-            });
-        paragraphs.reduce<LexicalNode>((prev, p) => {
-            prev.insertAfter(p);
-            return p;
-        }, node);
-        paragraphs[paragraphs.length - 1]?.selectEnd();
+        $insertParagraphsAfter(node, text);
     };
 
     // Accept keeps the beat (and every take) for later; tidy removes the

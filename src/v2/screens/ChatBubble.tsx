@@ -1,4 +1,5 @@
 import { BookOpenText, FilePlus2, NotebookPen, RefreshCw, RotateCcw } from "lucide-react";
+import { memo } from "react";
 import type { ChatMessage } from "@/types/story";
 import { AttemptNav } from "../ai/AttemptNav";
 import { MarkdownView } from "../components/MarkdownView";
@@ -8,8 +9,12 @@ const versionShown = (message: ChatMessage) =>
 
 const ACTION = "mt-1 flex items-center gap-1 text-xs text-muted-foreground";
 
-/** One message in a brainstorm chat, with the bridges onward from an assistant reply. */
-export const ChatBubble = ({
+/**
+ * One message in a brainstorm chat, with the bridges onward from an assistant
+ * reply. Memoised, with handlers that take the message: a streaming reply
+ * re-renders the screen every frame, and the finished messages must not.
+ */
+export const ChatBubble = memo(function ChatBubble({
     message,
     isLast,
     onSaveNote,
@@ -20,12 +25,12 @@ export const ChatBubble = ({
 }: {
     message: ChatMessage;
     isLast: boolean;
-    onSaveNote: () => void;
-    onToBible: () => void;
-    onToChapter: () => void;
+    onSaveNote: (message: ChatMessage) => void;
+    onToBible: (message: ChatMessage) => void;
+    onToChapter: (message: ChatMessage) => void;
     onRegenerate: () => void;
-    onShowVersion: (index: number) => void;
-}) => {
+    onShowVersion: (message: ChatMessage, index: number) => void;
+}) {
     if (message.role === "user")
         return (
             <div className="ml-auto max-w-[85%] whitespace-pre-wrap rounded-lg bg-primary p-3 text-sm text-primary-foreground">
@@ -44,7 +49,7 @@ export const ChatBubble = ({
             <MarkdownView>{message.content}</MarkdownView>
             <button
                 type="button"
-                onClick={onSaveNote}
+                onClick={() => onSaveNote(message)}
                 aria-label="Save as note"
                 title="Save as note"
                 className={ACTION}
@@ -54,13 +59,18 @@ export const ChatBubble = ({
             <span className="flex flex-wrap gap-3">
                 <button
                     type="button"
-                    onClick={onToBible}
+                    onClick={() => onToBible(message)}
                     aria-label="Extract bible entries from this"
                     className={ACTION}
                 >
                     <BookOpenText className="h-3.5 w-3.5" /> To bible
                 </button>
-                <button type="button" onClick={onToChapter} aria-label="New chapter from this" className={ACTION}>
+                <button
+                    type="button"
+                    onClick={() => onToChapter(message)}
+                    aria-label="New chapter from this"
+                    className={ACTION}
+                >
                     <FilePlus2 className="h-3.5 w-3.5" /> To chapter
                 </button>
             </span>
@@ -74,13 +84,13 @@ export const ChatBubble = ({
                     label="Version"
                     index={shown}
                     count={versions.length}
-                    onSelect={onShowVersion}
+                    onSelect={index => onShowVersion(message, index)}
                     className="mt-1 flex items-center gap-1 text-xs"
                 />
             )}
         </div>
     );
-};
+});
 
 /** A conversation the server hasn't accepted yet — kept on this device until it does. */
 export const UnsavedBanner = ({

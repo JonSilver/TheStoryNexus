@@ -8,17 +8,14 @@ import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode } from "@lexical/rich-text";
-import { debounce } from "lodash";
-import { X } from "lucide-react";
-import { Component, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
+import { Component, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import type { Chapter } from "@/types/story";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
-import { findUnmatchedNames, setNudgeHandoff } from "../bible/nameNudges";
+import { setNudgeHandoff } from "../bible/nameNudges";
 import { blocksToMarkdown, parseSerialisedDocument } from "../export";
-import { useV2Store } from "../state/useV2Store";
 import { ChapterContextProvider } from "./ChapterContext";
+import { ConflictBanner, NudgeBar } from "./EditorBars";
 import { ReferencePanel } from "./components/ReferencePanel";
 import { GhostSuggestionNode } from "./nodes/GhostSuggestionNode";
 import { ImageNode } from "./nodes/ImageNode";
@@ -30,6 +27,8 @@ import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { useAutoSummarise } from "./useAutoSummarise";
 import { hasInFlightSave, useChapterSaver, whenSavesSettle } from "./useChapterSaver";
+import { useNameNudges } from "./useNameNudges";
+import { useScrollMemory } from "./useScrollMemory";
 
 const theme = {
     paragraph: "my-3",
@@ -92,10 +91,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
         link.click();
         URL.revokeObjectURL(link.href);
     };
-    const [wordCount, setWordCount] = useState(chapter.wordCount ?? 0);
-    const { scrollFor, setScroll } = useV2Store();
-    const scrollerRef = useRef<HTMLDivElement | null>(null);
-    const persistScroll = useRef(debounce((chapterId: string, top: number) => setScroll(chapterId, top), 500)).current;
+    const scroll = useScrollMemory(chapter.id);
     const actions = useEditorActions(chapter);
     // The one place editability is decided. A conflicted editor must not keep accepting words it
     // will never save; a selection sheet freezes the document under its saved selection
@@ -103,106 +99,49 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     useEffect(() => {
         editor.setEditable(editable);
     }, [editor, editable]);
-    const { data: bibleEntries } = useHierarchicalLorebookQuery(chapter.storyId);
-    const [nudgeNames, setNudgeNames] = useState<string[]>([]);
+    const nudges = useNameNudges(chapter.storyId);
     const [referenceOpen, setReferenceOpen] = useState(false);
-    const { dismissedNudges, dismissNudges } = useV2Store();
-    const detectNames = useRef(
-        debounce((text: string, known: string[], dismissed: string[]) => {
-            const found = findUnmatchedNames(text, known).filter(name => !dismissed.includes(name.toLowerCase()));
-            setNudgeNames(found);
-        }, 8000)
-    ).current;
-    useEffect(() => () => detectNames.cancel(), [detectNames]);
-
-    const onDocument = useCallback(
-        (serialised: string, doc: unknown, words: number, text: string) => {
-            setWordCount(words);
-            scheduleSave(serialised, doc, words);
-            noteActivity();
-            // No detection until the bible has actually loaded — an empty
-            // known list would nudge about names that are already entries
-            if (!bibleEntries) return;
-            const known = bibleEntries.flatMap(e => [e.name, ...((e.tags as string[]) ?? [])]);
-            detectNames(text, known, dismissedNudges(chapter.storyId));
-        },
-        [scheduleSave, noteActivity, bibleEntries, detectNames, dismissedNudges, chapter.storyId]
+    const identity = useMemo(
+        () => ({ storyId: chapter.storyId, chapterId: chapter.id }),
+        [chapter.storyId, chapter.id]
     );
 
-    const restoreScroll = useCallback(
-        (el: HTMLDivElement | null) => {
-            scrollerRef.current = el;
-            if (el) el.scrollTop = scrollFor(chapter.id);
+    const { noteText } = nudges;
+    const onDocument = useCallback(
+        (serialised: string, doc: unknown, words: number, text: string) => {
+            scheduleSave(serialised, doc, words);
+            noteActivity();
+            noteText(text);
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [chapter.id]
+        [scheduleSave, noteActivity, noteText]
     );
 
     return (
-        <ChapterContextProvider value={{ storyId: chapter.storyId, chapterId: chapter.id }}>
+        <ChapterContextProvider value={identity}>
             <div className="relative flex h-full min-h-0 flex-col">
                 <ToolbarPlugin
                     saveStatus={status}
-                    wordCount={wordCount}
+                    initialWordCount={chapter.wordCount ?? 0}
                     storyId={chapter.storyId}
                     actions={actions.toolbarActions}
                     onToggleReference={() => setReferenceOpen(open => !open)}
                 />
                 {actions.sheetOpen && <ActionSheet {...actions.sheetProps} />}
-                {nudgeNames.length > 0 && (
-                    <div className="flex items-center gap-2 border-b bg-primary/5 px-3 py-1.5 text-xs">
-                        <span className="min-w-0 truncate">
-                            New name{nudgeNames.length > 1 ? "s" : ""} spotted: <b>{nudgeNames.join(", ")}</b>
-                        </span>
-                        {onOpenBible && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setNudgeHandoff(nudgeNames);
-                                    setNudgeNames([]);
-                                    onOpenBible();
-                                }}
-                                className="shrink-0 rounded-md border px-2 py-0.5"
-                            >
-                                Add to bible
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            aria-label="Dismiss"
-                            className="ml-auto shrink-0 text-muted-foreground"
-                            onClick={() => {
-                                dismissNudges(chapter.storyId, nudgeNames);
-                                setNudgeNames([]);
-                            }}
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
-                    </div>
+                {nudges.names.length > 0 && (
+                    <NudgeBar
+                        names={nudges.names}
+                        onAdd={
+                            onOpenBible &&
+                            (() => {
+                                setNudgeHandoff(nudges.take());
+                                onOpenBible();
+                            })
+                        }
+                        onDismiss={nudges.dismiss}
+                    />
                 )}
-                {status === "conflict" && (
-                    <div className="flex flex-wrap items-center gap-2 border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
-                        <span className="min-w-0 flex-1">
-                            This chapter was changed elsewhere. Saving is paused — Reload shows the other version, so
-                            download yours first.
-                        </span>
-                        <button type="button" className="rounded-md border px-2 py-1" onClick={downloadDraft}>
-                            Download my version
-                        </button>
-                        <button
-                            type="button"
-                            className="rounded-md border px-2 py-1"
-                            onClick={() => window.location.reload()}
-                        >
-                            Reload
-                        </button>
-                    </div>
-                )}
-                <div
-                    ref={restoreScroll}
-                    className="min-h-0 flex-1 overflow-y-auto"
-                    onScroll={e => persistScroll(chapter.id, e.currentTarget.scrollTop)}
-                >
+                {status === "conflict" && <ConflictBanner onDownload={downloadDraft} />}
+                <div ref={scroll.restore} className="min-h-0 flex-1 overflow-y-auto" onScroll={scroll.onScroll}>
                     <RichTextPlugin
                         contentEditable={
                             <ContentEditable

@@ -37,10 +37,12 @@ export const useActionGeneration = () => {
     const active = useRef<{ requestId: string; controller: AbortController } | null>(null);
 
     const unmounted = useRef(false);
+    const frame = useRef(0);
     // Abort any in-flight generation when the owning component unmounts
     useEffect(
         () => () => {
             unmounted.current = true;
+            cancelAnimationFrame(frame.current);
             active.current?.controller.abort();
             active.current = null;
         },
@@ -98,11 +100,19 @@ export const useActionGeneration = () => {
                     onToken: token => {
                         if (!owns()) return;
                         chunks.push(token);
-                        setText(chunks.join(""));
+                        // One render per frame, not per token (joining per token was quadratic too)
+                        if (frame.current) return;
+                        frame.current = requestAnimationFrame(() => {
+                            frame.current = 0;
+                            if (owns()) setText(chunks.join(""));
+                        });
                     }
                 }
             );
             const text = chunks.join("");
+            cancelAnimationFrame(frame.current);
+            frame.current = 0;
+            if (owns()) setText(text);
 
             // Left mid-stream (the screen closed): what arrived is still the writer's — callers
             // that persist (Brainstorm) keep it; no state is touched on the unmounted hook

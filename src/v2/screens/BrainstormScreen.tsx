@@ -7,15 +7,16 @@ import {
 } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
-import type { AIChat } from "@/types/story";
+import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
+import { useEvent } from "../hooks/useEvent";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ChatBubble, UnsavedBanner } from "./ChatBubble";
 import { clearPending } from "./chatOps";
 import { useChapterFromReply, useChatConversation } from "./useChatConversation";
@@ -27,7 +28,8 @@ import { useCorrectMissingChat } from "./useCorrectMissingChat";
  * assembled server-side like every other action.
  */
 export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
-    const { currentStoryId, lastChapterFor } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const { lastChapterFor } = uiState;
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
     const createChat = useCreateBrainstormMutation();
     const deleteChat = useDeleteBrainstormMutation();
@@ -53,6 +55,21 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
     const streamingElsewhere = generation.phase === "streaming" && !streamingHere;
     const idle = generation.phase !== "streaming";
     const unanswered = messages[messages.length - 1]?.role === "user";
+
+    // Stable, so memoised bubbles skip re-rendering while a reply streams
+    const saveNote = useEvent((message: ChatMessage) => {
+        if (!currentStoryId) return;
+        createNote.mutate({
+            storyId: currentStoryId,
+            title: message.content.slice(0, 60),
+            content: message.content,
+            type: "idea"
+        });
+    });
+    const toBible = useEvent((message: ChatMessage) => setExtracting(message.content));
+    const toChapter = useEvent((message: ChatMessage) => chapterFromMessage(message.content));
+    const regenerate = useEvent(() => void conversation.regenerate());
+    const showVersion = useEvent((message: ChatMessage, index: number) => conversation.showVersion(message, index));
 
     const send = async () => {
         if (!chat || !currentStoryId || !draft.trim() || generation.phase === "streaming") return;
@@ -146,18 +163,11 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         key={message.id}
                         message={message}
                         isLast={message.id === messages[messages.length - 1]?.id}
-                        onSaveNote={() =>
-                            createNote.mutate({
-                                storyId: currentStoryId,
-                                title: message.content.slice(0, 60),
-                                content: message.content,
-                                type: "idea"
-                            })
-                        }
-                        onToBible={() => setExtracting(message.content)}
-                        onToChapter={() => chapterFromMessage(message.content)}
-                        onRegenerate={() => void conversation.regenerate()}
-                        onShowVersion={index => conversation.showVersion(message, index)}
+                        onSaveNote={saveNote}
+                        onToBible={toBible}
+                        onToChapter={toChapter}
+                        onRegenerate={regenerate}
+                        onShowVersion={showVersion}
                     />
                 ))}
                 {streamingElsewhere && (

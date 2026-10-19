@@ -2,8 +2,6 @@ import { attemptPromise } from "@jfdi/attempt";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-    $createParagraphNode,
-    $createTextNode,
     $getRoot,
     $getSelection,
     $isRangeSelection,
@@ -11,11 +9,12 @@ import {
     HISTORY_PUSH_TAG,
     type RangeSelection
 } from "lexical";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { chaptersKeys, useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
+import { $appendParagraphs } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
@@ -44,6 +43,7 @@ const RECENT_PROSE_CHAR_CAP = 100_000;
  * document on Accept; Summarise saves the chapter summary with its source
  * revision for freshness tracking.
  */
+
 export const useEditorActions = (chapter: Chapter) => {
     const [editor] = useLexicalComposerContext();
     const queryClient = useQueryClient();
@@ -56,20 +56,22 @@ export const useEditorActions = (chapter: Chapter) => {
     const lastRun = useRef<{ actionId: ActionId; editorContext: Record<string, string> } | null>(null);
     const [askPending, setAskPending] = useState(false);
     const attempts = useAttempts();
-    const { record } = attempts;
+    // Stable members only in callback deps — the hook objects themselves are new every render
+    const { record, clear: clearAttempts } = attempts;
+    const { run: runGeneration, reset: resetGeneration } = generation;
 
     // Every run that produced text is kept as an attempt — a failure keeps
     // what arrived as a partial one — so nothing the model wrote is lost
     const runAttempt = useCallback(
         (actionId: ActionId, editorContext?: Record<string, string>) => {
             lastRun.current = { actionId, editorContext: editorContext ?? {} };
-            void generation
-                .run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext })
-                .then(result => {
+            void runGeneration({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext }).then(
+                result => {
                     if (result.outcome !== "superseded") record(result.text, result.outcome !== "complete");
-                });
+                }
+            );
         },
-        [generation, chapter.storyId, chapter.id, record]
+        [runGeneration, chapter.storyId, chapter.id, record]
     );
 
     const docTextTail = useCallback(
@@ -103,11 +105,11 @@ export const useEditorActions = (chapter: Chapter) => {
             }
             savedSelection.current = info.clone;
             savedSelectionText.current = info.text;
-            attempts.clear();
+            clearAttempts();
             setActive({ id: actionId, title: label, kind: "selection" });
             runAttempt(actionId, { ...baseContext(), selection: info.text, recentProse: docTextTail() });
         },
-        [editor, attempts, runAttempt, baseContext, docTextTail]
+        [editor, clearAttempts, runAttempt, baseContext, docTextTail]
     );
 
     // Free-form instruction on a selection: capture first, ask the writer
@@ -124,10 +126,10 @@ export const useEditorActions = (chapter: Chapter) => {
         }
         savedSelection.current = info.clone;
         savedSelectionText.current = info.text;
-        attempts.clear();
+        clearAttempts();
         setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
         setAskPending(true);
-    }, [editor, attempts]);
+    }, [editor, clearAttempts]);
 
     const submitAsk = useCallback(
         (instruction: string) => {
@@ -173,7 +175,7 @@ export const useEditorActions = (chapter: Chapter) => {
     const session = useRef(0);
 
     const onSummarise = useCallback(() => {
-        attempts.clear();
+        clearAttempts();
         setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });
         const mine = ++session.current;
         void (async () => {
@@ -193,7 +195,7 @@ export const useEditorActions = (chapter: Chapter) => {
             summariseBaseRevision.current = fresh?.revision ?? chapter.revision ?? 0;
             runAttempt("summarise_chapter");
         })();
-    }, [attempts, runAttempt, chapter.id, chapter.revision, queryClient]);
+    }, [clearAttempts, runAttempt, chapter.id, chapter.revision, queryClient]);
 
     const close = useCallback(() => {
         session.current += 1;
@@ -201,41 +203,31 @@ export const useEditorActions = (chapter: Chapter) => {
         setAskPending(false);
         savedSelection.current = null;
         lastRun.current = null;
-        attempts.clear();
-        generation.reset();
-    }, [generation, attempts]);
+        clearAttempts();
+        resetGeneration();
+    }, [resetGeneration, clearAttempts]);
 
-    const insertParagraphsAtEnd = (text: string) => {
-        const paragraphs = text
-            .split(/\n{2,}/)
-            .map(p => p.trim())
-            .filter(Boolean)
-            .map(p => {
-                const paragraph = $createParagraphNode();
-                paragraph.append($createTextNode(p));
-                return paragraph;
-            });
-        const root = $getRoot();
-        paragraphs.forEach(p => root.append(p));
-        paragraphs[paragraphs.length - 1]?.selectEnd();
-    };
+    const { mutate: updateChapterMutate } = updateChapter;
+    const saveSummary = useCallback(
+        (summary: string) => {
+            const sourceRevision = summariseBaseRevision.current;
+            if (sourceRevision === null) {
+                toast.error("Couldn't save summary");
+                return;
+            }
+            updateChapterMutate(
+                { id: chapter.id, data: { summary, summarySourceRevision: sourceRevision, summaryLocked: false } },
+                { onSuccess: () => toast.success("Summary saved") }
+            );
+        },
+        [chapter.id, updateChapterMutate]
+    );
 
-    const saveSummary = (summary: string) => {
-        const sourceRevision = summariseBaseRevision.current;
-        if (sourceRevision === null) {
-            toast.error("Couldn't save summary");
-            return;
-        }
-        updateChapter.mutate(
-            { id: chapter.id, data: { summary, summarySourceRevision: sourceRevision, summaryLocked: false } },
-            { onSuccess: () => toast.success("Summary saved") }
-        );
-    };
-
+    // The attempt the writer is looking at, not necessarily the latest
+    const shown = attempts.current;
     const onAccept = useCallback(() => {
         const kind = active?.kind;
-        // The attempt the writer is looking at, not necessarily the latest
-        const text = attempts.current;
+        const text = shown;
         if (!kind || !text) return;
 
         if (kind === "selection" || kind === "ask")
@@ -248,19 +240,23 @@ export const useEditorActions = (chapter: Chapter) => {
                 },
                 { tag: HISTORY_PUSH_TAG }
             );
-        else if (kind === "continue") editor.update(() => insertParagraphsAtEnd(text), { tag: HISTORY_PUSH_TAG });
+        else if (kind === "continue") editor.update(() => $appendParagraphs(text), { tag: HISTORY_PUSH_TAG });
         else saveSummary(text);
 
         close();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [active, attempts.current, editor, close]);
+    }, [active, shown, editor, close, saveSummary]);
+
+    const toolbarActions = useMemo(
+        () => ({ onContinue, onSummarise, onSelectionAction, onAsk }),
+        [onContinue, onSummarise, onSelectionAction, onAsk]
+    );
 
     return {
         // The saved selection is positional: the document stays frozen while a
         // selection sheet is up, so accept can't land on shifted or deleted nodes
         locksEditor: active?.kind === "selection" || active?.kind === "ask",
         sheetOpen: active !== null,
-        toolbarActions: { onContinue, onSummarise, onSelectionAction, onAsk },
+        toolbarActions,
         sheetProps: {
             title: active?.title ?? "",
             phase: generation.phase,

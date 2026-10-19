@@ -10,11 +10,12 @@ import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { Chapter } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ChapterDetailsSheet } from "./ChapterDetailsSheet";
 
 export const ChaptersScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId, setLastChapter } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const { setLastChapter } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
     const createChapter = useCreateChapterMutation();

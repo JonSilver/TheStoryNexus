@@ -5,7 +5,7 @@ import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery
 import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
-import { useV2Store } from "../state/useV2Store";
+import { uiState } from "../state/useV2Store";
 
 const IDLE_MS = 90_000;
 const FAILURE_TOAST = "auto-summarise-failure";
@@ -36,12 +36,9 @@ export const useAutoSummarise = (chapter: Chapter) => {
     if (local.current.chapterId !== chapter.id)
         local.current = { chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false };
     const queryClient = useQueryClient();
-    const { autoSummarise } = useV2Store();
-    const enabled = useRef(autoSummarise);
-    enabled.current = autoSummarise;
 
     const refreshIfDue = async (chapterId: string) => {
-        if (!enabled.current || running.current) return;
+        if (!uiState.get().autoSummarise || running.current) return;
         if (local.current.chapterId !== chapterId || !local.current.pending) return;
         running.current = true;
         const claimed = await chaptersApi.claimBackgroundSummary(chapterId);

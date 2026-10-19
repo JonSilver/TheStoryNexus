@@ -8,11 +8,12 @@ import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hook
 import { adminApi, storiesApi } from "@/services/api/client";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ImportSheet } from "./ImportSheet";
 
 export const StoriesScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId, setCurrentStory } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const { setCurrentStory } = uiState;
     const { data: stories, isLoading, isError, refetch } = useStoriesQuery();
     const { data: allSeries } = useSeriesQuery();
 

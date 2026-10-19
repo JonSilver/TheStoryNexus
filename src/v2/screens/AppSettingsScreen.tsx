@@ -10,11 +10,12 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
 import type { ScreenProps } from "../V2App";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useUiState } from "../state/useV2Store";
 
 /** App-level configuration — nothing story-scoped lives here. */
 export const AppSettingsScreen = ({ goTo }: ScreenProps) => {
-    const { autoSummarise, setAutoSummarise } = useV2Store();
+    const autoSummarise = useUiState(state => state.autoSummarise);
+    const { setAutoSummarise } = uiState;
     const { theme, setTheme } = useTheme();
     const rowClass = "flex w-full items-center gap-3 px-4 py-3 text-left";
 
