@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "fd4a910d-006a-4678-a490-55d5ab45ddcc",
+    "id": "456cb0d5-452a-435b-a12b-416f3f984ef2",
     "prevId": "b0877f06-0ddd-4cd5-824f-681d2755f5d9",
     "tables": {
         "actionOverrides": {
@@ -378,13 +378,6 @@
                 "revisionText": {
                     "name": "revisionText",
                     "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "autoSummaryRevision": {
-                    "name": "autoSummaryRevision",
-                    "type": "integer",
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false

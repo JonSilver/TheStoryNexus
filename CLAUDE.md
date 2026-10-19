@@ -54,6 +54,8 @@ npm run db:generate  # Drizzle migration from schema changes
 npm run db:migrate   # Apply migrations
 ```
 
+The dev server applies migrations on start, against the real database. Never rename, regenerate or squash a migration once a running dev server could have applied it — add a new one. Branch work that changes the schema belongs in a worktree, not the checkout the dev server watches.
+
 Production serves the built client from `dist/` on a single port. Docker: `docker-compose up --build` (port 3000).
 
 ## Binding Documents
