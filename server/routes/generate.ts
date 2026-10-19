@@ -7,18 +7,19 @@ import { db, schema } from "../db/client.js";
 import { assembleContext } from "../services/actions/context.js";
 import { ACTION_IDS } from "../services/actions/registry.js";
 import { type ActionOverrideRow, renderTemplate, resolveAction } from "../services/actions/resolve.js";
+import { runGeneration } from "../services/ai/generationRun.js";
 import {
     type AIProviderId,
+    DEFAULT_LOCAL_API_URL,
     openAIContextLength,
-    type PromptMessage,
-    streamCompletion
+    openCompletionStream,
+    type PromptMessage
 } from "../services/ai/providers.js";
 
 const router = express.Router();
 
 const activeGenerations = new Map<string, AbortController>();
 
-const INACTIVITY_TIMEOUT_MS = 120_000;
 const BUDGET_SAFETY_MARGIN = 256;
 
 const PROVIDER_CONTEXT_DEFAULTS: Record<AIProviderId, number> = {
@@ -88,10 +89,32 @@ const parseModelRef = (ref: string | null | undefined): { provider: AIProviderId
     return providerEnum.safeParse(provider).success && modelId ? { provider: provider as AIProviderId, modelId } : null;
 };
 
+const PROVIDER_LABELS: Record<AIProviderId, string> = {
+    openai: "OpenAI",
+    openrouter: "OpenRouter",
+    gemini: "Google Gemini",
+    local: "the local server"
+};
+
+/** Names the model AND the server in every message the writer sees. */
+const describeTarget = (settings: Settings, provider: AIProviderId, modelId: string): string => {
+    const model = modelId.replace(/^local\//, "");
+    if (provider !== "local") return `${model} on ${PROVIDER_LABELS[provider]}`;
+    const base = settings.localApiUrl || DEFAULT_LOCAL_API_URL;
+    const host = (() => {
+        try {
+            return new URL(base).host;
+        } catch {
+            return base;
+        }
+    })();
+    return `${model} on the local server at ${host}`;
+};
+
 /**
  * Shared streaming tail: abort registry entry + close handler must already
- * exist. Streams tokens, enforces the inactivity timeout, emits the terminal
- * frame, and cleans up.
+ * exist. The runner narrates phases (status events), enforces per-phase
+ * timeouts and turns provider failures into writer-readable errors.
  */
 const streamToClient = async (
     res: express.Response,
@@ -107,7 +130,8 @@ const streamToClient = async (
         topP?: number;
         frequencyPenalty?: number;
         presencePenalty?: number;
-    }
+    },
+    modelSourceHint?: string
 ) => {
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -117,43 +141,18 @@ const streamToClient = async (
     });
     res.flushHeaders();
 
-    const inactivity = { timedOut: false, timer: setTimeout(() => undefined, 0) };
-    const armInactivityTimer = () => {
-        clearTimeout(inactivity.timer);
-        inactivity.timer = setTimeout(() => {
-            inactivity.timedOut = true;
-            abortController.abort();
-        }, INACTIVITY_TIMEOUT_MS);
-    };
-    armInactivityTimer();
-
-    const sent = { content: false };
-    const [error] = await attemptPromise(async () => {
-        const stream = streamCompletion({ ...request, signal: abortController.signal }, settings);
-        for await (const token of stream) {
-            armInactivityTimer();
-            if (token.trim()) sent.content = true;
-            sendEvent(res, "token", { text: token });
+    await runGeneration({
+        open: signal => openCompletionStream({ ...request, signal }, settings),
+        signal: abortController.signal,
+        target: describeTarget(settings, request.provider, request.modelId),
+        modelSourceHint,
+        emit: event => {
+            const { type, ...data } = event;
+            sendEvent(res, type, data);
         }
     });
 
-    clearTimeout(inactivity.timer);
     activeGenerations.delete(requestId);
-
-    if (inactivity.timedOut) sendEvent(res, "error", { message: "Generation timed out (no output from provider)" });
-    else if (error)
-        if ((error as Error).name === "AbortError" || abortController.signal.aborted) sendEvent(res, "aborted", {});
-        else sendEvent(res, "error", { message: (error as Error).message || "Generation failed" });
-    // A clean stream with zero content (no events, or whitespace only) is a
-    // failure, not a completion — thinking models can burn the whole token
-    // budget on hidden reasoning
-    else if (!sent.content && !abortController.signal.aborted)
-        sendEvent(res, "error", {
-            message:
-                "The model produced no output — it may have spent its token budget on hidden reasoning. Raise max tokens for this action or use a non-thinking model."
-        });
-    else sendEvent(res, "finish", { reason: abortController.signal.aborted ? "aborted" : "complete" });
-
     res.end();
 };
 
@@ -207,12 +206,19 @@ router.post("/action", async (req, res) => {
 
     const resolved = resolveAction(actionId, storyId, overrides);
 
+    const overrideModel = parseModelRef(resolved.modelRef);
     const model =
         modelRef ??
-        parseModelRef(resolved.modelRef) ??
+        overrideModel ??
         (settings.defaultProvider && settings.defaultModelId
             ? { provider: settings.defaultProvider as AIProviderId, modelId: settings.defaultModelId }
             : null);
+    // Where the model choice came from, so a "model not found" says what to fix
+    const modelSourceHint = modelRef
+        ? undefined
+        : overrideModel
+          ? `the ${resolved.def.label} override in Settings → AI actions`
+          : "your default model in Settings → AI providers";
     if (!model) {
         cleanup();
         res.status(422).json({ error: "No model configured — add a provider key in Settings" });
@@ -258,16 +264,23 @@ router.post("/action", async (req, res) => {
         return;
     }
 
-    await streamToClient(res, requestId, abortController, settings, {
-        provider: model.provider,
-        modelId: model.modelId,
-        messages,
-        temperature: resolved.params.temperature,
-        topP: resolved.params.topP,
-        frequencyPenalty: resolved.params.frequencyPenalty,
-        presencePenalty: resolved.params.presencePenalty,
-        maxTokens
-    });
+    await streamToClient(
+        res,
+        requestId,
+        abortController,
+        settings,
+        {
+            provider: model.provider,
+            modelId: model.modelId,
+            messages,
+            temperature: resolved.params.temperature,
+            topP: resolved.params.topP,
+            frequencyPenalty: resolved.params.frequencyPenalty,
+            presencePenalty: resolved.params.presencePenalty,
+            maxTokens
+        },
+        modelSourceHint
+    );
 });
 
 // Inspector: the exact messages an action request would send, without generating

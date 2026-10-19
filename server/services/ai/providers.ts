@@ -57,7 +57,11 @@ const openAICompatibleClient = (provider: AIProviderId, settings: ProviderSettin
     };
     const config = configs[provider];
     if (!config?.apiKey) throw new Error(`${provider} API key not set`);
-    return new OpenAI(config);
+    // No hidden SDK retries: a retried 5xx/connection error turns a fast, clear
+    // failure into a slow vague one. Timeouts are owned by the generation
+    // runner, which knows what phase it's in; the SDK's 10-minute default
+    // would only ever mask that.
+    return new OpenAI({ ...config, maxRetries: 0, timeout: 60 * 60_000 });
 };
 
 // Only gemini-* models support native systemInstruction; others get it prepended to the first user message
@@ -99,10 +103,16 @@ export const buildOpenAICompatiblePayload = (request: Omit<GenerationRequest, "s
     };
 };
 
-export async function* streamCompletion(
+/**
+ * Opens a completion stream. The returned promise resolves only once the
+ * provider has ACCEPTED the request (response headers received) — before
+ * that the request may be queued, loading a model, or stuck, which the
+ * caller reports as a distinct phase. The iterable then yields text tokens.
+ */
+export const openCompletionStream = async (
     request: GenerationRequest,
     settings: ProviderSettings
-): AsyncGenerator<string> {
+): Promise<AsyncIterable<string>> => {
     const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty, signal } =
         request;
 
@@ -124,8 +134,9 @@ export async function* streamCompletion(
                 abortSignal: signal
             }
         });
-        for await (const chunk of stream) if (chunk.text) yield chunk.text;
-        return;
+        return (async function* () {
+            for await (const chunk of stream) if (chunk.text) yield chunk.text;
+        })();
     }
 
     const client = openAICompatibleClient(provider, settings);
@@ -133,11 +144,13 @@ export async function* streamCompletion(
         { ...buildOpenAICompatiblePayload(request), stream: true },
         { signal }
     );
-    for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) yield content;
-    }
-}
+    return (async function* () {
+        for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) yield content;
+        }
+    })();
+};
 
 // OpenAI's models API doesn't report context windows, so this table maps
 // model-name fragments to their documented limits — first match wins, most

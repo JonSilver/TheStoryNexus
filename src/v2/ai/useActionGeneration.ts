@@ -1,6 +1,6 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createSSEParser } from "@/services/ai/sseParser";
+import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
 
 export type ActionId =
@@ -45,6 +45,7 @@ export const useActionGeneration = () => {
     const [phase, setPhase] = useState<GenerationPhase>("idle");
     const [text, setText] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<GenerationStatus | null>(null);
     const active = useRef<{ requestId: string; controller: AbortController } | null>(null);
 
     // Abort any in-flight generation when the owning component unmounts
@@ -90,6 +91,7 @@ export const useActionGeneration = () => {
         setPhase("idle");
         setText("");
         setError(null);
+        setStatus(null);
     }, []);
 
     const run = useCallback(
@@ -101,6 +103,7 @@ export const useActionGeneration = () => {
             setPhase("streaming");
             setText("");
             setError(null);
+            setStatus({ phase: "waiting", elapsedMs: 0 });
 
             const chunks: string[] = [];
             const finished = { ok: false };
@@ -139,6 +142,9 @@ export const useActionGeneration = () => {
             }
 
             const parser = createSSEParser({
+                onStatus: next => {
+                    if (owns()) setStatus(next);
+                },
                 onToken: token => {
                     if (!owns()) return;
                     chunks.push(token);
@@ -195,5 +201,5 @@ export const useActionGeneration = () => {
         [abort]
     );
 
-    return { phase, text, error, run, abort, reset };
+    return { phase, text, error, status: phase === "streaming" ? status : null, run, abort, reset };
 };

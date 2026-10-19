@@ -1,16 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import {
-    ArrowLeft,
-    BookOpenText,
-    FilePlus2,
-    Loader2,
-    NotebookPen,
-    Plus,
-    RefreshCw,
-    Send,
-    Square,
-    Trash2
-} from "lucide-react";
+import { ArrowLeft, BookOpenText, FilePlus2, NotebookPen, Plus, RefreshCw, Send, Square, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -25,6 +14,7 @@ import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
+import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
 import { MarkdownView } from "../components/MarkdownView";
@@ -295,7 +285,7 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
                 ))}
                 {generation.phase === "streaming" && (
                     <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">
-                        {generation.text || <Loader2 className="h-4 w-4 animate-spin" />}
+                        {generation.text || <GenerationProgress status={generation.status} />}
                     </div>
                 )}
                 {generation.error && <p className="text-sm text-destructive">{generation.error}</p>}

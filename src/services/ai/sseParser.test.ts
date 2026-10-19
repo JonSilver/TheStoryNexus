@@ -78,4 +78,28 @@ describe("createSSEParser", () => {
         expect(tokens).toEqual([]);
         expect(onComplete).toHaveBeenCalledOnce();
     });
+
+    it("reports status heartbeats without terminating the stream", () => {
+        const statuses: Array<{ phase: string; elapsedMs: number }> = [];
+        const tokens: string[] = [];
+        const onComplete = vi.fn();
+        const parser = createSSEParser({
+            onStatus: status => statuses.push(status),
+            onToken: t => tokens.push(t),
+            onComplete,
+            onError: vi.fn()
+        });
+        parser.push('event: status\ndata: {"phase":"waiting","elapsedMs":2000}\n\n');
+        parser.push(
+            'event: status\ndata: {"phase":"streaming","elapsedMs":4100}\n\nevent: token\ndata: {"text":"Hi"}\n\n'
+        );
+        parser.push("event: finish\ndata: {}\n\n");
+        parser.end();
+        expect(statuses).toEqual([
+            { phase: "waiting", elapsedMs: 2000 },
+            { phase: "streaming", elapsedMs: 4100 }
+        ]);
+        expect(tokens).toEqual(["Hi"]);
+        expect(onComplete).toHaveBeenCalledOnce();
+    });
 });

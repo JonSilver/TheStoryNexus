@@ -9,9 +9,10 @@ import {
     type LexicalNode,
     type NodeKey
 } from "lexical";
-import { ChevronDown, ChevronRight, Loader2, Sparkles, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, Sparkles, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import { ContextInspector } from "../../ai/ContextInspector";
+import { GenerationProgress } from "../../ai/GenerationProgress";
 import { useChapterIdentity } from "../ChapterContext";
 import {
     activeTakeState,
@@ -30,28 +31,13 @@ import { TakeViewer } from "./TakeViewer";
 
 const stopKeydown = (e: KeyboardEvent) => e.stopPropagation();
 
-/** Elapsed seconds while waiting for the first token — cold model loads get a heartbeat. */
-const useWarmupSeconds = (waiting: boolean) => {
-    const [seconds, setSeconds] = useState(0);
-    useEffect(() => {
-        if (!waiting) {
-            setSeconds(0);
-            return undefined;
-        }
-        const timer = setInterval(() => setSeconds(s => s + 1), 1000);
-        return () => clearInterval(timer);
-    }, [waiting]);
-    return seconds;
-};
-
 export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
     const { command, status, takes, activeTake, streaming, collapsed } = useSceneBeatData(nodeKey);
     const { storyId, chapterId } = useChapterIdentity();
-    const { generate, stop, mutate, abortActive, ownsRun, textBeforeNode } = useSceneBeatGeneration(nodeKey);
+    const { generate, stop, mutate, abortActive, ownsRun, textBeforeNode, progress } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
     const isGenerating = status === "generating";
-    const warmupSeconds = useWarmupSeconds(isGenerating && !streaming);
 
     // Orphaned-stream recovery: streamed text with no owning request (reload
     // mid-generation, or undo reviving a deleted beat still marked
@@ -175,10 +161,7 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
                     {isGenerating && (
                         <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">
                             {streaming || (
-                                <span className="flex items-center gap-2 text-muted-foreground">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    {warmupSeconds > 3 ? `warming the model… ${warmupSeconds}s` : "starting…"}
-                                </span>
+                                <GenerationProgress status={progress ?? { phase: "waiting", elapsedMs: 0 }} />
                             )}
                         </div>
                     )}

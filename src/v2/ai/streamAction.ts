@@ -1,5 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { createSSEParser } from "@/services/ai/sseParser";
+import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
 import type { ActionEditorContext, ActionId } from "./useActionGeneration";
 
@@ -11,6 +11,7 @@ export interface StreamActionRequest {
 }
 
 export interface StreamActionHandlers {
+    onStatus?: (status: GenerationStatus) => void;
     onToken: (token: string) => void;
     /** Exactly once: error is undefined for success/abort (partial tokens already delivered). */
     onDone: (error?: string) => void;
@@ -56,6 +57,7 @@ export const streamAction = (request: StreamActionRequest, handlers: StreamActio
         }
 
         const parser = createSSEParser({
+            onStatus: handlers.onStatus,
             onToken: handlers.onToken,
             onComplete: () => done(),
             onError: error => done(error.message)
