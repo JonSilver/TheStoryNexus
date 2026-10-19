@@ -8,6 +8,7 @@ import { randomUUID } from "@/utils/crypto";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { BIBLE_STOP_NOTE } from "./FlowResults";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
 import type { UpdateProposal } from "./parseProposals";
 import { useFlowResults } from "./useFlowResults";
@@ -104,8 +105,9 @@ export const ExtractSheet = ({
     const approveEntries = async () => {
         if (approving) return;
         setApproving(true);
-        const chosen = (proposals ?? []).filter((_, i) => ticked.has(i));
-        const results = await Promise.allSettled(
+        const chosenIndexes = [...ticked].sort((a, b) => a - b);
+        const chosen = chosenIndexes.map(i => (proposals ?? [])[i]);
+        const settled = await Promise.allSettled(
             chosen.map(proposal =>
                 createEntry.mutateAsync({
                     id: randomUUID(),
@@ -119,11 +121,17 @@ export const ExtractSheet = ({
                 })
             )
         );
-        const added = results.filter(r => r.status === "fulfilled").length;
-        const failed = results.length - added;
-        if (failed) toast.error(`${added} added, ${failed} failed — the failures were not saved`);
-        else toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
-        onClose();
+        const added = settled.filter(r => r.status === "fulfilled").length;
+        const failed = settled.length - added;
+        if (!failed) {
+            toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
+            onClose();
+            return;
+        }
+        // Failures stay listed and ticked to retry — the list is paid-for work
+        results.removeProposals(new Set(chosenIndexes.filter((_, n) => settled[n].status === "fulfilled")));
+        setApproving(false);
+        toast.error(`${added} added, ${failed} couldn't be saved — they're still ticked here to try again`);
     };
 
     const applyUpdate = async (proposal: UpdateProposal) => {
@@ -192,7 +200,7 @@ export const ExtractSheet = ({
                             {sweep.progress.found} entr{sweep.progress.found === 1 ? "y" : "ies"} found so far
                         </p>
                     )}
-                    {busy && <GenerationProgress status={generation.status} />}
+                    {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
                     {(sweepFailure ?? (!busy && generation.error)) && (
                         <p className="text-destructive" role="alert">
                             {sweepFailure ?? generation.error}

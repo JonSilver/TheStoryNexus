@@ -45,10 +45,10 @@ const writeUnsaved = (chatId: string, messages: ChatMessage[] | null) => {
     }
 };
 
-/** A reply that produced text is kept — cut short by a failure, it's kept and labelled incomplete. */
+/** A reply that produced text is kept — cut short (a failure, Stop, or leaving mid-reply), it's kept and labelled incomplete. */
 const replyFrom = (result: RunResult) =>
     result.text.trim() && result.outcome !== "superseded"
-        ? { text: result.text, interrupted: result.outcome === "failed" }
+        ? { text: result.text, interrupted: result.outcome !== "complete" }
         : null;
 
 /**
@@ -75,7 +75,18 @@ export const useChatConversation = (
     const unsaved = chat && stored ? { chatId: chat.id, messages: stored } : null;
     const messages = stored ?? chat?.messages ?? [];
 
+    // The chat a reply is being written for — switching chats mid-reply must not show it in, or let Stop cut it from, another
+    const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+
     const runBrainstorm = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
+        if (!storyId || !chat) return { text: "", outcome: "superseded" };
+        setGeneratingFor(chat.id);
+        const result = await runFor(history, userMessage);
+        setGeneratingFor(null);
+        return result;
+    };
+
+    const runFor = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
         if (!storyId) return { text: "", outcome: "superseded" };
         const chapterId = lastChapterFor(storyId) ?? undefined;
         if (chapterId) await flushChapterSave(chapterId);
@@ -169,7 +180,7 @@ export const useChatConversation = (
         if (chat) remember(chat.id, null);
     };
 
-    return { messages, unsaved, saveMessages, discardUnsaved, send, regenerate, retryLast, showVersion };
+    return { messages, unsaved, generatingFor, saveMessages, discardUnsaved, send, regenerate, retryLast, showVersion };
 };
 
 /** Brainstormed material flows onward: a new chapter carries the reply as its outline, ready to write against. */

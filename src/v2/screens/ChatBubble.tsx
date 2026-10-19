@@ -1,4 +1,4 @@
-import { BookOpenText, FilePlus2, NotebookPen, RefreshCw } from "lucide-react";
+import { BookOpenText, FilePlus2, NotebookPen, RefreshCw, RotateCcw } from "lucide-react";
 import type { ChatMessage } from "@/types/story";
 import { AttemptNav } from "../ai/AttemptNav";
 import { MarkdownView } from "../components/MarkdownView";
@@ -38,7 +38,7 @@ export const ChatBubble = ({
         <div className="max-w-[85%] rounded-lg bg-muted p-3 text-sm">
             {message.interruptedVersions?.includes(shown) && (
                 <p className="mb-1 text-xs text-muted-foreground">
-                    Incomplete — the model stopped partway through. Regenerate for a full reply.
+                    Incomplete — cut short before the end. Regenerate for a full reply.
                 </p>
             )}
             <MarkdownView>{message.content}</MarkdownView>
@@ -81,3 +81,24 @@ export const ChatBubble = ({
         </div>
     );
 };
+
+/** A conversation the server hasn't accepted yet — kept on this device until it does. */
+export const UnsavedBanner = ({ onSave, onDiscard }: { onSave: () => void; onDiscard: () => void }) => (
+    <div className="flex flex-wrap items-center gap-2 text-sm" role="alert">
+        <p className="w-full text-destructive">
+            This conversation isn't saved yet — the last write failed. It's kept on this device until it is.
+        </p>
+        <button type="button" onClick={onSave} className="flex items-center gap-1 rounded-md border px-3 py-1">
+            <RotateCcw className="h-3.5 w-3.5" /> Save again
+        </button>
+        <button
+            type="button"
+            onClick={() =>
+                window.confirm("Discard the unsaved messages and show the saved conversation?") && onDiscard()
+            }
+            className="rounded-md border px-3 py-1"
+        >
+            Discard
+        </button>
+    </div>
+);

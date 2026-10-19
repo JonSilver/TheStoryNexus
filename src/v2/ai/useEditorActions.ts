@@ -64,7 +64,7 @@ export const useEditorActions = (chapter: Chapter) => {
             void generation
                 .run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext })
                 .then(result => {
-                    if (result.outcome !== "superseded") record(result.text, result.outcome === "failed");
+                    if (result.outcome !== "superseded") record(result.text, result.outcome !== "complete");
                 });
         },
         [generation, chapter.storyId, chapter.id, record]

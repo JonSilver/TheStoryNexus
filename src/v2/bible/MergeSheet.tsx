@@ -7,6 +7,7 @@ import type { LorebookEntry } from "@/types/story";
 import { AttemptNav } from "../ai/AttemptNav";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { BIBLE_STOP_NOTE } from "./FlowResults";
 import { MergePicker } from "./MergePicker";
 import { type EntryProposal, parseEntryProposals } from "./parseProposals";
 
@@ -161,12 +162,12 @@ export const MergeSheet = ({
                                     }}
                                 />
                             </fieldset>
-                            {busy && <GenerationProgress status={generation.status} />}
+                            {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
                             {generation.error && <p className="text-destructive">{generation.error}</p>}
                         </>
                     ) : (
                         <>
-                            {busy && <GenerationProgress status={generation.status} />}
+                            {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
                             {generation.error && !busy && (
                                 <p className="text-destructive">
                                     {generation.error} The previous merge result is still below.

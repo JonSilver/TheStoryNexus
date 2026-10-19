@@ -38,9 +38,7 @@ export const TakeViewer = ({
         <div className="space-y-2">
             <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2 select-text">
                 {incompleteTakes.includes(current) && (
-                    <p className="mb-1 text-xs text-muted-foreground">
-                        Incomplete — the model stopped partway through.
-                    </p>
+                    <p className="mb-1 text-xs text-muted-foreground">Incomplete — cut short before the end.</p>
                 )}
                 {takes[current]}
             </div>

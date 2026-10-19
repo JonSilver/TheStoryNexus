@@ -51,10 +51,10 @@ test("brainstorm: a reply cut short is kept and labelled, and survives a reload"
     await send(page, "What happens next?");
 
     await expect(page.getByText("A reply that was cut")).toBeVisible();
-    await expect(page.getByText(/Incomplete — the model stopped partway/)).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
     await page.reload();
     await expect(page.getByText("A reply that was cut")).toBeVisible();
-    await expect(page.getByText(/Incomplete — the model stopped partway/)).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
 });
 
 test("brainstorm: a reply that couldn't be saved stays on screen until it is", async ({ page }) => {
@@ -183,12 +183,27 @@ test("scene beat: a take cut short is kept and marked incomplete, even after a r
     await page.getByPlaceholder("Describe what happens in this beat…").fill("A storm hits the harbour");
     await page.getByRole("button", { name: "Generate" }).click();
     await expect(page.getByText("The storm broke over the")).toBeVisible();
-    await expect(page.getByText(/Incomplete — the model stopped partway/)).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
 
     const chapterId = new URL(page.url()).pathname.split("/").pop();
     await expect
         .poll(async () => (await (await page.request.get(`/api/chapters/${chapterId}`)).json()).content)
         .toContain("incompleteTakes");
     await page.reload();
-    await expect(page.getByText(/Incomplete — the model stopped partway/)).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
+});
+
+test("brainstorm: a reply being written stays in its own chat", async ({ page }) => {
+    await script(page, [{ hold: true }]);
+    await createStoryAndChapter(page, "Fixes — chat binding", "One");
+    await openNewChat(page);
+    await send(page, "Question for chat one");
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Back to chats" }).click();
+    await page.getByRole("button", { name: "New chat" }).click();
+    await expect(page.getByText(/A reply is still being written in another chat/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stop" })).toHaveCount(0);
+    await page.getByPlaceholder("Bounce an idea around…").fill("Something else");
+    await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
 });

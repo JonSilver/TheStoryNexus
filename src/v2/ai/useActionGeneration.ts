@@ -59,9 +59,11 @@ export const useActionGeneration = () => {
     const [status, setStatus] = useState<GenerationStatus | null>(null);
     const active = useRef<{ requestId: string; controller: AbortController } | null>(null);
 
+    const unmounted = useRef(false);
     // Abort any in-flight generation when the owning component unmounts
     useEffect(
         () => () => {
+            unmounted.current = true;
             active.current?.controller.abort();
             active.current = null;
         },
@@ -196,7 +198,10 @@ export const useActionGeneration = () => {
                 }
             });
 
-            if (!owns()) return superseded;
+            // Left mid-stream (the screen closed): what arrived is still the writer's — callers
+            // that persist (Brainstorm) keep it; no state is touched on the unmounted hook
+            if (!owns())
+                return unmounted.current && chunks.length ? { text: chunks.join(""), outcome: "stopped" } : superseded;
             active.current = null;
             // Stopped mid-stream: what arrived is the writer's to accept or discard
             if ((readError as Error)?.name === "AbortError" || outcome.aborted) {

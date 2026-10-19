@@ -69,6 +69,13 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
     const removeUpdate = (applied: UpdateProposal) =>
         commit({ ...latest.current, updates: (latest.current.updates ?? []).filter(u => u !== applied) });
 
+    /** Drops the given proposals (e.g. once added to the bible), keeping the rest and their ticks. */
+    const removeProposals = (indexes: Set<number>) => {
+        const kept = (latest.current.proposals ?? []).map((p, i) => ({ p, i })).filter(({ i }) => !indexes.has(i));
+        const ticked = new Set(kept.flatMap(({ i }, n) => (latest.current.ticked.has(i) ? [n] : [])));
+        commit({ ...latest.current, proposals: kept.map(({ p }) => p), ticked });
+    };
+
     const toggle = (index: number) => {
         const ticked = new Set(latest.current.ticked);
         if (ticked.has(index)) ticked.delete(index);
@@ -110,6 +117,7 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
         addIssues,
         addUpdates,
         removeUpdate,
+        removeProposals,
         toggle
     };
 };

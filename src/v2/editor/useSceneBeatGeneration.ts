@@ -118,11 +118,11 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
 
             // Completion commits the streamed text (if any) as a NEW take;
             // failure with nothing streamed restores the pre-generation view
-            const finish = (errorMessage?: string) => {
+            const finish = (errorMessage?: string, stopped = false) => {
                 if (!owns()) return;
                 cancelRef.current = null;
-                // A take cut short by a failure is kept, and marked so it can't pass for a finished one
-                mutate(node => $commitStreamingAsTake(node, Boolean(errorMessage)), HISTORY_MERGE_TAG);
+                // A take cut short (failure or Stop) is kept, and marked so it can't pass for a finished one
+                mutate(node => $commitStreamingAsTake(node, Boolean(errorMessage) || stopped), HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
             };
 
@@ -167,6 +167,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                     );
                 },
                 onComplete: () => finish(),
+                onAborted: () => finish(undefined, true),
                 onError: error => finish(error.message)
             });
 
@@ -184,7 +185,8 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 }
             });
             if (readError)
-                finish((readError as Error).name === "AbortError" ? undefined : describeStreamFailure(readError));
+                if ((readError as Error).name === "AbortError") finish(undefined, true);
+                else finish(describeStreamFailure(readError));
         },
         [mutate, editor, nodeKey, storyId, chapterId, textBeforeNode]
     );

@@ -77,6 +77,24 @@ test.describe("against a real model server", () => {
         await expect(sheet.getByText(/doesn't have this model/)).toBeVisible();
     });
 
+    test("leaving Brainstorm mid-reply keeps what arrived, marked incomplete", async ({ page }) => {
+        test.setTimeout(60_000);
+        server.mode = "stall";
+        await createStoryAndChapter(page, "Real — left mid-reply", "One");
+        await page.getByRole("button", { name: "Brainstorm" }).click();
+        await page.getByRole("button", { name: "New chat" }).click();
+        await page.getByPlaceholder("Bounce an idea around…").fill("Tell me something");
+        await page.getByRole("button", { name: "Send" }).click();
+        await expect(page.getByText("The server's own words")).toBeVisible({ timeout: 15_000 });
+
+        await page.getByRole("button", { name: "Write" }).click();
+        await page.getByRole("button", { name: "Brainstorm" }).click();
+        await page.getByText("Chat 1", { exact: true }).click();
+        await expect(page.getByText("Tell me something")).toBeVisible();
+        await expect(page.getByText("The server's own words")).toBeVisible();
+        await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
+    });
+
     test("a pause mid-stream is shown while it lasts", async ({ page }) => {
         test.setTimeout(60_000);
         server.mode = "stall";

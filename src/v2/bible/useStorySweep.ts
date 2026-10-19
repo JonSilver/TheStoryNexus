@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { type EntryProposal, parseEntryProposals } from "./parseProposals";
+import { type EntryProposal, parseEntryProposals, readsAsJsonArray } from "./parseProposals";
 
 export interface SweepProgress {
     current: number;
@@ -50,6 +50,13 @@ export const useStorySweep = (
         stopRequested.current = true;
         generation.abort();
     };
+    // Closing the sheet must end the sweep, not leave it paying for the rest of the book unseen
+    useEffect(
+        () => () => {
+            stopRequested.current = true;
+        },
+        []
+    );
 
     /** `onFound` receives each chapter's new finds as they arrive, so nothing waits on the whole book. */
     const run = async (onFound: (found: EntryProposal[]) => void): Promise<SweepResult> => {
@@ -68,8 +75,18 @@ export const useStorySweep = (
                 chapterId: chapter.id,
                 editorContext: {}
             });
-            if (result.outcome === "failed") {
-                failures.push({ title: chapter.title, error: result.error ?? "failed" });
+            if (result.outcome === "superseded") break;
+            // A reply that isn't entries at all (prose instead of JSON) is a model that can't do
+            // this job — as much a failure as an error, and just as costly to repeat 50 times
+            const unreadable = result.outcome === "complete" && !!result.text.trim() && !readsAsJsonArray(result.text);
+            const error =
+                result.outcome === "failed"
+                    ? (result.error ?? "failed")
+                    : unreadable
+                      ? "the reply couldn't be read as entries — this model may not suit extraction (Settings → AI actions → Extract Bible Entries)."
+                      : null;
+            if (error) {
+                failures.push({ title: chapter.title, error });
                 streak.failed += 1;
             } else streak.failed = 0;
             // Whatever arrived is parsed — a reply can be complete before its stream fails

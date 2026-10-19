@@ -88,3 +88,6 @@ export const UpdateList = ({
         })}
     </>
 );
+
+/** Bible replies are structured: Stop keeps only what can be read as entries. */
+export const BIBLE_STOP_NOTE = "Stop ends it; anything that can be read so far is kept.";

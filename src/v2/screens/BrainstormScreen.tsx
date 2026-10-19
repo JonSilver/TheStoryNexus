@@ -17,7 +17,7 @@ import { ExtractSheet } from "../bible/ExtractSheet";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
 import { useV2Store } from "../state/useV2Store";
-import { ChatBubble } from "./ChatBubble";
+import { ChatBubble, UnsavedBanner } from "./ChatBubble";
 import { useChapterFromReply, useChatConversation } from "./useChatConversation";
 import { useCorrectMissingChat } from "./useCorrectMissingChat";
 
@@ -49,6 +49,8 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
 
     const conversation = useChatConversation(chat, currentStoryId, lastChapterFor, generation);
     const { messages, unsaved } = conversation;
+    const streamingHere = generation.phase === "streaming" && conversation.generatingFor === chat?.id;
+    const streamingElsewhere = generation.phase === "streaming" && !streamingHere;
     const idle = generation.phase !== "streaming";
     const unanswered = messages[messages.length - 1]?.role === "user";
 
@@ -160,36 +162,22 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         onShowVersion={index => conversation.showVersion(message, index)}
                     />
                 ))}
-                {generation.phase === "streaming" && (
+                {streamingElsewhere && (
+                    <p className="text-sm text-muted-foreground" role="status">
+                        A reply is still being written in another chat — you can send here once it's done.
+                    </p>
+                )}
+                {streamingHere && (
                     <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">
                         {generation.text}
                         <GenerationProgress status={generation.status} className={generation.text ? "mt-2" : ""} />
                     </div>
                 )}
                 {unsaved?.chatId === chat.id && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm" role="alert">
-                        <p className="w-full text-destructive">
-                            This conversation isn't saved yet — the last write failed. It's kept on this device until it
-                            is.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => void conversation.saveMessages(unsaved.messages)}
-                            className="flex items-center gap-1 rounded-md border px-3 py-1"
-                        >
-                            <RotateCcw className="h-3.5 w-3.5" /> Save again
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                window.confirm("Discard the unsaved messages and show the saved conversation?") &&
-                                conversation.discardUnsaved()
-                            }
-                            className="rounded-md border px-3 py-1"
-                        >
-                            Discard
-                        </button>
-                    </div>
+                    <UnsavedBanner
+                        onSave={() => void conversation.saveMessages(unsaved.messages)}
+                        onDiscard={conversation.discardUnsaved}
+                    />
                 )}
                 {idle && generation.error && !unanswered && (
                     <p className="text-sm text-destructive" role="alert">
@@ -234,7 +222,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         }
                     }}
                 />
-                {generation.phase === "streaming" ? (
+                {streamingHere ? (
                     <button
                         type="button"
                         onClick={generation.abort}
@@ -247,7 +235,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                     <button
                         type="button"
                         onClick={() => void send()}
-                        disabled={!draft.trim()}
+                        disabled={!draft.trim() || streamingElsewhere}
                         aria-label="Send"
                         className="rounded-md bg-primary px-3 text-primary-foreground disabled:opacity-50"
                     >

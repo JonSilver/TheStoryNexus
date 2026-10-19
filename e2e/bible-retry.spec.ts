@@ -136,3 +136,68 @@ test("bible: whole-story finds appear as they arrive, and closing mid-run asks f
     expect(asked[0]).toContain("1 entry found so far");
     await expect(page.getByText("Found first.")).toBeVisible();
 });
+
+const threeChapters = async (page: import("@playwright/test").Page, story: string) => {
+    await createStoryAndChapter(page, story, "One");
+    for (const title of ["Two", "Three"]) {
+        await page.getByRole("button", { name: "Story", exact: true }).click();
+        await page.getByRole("button", { name: "Chapters" }).click();
+        await page.getByPlaceholder("New chapter title (optional)").fill(title);
+        await page.getByRole("button", { name: "Add" }).click();
+        await expect(editorLocator(page)).toBeVisible();
+    }
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "Extract from whole story" }).click();
+};
+
+test("bible: closing a whole-story run ends it — no chapters are paid for unseen", async ({ page }) => {
+    const entry = JSON.stringify([{ name: "Elinor", category: "character", description: "Found first.", tags: [] }]);
+    const calls = await script(page, [{ text: entry }, { hold: true }, { text: entry }]);
+    await threeChapters(page, "Fixes — sweep closed");
+    await page.getByRole("button", { name: "Run" }).click();
+    await expect(page.getByText("Found first.")).toBeVisible();
+    await expect.poll(() => calls.length).toBe(2);
+
+    page.once("dialog", dialog => void dialog.accept());
+    await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
+    await expect(page.getByText("Found first.")).toHaveCount(0);
+    await page.waitForTimeout(1_500);
+    expect(calls).toHaveLength(2);
+});
+
+test("bible: a model that answers in prose instead of entries stops the run too", async ({ page }) => {
+    const prose = "Here are some thoughts about the characters in this chapter, who are many and varied.";
+    const calls = await script(page, [{ text: prose }, { text: prose }, { text: prose }]);
+    await threeChapters(page, "Fixes — sweep prose");
+    await page.getByRole("button", { name: "Run" }).click();
+    await expect(page.getByText(/Stopped after two chapters in a row failed/)).toBeVisible();
+    await expect(page.getByText(/couldn't be read as entries/)).toBeVisible();
+    expect(calls).toHaveLength(2);
+});
+
+test("bible: entries that couldn't be added stay listed and ticked to try again", async ({ page }) => {
+    const entries = JSON.stringify([
+        { name: "Elinor", category: "character", description: "The elder sister.", tags: [] },
+        { name: "Marianne", category: "character", description: "The younger sister.", tags: [] }
+    ]);
+    await script(page, [{ text: entries }]);
+    await createStoryAndChapter(page, "Fixes — add fails", "One");
+    await typeInEditor(page, "Elinor and Marianne.");
+    await waitForSaved(page);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "Extract from chapter" }).click();
+    await page.getByRole("button", { name: "Run" }).click();
+    await expect(page.getByText("The younger sister.")).toBeVisible();
+
+    await page.route("**/api/lorebook", route =>
+        route.request().method() === "POST" && route.request().postData()?.includes("Marianne")
+            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+            : route.fallback()
+    );
+    await page.getByRole("button", { name: "Add 2 to bible" }).click();
+    await expect(page.getByText(/1 added, 1 couldn't be saved/)).toBeVisible();
+    await expect(page.getByText("The younger sister.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add 1 to bible" })).toBeVisible();
+});

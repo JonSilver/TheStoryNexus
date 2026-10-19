@@ -22,17 +22,20 @@ const STALL_NOTICE_MS = 10_000;
  */
 export const GenerationProgress = ({
     status,
-    className = ""
+    className = "",
+    stopNote = "Stop keeps what has arrived."
 }: {
     status: GenerationStatus | null;
     className?: string;
+    /** What Stop does here, said in the stall notice — surfaces differ in what they can keep. */
+    stopNote?: string;
 }) => {
     if (!status) return null;
     if (status.phase === "streaming") {
         if ((status.idleMs ?? 0) < STALL_NOTICE_MS) return null;
         return (
             <span role="status" aria-live="polite" className={`block text-xs text-muted-foreground ${className}`}>
-                No new text for {elapsed(status.idleMs ?? 0)} — the model may have stalled. Stop keeps what has arrived.
+                No new text for {elapsed(status.idleMs ?? 0)} — the model may have stalled. {stopNote}
             </span>
         );
     }

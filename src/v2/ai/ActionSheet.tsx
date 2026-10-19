@@ -101,7 +101,7 @@ export const ActionSheet = ({
                             )}
                             {text && attemptPartial && (
                                 <p className="mb-1 text-xs text-muted-foreground">
-                                    Incomplete — the model stopped partway through.
+                                    Incomplete — cut short before the end.
                                 </p>
                             )}
                             {text}
