@@ -25,12 +25,22 @@ export const applyChatToCaches = (queryClient: ReturnType<typeof useQueryClient>
 };
 
 // Fetch brainstorm chats by story
-export const useBrainstormByStoryQuery = (storyId: string) =>
-    useQuery({
+export const useBrainstormByStoryQuery = (storyId: string) => {
+    const queryClient = useQueryClient();
+    return useQuery({
         queryKey: brainstormKeys.byStory(storyId),
-        queryFn: () => brainstormApi.getByStory(storyId),
+        // A fetch that started before a save can answer after it: keep whichever copy is newer
+        queryFn: async () => {
+            const fetched = await brainstormApi.getByStory(storyId);
+            const cached = queryClient.getQueryData<AIChat[]>(brainstormKeys.byStory(storyId)) ?? [];
+            return fetched.map(chat => {
+                const mine = cached.find(c => c.id === chat.id);
+                return mine && (mine.revision ?? 0) > (chat.revision ?? 0) ? mine : chat;
+            });
+        },
         enabled: !!storyId
     });
+};
 
 // Create brainstorm chat mutation
 export const useCreateBrainstormMutation = () => {

@@ -95,6 +95,8 @@ export interface ChatMessage {
     shownVersion?: number;
     /** The change that added each version (null for older ones) — a retried save is recognised, not doubled. */
     versionIds?: (string | null)[];
+    /** The change that last set the shown version — a stale choice never overrides a newer one. */
+    shownBy?: string;
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

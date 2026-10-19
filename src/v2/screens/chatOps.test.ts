@@ -1,6 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ChatMessage } from "@/types/story";
-import { addPending, applyOps, clearPending, op, readPending, removePending } from "./chatOps";
+import {
+    addPending,
+    applyOps,
+    claimPending,
+    clearPending,
+    discardUnsaved,
+    op,
+    readPending,
+    readUnsaved,
+    removePending
+} from "./chatOps";
 
 const msg = (id: string, content: string, extra: Partial<ChatMessage> = {}): ChatMessage => ({
     id,
@@ -48,10 +58,18 @@ describe("applyOps", () => {
 
     it("choosing a version is by position, so it means the same version everywhere", () => {
         const two = applyOps(base, [op({ type: "addVersion", messageId: "a1", text: "B", interrupted: false })]);
-        expect(applyOps(two, [op({ type: "show", messageId: "a1", index: 0 })])[1]).toMatchObject({
-            content: "A1",
-            shownVersion: 0
-        });
+        const choice = op({ type: "show", messageId: "a1", index: 0, basedOn: two[1].shownBy ?? null });
+        expect(applyOps(two, [choice])[1]).toMatchObject({ content: "A1", shownVersion: 0 });
+    });
+
+    it("a retried choice that already landed never overrides a newer choice made since", () => {
+        const regen = op({ type: "addVersion", messageId: "a1", text: "B", interrupted: false });
+        const two = applyOps(base, [regen]);
+        const mine = op({ type: "show", messageId: "a1", index: 0, basedOn: regen.id });
+        const landed = applyOps(two, [mine]);
+        const theirs = op({ type: "show", messageId: "a1", index: 1, basedOn: mine.id });
+        const newer = applyOps(landed, [theirs]);
+        expect(applyOps(newer, [mine])[1]).toMatchObject({ content: "B", shownVersion: 1 });
     });
 });
 
@@ -64,15 +82,17 @@ describe("pending changes", () => {
             setItem: (key: string, value: string) => void store.set(key, value),
             removeItem: (key: string) => void store.delete(key),
             clear: () => store.clear(),
-            key: () => null,
-            length: 0
+            key: (index: number) => [...store.keys()][index] ?? null,
+            get length() {
+                return store.size;
+            }
         } as Storage;
         clearPending("c1");
     });
 
     it("adds and removes by id, so one tab's save never drops another tab's change", () => {
-        const mine = op({ type: "show", messageId: "a1", index: 0 });
-        const theirs = op({ type: "show", messageId: "a1", index: 1 });
+        const mine = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
+        const theirs = op({ type: "show", messageId: "a1", index: 1, basedOn: null });
         addPending("c1", [mine]);
         addPending("c1", [theirs]);
         removePending("c1", [mine.id]);
@@ -91,5 +111,33 @@ describe("pending changes", () => {
         expect(ops.map(change => change.type)).toEqual(["addVersion", "append"]);
         expect(readPending("c1").map(change => change.id)).toEqual(ops.map(change => change.id));
         expect(applyOps(before, ops)[1]).toMatchObject({ versions: ["A1", "B"], interruptedVersions: [1] });
+    });
+
+    it("a change another tab is saving is neither unsaved nor discardable meanwhile", () => {
+        const saving = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
+        const waiting = op({ type: "show", messageId: "a1", index: 1, basedOn: null });
+        addPending("c1", [saving, waiting]);
+        claimPending("c1", [saving], true);
+        expect(readUnsaved("c1").map(change => change.id)).toEqual([waiting.id]);
+        discardUnsaved("c1");
+        expect(readPending("c1").map(change => change.id)).toEqual([saving.id]);
+    });
+
+    it("keeps changes storage couldn't take", () => {
+        const kept = op({ type: "show", messageId: "a1", index: 0, basedOn: null });
+        const setItem = localStorage.setItem;
+        localStorage.setItem = () => {
+            throw new Error("QuotaExceededError");
+        };
+        addPending("c1", [kept]);
+        localStorage.setItem = setItem;
+        expect(readPending("c1").map(change => change.id)).toEqual([kept.id]);
+    });
+
+    it("keeps a choice among several unsaved regenerations when recovering the earlier format", () => {
+        const before = [msg("u1", "Q1"), msg("a1", "A1")];
+        const after = [msg("u1", "Q1"), msg("a1", "B", { versions: ["A1", "B", "C"], shownVersion: 1 })];
+        localStorage.setItem("storynexus-unsaved-chat:c1", JSON.stringify({ base: before, local: after }));
+        expect(applyOps(before, readPending("c1"))[1]).toMatchObject({ content: "B", shownVersion: 1 });
     });
 });

@@ -224,3 +224,29 @@ test("brainstorm: reloading while a reply is being saved never loses it", async 
     await page.reload();
     await expect(page.getByText("A reply mid-save.")).toBeVisible();
 });
+
+test("brainstorm: unsaved changes to a chat deleted elsewhere are dropped, and the writer is told", async ({
+    page
+}) => {
+    await script(page, [{ text: "A reply nobody will keep." }]);
+    await createStoryAndChapter(page, "Keep — deleted elsewhere", "One");
+    await openNewChat(page);
+    await expect(page).toHaveURL(/\/brainstorm\/.+/);
+    const chatId = new URL(page.url()).pathname.split("/").pop();
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        return writes.count === 2
+            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+            : route.fallback();
+    });
+    await send(page, "Question");
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+
+    // Another device deletes the chat
+    expect((await page.request.delete(`/api/brainstorm/${chatId}`)).ok()).toBe(true);
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/That chat was deleted, so its unsaved changes were dropped/)).toBeVisible();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+});

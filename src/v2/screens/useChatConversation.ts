@@ -13,9 +13,12 @@ import {
     PENDING_PREFIX,
     addPending,
     applyOps,
+    claimPending,
     clearPending,
+    discardUnsaved as dropUnsaved,
     op,
     readPending,
+    readUnsaved,
     removePending
 } from "./chatOps";
 
@@ -35,7 +38,7 @@ const replyFrom = (result: RunResult) =>
         ? { text: result.text, interrupted: result.outcome !== "complete" }
         : null;
 
-type WriteResult = { outcome: "ok" | "conflict"; chat: AIChat | null } | { outcome: "failed" };
+type WriteResult = { outcome: "ok" | "conflict"; chat: AIChat | null } | { outcome: "failed" } | { outcome: "gone" };
 
 const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<WriteResult> => {
     const [error, response] = await attemptPromise(() =>
@@ -45,6 +48,7 @@ const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<Write
             body: JSON.stringify({ messages, expectedRevision: chat.revision ?? 0 })
         })
     );
+    if (response?.status === 404) return { outcome: "gone" };
     if (error || !response || (!response.ok && response.status !== 409)) return { outcome: "failed" };
     const [, body] = await attemptPromise(() => response.json());
     return response.ok
@@ -88,8 +92,6 @@ export const useChatConversation = (
     };
     if (chat) know(chat);
     const queue = useRef<Promise<unknown>>(Promise.resolve());
-    // Changes this tab is saving right now: shown at once, but not "unsaved" unless the save fails
-    const inFlight = useRef(new Set<string>());
     // Re-render when this device's pending changes change — here, or in another tab
     const [, setPendingVersion] = useState(0);
     const refresh = () => {
@@ -105,7 +107,8 @@ export const useChatConversation = (
     }, []);
     const pendingOps = chat ? readPending(chat.id) : [];
     const messages = chat ? applyOps(chat.messages, pendingOps) : [];
-    const unsaved = chat && pendingOps.some(change => !inFlight.current.has(change.id)) ? { chatId: chat.id } : null;
+    // Shown at once, but only "unsaved" once nobody is saving it
+    const unsaved = chat && readUnsaved(chat.id).length ? { chatId: chat.id } : null;
 
     /**
      * Saves this device's pending changes plus `ops`, one write at a time.
@@ -115,14 +118,20 @@ export const useChatConversation = (
      */
     const commit = (chatId: string, ops: ChatOp[], keep = true): Promise<boolean> => {
         addPending(chatId, ops);
-        ops.forEach(change => inFlight.current.add(change.id));
+        claimPending(chatId, ops, true);
         refresh();
         const run = queue.current.then(async () => {
             const all = readPending(chatId);
-            all.forEach(change => inFlight.current.add(change.id));
+            claimPending(chatId, all, true);
             const attempt = async (server: AIChat | undefined, left: number): Promise<boolean> => {
                 if (!server) return false;
                 const result = await putMessages(server, applyOps(server.messages, all));
+                if (result.outcome === "gone") {
+                    // Deleted (here, elsewhere, or by a restore): there is nothing left to save these into
+                    clearPending(chatId);
+                    toast.info("That chat was deleted, so its unsaved changes were dropped.");
+                    return false;
+                }
                 if (result.outcome === "failed") return false;
                 if (result.chat) {
                     know(result.chat);
@@ -132,17 +141,19 @@ export const useChatConversation = (
                 return left > 1 ? attempt(newest.current.get(chatId), left - 1) : false;
             };
             const saved = await attempt(newest.current.get(chatId), MAX_ATTEMPTS);
-            all.forEach(change => inFlight.current.delete(change.id));
             if (saved)
                 removePending(
                     chatId,
                     all.map(change => change.id)
                 );
-            else if (!keep)
-                removePending(
-                    chatId,
-                    ops.map(change => change.id)
-                );
+            else {
+                if (!keep)
+                    removePending(
+                        chatId,
+                        ops.map(change => change.id)
+                    );
+                claimPending(chatId, all, false);
+            }
             refresh();
             return saved;
         });
@@ -220,7 +231,7 @@ export const useChatConversation = (
 
     const showVersion = (message: ChatMessage, index: number) => {
         if (!chat || message.versions?.[index] === undefined) return;
-        void commit(chat.id, [op({ type: "show", messageId: message.id, index })]);
+        void commit(chat.id, [op({ type: "show", messageId: message.id, index, basedOn: message.shownBy ?? null })]);
     };
 
     /** Writes what this device still holds unsaved. */
@@ -229,7 +240,7 @@ export const useChatConversation = (
     /** The writer chooses the saved conversation over this device's unsaved changes. */
     const discardUnsaved = () => {
         if (!chat) return;
-        clearPending(chat.id);
+        dropUnsaved(chat.id);
         refresh();
     };
 
