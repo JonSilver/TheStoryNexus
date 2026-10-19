@@ -1,13 +1,14 @@
 import { attemptPromise } from "@jfdi/attempt";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { useUpdateBrainstormMutation } from "@/features/brainstorm/hooks/useBrainstormQuery";
+import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { mergeUnsaved, readUnsaved, writeUnsaved } from "./unsavedChat";
+import { type ChatOp, applyOps, readPending, writePending } from "./chatOps";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
@@ -25,12 +26,34 @@ const replyFrom = (result: RunResult) =>
         ? { text: result.text, interrupted: result.outcome !== "complete" }
         : null;
 
+type WriteResult = { outcome: "ok" | "conflict"; chat: AIChat | null } | { outcome: "failed" };
+
+const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<WriteResult> => {
+    const [error, response] = await attemptPromise(() =>
+        fetch(`/api/brainstorm/${chat.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages, expectedRevision: chat.revision ?? 0 })
+        })
+    );
+    if (error || !response || (!response.ok && response.status !== 409)) return { outcome: "failed" };
+    const [, body] = await attemptPromise(() => response.json());
+    return response.ok
+        ? { outcome: "ok", chat: body as AIChat }
+        : { outcome: "conflict", chat: (body as { current?: AIChat } | null)?.current ?? null };
+};
+
+// A conflict means another device wrote first: re-apply onto theirs and try again, a few times
+const MAX_ATTEMPTS = 3;
+
 /**
  * One brainstorm conversation on the action pipeline: chat history and the
- * new message go up as chat_history/user_message. Nothing the model writes
- * is lost — a reply cut short is kept and labelled, regenerating keeps
- * earlier versions, and a write that fails keeps its messages on screen
- * (with Save again) instead of letting them vanish.
+ * new message go up as chat_history/user_message. Every change is a ChatOp
+ * applied to the server's current conversation, written one at a time and
+ * guarded by the chat's revision — two devices never erase each other's
+ * turns. Nothing the model writes is lost: a reply cut short is kept and
+ * labelled, regenerating keeps earlier versions, and changes that can't be
+ * saved wait on this device (Save again) instead of vanishing.
  */
 export const useChatConversation = (
     chat: AIChat | null,
@@ -38,7 +61,7 @@ export const useChatConversation = (
     lastChapterFor: (storyId: string) => string | null | undefined,
     generation: ReturnType<typeof useActionGeneration>
 ) => {
-    const updateChat = useUpdateBrainstormMutation();
+    const queryClient = useQueryClient();
     // A reply can finish after the screen has gone (it's still saved); only
     // the screen's own state must not be touched then
     const alive = useRef(true);
@@ -48,82 +71,89 @@ export const useChatConversation = (
             alive.current = false;
         };
     }, []);
-    // Re-render after the browser-stored copy changes; the copy itself is the truth
-    const [, setStoredVersion] = useState(0);
-    // Kept with what the server had at the time, so only this device's changes are ever replayed
-    const remember = (chatId: string, next: ChatMessage[] | null) => {
-        writeUnsaved(chatId, next ? { base: chat?.messages ?? [], local: next } : null);
-        if (alive.current) setStoredVersion(v => v + 1);
+    // The newest server copy seen, per chat — a write must build on it, not on a render's snapshot
+    const newest = useRef(new Map<string, AIChat>());
+    const know = (seen: AIChat) => {
+        const known = newest.current.get(seen.id);
+        if (!known || (known.revision ?? 0) <= (seen.revision ?? 0)) newest.current.set(seen.id, seen);
     };
-    const serverMessages = chat?.messages ?? [];
-    const stored = chat ? readUnsaved(chat.id) : null;
-    const merged = stored ? mergeUnsaved(serverMessages, stored) : null;
-    // Unsaved only while it holds something the server doesn't
-    const pending = merged && JSON.stringify(merged) !== JSON.stringify(serverMessages) ? merged : null;
-    const unsaved = chat && pending ? { chatId: chat.id, messages: pending } : null;
-    const messages = pending ?? serverMessages;
+    if (chat) know(chat);
+    const queue = useRef<Promise<unknown>>(Promise.resolve());
+    // Re-render after this device's pending changes change; storage is the truth
+    const [, setPendingVersion] = useState(0);
+    const pendingOps = chat ? readPending(chat.id) : [];
+    const messages = chat ? applyOps(chat.messages, pendingOps) : [];
+    const unsaved = chat && pendingOps.length ? { chatId: chat.id } : null;
+
+    /**
+     * Writes this device's pending changes plus `ops`, one write at a time.
+     * `keep` — on failure, keep them pending (Save again); otherwise drop
+     * them (the writer still has them, e.g. the draft message).
+     */
+    const commit = (chatId: string, ops: ChatOp[], keep = true): Promise<boolean> => {
+        const run = queue.current.then(async () => {
+            // Writes are queued, so nothing else changes this device's pending list meanwhile
+            const before = readPending(chatId);
+            const all = [...before, ...ops];
+            const attempt = async (server: AIChat | undefined, left: number): Promise<boolean> => {
+                if (!server) return false;
+                const result = await putMessages(server, applyOps(server.messages, all));
+                if (result.outcome === "failed") return false;
+                if (result.chat) {
+                    know(result.chat);
+                    applyChatToCaches(queryClient, result.chat);
+                }
+                if (result.outcome === "ok") return true;
+                return left > 1 ? attempt(newest.current.get(chatId), left - 1) : false;
+            };
+            const saved = await attempt(newest.current.get(chatId), MAX_ATTEMPTS);
+            writePending(chatId, saved ? [] : keep ? all : before);
+            if (alive.current) setPendingVersion(v => v + 1);
+            return saved;
+        });
+        queue.current = run.catch(() => undefined);
+        return run;
+    };
 
     // The chat a reply is being written for — switching chats mid-reply must not show it in, or let Stop cut it from, another
     const [generatingFor, setGeneratingFor] = useState<string | null>(null);
 
     const runBrainstorm = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
         if (!storyId || !chat) return { text: "", outcome: "superseded" };
-        if (alive.current) setGeneratingFor(chat.id);
-        const result = await runFor(history, userMessage);
-        if (alive.current) setGeneratingFor(null);
-        return result;
-    };
-
-    const runFor = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
-        if (!storyId) return { text: "", outcome: "superseded" };
         const chapterId = lastChapterFor(storyId) ?? undefined;
+        if (alive.current) setGeneratingFor(chat.id);
         if (chapterId) await flushChapterSave(chapterId);
-        return generation.run({
+        const result = await generation.run({
             actionId: "brainstorm",
             storyId,
             // The chat has READ the story: summaries + current chapter go up
             ...(chapterId ? { chapterId } : {}),
             editorContext: { chatHistory: historyText(history), userMessage }
         });
+        if (alive.current) setGeneratingFor(null);
+        return result;
     };
 
-    const saveMessages = async (next: ChatMessage[]): Promise<boolean> => {
-        if (!chat) return false;
-        const [writeError] = await attemptPromise(() =>
-            updateChat.mutateAsync({ id: chat.id, data: { messages: next } })
-        );
-        if (writeError) {
-            remember(chat.id, next);
-            return false;
-        }
-        remember(chat.id, null);
-        return true;
-    };
-
-    const answer = async (history: ChatMessage[], userMessage: string, withUser: ChatMessage[]) => {
-        const reply = replyFrom(await runBrainstorm(history, userMessage));
+    const answer = async (history: ChatMessage[], question: ChatMessage) => {
+        if (!chat) return;
+        const reply = replyFrom(await runBrainstorm(history, question.content));
         // Nothing arrived: the writer's message stays unanswered, with the error and Try again
         if (!reply) return;
-        await saveMessages([
-            ...withUser,
-            { ...chatMessage("assistant", reply.text), ...(reply.interrupted && { interruptedVersions: [0] }) }
-        ]);
+        const message = {
+            ...chatMessage("assistant", reply.text),
+            ...(reply.interrupted && { interruptedVersions: [0] })
+        };
+        await commit(chat.id, [{ type: "append", message, after: question.id }]);
         if (alive.current) generation.reset();
     };
 
-    /** False when the writer's own message couldn't be saved — nothing was sent. */
-    const send = async (userMessage: string): Promise<boolean> => {
+    /** False when the writer's own message couldn't be saved — nothing was sent to the model. */
+    const send = async (text: string): Promise<boolean> => {
         if (!chat) return false;
-        const withUser = [...messages, chatMessage("user", userMessage)];
-        // Sequential writes: firing the user-message update without awaiting
-        // let it finish AFTER the reply update and clobber the assistant turn
-        const [userWriteError] = await attemptPromise(() =>
-            updateChat.mutateAsync({ id: chat.id, data: { messages: withUser } })
-        );
-        if (userWriteError) return false;
-        // That write carried everything on screen, unsaved messages included — they're saved now
-        remember(chat.id, null);
-        await answer(messages, userMessage, withUser);
+        const question = chatMessage("user", text);
+        const history = messages;
+        if (!(await commit(chat.id, [{ type: "append", message: question, after: null }], false))) return false;
+        await answer(history, question);
         return true;
     };
 
@@ -134,25 +164,14 @@ export const useChatConversation = (
     const regenerate = async () => {
         if (!chat || generation.phase === "streaming") return;
         const last = messages[messages.length - 1];
+        const lastIndex = messages.length - 1;
         const priorUser = [...messages].reverse().find(m => m.role === "user");
         if (!last || last.role !== "assistant" || !priorUser) return;
-        const kept = messages.slice(0, -1);
-        const reply = replyFrom(await runBrainstorm(kept.slice(0, -1), priorUser.content));
+        const baseCount = (last.versions ?? [last.content]).length;
+        const reply = replyFrom(await runBrainstorm(messages.slice(0, lastIndex - 1), priorUser.content));
         if (!reply) return;
-        const versions = [...(last.versions ?? [last.content]), reply.text];
-        const interruptedVersions = [
-            ...(last.interruptedVersions ?? []),
-            ...(reply.interrupted ? [versions.length - 1] : [])
-        ];
-        await saveMessages([
-            ...kept,
-            {
-                ...last,
-                content: reply.text,
-                versions,
-                shownVersion: versions.length - 1,
-                ...(interruptedVersions.length && { interruptedVersions })
-            }
+        await commit(chat.id, [
+            { type: "addVersion", messageId: last.id, text: reply.text, interrupted: reply.interrupted, baseCount }
         ]);
         if (alive.current) generation.reset();
     };
@@ -162,20 +181,22 @@ export const useChatConversation = (
         if (!chat || generation.phase === "streaming") return;
         const last = messages[messages.length - 1];
         if (!last || last.role !== "user") return;
-        await answer(messages.slice(0, -1), last.content, messages);
+        await answer(messages.slice(0, -1), last);
     };
 
     const showVersion = (message: ChatMessage, index: number) => {
-        const chosen = message.versions?.[index];
-        if (!chat || chosen === undefined) return;
-        void saveMessages(
-            messages.map(m => (m.id === message.id ? { ...m, content: chosen, shownVersion: index } : m))
-        );
+        if (!chat || message.versions?.[index] === undefined) return;
+        void commit(chat.id, [{ type: "show", messageId: message.id, index }]);
     };
 
-    /** The writer chooses the saved version over the unsaved one. */
+    /** Writes what this device still holds unsaved. */
+    const saveAgain = () => (chat ? commit(chat.id, []) : Promise.resolve(false));
+
+    /** The writer chooses the saved conversation over this device's unsaved changes. */
     const discardUnsaved = () => {
-        if (chat) remember(chat.id, null);
+        if (!chat) return;
+        writePending(chat.id, []);
+        setPendingVersion(v => v + 1);
     };
 
     return {
@@ -183,7 +204,7 @@ export const useChatConversation = (
         messages,
         unsaved,
         generatingFor,
-        saveMessages,
+        saveAgain,
         discardUnsaved,
         send,
         regenerate,

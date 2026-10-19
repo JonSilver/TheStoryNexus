@@ -156,3 +156,48 @@ test("brainstorm: a message sent after an unsaved reply saves it too, even if it
     for (const text of ["First question", "The reply that failed to save.", "Second question"])
         await expect(page.getByText(text)).toBeVisible();
 });
+
+test("brainstorm: two devices writing to one chat without seeing each other's turn both keep theirs", async ({
+    page,
+    browser
+}) => {
+    await script(page, [{ text: "Reply here." }]);
+    await createStoryAndChapter(page, "Keep — concurrent", "One");
+    await openNewChat(page);
+    await expect(page).toHaveURL(/\/brainstorm\/.+/);
+    const other = await (await browser.newContext()).newPage();
+    await script(other, [{ text: "Reply there." }]);
+    await other.goto(page.url());
+    await expect(other.getByPlaceholder("Bounce an idea around…")).toBeVisible();
+
+    // The other device writes first; this one still holds the older conversation
+    await send(other, "Question there");
+    await expect(other.getByText("Reply there.")).toBeVisible();
+    await send(page, "Question here");
+    await expect(page.getByText("Reply here.")).toBeVisible();
+
+    await page.reload();
+    for (const text of ["Question there", "Reply there.", "Question here", "Reply here."])
+        await expect(page.getByText(text)).toBeVisible();
+});
+
+test("brainstorm: a write that landed but whose answer was lost is never doubled", async ({ page }) => {
+    await script(page, [{ text: "Exactly one of me." }]);
+    await createStoryAndChapter(page, "Keep — lost answer", "One");
+    await openNewChat(page);
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", async route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        if (writes.count !== 2) return route.fallback();
+        // The server saves the reply; the answer never arrives
+        await route.fetch();
+        return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+    });
+    await send(page, "Say it once");
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText("Exactly one of me.")).toHaveCount(1);
+});

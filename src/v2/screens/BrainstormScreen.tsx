@@ -18,7 +18,7 @@ import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
 import { useV2Store } from "../state/useV2Store";
 import { ChatBubble, UnsavedBanner } from "./ChatBubble";
-import { writeUnsaved } from "./unsavedChat";
+import { writePending } from "./chatOps";
 import { useChapterFromReply, useChatConversation } from "./useChatConversation";
 import { useCorrectMissingChat } from "./useCorrectMissingChat";
 
@@ -120,7 +120,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                                 type="button"
                                 onClick={() =>
                                     window.confirm(`Delete “${c.title}” and its whole conversation?`) &&
-                                    deleteChat.mutate(c.id, { onSuccess: () => writeUnsaved(c.id, null) })
+                                    deleteChat.mutate(c.id, { onSuccess: () => writePending(c.id, []) })
                                 }
                                 aria-label={`Delete ${c.title}`}
                                 className="text-muted-foreground"
@@ -177,7 +177,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                 )}
                 {unsaved?.chatId === chat.id && (
                     <UnsavedBanner
-                        onSave={() => void conversation.saveMessages(unsaved.messages)}
+                        onSave={() => void conversation.saveAgain()}
                         onDiscard={conversation.discardUnsaved}
                     />
                 )}

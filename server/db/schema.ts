@@ -85,6 +85,8 @@ export const aiChats = sqliteTable(
             .references(() => stories.id, { onDelete: "cascade" }),
         title: text("title").notNull(),
         messages: text("messages", { mode: "json" }).notNull(), // JSON: ChatMessage[]
+        // Optimistic concurrency for messages: two devices must never erase each other's turns
+        revision: integer("revision").notNull().default(0),
         createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
         updatedAt: integer("updatedAt", { mode: "timestamp" }),
         lastUsedPromptId: text("lastUsedPromptId"),

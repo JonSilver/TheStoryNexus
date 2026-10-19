@@ -161,6 +161,7 @@ Model context limits come from provider metadata where available, else a conserv
 | ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------- |
 | `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                 | Phase 3                         |
 | `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only | 2026-10-19                      |
+| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                | 2026-10-19                      |
 | `stories`         | + `aiInstructions`                                                                                 | Phase 4                         |
 | `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                  | Phase 2                         |
 | `actionOverrides` | new                                                                                                | Phase 2 (storage), Phase 8 (UI) |

@@ -75,6 +75,8 @@ export interface AIChat extends BaseEntity {
     storyId: string;
     title: string;
     messages: ChatMessage[];
+    /** Server-managed: moves on every messages write — concurrency between devices. */
+    revision?: number;
     updatedAt?: Date;
     lastUsedPromptId?: string;
     lastUsedModelId?: string;

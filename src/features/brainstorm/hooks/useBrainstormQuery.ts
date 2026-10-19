@@ -10,6 +10,20 @@ const brainstormKeys = {
     detail: (id: string) => ["brainstorm", id] as const
 };
 
+/**
+ * Push a server-returned chat into both caches. Writes outside a mutation
+ * (the conversation's guarded message writes) MUST call this. Revision-
+ * monotonic: a late, older answer never replaces a newer cached chat.
+ */
+export const applyChatToCaches = (queryClient: ReturnType<typeof useQueryClient>, chat: AIChat) => {
+    const newer = (cached?: AIChat) => !cached || (cached.revision ?? 0) <= (chat.revision ?? 0);
+    if (newer(queryClient.getQueryData<AIChat>(brainstormKeys.detail(chat.id))))
+        queryClient.setQueryData(brainstormKeys.detail(chat.id), chat);
+    queryClient.setQueryData<AIChat[]>(brainstormKeys.byStory(chat.storyId), old =>
+        old?.map(c => (c.id === chat.id && newer(c) ? chat : c))
+    );
+};
+
 // Fetch brainstorm chats by story
 export const useBrainstormByStoryQuery = (storyId: string) =>
     useQuery({
@@ -30,24 +44,6 @@ export const useCreateBrainstormMutation = () => {
         },
         onError: (error: Error) => {
             toast.error(`Failed to create brainstorm chat: ${error.message}`);
-        }
-    });
-};
-
-// Update brainstorm chat mutation
-export const useUpdateBrainstormMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<AIChat> }) => brainstormApi.update(id, data),
-        onSuccess: (updatedChat, variables) => {
-            queryClient.setQueryData(brainstormKeys.detail(variables.id), updatedChat);
-            queryClient.setQueryData<AIChat[]>(brainstormKeys.byStory(updatedChat.storyId), old =>
-                old?.map(c => (c.id === updatedChat.id ? updatedChat : c))
-            );
-        },
-        onError: () => {
-            toast.error("Failed to update brainstorm chat");
         }
     });
 };

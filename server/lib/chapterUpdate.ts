@@ -29,7 +29,7 @@ export type ChapterUpdateResolution =
  * A background summary may only land on the summary it set out to replace:
  * never on one the writer saved or locked while the model was running.
  */
-export interface SummaryGuard {
+interface SummaryGuard {
     expectedSourceRevision: number | null;
 }
 
