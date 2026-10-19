@@ -96,3 +96,42 @@ export const deleteStoryAssets = async (storyId: string): Promise<number> => {
     await fs.rm(dir, { recursive: true, force: true });
     return count;
 };
+
+/** Every asset of a story, base64-encoded, for embedding in a JSON backup. */
+export const readStoryAssets = async (storyId: string): Promise<Array<{ filename: string; data: string }>> => {
+    const dir = resolveStoryDir(storyId);
+    if (!dir) return [];
+    const filenames = await listStoryAssets(storyId);
+    return Promise.all(
+        filenames.map(async filename => ({
+            filename,
+            data: (await fs.readFile(path.join(dir, filename))).toString("base64")
+        }))
+    );
+};
+
+/**
+ * Restores backed-up assets into a story's directory. Filenames are
+ * re-validated (a backup is untrusted input) and oversized files skipped;
+ * returns the filenames that could NOT be written so the caller can say so.
+ */
+export const writeStoryAssets = async (
+    storyId: string,
+    assets: Array<{ filename: string; data: string }>
+): Promise<string[]> => {
+    if (assets.length === 0) return [];
+    const dir = await ensureStoryDir(storyId);
+    if (!dir) return assets.map(asset => asset.filename);
+    const failed: string[] = [];
+    for (const asset of assets) {
+        const target = resolveAssetPath(storyId, asset.filename);
+        const bytes = typeof asset.data === "string" ? Buffer.from(asset.data, "base64") : null;
+        if (!target || !bytes || bytes.length === 0 || bytes.length > MAX_ASSET_BYTES) {
+            failed.push(String(asset.filename));
+            continue;
+        }
+        const [error] = await attemptPromise(() => fs.writeFile(target, bytes));
+        if (error) failed.push(asset.filename);
+    }
+    return failed;
+};

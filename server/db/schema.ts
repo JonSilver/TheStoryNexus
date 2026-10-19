@@ -52,6 +52,8 @@ export const chapters = sqliteTable(
         revision: integer("revision").notNull().default(0),
         updatedAt: integer("updatedAt", { mode: "timestamp" }),
         summarySourceRevision: integer("summarySourceRevision"),
+        // Writer-authored summary: auto-summarise must never overwrite it
+        summaryLocked: integer("summaryLocked", { mode: "boolean" }).notNull().default(false),
         outline: text("outline", { mode: "json" }), // JSON: { content: string, lastUpdated: Date }
         wordCount: integer("wordCount").notNull().default(0),
         povCharacter: text("povCharacter"),

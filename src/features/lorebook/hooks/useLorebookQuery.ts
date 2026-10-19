@@ -62,18 +62,11 @@ export const useCreateLorebookMutation = () => {
 
     return useMutation({
         mutationFn: lorebookApi.create,
-        onSuccess: newEntry => {
-            // Invalidate based on entry level
-            if (newEntry.level === "global") queryClient.invalidateQueries({ queryKey: lorebookKeys.global() });
-            else if (newEntry.level === "series" && newEntry.scopeId)
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.series(newEntry.scopeId) });
-            else if (newEntry.level === "story" && newEntry.scopeId) {
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.story(newEntry.scopeId) });
-                queryClient.invalidateQueries({ queryKey: lorebookKeys.hierarchical(newEntry.scopeId) });
-            }
-
-            // Also invalidate list query
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.lists() });
+        onSuccess: () => {
+            // Level-scoped invalidation missed every story's hierarchical view
+            // for series/global entries — they stayed invisible until an
+            // unrelated refetch. Invalidate all lorebook queries.
+            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
 
             toast.success("Lorebook entry created successfully");
         },

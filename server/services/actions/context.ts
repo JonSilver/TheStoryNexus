@@ -80,7 +80,9 @@ const loadStoryEntries = async (story: StoryRow): Promise<LorebookRow[]> => {
 };
 
 const summaryLine = (chapter: ChapterRow): string => {
-    const stale = chapter.summarySourceRevision !== chapter.revision ? " [may be outdated]" : "";
+    // A locked summary is the writer's own account — it vouches for itself
+    const stale =
+        !chapter.summaryLocked && chapter.summarySourceRevision !== chapter.revision ? " [may be outdated]" : "";
     return `Chapter ${chapter.order + 1} (${chapter.title})${stale}: ${chapter.summary}`;
 };
 

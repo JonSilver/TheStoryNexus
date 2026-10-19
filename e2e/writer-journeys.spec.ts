@@ -238,7 +238,7 @@ test("chapter details: POV, outline and summary are editable and stick", async (
     await page.getByRole("button", { name: "Edit One details" }).click();
     await page.getByLabel("Chapter POV type").selectOption("First Person");
     await page.getByLabel("Outline").fill("Elinor learns the truth.");
-    await page.getByLabel("Summary").fill("A hand-written summary.");
+    await page.getByLabel("Summary", { exact: true }).fill("A hand-written summary.");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await page.reload();
@@ -247,7 +247,7 @@ test("chapter details: POV, outline and summary are editable and stick", async (
     await page.getByRole("button", { name: "Edit One details" }).click();
     await expect(page.getByLabel("Chapter POV type")).toHaveValue("First Person");
     await expect(page.getByLabel("Outline")).toHaveValue("Elinor learns the truth.");
-    await expect(page.getByLabel("Summary")).toHaveValue("A hand-written summary.");
+    await expect(page.getByLabel("Summary", { exact: true })).toHaveValue("A hand-written summary.");
 });
 
 test("selection right-click shows the app's own menu, not the browser's", async ({ page }) => {

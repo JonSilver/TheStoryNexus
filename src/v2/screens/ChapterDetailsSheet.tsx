@@ -11,7 +11,8 @@ const POV_TYPES = ["", "First Person", "Third Person Limited", "Third Person Omn
  * Chapter metadata that steers the AI but had no editing surface: POV
  * (the default for Continue and scene beats without their own), outline,
  * and the summary text itself. A hand-edited summary is marked fresh so
- * auto-summarise doesn't overwrite it.
+ * auto-summarise doesn't overwrite it — and is LOCKED against background
+ * refresh, which would otherwise replace it after the next prose edit.
  */
 export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; onClose: () => void }) => {
     const updateChapter = useUpdateChapterMutation();
@@ -22,6 +23,7 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
     const [povCharacter, setPovCharacter] = useState(chapter.povCharacter ?? "");
     const [outline, setOutline] = useState(chapter.outline?.content ?? "");
     const [summary, setSummary] = useState(chapter.summary ?? "");
+    const [locked, setLocked] = useState(chapter.summaryLocked ?? false);
 
     const save = () => {
         const summaryEdited = summary !== (chapter.summary ?? "");
@@ -34,6 +36,7 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
                     povCharacter: povCharacter || null,
                     outline: outline.trim() ? { content: outline, lastUpdated: new Date() } : null,
                     summary,
+                    summaryLocked: locked && summary.trim().length > 0,
                     // Hand-edited summaries are authoritative for the current text
                     ...(summaryEdited ? { summarySourceRevision: chapter.revision ?? 0 } : {})
                 } as Partial<Chapter>
@@ -102,8 +105,21 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
                         aria-label="Summary"
                         placeholder="Summary — what has happened (feeds later chapters' AI context)…"
                         value={summary}
-                        onChange={e => setSummary(e.target.value)}
+                        onChange={e => {
+                            setSummary(e.target.value);
+                            // Writing it yourself means you want to keep it
+                            setLocked(true);
+                        }}
                     />
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <input
+                            type="checkbox"
+                            checked={locked}
+                            onChange={e => setLocked(e.target.checked)}
+                            aria-label="Keep this summary"
+                        />
+                        Keep this summary — don't refresh it automatically
+                    </label>
                 </div>
                 <footer className="flex gap-2 border-t p-3">
                     <button

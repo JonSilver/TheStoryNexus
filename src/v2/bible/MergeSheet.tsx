@@ -14,7 +14,19 @@ import { type EntryProposal, parseEntryProposals } from "./parseProposals";
  * aliases; the result is reviewed (and editable) before anything is
  * written. Saving updates the kept entry and deletes the duplicate.
  */
-export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onClose: () => void }) => {
+export const MergeSheet = ({
+    entries: allEntries,
+    storyId,
+    onClose
+}: {
+    entries: LorebookEntry[];
+    storyId: string;
+    onClose: () => void;
+}) => {
+    // Series and global entries are shared canon across stories — merging
+    // from one story must never rewrite or delete them for the others
+    const entries = allEntries.filter(e => e.level === "story" && e.scopeId === storyId);
+    const inheritedCount = allEntries.length - entries.length;
     const generation = useActionGeneration();
     const updateEntry = useUpdateLorebookMutation();
     const deleteEntry = useDeleteLorebookMutation();
@@ -33,7 +45,6 @@ export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onC
 
     const keep = entries.find(e => e.id === keepId);
     const duplicate = entries.find(e => e.id === duplicateId);
-    const storyId = keep?.level === "story" ? keep.scopeId : undefined;
 
     const run = async () => {
         if (!keep || !duplicate) return;
@@ -41,7 +52,7 @@ export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onC
             JSON.stringify({ name: e.name, category: e.category, description: e.description, tags: e.tags ?? [] });
         const text = await generation.run({
             actionId: "merge_entries",
-            storyId: storyId ?? keep.scopeId ?? "",
+            storyId,
             editorContext: {
                 userMessage: `Entry A (keep):\n${describe(keep)}\n\nEntry B (duplicate):\n${describe(duplicate)}`
             }
@@ -103,6 +114,12 @@ export const MergeSheet = ({ entries, onClose }: { entries: LorebookEntry[]; onC
                 <div className="space-y-2 overflow-y-auto px-4 pb-4 text-sm">
                     {!merged ? (
                         <>
+                            {inheritedCount > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    {inheritedCount} series/global entr{inheritedCount === 1 ? "y is" : "ies are"}{" "}
+                                    shared with other stories and can't be merged from here.
+                                </p>
+                            )}
                             <MergePicker
                                 entries={entries}
                                 keep={keep ?? null}

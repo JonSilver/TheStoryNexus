@@ -31,6 +31,8 @@ export interface Chapter extends BaseEntity {
     revision?: number; // server-managed; always present on reads, omitted from creates
     updatedAt?: Date;
     summarySourceRevision?: number;
+    /** Writer-authored summary — auto-summarise leaves it alone. */
+    summaryLocked?: boolean;
     outline?: ChapterOutline;
     wordCount: number;
     povCharacter?: string;

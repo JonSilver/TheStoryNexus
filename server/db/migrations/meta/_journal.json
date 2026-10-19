@@ -85,6 +85,13 @@
             "when": 1788723826431,
             "tag": "0011_windy_nekra",
             "breakpoints": true
+        },
+        {
+            "idx": 12,
+            "version": "6",
+            "when": 1792395306167,
+            "tag": "0012_thin_cerebro",
+            "breakpoints": true
         }
     ]
 }

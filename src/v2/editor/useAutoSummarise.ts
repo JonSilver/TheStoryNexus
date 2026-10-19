@@ -46,7 +46,8 @@ export const useAutoSummarise = (chapter: Chapter) => {
         if (error || !response?.ok) return;
         const fresh: Chapter = await response.json();
         const stale = (fresh.summarySourceRevision ?? -1) !== (fresh.revision ?? 0);
-        if (!stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
+        // A hand-written summary is never overwritten by background work
+        if (fresh.summaryLocked || !stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
 
         // A run that fails, or lands while the content has already moved on,
         // must not strand the summary stale until the next edit — re-arm,

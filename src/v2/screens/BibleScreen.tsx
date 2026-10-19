@@ -86,7 +86,9 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                 <button
                     key="merge"
                     type="button"
-                    disabled={(entries?.length ?? 0) < 2}
+                    disabled={
+                        (entries ?? []).filter(e => e.level === "story" && e.scopeId === currentStoryId).length < 2
+                    }
                     onClick={() => setMerging(true)}
                     className="flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm disabled:opacity-50"
                 >
@@ -172,7 +174,9 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
                 ))}
             </div>
 
-            {merging && <MergeSheet entries={entries ?? []} onClose={() => setMerging(false)} />}
+            {merging && (
+                <MergeSheet entries={entries ?? []} storyId={currentStoryId} onClose={() => setMerging(false)} />
+            )}
             {editing && (
                 <EntryEditor
                     entry={editing === "new" ? null : editing}

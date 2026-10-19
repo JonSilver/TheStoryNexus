@@ -1,17 +1,13 @@
 import { attemptPromise } from "@jfdi/attempt";
-import type { InferSelectModel } from "drizzle-orm";
 import { and, eq } from "drizzle-orm";
 import multer from "multer";
 import { db, schema } from "../db/client.js";
 import { createCrudRouter } from "../lib/crud.js";
-import { deleteStoryAssets } from "../services/assets/storage.js";
+import { deleteStoryAssets, readStoryAssets, writeStoryAssets } from "../services/assets/storage.js";
 import { generateEpub } from "../services/epubGenerator.js";
+import { type StoryBackup, buildStoryImport } from "../services/stories/portable.js";
 
-type ImportedChapter = InferSelectModel<typeof schema.chapters>;
-type ImportedLorebookEntry = InferSelectModel<typeof schema.lorebookEntries>;
-type ImportedAiChat = InferSelectModel<typeof schema.aiChats>;
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 250 * 1024 * 1024 } });
 
 export default createCrudRouter({
     table: schema.stories,
@@ -62,7 +58,9 @@ export default createCrudRouter({
                         lorebookEntries,
                         aiChats,
                         notes,
-                        actionOverrides
+                        actionOverrides,
+                        // Images travel inside the backup, or restoring loses them
+                        assets: await readStoryAssets(storyId)
                     };
                 });
 
@@ -108,90 +106,24 @@ export default createCrudRouter({
                     return;
                 }
 
-                const [error, newStoryId] = await attemptPromise(async () => {
-                    const newStoryId = crypto.randomUUID();
-                    const idMap = new Map<string, string>();
-                    idMap.set(storyData.story.id, newStoryId);
+                const backup = storyData as StoryBackup;
+                const newStoryId = crypto.randomUUID();
+                const rows = buildStoryImport(backup, newStoryId, () => crypto.randomUUID(), new Date());
 
-                    const newStory = {
-                        ...storyData.story,
-                        id: newStoryId,
-                        createdAt: new Date(),
-                        title: `${storyData.story.title} (Imported)`,
-                        seriesId: undefined // Don't import series relationship - user must manually assign
-                    };
-
-                    await db.insert(schema.stories).values(newStory);
-
-                    if (storyData.chapters?.length) {
-                        const newChapters = storyData.chapters.map((chapter: ImportedChapter) => {
-                            const newChapterId = crypto.randomUUID();
-                            idMap.set(chapter.id, newChapterId);
-                            return {
-                                ...chapter,
-                                id: newChapterId,
-                                storyId: newStoryId,
-                                createdAt: new Date()
-                            };
-                        });
-                        await db.insert(schema.chapters).values(newChapters);
-                    }
-
-                    if (storyData.lorebookEntries?.length) {
-                        const newEntries = storyData.lorebookEntries
-                            .map((entry: ImportedLorebookEntry) => {
-                                // Validate level/scopeId constraints
-                                if (entry.level === "global" && entry.scopeId) {
-                                    console.warn(
-                                        `Skipping invalid entry ${entry.name}: global entries cannot have scopeId`
-                                    );
-                                    return null;
-                                }
-                                if ((entry.level === "series" || entry.level === "story") && !entry.scopeId) {
-                                    console.warn(
-                                        `Skipping invalid entry ${entry.name}: ${entry.level} entries require scopeId`
-                                    );
-                                    return null;
-                                }
-                                if (entry.level && !["global", "series", "story"].includes(entry.level)) {
-                                    console.warn(`Skipping invalid entry ${entry.name}: invalid level ${entry.level}`);
-                                    return null;
-                                }
-
-                                const newEntryId = crypto.randomUUID();
-                                idMap.set(entry.id, newEntryId);
-                                return {
-                                    ...entry,
-                                    id: newEntryId,
-                                    level: "story", // Force to story level on import
-                                    scopeId: newStoryId, // Assign to new story
-                                    storyId: newStoryId, // Temporary for Phase 1
-                                    createdAt: new Date()
-                                };
-                            })
-                            .filter(
-                                (entry: ImportedLorebookEntry): entry is NonNullable<typeof entry> => entry !== null
-                            );
-
-                        if (newEntries.length > 0) await db.insert(schema.lorebookEntries).values(newEntries);
-                    }
-
-                    if (storyData.aiChats?.length) {
-                        const newChats = storyData.aiChats.map((chat: ImportedAiChat) => {
-                            const newChatId = crypto.randomUUID();
-                            return {
-                                ...chat,
-                                id: newChatId,
-                                storyId: newStoryId,
-                                createdAt: new Date(),
-                                updatedAt: new Date()
-                            };
-                        });
-                        await db.insert(schema.aiChats).values(newChats);
-                    }
-
-                    return newStoryId;
-                });
+                // All-or-nothing: a half-restored backup is worse than none.
+                // better-sqlite3 transactions are synchronous — .run() each insert.
+                const [error] = await attemptPromise(async () =>
+                    db.transaction(tx => {
+                        tx.insert(schema.stories).values(rows.story).run();
+                        if (rows.chapters.length) tx.insert(schema.chapters).values(rows.chapters).run();
+                        if (rows.lorebookEntries.length)
+                            tx.insert(schema.lorebookEntries).values(rows.lorebookEntries).run();
+                        if (rows.aiChats.length) tx.insert(schema.aiChats).values(rows.aiChats).run();
+                        if (rows.notes.length) tx.insert(schema.notes).values(rows.notes).run();
+                        if (rows.actionOverrides.length)
+                            tx.insert(schema.actionOverrides).values(rows.actionOverrides).run();
+                    })
+                );
 
                 if (error) {
                     console.error("Error importing story:", error);
@@ -199,14 +131,23 @@ export default createCrudRouter({
                     return;
                 }
 
+                // Images go after the commit; any that can't be restored are
+                // reported, never silently dropped
+                const assetsFailed = await writeStoryAssets(newStoryId, backup.assets ?? []);
+
                 res.json({
                     success: true,
                     storyId: newStoryId,
+                    title: rows.story.title,
                     imported: {
-                        chapters: storyData.chapters?.length || 0,
-                        lorebookEntries: storyData.lorebookEntries?.length || 0,
-                        aiChats: storyData.aiChats?.length || 0
-                    }
+                        chapters: rows.chapters.length,
+                        lorebookEntries: rows.lorebookEntries.length,
+                        aiChats: rows.aiChats.length,
+                        notes: rows.notes.length,
+                        actionOverrides: rows.actionOverrides.length,
+                        assets: (backup.assets ?? []).length - assetsFailed.length
+                    },
+                    assetsFailed
                 });
             })
         );

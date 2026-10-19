@@ -209,7 +209,7 @@ export const useEditorActions = (chapter: Chapter) => {
             fetch(`/api/chapters/${chapter.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ summary, summarySourceRevision: sourceRevision })
+                body: JSON.stringify({ summary, summarySourceRevision: sourceRevision, summaryLocked: false })
             })
         );
         if (saveError || !saveResponse?.ok) toast.error("Couldn't save summary");

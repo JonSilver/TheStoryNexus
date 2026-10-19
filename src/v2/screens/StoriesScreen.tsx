@@ -43,13 +43,24 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
     };
 
     const importJson = async (file: File) => {
-        const [error, story] = await attemptPromise(() => storiesApi.importStory(file));
-        if (error || !story) {
-            toast.error("Couldn't import that JSON — is it a story export?");
+        const [error, result] = await attemptPromise(() => storiesApi.importStory(file));
+        if (error || !result?.storyId) {
+            toast.error(`Couldn't import that JSON${error ? `: ${error.message}` : ""}`);
             return;
         }
-        void queryClient.invalidateQueries();
-        toast.success(`Imported “${story.title}”`);
+        await queryClient.invalidateQueries();
+        const counts = result.imported;
+        toast.success(
+            `Restored “${result.title}” — ${counts.chapters ?? 0} chapters, ${counts.lorebookEntries ?? 0} bible entries, ` +
+                `${counts.notes ?? 0} notes, ${counts.assets ?? 0} images`
+        );
+        if (result.assetsFailed.length > 0)
+            toast.error(
+                `${result.assetsFailed.length} image(s) couldn't be restored: ${result.assetsFailed.join(", ")}`
+            );
+        // Land in the restored story, not back at the list
+        setCurrentStory(result.storyId);
+        goTo("story");
     };
 
     const create = () => {
