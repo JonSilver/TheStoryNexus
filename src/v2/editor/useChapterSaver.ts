@@ -1,5 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
+import { attempt } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
+import { isEqual } from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
@@ -8,8 +10,14 @@ export type SaveStatus = "idle" | "saving" | "saved" | "failed" | "conflict";
 
 interface SavePayload {
     content: string;
+    doc: unknown;
     wordCount: number;
 }
+
+const parseDocument = (content: string): unknown => {
+    const [error, doc] = attempt(() => JSON.parse(content) as unknown);
+    return error ? content : doc;
+};
 
 type SaveResult =
     | { outcome: "ok"; chapter: Chapter }
@@ -20,11 +28,11 @@ const KEEPALIVE_BODY_LIMIT = 60_000;
 
 const putChapterContent = async (
     chapterId: string,
-    payload: SavePayload,
-    expectedRevision: number,
+    { content, wordCount }: SavePayload,
+    expectedSaveVersion: number,
     exiting = false
 ): Promise<SaveResult> => {
-    const body = JSON.stringify({ ...payload, expectedRevision });
+    const body = JSON.stringify({ content, wordCount, expectedSaveVersion });
     const [error, response] = await attemptPromise(() =>
         fetch(`/api/chapters/${chapterId}`, {
             method: "PUT",
@@ -85,14 +93,21 @@ export const flushChapterSave = async (chapterId: string): Promise<void> => {
  * One save in flight per chapter; newer content replaces queued content;
  * 409 halts saving until the caller reloads; failures retry.
  */
-export const useChapterSaver = (chapterId: string, initialRevision: number, initialContent: string) => {
+export const useChapterSaver = (
+    chapterId: string,
+    initialSaveVersion: number,
+    initialContent: string,
+    onSaved?: (chapter: Chapter) => void
+) => {
     const [status, setStatus] = useState<SaveStatus>("idle");
+    const onSavedRef = useRef(onSaved);
+    onSavedRef.current = onSaved;
     const queryClient = useQueryClient();
     const internals = useRef({
         pending: null as SavePayload | null,
         inFlight: false,
-        revision: initialRevision,
-        lastSavedContent: initialContent,
+        saveVersion: initialSaveVersion,
+        lastSavedDocument: parseDocument(initialContent),
         conflicted: false,
         debounceTimer: 0 as ReturnType<typeof setTimeout> | 0,
         retryTimer: 0 as ReturnType<typeof setTimeout> | 0,
@@ -108,7 +123,7 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
             s.inFlight = true;
             setStatus("saving");
 
-            const request = putChapterContent(chapterId, payload, s.revision, exiting);
+            const request = putChapterContent(chapterId, payload, s.saveVersion, exiting);
             const tracked = request.then(
                 () => undefined,
                 () => undefined
@@ -121,9 +136,10 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
             s.inFlight = false;
 
             if (result.outcome === "ok") {
-                s.revision = result.chapter.revision ?? s.revision + 1;
-                s.lastSavedContent = payload.content;
+                s.saveVersion = result.chapter.saveVersion ?? s.saveVersion;
+                s.lastSavedDocument = payload.doc;
                 applyChapterToCaches(queryClient, result.chapter);
+                onSavedRef.current?.(result.chapter);
                 if (s.pending) void drain();
                 else setStatus("saved");
                 return;
@@ -143,14 +159,15 @@ export const useChapterSaver = (chapterId: string, initialRevision: number, init
         [chapterId, queryClient]
     );
 
+    // Compared as documents, not strings: serialisation order is not identity
     const scheduleSave = useCallback(
-        (content: string, wordCount: number) => {
+        (content: string, doc: unknown, wordCount: number) => {
             const s = internals.current;
             // Reverting to the last-saved content still needs saving whenever a
             // different payload is queued or in flight, or the in-flight write
             // wins and the visible text is silently lost
-            if (s.conflicted || (content === s.lastSavedContent && !s.inFlight && !s.pending)) return;
-            s.pending = { content, wordCount };
+            if (s.conflicted || (!s.inFlight && !s.pending && isEqual(doc, s.lastSavedDocument))) return;
+            s.pending = { content, doc, wordCount };
             clearTimeout(s.debounceTimer);
             s.debounceTimer = setTimeout(() => void drain(), DEBOUNCE_MS);
         },

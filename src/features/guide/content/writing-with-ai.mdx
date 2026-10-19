@@ -60,7 +60,7 @@ Every AI action shows what's happening: _Waiting for the model server to respond
 
 **… → Summarise chapter** writes a short summary of the chapter you're in; **Save summary** stores it. Summaries are how the AI knows what happened in earlier chapters when you write later ones.
 
-With **Settings → Refresh chapter summaries automatically** on, a chapter whose summary is out of date gets a fresh one in the background after you pause writing (it costs tokens on your model; turn it off if you'd rather not). A summary you write yourself — **Story → Chapters → pencil → Summary** — is marked **Keep this summary** and is never replaced automatically. If background summaries start failing, a warning tells you why.
+With **Settings → Refresh chapter summaries automatically** on, when you've changed a chapter substantially — roughly a paragraph or more, or 5% of a long chapter — and then paused for a minute and a half, it's summarised once in the background. Every generation costs money, so that's all it does: opening or reading a chapter never triggers one, small edits don't, a failed attempt isn't retried until the chapter changes substantially again, and there are at most six an hour. Turn it off if you'd rather summarise by hand. A summary you write yourself — **Story → Chapters → pencil → Summary** — is marked **Keep this summary** and is never replaced automatically. If a background summary fails, a warning tells you why.
 
 ## Your story's voice
 

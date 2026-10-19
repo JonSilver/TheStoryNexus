@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createStoryAndChapter, editorLocator, mockGeneration, waitForSaved } from "./helpers";
+import { createStoryAndChapter, editorLocator, mockGeneration, resetBackgroundBudget, waitForSaved } from "./helpers";
 
 /**
  * Journeys where getting it wrong destroys the writer's work: backups that
@@ -55,6 +55,8 @@ test("a hand-written summary survives background auto-summarise", async ({ page 
         return "AN AI SUMMARY THAT MUST NOT APPEAR";
     });
     await page.clock.install();
+    // Room in the hourly allowance, so zero calls proves the lock refused — not an exhausted budget
+    await resetBackgroundBudget(page);
 
     await createStoryAndChapter(page, "Safety — summary", "One");
     await editorLocator(page).click();
@@ -70,11 +72,11 @@ test("a hand-written summary survives background auto-summarise", async ({ page 
     await expect(page.getByLabel("Keep this summary")).toBeChecked();
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    // A later prose edit makes the summary stale — then the idle window passes
+    // A later substantial prose edit makes the summary stale — then the idle window passes
     await page.getByRole("button", { name: "Write" }).click();
     await editorLocator(page).click();
     await page.keyboard.press("Control+End");
-    await page.keyboard.type(" One more line.");
+    await page.keyboard.insertText(" The keeper climbed the stair again and watched the ships. ".repeat(10));
     await page.clock.runFor(2_000);
     await waitForSaved(page);
     await page.clock.runFor(120_000);

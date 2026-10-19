@@ -46,10 +46,19 @@ export const useCreateChapterMutation = () => {
 // chapter outside a mutation (the v2 editor saver, background summarise) MUST
 // call this, or the next editor mount resurrects stale content and 409s.
 export const applyChapterToCaches = (queryClient: ReturnType<typeof useQueryClient>, chapter: Chapter) => {
-    // Revision monotonicity: a late response from an older save must never
-    // overwrite a newer cached row
+    // Monotonicity: a late response from an older write must never overwrite a
+    // newer cached row. Metadata writes share a saveVersion, so ties fall to updatedAt
     const cached = queryClient.getQueryData<Chapter>(chaptersKeys.detail(chapter.id));
-    if ((cached?.revision ?? -1) > (chapter.revision ?? -1)) return;
+    const cachedVersion = cached?.saveVersion ?? -1;
+    const incomingVersion = chapter.saveVersion ?? -1;
+    if (cachedVersion > incomingVersion) return;
+    if (
+        cached?.updatedAt &&
+        chapter.updatedAt &&
+        cachedVersion === incomingVersion &&
+        new Date(cached.updatedAt).getTime() > new Date(chapter.updatedAt).getTime()
+    )
+        return;
     queryClient.setQueryData(chaptersKeys.detail(chapter.id), chapter);
     queryClient.setQueryData<Chapter[]>(chaptersKeys.byStory(chapter.storyId), old =>
         old?.map(ch => (ch.id === chapter.id ? chapter : ch))

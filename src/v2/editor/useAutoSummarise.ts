@@ -7,102 +7,137 @@ import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
 import { useV2Store } from "../state/useV2Store";
 
+type BackgroundClaim =
+    | { due: true; storyId: string; revision: number; summarySourceRevision: number | null }
+    | { due: false; reason: string };
+
 const IDLE_MS = 90_000;
-const MIN_WORDS = 150;
-const MAX_CONSECUTIVE_FAILURES = 3;
+const FAILURE_TOAST = "auto-summarise-failure";
+
+const reportFailure = (reason: string, next = "It won't try again until the chapter changes substantially.") =>
+    toast.error(
+        `Background chapter summaries aren't working: ${reason} ${next} Turn this off in Settings if you don't need it.`,
+        { toastId: FAILURE_TOAST, autoClose: false }
+    );
 
 /**
- * Background summary freshness (writing-process review W4): when saves have
- * settled and the editor has been idle, a stale summary regenerates silently
- * via the summarise action (which respects its per-action model override).
- * The freshness fields (summarySourceRevision vs revision) both trigger the
- * run and prevent loops. Failures are surfaced (persistently, once): a
- * broken background job the writer can't see is a silent data-quality bug.
+ * Background summary freshness under a strict cost limit. The client asks
+ * only when THIS device saved a significant prose change (a new revision —
+ * see server/lib/proseChange.ts) and the writer has since been idle; opening
+ * or reading a chapter, here or with edits arriving from elsewhere, never asks. The server then decides,
+ * before anything is spent (server/services/actions/backgroundSummary.ts): stale, unlocked, long
+ * enough, never attempted for this revision on any device, and within the
+ * app-wide hourly limit — otherwise it spends nothing. A failure is reported
+ * once and not retried until the prose changes significantly again.
  */
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
     const running = useRef(false);
-    const failures = useRef(0);
+    const alive = useRef(true);
+    // Significant changes THIS device saved: another device's edit, arriving
+    // while this one only reads, never makes this one spend
+    const local = useRef({ chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false });
+    if (local.current.chapterId !== chapter.id)
+        local.current = { chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false };
     const queryClient = useQueryClient();
     const { autoSummarise } = useV2Store();
     const enabled = useRef(autoSummarise);
     enabled.current = autoSummarise;
 
-    const schedule = () => {
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => void refreshIfStale(chapter.id), IDLE_MS);
-    };
-
-    // Real editor activity forgives past failures; internal re-arms don't —
-    // a permanently broken summarise path must not fire a paid generation
-    // every 90s for as long as the editor sits idle
-    const noteActivity = () => {
-        failures.current = 0;
-        schedule();
-    };
-
-    const refreshIfStale = async (chapterId: string) => {
+    const refreshIfDue = async (chapterId: string) => {
         if (!enabled.current || running.current) return;
-        const [error, response] = await attemptPromise(() => fetch(`/api/chapters/${chapterId}`));
-        if (error || !response?.ok) return;
-        const fresh: Chapter = await response.json();
-        const stale = (fresh.summarySourceRevision ?? -1) !== (fresh.revision ?? 0);
-        // A hand-written summary is never overwritten by background work
-        if (fresh.summaryLocked || !stale || (fresh.wordCount ?? 0) < MIN_WORDS) return;
-
-        // A run that fails, or lands while the content has already moved on,
-        // must not strand the summary stale until the next edit — re-arm,
-        // but give up after repeated failures until the writer types again
-        const rearmAfterFailure = () => {
-            failures.current += 1;
-            if (failures.current < MAX_CONSECUTIVE_FAILURES) schedule();
-        };
-
+        if (local.current.chapterId !== chapterId || !local.current.pending) return;
         running.current = true;
-        const baseRevision = fresh.revision ?? 0;
+        const [claimError, claim] = await attemptPromise(async () => {
+            const response = await fetch(`/api/chapters/${chapterId}/background-summary`, { method: "POST" });
+            if (!response.ok) throw new Error(`the app's server answered ${response.status}.`);
+            return (await response.json()) as BackgroundClaim;
+        });
+        if (claimError || !claim) {
+            running.current = false;
+            // Still pending: the writer's next pause asks again — no retry loop while idle
+            reportFailure(
+                `couldn't reach the app's server — ${(claimError as Error)?.message ?? "no answer."}`,
+                "It will ask again after your next pause in writing."
+            );
+            return;
+        }
+        // One ask per local significant change, whatever the answer
+        local.current.pending = false;
+        if (!claim.due) {
+            running.current = false;
+            return;
+        }
+        const { storyId, revision, summarySourceRevision } = claim;
         const chunks: string[] = [];
         streamAction(
-            { actionId: "summarise_chapter", storyId: fresh.storyId, chapterId },
+            { actionId: "summarise_chapter", storyId, chapterId },
             {
                 onToken: token => chunks.push(token),
                 onDone: error => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) {
-                        // Background work must never fail silently: one persistent,
-                        // de-duplicated warning that says what broke and what to do
-                        toast.error(
-                            `Background chapter summaries aren't working: ${
-                                error ?? "the model returned an empty summary"
-                            } Turn this off in Settings if you don't need it.`,
-                            { toastId: "auto-summarise-failure", autoClose: false }
-                        );
-                        rearmAfterFailure();
+                        reportFailure(error ?? "the model returned an empty summary.");
                         return;
                     }
-                    failures.current = 0;
-                    void attemptPromise(async () => {
-                        const response = await fetch(`/api/chapters/${chapterId}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ summary, summarySourceRevision: baseRevision })
-                        });
-                        if (!response.ok) return;
-                        const updated: Chapter = await response.json();
-                        applyChapterToCaches(queryClient, updated);
-                        // Content moved while summarising — not a failure, still stale
-                        if ((updated.summarySourceRevision ?? -1) !== (updated.revision ?? 0)) schedule();
-                    });
+                    void (async () => {
+                        const [putError, put] = await attemptPromise(() =>
+                            fetch(`/api/chapters/${chapterId}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    summary,
+                                    summarySourceRevision: revision,
+                                    backgroundSummary: { expectedSourceRevision: summarySourceRevision }
+                                })
+                            })
+                        );
+                        // 409: the writer saved or locked a summary meanwhile — theirs wins, by design
+                        if (put?.status === 409) return;
+                        if (putError || !put?.ok) {
+                            reportFailure("a summary was generated but couldn't be saved.");
+                            return;
+                        }
+                        const [parseError, saved] = await attemptPromise(() => put.json() as Promise<Chapter>);
+                        // The summary is stored either way; an unreadable echo only means the next fetch syncs the cache
+                        if (!parseError && saved) applyChapterToCaches(queryClient, saved);
+                    })();
                 }
             }
         );
     };
 
+    const schedule = () => {
+        clearTimeout(timer.current);
+        // A save that settles after the editor closed must not arm a timer nothing will clear
+        if (!alive.current) return;
+        timer.current = setTimeout(() => void refreshIfDue(chapter.id), IDLE_MS);
+    };
+
+    /** Typing defers a pending summary until the writer pauses. */
+    const noteActivity = () => {
+        if (local.current.pending) schedule();
+    };
+
+    /** The saver's response: a revision bump here is this device's significant change. */
+    const noteSaved = (saved: Chapter) => {
+        if (saved.id !== local.current.chapterId) return;
+        const revision = saved.revision ?? 0;
+        if (revision > local.current.knownRevision) {
+            local.current.knownRevision = revision;
+            local.current.pending = true;
+            schedule();
+        }
+    };
+
     useEffect(() => {
-        noteActivity();
-        return () => clearTimeout(timer.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        alive.current = true;
+        return () => {
+            alive.current = false;
+            clearTimeout(timer.current);
+        };
     }, [chapter.id]);
 
-    return { noteActivity };
+    return { noteActivity, noteSaved };
 };

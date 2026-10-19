@@ -27,6 +27,7 @@ Each rule below exists because its absence shipped a real defect. Do not relax t
 9. **Docs are change surface.** Grep README/docs/guide for claims touched by any change; a stale claim is a defect and a dangerous one (backup instructions) is a serious defect. The in-app guide counts.
 10. **Curate, don't just implement.** After each feature, ask what journey it completes and what adjacent dead-end it exposes; propose the follow-on rather than waiting for the user to trip over it. Keep the task list honest about product gaps, not just build steps.
 11. **Problem reports are UX reports first.** When the writer says something went wrong, the first question is _what did the app show them, and was that good enough?_, not _whose fault is it?_ Something outside the app misbehaving (model server, network, provider) explains the cause; it never excuses a silent, slow or vague experience. Lead the answer with the app's failure and the fix; put the environment's part second, as context. (A model-server swap produced a two-minute silent spinner, and the first response was a diagnosis of the server.)
+12. **Nothing that calls a model or API is free.** Every automatic call (background, retry, re-arm, on-open) needs a trigger that means real work is due, a once-per-cause guard, and a hard rate cap — and an E2E test proving idle time, reading and trivial edits cost nothing. "Changed" is decided semantically (parsed structures, meaningful thresholds), never by comparing serialised strings. (Background summaries re-ran on every chapter visit and retried a deterministic failure; a revision bumped per keystroke burst made them due.)
 
 ## Project Overview
 
@@ -52,6 +53,8 @@ npm start            # Production server (port 3000, PORT env)
 npm run db:generate  # Drizzle migration from schema changes
 npm run db:migrate   # Apply migrations
 ```
+
+The dev server applies migrations on start, against the real database. Never rename, regenerate or squash a migration once a running dev server could have applied it — add a new one. Branch work that changes the schema belongs in a worktree, not the checkout the dev server watches.
 
 Production serves the built client from `dist/` on a single port. Docker: `docker-compose up --build` (port 3000).
 
@@ -111,8 +114,8 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 - **Selection context menu**: right-click / Android long-press on selected text opens the app's menu (rework/expand/shorten/ask + formatting). iOS Safari doesn't fire contextmenu on long-press — the toolbar selection buttons are the touch path there.
 - **Series**: joined from Story → Details, series & voice; the library groups stories by series; series-level bible entries flow into member stories' AI context automatically.
 - **Brainstorm bridges**: replies can become notes, bible entries (auto-run extraction), or new chapters (reply lands as the chapter outline). Chapter POV/outline/summary edit via the Chapters screen details sheet.
-- **Saves**: revision-aware (expectedRevision → 409 conflict banner with draft download; editor locks). Cross-module save flushing (`flushChapterSave`) before chapter-based AI actions and exports. All chapter writes sync the TanStack caches (`applyChapterToCaches`, revision-monotonic).
-- **Auto-summarise**: 90s idle → stale summary regenerates (revision-pinned, failure-capped, skips writer-locked summaries, toggleable in Settings); failures raise a persistent warning.
+- **Saves**: `saveVersion`-aware (expectedSaveVersion → 409 conflict banner with draft download; editor locks). Documents are compared structurally, never as serialised strings; an identical save writes nothing. `revision` moves only on significant prose change (`server/lib/proseChange.ts`) and drives summary freshness. Cross-module save flushing (`flushChapterSave`) before chapter-based AI actions and exports. All chapter writes sync the TanStack caches (`applyChapterToCaches`, revision-monotonic).
+- **Auto-summarise**: client asks only after THIS device saved a significant change + 90s idle; the server gate (`backgroundSummary.ts`) allows once per revision across all devices and ≤6/hour app-wide; never on merely opening a chapter; never lands over a summary the writer saved meanwhile; toggleable in Settings; failures (including an unsaved result) raise a persistent warning.
 - **Exports**: document JSON → block list → per-target renderers; scene beats/ghosts omitted (with an undecided-drafts warning); EPUB server-side. Backup via SQLite online backup API (`/api/admin/backup`) — never bare .db copies (WAL).
 
 ### Testing

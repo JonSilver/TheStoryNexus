@@ -77,7 +77,8 @@ export const AppSettingsScreen = ({ goTo }: ScreenProps) => {
                 <span>
                     Refresh chapter summaries automatically
                     <span className="block text-xs text-muted-foreground">
-                        Runs the summarise action in the background after you pause — spends tokens on your configured
+                        After you've substantially changed a chapter and paused, summarises it once in the background —
+                        at most 6 times an hour, never just for opening a chapter. Spends tokens on your configured
                         model.
                     </span>
                 </span>

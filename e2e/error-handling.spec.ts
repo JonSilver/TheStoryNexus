@@ -1,5 +1,5 @@
 import { expect, type Page, type Route, test } from "@playwright/test";
-import { createStoryAndChapter, editorLocator, waitForSaved } from "./helpers";
+import { createStoryAndChapter, editorLocator, resetBackgroundBudget, waitForSaved } from "./helpers";
 
 /**
  * When the model server is slow or failing, the writer must SEE it: a
@@ -103,6 +103,7 @@ test("a failing background summary is reported, not swallowed", async ({ page })
         })
     );
     await page.clock.install();
+    await resetBackgroundBudget(page);
     await createStoryAndChapter(page, "Errors — background", "One");
     await editorLocator(page).click();
     // Auto-summarise only runs on chapters of 150+ words

@@ -51,3 +51,9 @@ export const typeInEditor = async (page: Page, text: string) => {
 export const waitForSaved = async (page: Page) => {
     await expect(page.locator("[data-save-status=saved]")).toBeVisible({ timeout: 10_000 });
 };
+
+/** The background-summary hourly allowance is server-process state shared by every test in a run. */
+export const resetBackgroundBudget = async (page: Page) => {
+    const response = await page.request.delete("/api/chapters/background-summary-budget");
+    expect(response.status()).toBe(204);
+};

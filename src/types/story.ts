@@ -28,7 +28,10 @@ export interface Chapter extends BaseEntity {
     summary?: string;
     order: number;
     content: string;
-    revision?: number; // server-managed; always present on reads, omitted from creates
+    /** Server-managed: bumps on significant prose change only — summary freshness. */
+    revision?: number;
+    /** Server-managed: bumps on every real content change — save concurrency. */
+    saveVersion?: number;
     updatedAt?: Date;
     summarySourceRevision?: number;
     /** Writer-authored summary — auto-summarise leaves it alone. */

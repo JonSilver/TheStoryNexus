@@ -1,0 +1,1 @@
+ALTER TABLE `chapters` ADD `autoSummaryRevision` integer;

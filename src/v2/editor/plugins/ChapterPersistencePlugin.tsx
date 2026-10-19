@@ -11,7 +11,7 @@ const THROTTLE_MS = 300;
  * ignoreHistoryMergeTagChange MUST be false: streamed scene-beat tokens are
  * tagged history-merge and would otherwise never reach autosave (spike §2).
  * DecoratorNodes contribute no text, so scene beats are excluded from the
- * word count for free. The saver skips content identical to the last save,
+ * word count for free. The saver skips a document equal to the last save,
  * which also covers the initial-load change.
  *
  * Serialisation is throttled: JSON.stringify of the whole document plus a
@@ -22,15 +22,15 @@ const THROTTLE_MS = 300;
 export const ChapterPersistencePlugin = ({
     onDocument
 }: {
-    onDocument: (serialised: string, wordCount: number, text: string) => void;
+    onDocument: (serialised: string, doc: unknown, wordCount: number, text: string) => void;
 }) => {
     const handleChange = useMemo(
         () =>
             throttle(
                 (editorState: EditorState) => {
-                    const serialised = JSON.stringify(editorState.toJSON());
+                    const doc = editorState.toJSON();
                     const text = editorState.read(() => $getRoot().getTextContent());
-                    onDocument(serialised, countWords(text), text);
+                    onDocument(JSON.stringify(doc), doc, countWords(text), text);
                 },
                 THROTTLE_MS,
                 { leading: true, trailing: true }
