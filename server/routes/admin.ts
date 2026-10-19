@@ -6,6 +6,7 @@ import multer from "multer";
 import os from "os";
 import path from "path";
 import { db, rawSqlite, schema } from "../db/client.js";
+import { freshChatRevision } from "../lib/chatUpdate.js";
 
 type ImportedSeries = typeof schema.series.$inferSelect;
 type ImportedStory = typeof schema.stories.$inferSelect;
@@ -216,6 +217,7 @@ router.post("/import", upload.single("file"), async (req, res) => {
                 ),
                 aiChats: importTable("aiChats", schema.aiChats, tables.aiChats, (c: ImportedAiChat) => ({
                     ...c,
+                    revision: freshChatRevision(),
                     createdAt: new Date(c.createdAt),
                     updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined
                 })),

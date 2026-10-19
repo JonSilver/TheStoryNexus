@@ -201,3 +201,26 @@ test("brainstorm: a write that landed but whose answer was lost is never doubled
     await page.reload();
     await expect(page.getByText("Exactly one of me.")).toHaveCount(1);
 });
+
+test("brainstorm: reloading while a reply is being saved never loses it", async ({ page }) => {
+    await script(page, [{ text: "A reply mid-save." }]);
+    await createStoryAndChapter(page, "Keep — reload mid-save", "One");
+    await openNewChat(page);
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        // The reply's save never completes before the page goes
+        return writes.count === 2 ? undefined : route.fallback();
+    });
+    await send(page, "Quick, before it saves");
+    await expect.poll(() => writes.count).toBe(2);
+
+    await page.reload();
+    await expect(page.getByText("A reply mid-save.")).toBeVisible();
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText("A reply mid-save.")).toBeVisible();
+});

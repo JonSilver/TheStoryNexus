@@ -93,6 +93,8 @@ export interface ChatMessage {
     interruptedVersions?: number[];
     /** Which version `content` is — content alone can't say when two versions match. */
     shownVersion?: number;
+    /** The change that added each version (null for older ones) — a retried save is recognised, not doubled. */
+    versionIds?: (string | null)[];
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

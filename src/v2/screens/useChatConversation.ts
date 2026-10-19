@@ -8,7 +8,16 @@ import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { type ChatOp, applyOps, readPending, writePending } from "./chatOps";
+import {
+    type ChatOp,
+    PENDING_PREFIX,
+    addPending,
+    applyOps,
+    clearPending,
+    op,
+    readPending,
+    removePending
+} from "./chatOps";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
@@ -79,22 +88,38 @@ export const useChatConversation = (
     };
     if (chat) know(chat);
     const queue = useRef<Promise<unknown>>(Promise.resolve());
-    // Re-render after this device's pending changes change; storage is the truth
+    // Changes this tab is saving right now: shown at once, but not "unsaved" unless the save fails
+    const inFlight = useRef(new Set<string>());
+    // Re-render when this device's pending changes change — here, or in another tab
     const [, setPendingVersion] = useState(0);
+    const refresh = () => {
+        if (alive.current) setPendingVersion(v => v + 1);
+    };
+    useEffect(() => {
+        const onStorage = (event: StorageEvent) => {
+            if (event.key?.startsWith(PENDING_PREFIX)) refresh();
+        };
+        window.addEventListener("storage", onStorage);
+        return () => window.removeEventListener("storage", onStorage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     const pendingOps = chat ? readPending(chat.id) : [];
     const messages = chat ? applyOps(chat.messages, pendingOps) : [];
-    const unsaved = chat && pendingOps.length ? { chatId: chat.id } : null;
+    const unsaved = chat && pendingOps.some(change => !inFlight.current.has(change.id)) ? { chatId: chat.id } : null;
 
     /**
-     * Writes this device's pending changes plus `ops`, one write at a time.
+     * Saves this device's pending changes plus `ops`, one write at a time.
+     * The new changes are stored on the device before the save starts.
      * `keep` — on failure, keep them pending (Save again); otherwise drop
      * them (the writer still has them, e.g. the draft message).
      */
     const commit = (chatId: string, ops: ChatOp[], keep = true): Promise<boolean> => {
+        addPending(chatId, ops);
+        ops.forEach(change => inFlight.current.add(change.id));
+        refresh();
         const run = queue.current.then(async () => {
-            // Writes are queued, so nothing else changes this device's pending list meanwhile
-            const before = readPending(chatId);
-            const all = [...before, ...ops];
+            const all = readPending(chatId);
+            all.forEach(change => inFlight.current.add(change.id));
             const attempt = async (server: AIChat | undefined, left: number): Promise<boolean> => {
                 if (!server) return false;
                 const result = await putMessages(server, applyOps(server.messages, all));
@@ -107,8 +132,18 @@ export const useChatConversation = (
                 return left > 1 ? attempt(newest.current.get(chatId), left - 1) : false;
             };
             const saved = await attempt(newest.current.get(chatId), MAX_ATTEMPTS);
-            writePending(chatId, saved ? [] : keep ? all : before);
-            if (alive.current) setPendingVersion(v => v + 1);
+            all.forEach(change => inFlight.current.delete(change.id));
+            if (saved)
+                removePending(
+                    chatId,
+                    all.map(change => change.id)
+                );
+            else if (!keep)
+                removePending(
+                    chatId,
+                    ops.map(change => change.id)
+                );
+            refresh();
             return saved;
         });
         queue.current = run.catch(() => undefined);
@@ -143,7 +178,7 @@ export const useChatConversation = (
             ...chatMessage("assistant", reply.text),
             ...(reply.interrupted && { interruptedVersions: [0] })
         };
-        await commit(chat.id, [{ type: "append", message, after: question.id }]);
+        await commit(chat.id, [op({ type: "append", message, after: question.id })]);
         if (alive.current) generation.reset();
     };
 
@@ -152,7 +187,7 @@ export const useChatConversation = (
         if (!chat) return false;
         const question = chatMessage("user", text);
         const history = messages;
-        if (!(await commit(chat.id, [{ type: "append", message: question, after: null }], false))) return false;
+        if (!(await commit(chat.id, [op({ type: "append", message: question, after: null })], false))) return false;
         await answer(history, question);
         return true;
     };
@@ -167,11 +202,10 @@ export const useChatConversation = (
         const lastIndex = messages.length - 1;
         const priorUser = [...messages].reverse().find(m => m.role === "user");
         if (!last || last.role !== "assistant" || !priorUser) return;
-        const baseCount = (last.versions ?? [last.content]).length;
         const reply = replyFrom(await runBrainstorm(messages.slice(0, lastIndex - 1), priorUser.content));
         if (!reply) return;
         await commit(chat.id, [
-            { type: "addVersion", messageId: last.id, text: reply.text, interrupted: reply.interrupted, baseCount }
+            op({ type: "addVersion", messageId: last.id, text: reply.text, interrupted: reply.interrupted })
         ]);
         if (alive.current) generation.reset();
     };
@@ -186,7 +220,7 @@ export const useChatConversation = (
 
     const showVersion = (message: ChatMessage, index: number) => {
         if (!chat || message.versions?.[index] === undefined) return;
-        void commit(chat.id, [{ type: "show", messageId: message.id, index }]);
+        void commit(chat.id, [op({ type: "show", messageId: message.id, index })]);
     };
 
     /** Writes what this device still holds unsaved. */
@@ -195,8 +229,8 @@ export const useChatConversation = (
     /** The writer chooses the saved conversation over this device's unsaved changes. */
     const discardUnsaved = () => {
         if (!chat) return;
-        writePending(chat.id, []);
-        setPendingVersion(v => v + 1);
+        clearPending(chat.id);
+        refresh();
     };
 
     return {

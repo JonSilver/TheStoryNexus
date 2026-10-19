@@ -20,3 +20,10 @@ export const resolveChatUpdate = (currentRevision: number, body: ChatUpdateBody,
     if (typeof expectedRevision !== "number" || expectedRevision !== currentRevision) return { outcome: "conflict" };
     return { outcome: "apply", updates: { ...updates, updatedAt: now, revision: currentRevision + 1 }, guarded: true };
 };
+
+/**
+ * Revision for a chat inserted under an id that may have existed before (a
+ * full restore, demo reseeding): no earlier incarnation can have held it, so
+ * a tab still holding the old chat gets a conflict instead of overwriting.
+ */
+export const freshChatRevision = () => Date.now();
