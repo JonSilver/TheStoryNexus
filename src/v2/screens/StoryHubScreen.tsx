@@ -13,9 +13,9 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import type { ScreenProps } from "../V2App";
 import { useConfirm } from "../components/Dialogs";
 import { EmptyState } from "../components/ScreenParts";
+import { useNav } from "../routing";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
 import { StoryDetailsEditor } from "./StoryDetailsEditor";
@@ -26,7 +26,8 @@ import { StoryVoiceEditor } from "./StoryVoiceEditor";
  * story am I in?"), with its working surfaces up top and its setup folded
  * away — not a dumping ground.
  */
-export const StoryHubScreen = ({ goTo }: ScreenProps) => {
+export const StoryHubScreen = () => {
+    const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { setCurrentStory } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
@@ -104,8 +105,9 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </span>
                 </summary>
-                <StoryDetailsEditor storyId={currentStoryId} />
-                <StoryVoiceEditor storyId={currentStoryId} />
+                {/* Keyed: another story's drafts start afresh */}
+                <StoryDetailsEditor key={`details-${currentStoryId}`} storyId={currentStoryId} />
+                <StoryVoiceEditor key={`voice-${currentStoryId}`} storyId={currentStoryId} />
             </details>
 
             <details className="border-b">

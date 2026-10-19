@@ -9,13 +9,13 @@ import {
     useStoriesQuery
 } from "@/features/stories/hooks/useStoriesQuery";
 import { randomUUID } from "@/utils/crypto";
-import type { ScreenProps } from "../V2App";
-import { uiState, useCurrentStoryId } from "../state/useV2Store";
+import { useNav } from "../routing";
+import { useCurrentStoryId } from "../state/useV2Store";
 import { ImportSheet } from "./ImportSheet";
 
-export const StoriesScreen = ({ goTo }: ScreenProps) => {
+export const StoriesScreen = () => {
+    const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
-    const { setCurrentStory } = uiState;
     const { data: stories, isLoading, isError, refetch } = useStoriesQuery();
     const { data: allSeries } = useSeriesQuery();
 
@@ -43,8 +43,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                 if (assetsFailed.length > 0)
                     toast.error(`${assetsFailed.length} image(s) couldn't be restored: ${assetsFailed.join(", ")}`);
                 // Land in the restored story, not back at the list
-                setCurrentStory(storyId);
-                goTo("story");
+                goTo("story", { storyId: storyId });
             }
         });
 
@@ -56,8 +55,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
             {
                 onSuccess: story => {
                     setNewTitle("");
-                    setCurrentStory(story.id);
-                    goTo("chapters");
+                    goTo("chapters", { storyId: story.id });
                 }
             }
         );
@@ -119,8 +117,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                                                 type="button"
                                                 className={`w-full px-4 py-3 text-left ${story.id === currentStoryId ? "bg-accent/40" : ""}`}
                                                 onClick={() => {
-                                                    setCurrentStory(story.id);
-                                                    goTo("write");
+                                                    goTo("write", { storyId: story.id });
                                                 }}
                                             >
                                                 <p className="truncate font-medium">{story.title}</p>
@@ -177,8 +174,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                     onClose={() => setImporting(false)}
                     onImported={storyId => {
                         setImporting(false);
-                        setCurrentStory(storyId);
-                        goTo("chapters");
+                        goTo("chapters", { storyId: storyId });
                     }}
                 />
             )}

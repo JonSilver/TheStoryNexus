@@ -13,7 +13,6 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { LOREBOOK_CATEGORIES, type LorebookEntry } from "@/types/story";
-import type { ScreenProps } from "../V2App";
 import { EntryEditor } from "../bible/EntryEditor";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { MergeSheet } from "../bible/MergeSheet";
@@ -21,6 +20,7 @@ import { entryMatches } from "../bible/duplicates";
 import { takeNudgeHandoff } from "../bible/nameNudges";
 import { useConfirm } from "../components/Dialogs";
 import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
+import { useNav } from "../routing";
 import { useCurrentStoryId, useUiState } from "../state/useV2Store";
 
 const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; needsChapter: boolean }> = [
@@ -37,7 +37,8 @@ const groupEntries = (entries: LorebookEntry[]) =>
         items: entries.filter(e => e.category === category).sort((a, b) => a.name.localeCompare(b.name))
     })).filter(group => group.items.length > 0);
 
-export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
+export const BibleScreen = () => {
+    const { goTo, goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const rememberedChapter = useUiState(state =>
         currentStoryId ? (state.lastChapterByStory[currentStoryId] ?? null) : null
@@ -47,7 +48,9 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
     const deleteEntry = useDeleteLorebookMutation();
     const confirm = useConfirm();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
-    const [editing, setEditing] = useState<LorebookEntry | null | "new">(null);
+    // The id, not a copy: the editor sees the entry as it is now, and closes if it's gone
+    const [editingId, setEditingId] = useState<string | null | "new">(null);
+    const editing = (entries ?? []).find(e => e.id === editingId) ?? null;
     const [merging, setMerging] = useState(false);
     const [search, setSearch] = useState("");
     // Arriving via the editor's nudge chip auto-opens a focused extraction —
@@ -63,7 +66,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
     return (
         <div className="flex h-full flex-col">
             <ScreenHeader title="Story Bible" onBack={() => goBack("story")}>
-                <button type="button" onClick={() => setEditing("new")} aria-label="New entry">
+                <button type="button" onClick={() => setEditingId("new")} aria-label="New entry">
                     <Plus className="h-5 w-5" />
                 </button>
             </ScreenHeader>
@@ -122,7 +125,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
                                     <button
                                         type="button"
                                         className="min-w-0 flex-1 text-left"
-                                        onClick={() => setEditing(entry)}
+                                        onClick={() => setEditingId(entry.id)}
                                         aria-label={`Edit ${entry.name}`}
                                     >
                                         <p className="font-medium">
@@ -168,12 +171,12 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
             {merging && (
                 <MergeSheet entries={entries ?? []} storyId={currentStoryId} onClose={() => setMerging(false)} />
             )}
-            {editing && (
+            {(editingId === "new" || editing) && (
                 <EntryEditor
-                    entry={editing === "new" ? null : editing}
+                    entry={editing}
                     storyId={currentStoryId}
                     seriesId={story?.seriesId ?? null}
-                    onClose={() => setEditing(null)}
+                    onClose={() => setEditingId(null)}
                 />
             )}
             {flow && (

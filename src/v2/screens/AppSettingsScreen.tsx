@@ -9,11 +9,12 @@ import {
     Sun
 } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
-import type { ScreenProps } from "../V2App";
+import { useNav } from "../routing";
 import { uiState, useUiState } from "../state/useV2Store";
 
 /** App-level configuration — nothing story-scoped lives here. */
-export const AppSettingsScreen = ({ goTo }: ScreenProps) => {
+export const AppSettingsScreen = () => {
+    const { goTo } = useNav();
     const autoSummarise = useUiState(state => state.autoSummarise);
     const { setAutoSummarise } = uiState;
     const { theme, setTheme } = useTheme();

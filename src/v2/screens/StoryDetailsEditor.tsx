@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
@@ -22,7 +22,6 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
         null
     );
 
-    useEffect(() => setDraft(null), [storyId]);
     if (!story) return null;
 
     const value = draft ?? {

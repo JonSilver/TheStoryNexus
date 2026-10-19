@@ -7,16 +7,15 @@ import {
     useMoveChapter
 } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import type { Chapter } from "@/types/story";
-import type { ScreenProps } from "../V2App";
 import { useConfirm } from "../components/Dialogs";
 import { NoStoryChosen } from "../components/ScreenParts";
-import { uiState, useCurrentStoryId } from "../state/useV2Store";
+import { useNav } from "../routing";
+import { useCurrentStoryId } from "../state/useV2Store";
 import { ChapterDetailsSheet } from "./ChapterDetailsSheet";
 
-export const ChaptersScreen = ({ goTo }: ScreenProps) => {
+export const ChaptersScreen = () => {
+    const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
-    const { setLastChapter } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
     const createChapter = useCreateChapter();
@@ -24,7 +23,8 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const deleteChapter = useDeleteChapterMutation();
     const confirm = useConfirm();
 
-    const [details, setDetails] = useState<Chapter | null>(null);
+    // The id, not a copy: the sheet sees the chapter as it is now, and closes if it's gone
+    const [detailsId, setDetailsId] = useState<string | null>(null);
 
     const move = (index: number, direction: -1 | 1) =>
         moveChapter.mutate({ chapters: ordered, from: index, to: index + direction });
@@ -35,6 +35,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     };
     const [newTitle, setNewTitle] = useState("");
     const ordered = chapters ?? [];
+    const details = ordered.find(c => c.id === detailsId) ?? null;
 
     if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
@@ -46,8 +47,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                 onSuccess: chapter => {
                     setNewTitle("");
                     // Creating a chapter takes you into it (contracts: Phase 3)
-                    setLastChapter(currentStoryId, chapter.id);
-                    goTo("write");
+                    goTo("write", { chapterId: chapter.id });
                 }
             }
         );
@@ -91,10 +91,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                 <button
                                     type="button"
                                     className="flex min-w-0 flex-1 items-baseline justify-between px-4 py-3 text-left"
-                                    onClick={() => {
-                                        setLastChapter(currentStoryId, chapter.id);
-                                        goTo("write");
-                                    }}
+                                    onClick={() => goTo("write", { chapterId: chapter.id })}
                                 >
                                     <span className="min-w-0 truncate">{chapter.title}</span>
                                     <span className="ml-3 shrink-0 text-xs text-muted-foreground">
@@ -103,7 +100,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setDetails(chapter)}
+                                    onClick={() => setDetailsId(chapter.id)}
                                     aria-label={`Edit ${chapter.title} details`}
                                     className="px-2 py-3 text-muted-foreground"
                                 >
@@ -142,7 +139,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                     <Plus className="h-4 w-4" /> Add
                 </button>
             </footer>
-            {details && <ChapterDetailsSheet chapter={details} onClose={() => setDetails(null)} />}
+            {details && <ChapterDetailsSheet chapter={details} onClose={() => setDetailsId(null)} />}
         </div>
     );
 };

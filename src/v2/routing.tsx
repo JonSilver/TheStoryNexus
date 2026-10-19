@@ -67,10 +67,16 @@ export const toolForPath = (pathname: string): V2Tool => {
     return tool;
 };
 
+/** Where to land: a named story (null: none) and, for Write, a chapter. Omitted: the current ones. */
+export interface NavTarget {
+    storyId?: string | null;
+    chapterId?: string | null;
+}
+
 /**
- * goTo pushes a history entry for the target screen. The story comes from the
- * URL when inside a story, else from the store — read at CALL time, so
- * "select a story, then goTo" lands on the story just chosen.
+ * goTo pushes a history entry for the target screen. Unless named, the story
+ * is the URL's (inside a story) else the remembered one, and Write opens the
+ * story's remembered chapter.
  * goBack is history-back when the writer arrived from inside the app, and the
  * fallback screen when they landed straight on this URL (back must never
  * leave the app).
@@ -80,10 +86,10 @@ export const useNav = () => {
     const route = useRouteParams();
 
     const goTo = useCallback(
-        (tool: V2Tool) => {
+        (tool: V2Tool, target: NavTarget = {}) => {
             const state = uiState.get();
-            const storyId = route.storyId ?? state.currentStoryId;
-            const chapterId = storyId ? (state.lastChapterByStory[storyId] ?? null) : null;
+            const storyId = target.storyId !== undefined ? target.storyId : (route.storyId ?? state.currentStoryId);
+            const chapterId = target.chapterId ?? (storyId ? (state.lastChapterByStory[storyId] ?? null) : null);
             navigate(pathFor(tool, storyId, chapterId));
         },
         [navigate, route.storyId]

@@ -2,12 +2,13 @@ import { Loader2 } from "lucide-react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { ChapterReader } from "@/features/stories/components/ChapterReader";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import type { ScreenProps } from "../V2App";
 import { ScreenHeader } from "../components/ScreenParts";
+import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 
 /** Reading mode inside the shell: the whole story as one continuous scroll. */
-export const ReadScreen = ({ goBack }: ScreenProps) => {
+export const ReadScreen = () => {
+    const { goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");

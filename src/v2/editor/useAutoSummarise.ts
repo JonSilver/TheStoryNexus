@@ -33,8 +33,6 @@ export const useAutoSummarise = (chapter: Chapter) => {
     // Significant changes THIS device saved: another device's edit, arriving
     // while this one only reads, never makes this one spend
     const local = useRef({ chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false });
-    if (local.current.chapterId !== chapter.id)
-        local.current = { chapterId: chapter.id, knownRevision: chapter.revision ?? 0, pending: false };
     const queryClient = useQueryClient();
 
     const refreshIfDue = async (chapterId: string) => {
