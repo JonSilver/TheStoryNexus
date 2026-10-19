@@ -1,5 +1,16 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { ArrowLeft, BookOpenText, FilePlus2, NotebookPen, Plus, RefreshCw, Send, Square, Trash2 } from "lucide-react";
+import {
+    ArrowLeft,
+    BookOpenText,
+    FilePlus2,
+    NotebookPen,
+    Plus,
+    RefreshCw,
+    RotateCcw,
+    Send,
+    Square,
+    Trash2
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -95,7 +106,16 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
         });
     };
 
-    /** Re-roll the LAST assistant reply from the same user message. */
+    const saveMessages = async (messages: ChatMessage[]) => {
+        if (!chat) return;
+        const [writeError] = await attemptPromise(() => updateChat.mutateAsync({ id: chat.id, data: { messages } }));
+        if (writeError) toast.error("The reply couldn't be saved — it may vanish on refresh");
+    };
+
+    /**
+     * Re-roll the LAST assistant reply. Earlier versions are kept on the
+     * message (flip with ‹ ›) — a worse re-roll never costs the better one.
+     */
     const regenerate = async () => {
         if (!chat || generation.phase === "streaming") return;
         const messages = chat.messages;
@@ -104,17 +124,29 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
         if (!last || last.role !== "assistant" || !priorUser) return;
         const kept = messages.slice(0, -1);
         const reply = await runBrainstorm(kept.slice(0, -1), priorUser.content);
-        const finalReply = reply || generation.text;
-        if (finalReply) {
-            const [writeError] = await attemptPromise(() =>
-                updateChat.mutateAsync({
-                    id: chat.id,
-                    data: { messages: [...kept, chatMessage("assistant", finalReply)] }
-                })
-            );
-            if (writeError) toast.error("The reply couldn't be saved — it may vanish on refresh");
-            generation.reset();
-        }
+        if (!reply.trim()) return;
+        const versions = [...(last.versions ?? [last.content]), reply];
+        await saveMessages([...kept, { ...last, content: reply, versions }]);
+        generation.reset();
+    };
+
+    /** After a failed reply the writer's message is saved but unanswered: send it again. */
+    const retryLast = async () => {
+        if (!chat || generation.phase === "streaming") return;
+        const messages = chat.messages;
+        const last = messages[messages.length - 1];
+        if (!last || last.role !== "user") return;
+        const reply = await runBrainstorm(messages.slice(0, -1), last.content);
+        if (!reply.trim()) return;
+        await saveMessages([...messages, chatMessage("assistant", reply)]);
+        generation.reset();
+    };
+
+    const showVersion = (message: ChatMessage, index: number) => {
+        if (!chat || !message.versions?.[index]) return;
+        void saveMessages(
+            chat.messages.map(m => (m.id === message.id ? { ...m, content: message.versions![index] } : m))
+        );
     };
 
     const send = async () => {
@@ -289,6 +321,37 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                                 <RefreshCw className="h-3.5 w-3.5" /> Regenerate
                             </button>
                         )}
+                        {message.role === "assistant" && (message.versions?.length ?? 0) > 1 && (
+                            <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                {(() => {
+                                    const versions = message.versions ?? [];
+                                    const current = Math.max(0, versions.lastIndexOf(message.content));
+                                    return (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => showVersion(message, current - 1)}
+                                                disabled={current === 0}
+                                                aria-label="Previous version"
+                                                className="rounded border px-1.5 disabled:opacity-40"
+                                            >
+                                                ‹
+                                            </button>
+                                            Version {current + 1} of {versions.length}
+                                            <button
+                                                type="button"
+                                                onClick={() => showVersion(message, current + 1)}
+                                                disabled={current === versions.length - 1}
+                                                aria-label="Next version"
+                                                className="rounded border px-1.5 disabled:opacity-40"
+                                            >
+                                                ›
+                                            </button>
+                                        </>
+                                    );
+                                })()}
+                            </span>
+                        )}
                     </div>
                 ))}
                 {generation.phase === "streaming" && (
@@ -296,7 +359,20 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         {generation.text || <GenerationProgress status={generation.status} />}
                     </div>
                 )}
-                {generation.error && <p className="text-sm text-destructive">{generation.error}</p>}
+                {generation.error && generation.phase !== "streaming" && (
+                    <div className="space-y-2 text-sm" role="alert">
+                        <p className="text-destructive">{generation.error}</p>
+                        {chat.messages[chat.messages.length - 1]?.role === "user" && (
+                            <button
+                                type="button"
+                                onClick={() => void retryLast()}
+                                className="flex items-center gap-1 rounded-md border px-3 py-1"
+                            >
+                                <RotateCcw className="h-3.5 w-3.5" /> Try again
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
             {extracting && currentStoryId && (
                 <ExtractSheet

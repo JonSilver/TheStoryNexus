@@ -18,6 +18,7 @@ import type { Chapter } from "@/types/story";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
+import { useAttempts } from "./useAttempts";
 
 type ActionKind = "selection" | "continue" | "summarise" | "ask";
 
@@ -52,6 +53,19 @@ export const useEditorActions = (chapter: Chapter) => {
     const summariseBaseRevision = useRef<number | null>(null);
     const lastRun = useRef<{ actionId: ActionId; editorContext: Record<string, string> } | null>(null);
     const [askPending, setAskPending] = useState(false);
+    const attempts = useAttempts();
+
+    // Every run's result is kept as an attempt; failures add nothing, so
+    // earlier attempts survive a backend error
+    const runAttempt = useCallback(
+        (actionId: ActionId, editorContext?: Record<string, string>) => {
+            lastRun.current = { actionId, editorContext: editorContext ?? {} };
+            void generation
+                .run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext })
+                .then(attempts.record);
+        },
+        [generation, chapter.storyId, chapter.id, attempts.record]
+    );
 
     const docTextTail = useCallback(
         () =>
@@ -87,12 +101,11 @@ export const useEditorActions = (chapter: Chapter) => {
             // The saved selection is positional: freeze the document while the
             // sheet is up so accept can't land on shifted or deleted nodes
             editor.setEditable(false);
+            attempts.clear();
             setActive({ id: actionId, title: label, kind: "selection" });
-            const editorContext = { ...baseContext(), selection: info.text, recentProse: docTextTail() };
-            lastRun.current = { actionId, editorContext };
-            void generation.run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext });
+            runAttempt(actionId, { ...baseContext(), selection: info.text, recentProse: docTextTail() });
         },
-        [editor, generation, chapter.storyId, chapter.id, baseContext, docTextTail]
+        [editor, attempts, runAttempt, baseContext, docTextTail]
     );
 
     // Free-form instruction on a selection: capture first, ask the writer
@@ -110,40 +123,38 @@ export const useEditorActions = (chapter: Chapter) => {
         savedSelection.current = info.clone;
         savedSelectionText.current = info.text;
         editor.setEditable(false);
+        attempts.clear();
         setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
         setAskPending(true);
-    }, [editor]);
+    }, [editor, attempts]);
 
     const submitAsk = useCallback(
         (instruction: string) => {
             setAskPending(false);
-            const editorContext = {
+            runAttempt("ask", {
                 ...baseContext(),
                 selection: savedSelectionText.current,
                 recentProse: docTextTail(),
                 userMessage: instruction
-            };
-            lastRun.current = { actionId: "ask", editorContext };
-            void generation.run({ actionId: "ask", storyId: chapter.storyId, chapterId: chapter.id, editorContext });
+            });
         },
-        [generation, chapter.storyId, chapter.id, baseContext, docTextTail]
+        [runAttempt, baseContext, docTextTail]
     );
 
     const onRefine = useCallback(
         (guidance: string) => {
             const previous = lastRun.current;
             if (!previous) return;
-            const editorContext = { ...previous.editorContext, guidance };
-            lastRun.current = { actionId: previous.actionId, editorContext };
-            void generation.run({
-                actionId: previous.actionId,
-                storyId: chapter.storyId,
-                chapterId: chapter.id,
-                editorContext
-            });
+            runAttempt(previous.actionId, { ...previous.editorContext, guidance });
         },
-        [generation, chapter.storyId, chapter.id]
+        [runAttempt]
     );
+
+    // Same request again — for a failure, or a result that isn't good enough
+    const onAgain = useCallback(() => {
+        const previous = lastRun.current;
+        if (previous) runAttempt(previous.actionId, previous.editorContext);
+    }, [runAttempt]);
 
     // Continue is inline now: a ghost suggestion node streams greyed prose
     // in the manuscript itself (W2) — no modal, judged in place
@@ -158,6 +169,7 @@ export const useEditorActions = (chapter: Chapter) => {
     }, [editor]);
 
     const onSummarise = useCallback(() => {
+        attempts.clear();
         setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });
         void (async () => {
             // The model must see what the writer sees: force the debounced
@@ -167,22 +179,19 @@ export const useEditorActions = (chapter: Chapter) => {
             // from, not whatever revision exists when it is accepted
             const [, fresh] = await attemptPromise(async () => (await fetch(`/api/chapters/${chapter.id}`)).json());
             summariseBaseRevision.current = fresh?.revision ?? chapter.revision ?? 0;
-            void generation.run({
-                actionId: "summarise_chapter",
-                storyId: chapter.storyId,
-                chapterId: chapter.id
-            });
+            runAttempt("summarise_chapter");
         })();
-    }, [generation, chapter.storyId, chapter.id, chapter.revision]);
+    }, [attempts, runAttempt, chapter.id, chapter.revision]);
 
     const close = useCallback(() => {
         setActive(null);
         setAskPending(false);
         savedSelection.current = null;
         lastRun.current = null;
+        attempts.clear();
         editor.setEditable(true);
         generation.reset();
-    }, [generation, editor]);
+    }, [generation, editor, attempts]);
 
     const insertParagraphsAtEnd = (text: string) => {
         const paragraphs = text
@@ -221,7 +230,8 @@ export const useEditorActions = (chapter: Chapter) => {
 
     const onAccept = useCallback(() => {
         const kind = active?.kind;
-        const text = generation.text;
+        // The attempt the writer is looking at, not necessarily the latest
+        const text = attempts.current;
         if (!kind || !text) return;
 
         if (kind === "selection" || kind === "ask")
@@ -239,14 +249,19 @@ export const useEditorActions = (chapter: Chapter) => {
 
         close();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [active, generation.text, editor, close]);
+    }, [active, attempts.current, editor, close]);
 
     return {
         toolbarActions: { onContinue, onSummarise, onSelectionAction, onAsk },
         sheetProps: {
             title: active?.title ?? "",
             phase: generation.phase,
-            text: generation.text,
+            // While streaming, the new text; otherwise the attempt being viewed
+            text: generation.phase === "streaming" ? generation.text : (attempts.current ?? ""),
+            attemptIndex: attempts.index,
+            attemptCount: attempts.count,
+            onSelectAttempt: attempts.select,
+            onAgain: active && !askPending ? onAgain : undefined,
             error: generation.error,
             status: generation.status,
             acceptLabel: active ? ACCEPT_LABELS[active.kind] : undefined,

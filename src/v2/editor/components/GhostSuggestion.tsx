@@ -11,9 +11,8 @@ import {
     type LexicalNode,
     type NodeKey
 } from "lexical";
-import { Check, CornerDownRight, X } from "lucide-react";
+import { Check, CornerDownRight, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
 import type { GenerationStatus } from "@/services/ai/sseParser";
 import { GenerationProgress } from "../../ai/GenerationProgress";
 import { streamAction } from "../../ai/streamAction";
@@ -38,6 +37,16 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const { text, ghostStatus } = useGhostData(nodeKey);
     const [refineText, setRefineText] = useState("");
     const [status, setStatus] = useState<GenerationStatus | null>(null);
+    // Runtime-only: earlier continuations to flip back to, and the last failure
+    const [attempts, setAttemptsState] = useState<{ list: string[]; index: number }>({ list: [], index: 0 });
+    const attemptsRef = useRef(attempts);
+    const setAttempts = (next: { list: string[]; index: number }) => {
+        attemptsRef.current = next;
+        setAttemptsState(next);
+    };
+    const [failure, setFailure] = useState<string | null>(null);
+    const lastGuidance = useRef<string | undefined>(undefined);
+    const streamed = useRef("");
     const abortRef = useRef<(() => void) | null>(null);
     const startedRef = useRef(false);
 
@@ -60,6 +69,9 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const generate = useCallback(
         (guidance?: string) => {
             abortRef.current?.();
+            lastGuidance.current = guidance;
+            streamed.current = "";
+            setFailure(null);
             editor.update(() => {
                 const node = $getNodeByKey(nodeKey);
                 if (!$isGhostSuggestionNode(node)) return;
@@ -78,28 +90,36 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                 },
                 {
                     onStatus: setStatus,
-                    onToken: token =>
+                    onToken: token => {
+                        streamed.current += token;
                         editor.update(
                             () => {
                                 const node = $getNodeByKey(nodeKey);
                                 if ($isGhostSuggestionNode(node)) $setGhostText(node, prev => prev + token);
                             },
                             { tag: [HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG] }
-                        ),
+                        );
+                    },
                     onDone: error => {
                         abortRef.current = null;
                         setStatus(null);
+                        const produced = streamed.current;
+                        const previous = attemptsRef.current;
+                        if (produced.trim())
+                            setAttempts({ list: [...previous.list, produced], index: previous.list.length });
+                        // A failure keeps the ghost (with Try again) instead of
+                        // vanishing — and restores the previous attempt if there was one
+                        if (error || !produced.trim()) setFailure(error ?? "The model returned nothing.");
+                        const fallback = produced.trim() ? null : (previous.list[previous.index] ?? null);
                         editor.update(
                             () => {
                                 const node = $getNodeByKey(nodeKey);
                                 if (!$isGhostSuggestionNode(node)) return;
                                 $setState(node, ghostStatusState, "done");
-                                // Nothing arrived and nothing to show: clear the ghost
-                                if (!$readGhost(node).text.trim()) node.remove();
+                                if (fallback !== null) $setGhostText(node, fallback);
                             },
                             { tag: HISTORY_MERGE_TAG }
                         );
-                        if (error) toast.error(error);
                     }
                 }
             );
@@ -107,6 +127,19 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
         },
         [editor, nodeKey, storyId, chapterId, textBeforeNode]
     );
+
+    const showAttempt = (index: number) => {
+        const chosen = attempts.list[index];
+        if (chosen === undefined) return;
+        setAttempts({ ...attemptsRef.current, index });
+        editor.update(
+            () => {
+                const node = $getNodeByKey(nodeKey);
+                if ($isGhostSuggestionNode(node)) $setGhostText(node, chosen);
+            },
+            { tag: HISTORY_MERGE_TAG }
+        );
+    };
 
     // Auto-start ONLY for a ghost created this session (one-shot runtime
     // marker). Anything else without an owning run — a rehydrated ghost, an
@@ -170,12 +203,24 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
 
     const streaming = ghostStatus === "streaming";
 
+    const again = () => generate(lastGuidance.current);
+
     return (
         <div className="my-2 border-l-2 border-primary/40 pl-3" data-ghost>
+            {failure && !streaming && (
+                <p className="mb-1 text-sm not-italic text-destructive" role="alert">
+                    {failure}
+                    {text && " Your earlier continuation is still here."}
+                </p>
+            )}
             <div className="whitespace-pre-wrap italic leading-relaxed text-muted-foreground">
-                {text || (
-                    <GenerationProgress status={status ?? { phase: "waiting", elapsedMs: 0 }} className="not-italic" />
-                )}
+                {text ||
+                    (streaming && (
+                        <GenerationProgress
+                            status={status ?? { phase: "waiting", elapsedMs: 0 }}
+                            className="not-italic"
+                        />
+                    ))}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 {streaming ? (
@@ -183,8 +228,8 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                         Stop
                     </button>
                 ) : (
-                    text && (
-                        <>
+                    <>
+                        {text && (
                             <button
                                 type="button"
                                 onClick={keep}
@@ -192,32 +237,68 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                             >
                                 <Check className="h-4 w-4" /> Keep
                             </button>
-                            <button
-                                type="button"
-                                onClick={dismiss}
-                                className="flex items-center gap-1 rounded-md border px-3 py-1"
-                            >
-                                <X className="h-4 w-4" /> Dismiss
-                            </button>
-                            <input
-                                className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1"
-                                maxLength={5000}
-                                placeholder="Refine…"
-                                value={refineText}
-                                onChange={e => setRefineText(e.target.value)}
-                                onKeyDown={e => e.key === "Enter" && refine()}
-                            />
-                            <button
-                                type="button"
-                                onClick={refine}
-                                disabled={!refineText.trim()}
-                                aria-label="Refine continuation"
-                                className="rounded-md border px-2 py-1 disabled:opacity-50"
-                            >
-                                <CornerDownRight className="h-4 w-4" />
-                            </button>
-                        </>
-                    )
+                        )}
+                        <button
+                            type="button"
+                            onClick={again}
+                            className="flex items-center gap-1 rounded-md border px-3 py-1"
+                        >
+                            <RotateCcw className="h-4 w-4" /> {text ? "Again" : "Try again"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={dismiss}
+                            className="flex items-center gap-1 rounded-md border px-3 py-1"
+                        >
+                            <X className="h-4 w-4" /> Dismiss
+                        </button>
+                        {attempts.list.length > 1 && (
+                            <span className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => showAttempt(attempts.index - 1)}
+                                    disabled={attempts.index === 0}
+                                    aria-label="Previous continuation"
+                                    className="rounded-md border px-2 py-0.5 disabled:opacity-40"
+                                >
+                                    ‹
+                                </button>
+                                <span className="text-xs text-muted-foreground">
+                                    {attempts.index + 1}/{attempts.list.length}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => showAttempt(attempts.index + 1)}
+                                    disabled={attempts.index === attempts.list.length - 1}
+                                    aria-label="Next continuation"
+                                    className="rounded-md border px-2 py-0.5 disabled:opacity-40"
+                                >
+                                    ›
+                                </button>
+                            </span>
+                        )}
+                        {text && (
+                            <>
+                                <input
+                                    className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1"
+                                    maxLength={5000}
+                                    placeholder="Refine…"
+                                    value={refineText}
+                                    onChange={e => setRefineText(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && refine()}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={refine}
+                                    disabled={!refineText.trim()}
+                                    aria-label="Refine continuation"
+                                    className="rounded-md border px-2 py-1 disabled:opacity-50"
+                                >
+                                    <CornerDownRight className="h-4 w-4" />
+                                </button>
+                            </>
+                        )}
+                    </>
                 )}
             </div>
         </div>

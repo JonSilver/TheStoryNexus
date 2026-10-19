@@ -153,6 +153,12 @@ export const MergeSheet = ({
                         </>
                     ) : (
                         <>
+                            {busy && <GenerationProgress status={generation.status} />}
+                            {generation.error && !busy && (
+                                <p className="text-destructive">
+                                    {generation.error} The previous merge result is still below.
+                                </p>
+                            )}
                             <input
                                 className="w-full rounded-md border bg-background px-3 py-2"
                                 aria-label="Merged name"
@@ -194,7 +200,7 @@ export const MergeSheet = ({
                             disabled={!keep || !duplicate || busy}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
-                            {busy ? "Merging…" : "Merge with AI"}
+                            {busy ? "Merging…" : generation.error ? "Try again" : "Merge with AI"}
                         </button>
                     ) : (
                         <button
@@ -204,6 +210,16 @@ export const MergeSheet = ({
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
                             Save merged entry
+                        </button>
+                    )}
+                    {merged && (
+                        <button
+                            type="button"
+                            onClick={() => void run()}
+                            disabled={busy || saving}
+                            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+                        >
+                            {busy ? "Merging…" : "Try again"}
                         </button>
                     )}
                     <button type="button" onClick={onClose} className="ml-auto rounded-md border px-4 py-2 text-sm">

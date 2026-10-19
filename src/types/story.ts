@@ -82,6 +82,8 @@ export interface ChatMessage {
     role: "user" | "assistant";
     content: string;
     timestamp: Date;
+    /** Every regenerated version of an assistant reply; `content` is the one shown and sent as history. */
+    versions?: string[];
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

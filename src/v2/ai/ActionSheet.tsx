@@ -1,4 +1,4 @@
-import { CornerDownRight, Loader2, Square } from "lucide-react";
+import { CornerDownRight, Loader2, RotateCcw, Square } from "lucide-react";
 import { useState } from "react";
 import type { GenerationStatus } from "@/services/ai/sseParser";
 import { GenerationProgress } from "./GenerationProgress";
@@ -15,6 +15,10 @@ export const ActionSheet = ({
     text,
     error,
     status = null,
+    attemptIndex = 0,
+    attemptCount = 0,
+    onSelectAttempt,
+    onAgain,
     acceptLabel = "Accept",
     onAccept,
     onDiscard,
@@ -27,6 +31,12 @@ export const ActionSheet = ({
     text: string;
     error: string | null;
     status?: GenerationStatus | null;
+    /** Earlier results are kept; the writer can flip between them. */
+    attemptIndex?: number;
+    attemptCount?: number;
+    onSelectAttempt?: (index: number) => void;
+    /** Run the same request again — after a failure or an unusable result. */
+    onAgain?: () => void;
     acceptLabel?: string;
     onAccept: () => void;
     onDiscard: () => void;
@@ -69,15 +79,46 @@ export const ActionSheet = ({
                                 }
                             }}
                         />
-                    ) : error ? (
-                        <span className="text-destructive">{error}</span>
-                    ) : text ? (
-                        text
+                    ) : phase === "streaming" ? (
+                        text || <GenerationProgress status={status} />
                     ) : (
-                        <GenerationProgress status={status} />
+                        <>
+                            {error && (
+                                <p className="mb-2 text-destructive">
+                                    {error}
+                                    {attemptCount > 0 && " Your earlier result is still here."}
+                                </p>
+                            )}
+                            {text}
+                        </>
                     )}
                 </div>
-                {phase === "done" && text && onRefine && (
+                {phase !== "streaming" && attemptCount > 1 && onSelectAttempt && (
+                    <div className="flex items-center justify-center gap-3 px-3 pb-2 text-sm">
+                        <button
+                            type="button"
+                            onClick={() => onSelectAttempt(attemptIndex - 1)}
+                            disabled={attemptIndex === 0}
+                            aria-label="Previous attempt"
+                            className="rounded-md border px-2 py-0.5 disabled:opacity-40"
+                        >
+                            ‹
+                        </button>
+                        <span className="text-muted-foreground">
+                            Attempt {attemptIndex + 1} of {attemptCount}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => onSelectAttempt(attemptIndex + 1)}
+                            disabled={attemptIndex === attemptCount - 1}
+                            aria-label="Next attempt"
+                            className="rounded-md border px-2 py-0.5 disabled:opacity-40"
+                        >
+                            ›
+                        </button>
+                    </div>
+                )}
+                {phase !== "streaming" && text && onRefine && (
                     <div className="flex gap-2 px-3 pb-2">
                         <input
                             className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
@@ -117,7 +158,7 @@ export const ActionSheet = ({
                         </button>
                     ) : (
                         <>
-                            {phase === "done" && text && (
+                            {text && (
                                 <button
                                     type="button"
                                     onClick={onAccept}
@@ -126,7 +167,20 @@ export const ActionSheet = ({
                                     {acceptLabel}
                                 </button>
                             )}
-                            <button type="button" onClick={onDiscard} className="rounded-md border px-4 py-2 text-sm">
+                            {onAgain && (
+                                <button
+                                    type="button"
+                                    onClick={onAgain}
+                                    className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm"
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5" /> Try again
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={onDiscard}
+                                className="ml-auto rounded-md border px-4 py-2 text-sm"
+                            >
                                 Discard
                             </button>
                         </>
