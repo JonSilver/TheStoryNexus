@@ -50,8 +50,9 @@ export const useChatConversation = (
     }, []);
     // Re-render after the browser-stored copy changes; the copy itself is the truth
     const [, setStoredVersion] = useState(0);
+    // Kept with what the server had at the time, so only this device's changes are ever replayed
     const remember = (chatId: string, next: ChatMessage[] | null) => {
-        writeUnsaved(chatId, next);
+        writeUnsaved(chatId, next ? { base: chat?.messages ?? [], local: next } : null);
         if (alive.current) setStoredVersion(v => v + 1);
     };
     const serverMessages = chat?.messages ?? [];
@@ -67,7 +68,7 @@ export const useChatConversation = (
 
     const runBrainstorm = async (history: ChatMessage[], userMessage: string): Promise<RunResult> => {
         if (!storyId || !chat) return { text: "", outcome: "superseded" };
-        setGeneratingFor(chat.id);
+        if (alive.current) setGeneratingFor(chat.id);
         const result = await runFor(history, userMessage);
         if (alive.current) setGeneratingFor(null);
         return result;
