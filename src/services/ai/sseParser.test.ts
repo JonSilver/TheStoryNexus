@@ -71,6 +71,15 @@ describe("createSSEParser", () => {
         expect(onError).not.toHaveBeenCalled();
     });
 
+    it("aborted goes to onAborted when the caller distinguishes a Stop", () => {
+        const onAborted = vi.fn();
+        const onComplete = vi.fn();
+        const parser = createSSEParser({ onToken: () => undefined, onComplete, onAborted, onError: vi.fn() });
+        parser.push("event: aborted\ndata: {}\n\n");
+        expect(onAborted).toHaveBeenCalledOnce();
+        expect(onComplete).not.toHaveBeenCalled();
+    });
+
     it("ignores frames after termination", () => {
         const { tokens, onComplete, parser } = collect();
         parser.push('event: finish\ndata: {}\n\nevent: token\ndata: {"text":"late"}\n\n');

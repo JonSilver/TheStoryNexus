@@ -9,6 +9,8 @@ export type GenerationPhase = "waiting" | "thinking" | "streaming";
 export interface GenerationStatus {
     phase: GenerationPhase;
     elapsedMs: number;
+    /** While streaming: time since text last arrived. */
+    idleMs?: number;
 }
 
 export interface SSEHandlers {
@@ -16,6 +18,8 @@ export interface SSEHandlers {
     onStatus?: (status: GenerationStatus) => void;
     onToken: (text: string) => void;
     onComplete: () => void;
+    /** The server confirmed a Stop; defaults to onComplete for callers that don't distinguish. */
+    onAborted?: () => void;
     onError: (error: Error) => void;
 }
 
@@ -24,7 +28,7 @@ export interface SSEParser {
     end: () => void;
 }
 
-export const createSSEParser = ({ onStatus, onToken, onComplete, onError }: SSEHandlers): SSEParser => {
+export const createSSEParser = ({ onStatus, onToken, onComplete, onAborted, onError }: SSEHandlers): SSEParser => {
     const state = { buffer: "", terminated: false };
 
     const dispatchFrame = (frame: string): void => {
@@ -45,7 +49,12 @@ export const createSSEParser = ({ onStatus, onToken, onComplete, onError }: SSEH
 
         switch (eventMatch[1]) {
             case "status":
-                if (data?.phase) onStatus?.({ phase: data.phase, elapsedMs: Number(data.elapsedMs) || 0 });
+                if (data?.phase)
+                    onStatus?.({
+                        phase: data.phase,
+                        elapsedMs: Number(data.elapsedMs) || 0,
+                        ...(typeof data.idleMs === "number" && { idleMs: data.idleMs })
+                    });
                 return;
             case "token":
                 if (data?.text) onToken(data.text);
@@ -55,9 +64,12 @@ export const createSSEParser = ({ onStatus, onToken, onComplete, onError }: SSEH
                 onError(new Error(data?.message || "Generation failed"));
                 return;
             case "finish":
-            case "aborted":
                 state.terminated = true;
                 onComplete();
+                return;
+            case "aborted":
+                state.terminated = true;
+                (onAborted ?? onComplete)();
                 return;
             default:
                 return;

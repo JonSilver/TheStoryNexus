@@ -9,6 +9,7 @@ const MISSING: SceneBeatData = {
     status: "idle",
     takes: [],
     activeTake: 0,
+    incompleteTakes: [],
     streaming: "",
     collapsed: false,
     povCharacter: "",
@@ -21,6 +22,7 @@ const same = (a: SceneBeatData, b: SceneBeatData) =>
     a.takes.length === b.takes.length &&
     a.takes.every((take, i) => take === b.takes[i]) &&
     a.activeTake === b.activeTake &&
+    a.incompleteTakes.join() === b.incompleteTakes.join() &&
     a.streaming === b.streaming &&
     a.collapsed === b.collapsed &&
     a.povCharacter === b.povCharacter &&

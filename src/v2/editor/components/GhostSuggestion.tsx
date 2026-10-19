@@ -49,6 +49,8 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const streamed = useRef("");
     const abortRef = useRef<(() => void) | null>(null);
     const startedRef = useRef(false);
+    const runRef = useRef<symbol | null>(null);
+    const stoppedRef = useRef(false);
 
     const textBeforeNode = useCallback(
         () =>
@@ -69,9 +71,21 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const generate = useCallback(
         (guidance?: string) => {
             abortRef.current?.();
+            const run = Symbol("ghost-run");
+            runRef.current = run;
+            stoppedRef.current = false;
             lastGuidance.current = guidance;
             streamed.current = "";
             setFailure(null);
+            // A continuation already on screen (e.g. after a reload, where the
+            // attempt list starts empty) becomes an attempt before it's cleared
+            const onScreen = editor.getEditorState().read(() => {
+                const node = $getNodeByKey(nodeKey);
+                return $isGhostSuggestionNode(node) ? $readGhost(node).text : "";
+            });
+            const known = attemptsRef.current;
+            if (onScreen.trim() && !known.list.includes(onScreen))
+                setAttempts({ list: [...known.list, onScreen], index: known.list.length });
             editor.update(() => {
                 const node = $getNodeByKey(nodeKey);
                 if (!$isGhostSuggestionNode(node)) return;
@@ -89,8 +103,11 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                     }
                 },
                 {
-                    onStatus: setStatus,
+                    onStatus: next => {
+                        if (runRef.current === run) setStatus(next);
+                    },
                     onToken: token => {
+                        if (runRef.current !== run) return;
                         streamed.current += token;
                         editor.update(
                             () => {
@@ -101,20 +118,26 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                         );
                     },
                     onDone: error => {
+                        // A superseded run's late completion must not touch its successor
+                        if (runRef.current !== run) return;
                         abortRef.current = null;
                         setStatus(null);
                         const produced = streamed.current;
                         const previous = attemptsRef.current;
                         if (produced.trim())
                             setAttempts({ list: [...previous.list, produced], index: previous.list.length });
+                        const stoppedEmpty = !error && !produced.trim() && stoppedRef.current;
                         // A failure keeps the ghost (with Try again) instead of
-                        // vanishing — and restores the previous attempt if there was one
-                        if (error || !produced.trim()) setFailure(error ?? "The model returned nothing.");
+                        // vanishing; a Stop before any text is the writer's choice, not a failure
+                        if (!stoppedEmpty && (error || !produced.trim()))
+                            setFailure(error ?? "The model returned nothing.");
                         const fallback = produced.trim() ? null : (previous.list[previous.index] ?? null);
                         editor.update(
                             () => {
                                 const node = $getNodeByKey(nodeKey);
                                 if (!$isGhostSuggestionNode(node)) return;
+                                // Stopped with nothing to show and nothing earlier: no ghost left behind
+                                if (stoppedEmpty && fallback === null) return node.remove();
                                 $setState(node, ghostStatusState, "done");
                                 if (fallback !== null) $setGhostText(node, fallback);
                             },
@@ -210,21 +233,31 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
             {failure && !streaming && (
                 <p className="mb-1 text-sm not-italic text-destructive" role="alert">
                     {failure}
-                    {text && " Your earlier continuation is still here."}
+                    {text &&
+                        (streamed.current.trim()
+                            ? " What arrived is kept below."
+                            : " Your earlier continuation is still here.")}
                 </p>
             )}
             <div className="whitespace-pre-wrap italic leading-relaxed text-muted-foreground">
-                {text ||
-                    (streaming && (
-                        <GenerationProgress
-                            status={status ?? { phase: "waiting", elapsedMs: 0 }}
-                            className="not-italic"
-                        />
-                    ))}
+                {text}
+                {streaming && (
+                    <GenerationProgress
+                        status={status ?? { phase: "waiting", elapsedMs: 0 }}
+                        className={`not-italic ${text ? "mt-1" : ""}`}
+                    />
+                )}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 {streaming ? (
-                    <button type="button" onClick={() => abortRef.current?.()} className="rounded-md border px-3 py-1">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            stoppedRef.current = true;
+                            abortRef.current?.();
+                        }}
+                        className="rounded-md border px-3 py-1"
+                    >
                         Stop
                     </button>
                 ) : (

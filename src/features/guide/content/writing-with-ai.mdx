@@ -7,12 +7,12 @@ The AI works where you write. **Nothing it produces touches your chapter until y
 Tap the **wand**. The continuation streams in **greyed out, right in your chapter** where the caret was — you judge it in context.
 
 - **Keep** turns it into ordinary paragraphs (one undo reverts it).
-- **Again** asks for a different continuation. Earlier ones are kept — flip between them with **‹ ›**.
+- **Again** asks for a different continuation. Earlier ones are kept while the chapter is open — flip between them with **‹ ›**.
 - **Refine…** — type a steer ("slower, more dread") and press Enter.
 - **Dismiss** removes it.
 - **Stop** ends a continuation early and keeps what arrived.
 
-If a continuation fails, it stays put and says why, with **Try again** and **Dismiss** — you're not left re-clicking the wand.
+If a continuation fails, it stays put and says why, with **Try again** and **Dismiss** — you're not left re-clicking the wand. Anything that arrived before the failure is kept.
 
 ## Rework, Expand, Shorten — and Ask
 
@@ -28,7 +28,7 @@ Select some text. The toolbar (or the right-click / long-press menu) offers:
 The result streams into a sheet. Then:
 
 - **Replace selection** swaps your selection for the result shown.
-- **Try again** runs the same request again. **Every result is kept**: _Attempt 2 of 3_, with **‹ ›** to compare — whichever you're looking at is the one **Replace selection** uses.
+- **Try again** runs the same request again. **Every result is kept** while the sheet is open: _Attempt 2 of 3_, with **‹ ›** to compare — whichever you're looking at is the one **Replace selection** uses. A result cut short — by a failure or by **Stop** — is kept too, marked incomplete.
 - **Refine** re-runs it with a steer, as another attempt.
 - **Discard** leaves your chapter untouched.
 
@@ -44,7 +44,7 @@ A scene beat is a note to the AI living inline in your chapter: _what should hap
 
 Describe the beat — "She finally admits she recognised him at the funeral; he doesn't take it well." Optionally pick a **POV type** and **POV character** (otherwise the chapter's point of view applies). Then **Generate**.
 
-Every generation becomes a **take**. **New take** asks for another; nothing is ever overwritten, even if a generation fails. Flip between takes with **‹ ›**, delete one you don't want, or type a steer in **Refine** and regenerate.
+Every generation becomes a **take**. **New take** asks for another; nothing is ever overwritten, even if a generation fails — a take cut short is kept and marked incomplete. Flip between takes with **‹ ›**, delete one you don't want, or type a steer in **Refine** and regenerate.
 
 - **Accept** drops the take you're viewing into the chapter after the beat and keeps the beat (with all its takes) for later.
 - **Accept & tidy** does the same and removes the beat.
@@ -81,7 +81,7 @@ Each reply can go further:
 
 - **Save as note**, **To bible** (extract entries from it, to review and approve), or **To chapter** (a new chapter with the reply as its outline).
 - **Regenerate** the latest reply — earlier versions are kept (_Version 2 of 2_, **‹ ›**).
-- If a reply fails, **Try again** resends your message.
+- If a reply fails, **Try again** resends your message — also when you come back to a chat whose last message was never answered. A reply cut short — a failure, **Stop**, or leaving the chat mid-reply — is kept and marked incomplete. If a reply can't be saved, it stays on this device with **Save again** until it is.
 
 ## New names
 

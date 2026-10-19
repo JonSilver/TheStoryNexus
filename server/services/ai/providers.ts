@@ -84,19 +84,27 @@ const convertGeminiMessages = (messages: PromptMessage[], supportsSystemInstruct
 
 /**
  * Pure payload builder for the OpenAI-compatible family. Unset optional
- * samplers are OMITTED (the model server's own tuning applies); newer OpenAI
- * models reject max_tokens but accept max_completion_tokens, so the budgeted
- * output cap always reaches the provider.
+ * samplers are OMITTED (the model server's own tuning applies); OpenAI's
+ * reasoning models reject max_tokens but accept max_completion_tokens, so the
+ * budgeted output cap always reaches the provider.
  */
 export const buildOpenAICompatiblePayload = (request: Omit<GenerationRequest, "signal">) => {
     const { provider, modelId, messages, temperature, maxTokens, topP, frequencyPenalty, presencePenalty } = request;
     const model = provider === "local" ? modelId.replace(/^local\//, "") : modelId;
-    const modernOpenAI = provider === "openai" && /^(gpt-5|o1|o3)/.test(model);
+    // OpenAI's reasoning families take max_completion_tokens and reject any
+    // non-default sampler, so samplers are omitted for them
+    const reasoningOpenAI = provider === "openai" && /^(gpt-5|o\d)/.test(model);
+    if (reasoningOpenAI)
+        return {
+            model,
+            messages: messages.map(m => ({ role: m.role, content: m.content })),
+            max_completion_tokens: maxTokens
+        };
     return {
         model,
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         temperature,
-        ...(modernOpenAI ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
+        max_tokens: maxTokens,
         ...(topP !== undefined && { top_p: topP }),
         ...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
         ...(presencePenalty !== undefined && { presence_penalty: presencePenalty })

@@ -26,7 +26,7 @@ Invariants:
 
 ## 2. Scene beat lifecycle
 
-Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`.
+Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`. Takes live in `takes[]`/`activeTake`; `incompleteTakes[]` marks takes cut short by a failure (kept, labelled).
 
 - **Streaming**: tokens accumulate in component state during generation (NOT written to the document per token — avoids undo-history pollution and save churn); committed to `generatedText` + `status: 'done'` in one transaction at completion or abort.
 - **Accept**: one transaction — insert `generatedText` as ordinary paragraph blocks after the node, set node `generatedText: ''`, `status: 'idle'`, `collapsed: true`. One undo step reverts the whole accept.
@@ -102,7 +102,7 @@ Overrides table `actionOverrides { id, actionId, storyId | null, template?, temp
 ```
 POST /api/generate/action
 { requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory? }, modelRef? }
-→ SSE: event: status {phase, elapsedMs} | token {text} | finish | error {message} | aborted
+→ SSE: event: status {phase, elapsedMs, idleMs?} | token {text} | finish | error {message} | aborted
 POST /api/generate/preview  — same body minus requestId; returns resolved messages + model + prompt token count (the inspector)
 POST /api/generate/abort { requestId }
 POST /api/generate          — raw-messages mode, v1-frontend compatibility only; deleted at cutover
@@ -115,7 +115,7 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 - One `AbortController` per `requestId`; client socket close aborts upstream; concurrent generations are independent.
 - SSE parsing (client) must buffer across chunk boundaries — v1's split-on-newline-per-chunk parser is banned.
 - Errors after tokens have streamed terminate with `error`; no automatic retry — including inside the provider SDK (`maxRetries: 0`), so a provider failure surfaces on the first attempt instead of after hidden backoff.
-- **Phases and timeouts** (`server/services/ai/generationRun.ts`, provider-agnostic): `waiting` (provider hasn't accepted the request — queued, loading a model, or stuck; 180s), `thinking` (accepted, no text yet; 120s), `streaming` (60s stall limit). A `status` heartbeat every 2s while waiting/thinking drives the client's shared `GenerationProgress` indicator. Each timeout and each provider error (404 unknown model, 401/403 key, 429, 5xx, unreachable) produces a specific message naming the model and server, and for a missing model, where it was chosen (action override vs default).
+- **Phases and timeouts** (`server/services/ai/generationRun.ts`, provider-agnostic): `waiting` (provider hasn't accepted the request — queued, loading a model, or stuck; 180s), `thinking` (accepted, no text yet; 120s), `streaming` (60s stall limit). A `status` heartbeat every 2s drives the client's shared `GenerationProgress` indicator; while streaming it carries `idleMs` (time since text last arrived), shown as a stall notice after 10s. Whitespace-only chunks are not progress: they neither leave `thinking` nor reset the stall timer. A failed run still delivers the text that arrived first; every surface keeps it (labelled incomplete) rather than discarding it. OpenAI reasoning models (gpt-5, o-series) get `max_completion_tokens` and no samplers. Each timeout and each provider error (404 unknown model, 401/403 key, 429, 5xx, unreachable) produces a specific message naming the model and server, and for a missing model, where it was chosen (action override vs default).
 - Background generation (auto-summarise) never fails silently: failures raise one persistent, de-duplicated warning.
 
 ## 7. Lorebook matching
@@ -161,6 +161,7 @@ Model context limits come from provider metadata where available, else a conserv
 | ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------- |
 | `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                 | Phase 3                         |
 | `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only | 2026-10-19                      |
+| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                | 2026-10-19                      |
 | `stories`         | + `aiInstructions`                                                                                 | Phase 4                         |
 | `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                  | Phase 2                         |
 | `actionOverrides` | new                                                                                                | Phase 2 (storage), Phase 8 (UI) |

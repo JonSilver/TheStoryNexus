@@ -9,6 +9,7 @@ import { useState } from "react";
 export const TakeViewer = ({
     takes,
     activeTake,
+    incompleteTakes = [],
     onSelect,
     onDelete,
     onAccept,
@@ -16,6 +17,8 @@ export const TakeViewer = ({
 }: {
     takes: string[];
     activeTake: number;
+    /** Takes cut short by a failure. */
+    incompleteTakes?: number[];
     onSelect: (index: number) => void;
     onDelete: (index: number) => void;
     onAccept: (removeBeat: boolean) => void;
@@ -34,6 +37,9 @@ export const TakeViewer = ({
     return (
         <div className="space-y-2">
             <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2 select-text">
+                {incompleteTakes.includes(current) && (
+                    <p className="mb-1 text-xs text-muted-foreground">Incomplete — cut short before the end.</p>
+                )}
                 {takes[current]}
             </div>
             <div className="flex items-center gap-2">

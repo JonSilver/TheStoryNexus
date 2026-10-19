@@ -66,7 +66,8 @@ const LABELS = [
     "Refresh Models",
     "Save summary",
     "Scene Beat",
-    "Server URL"
+    "Server URL",
+    "Look again"
 ];
 
 const TOOLS: V2Tool[] = [

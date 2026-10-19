@@ -152,8 +152,13 @@ const streamToClient = async (
         }
     });
 
-    activeGenerations.delete(requestId);
+    releaseGeneration(requestId, abortController);
     res.end();
+};
+
+/** Only the run that owns an entry may remove it — a settling old run must not unregister a newer one. */
+const releaseGeneration = (requestId: string, controller: AbortController) => {
+    if (activeGenerations.get(requestId) === controller) activeGenerations.delete(requestId);
 };
 
 const registerGeneration = (res: express.Response, requestId: string): AbortController | null => {
@@ -163,7 +168,7 @@ const registerGeneration = (res: express.Response, requestId: string): AbortCont
     // Registered before any await so an early disconnect can't leak the entry
     res.on("close", () => {
         abortController.abort();
-        activeGenerations.delete(requestId);
+        releaseGeneration(requestId, abortController);
     });
     return abortController;
 };
@@ -182,7 +187,7 @@ router.post("/action", async (req, res) => {
         res.status(409).json({ error: "requestId already in use" });
         return;
     }
-    const cleanup = () => activeGenerations.delete(requestId);
+    const cleanup = () => releaseGeneration(requestId, abortController);
 
     const settings = await loadSettings();
     if (!settings) {
@@ -371,7 +376,7 @@ router.post("/abort", (req, res) => {
     const controller = activeGenerations.get(requestId);
     if (controller) {
         controller.abort();
-        activeGenerations.delete(requestId);
+        releaseGeneration(requestId, controller);
     }
     res.json({ aborted: Boolean(controller) });
 });

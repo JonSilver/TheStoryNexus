@@ -32,6 +32,9 @@ const extractJsonArray = (text: string): unknown[] | null => {
     }
 };
 
+/** The reply holds a JSON array at all — an empty one is a real "nothing here"; prose is a model that can't do the job. */
+export const readsAsJsonArray = (text: string): boolean => extractJsonArray(text) !== null;
+
 export const parseEntryProposals = (text: string): EntryProposal[] =>
     (extractJsonArray(text) ?? [])
         .filter(

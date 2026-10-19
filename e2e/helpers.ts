@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * Deterministic AI at the network layer: /api/generate/action is answered
@@ -57,3 +57,40 @@ export const resetBackgroundBudget = async (page: Page) => {
     const response = await page.request.delete("/api/chapters/background-summary-budget");
     expect(response.status()).toBe(204);
 };
+
+/** Select the whole chapter and open Rework on it. */
+export const reworkAll = async (page: Page) => {
+    await editorLocator(page).click();
+    await page.keyboard.press("Control+A");
+    await page.getByRole("button", { name: "Rework selection" }).click();
+};
+
+export type ScriptedReply =
+    | { text: string }
+    | { error: string; partial?: string }
+    | { hold: true }
+    | { unreachable: true };
+
+const frame = (event: string, data: object) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+
+/** Scripted replies in order. `partial` streams text before the error; `hold` never answers. */
+export const scriptGeneration = async (page: Page, replies: ScriptedReply[]) => {
+    const queue = [...replies];
+    const calls: string[] = [];
+    await page.route("**/api/generate/action", (route: Route) => {
+        calls.push((route.request().postDataJSON() as { actionId: string }).actionId);
+        const next = queue.shift() ?? { text: "fallback reply" };
+        if ("hold" in next) return;
+        if ("unreachable" in next) return route.abort("connectionrefused");
+        const body =
+            "text" in next
+                ? frame("token", { text: next.text }) + frame("finish", {})
+                : (next.partial ? frame("token", { text: next.partial }) : "") +
+                  frame("error", { message: next.error });
+        return route.fulfill({ status: 200, contentType: "text/event-stream", body });
+    });
+    return calls;
+};
+
+/** The server's own wording for a mid-stream stall. */
+export const STALL = "the model stopped sending text for 60 seconds partway through. What arrived has been kept.";

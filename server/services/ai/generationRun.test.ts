@@ -116,6 +116,39 @@ describe("runGeneration", () => {
         await done;
         expect(events.at(-1)).toEqual({ type: "aborted" });
     });
+
+    it("whitespace trickling in doesn't count as text: the first-text deadline still applies", async () => {
+        const trickle = async () =>
+            (async function* () {
+                for (;;) {
+                    await new Promise(resolve => setTimeout(resolve, 1_000));
+                    yield "\n";
+                }
+            })();
+        const { events, done } = run(trickle);
+        await vi.advanceTimersByTimeAsync(timeouts.firstTokenMs + 1_500);
+        await done;
+        expect(events.some(e => e.type === "status" && e.phase === "streaming")).toBe(false);
+        const last = events.at(-1) as { type: string; message: string };
+        expect(last.message).toContain("accepted the request but produced no text");
+    });
+
+    it("while streaming, the heartbeat says how long since text last arrived", async () => {
+        const pausing = async () =>
+            (async function* () {
+                yield "Hello";
+                await new Promise(resolve => setTimeout(resolve, 3_500));
+                yield " world";
+            })();
+        const { events, done } = run(pausing);
+        await vi.advanceTimersByTimeAsync(4_000);
+        await done;
+        const idle = events
+            .filter(e => e.type === "status" && e.phase === "streaming" && "idleMs" in e)
+            .map(e => (e as { idleMs: number }).idleMs);
+        expect(Math.max(...idle)).toBeGreaterThanOrEqual(3_000);
+        expect(events.at(-1)).toEqual({ type: "finish" });
+    });
 });
 
 describe("describeProviderError", () => {

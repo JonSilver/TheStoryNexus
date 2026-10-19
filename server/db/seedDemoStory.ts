@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { StoryExport } from "../../src/types/story.js";
+import { freshChatRevision } from "../lib/chatUpdate.js";
 import { db, schema } from "./client.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +89,7 @@ export const seedDemoStory = async () => {
                 updatedAt: chat.updatedAt ? new Date(chat.updatedAt) : null,
                 lastUsedPromptId: chat.lastUsedPromptId || null,
                 lastUsedModelId: chat.lastUsedModelId || null,
+                revision: freshChatRevision(),
                 isDemo: true
             }));
             await db.insert(schema.aiChats).values(chatsToInsert);

@@ -22,7 +22,8 @@ import {
     generatedTextState,
     $isSceneBeatNode,
     statusState,
-    takesState
+    takesState,
+    incompleteTakesState
 } from "../nodes/SceneBeatNode";
 import { useSceneBeatData } from "../useSceneBeatData";
 import { useSceneBeatGeneration } from "../useSceneBeatGeneration";
@@ -33,7 +34,7 @@ const stopKeydown = (e: KeyboardEvent) => e.stopPropagation();
 
 export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const [editor] = useLexicalComposerContext();
-    const { command, status, takes, activeTake, streaming, collapsed } = useSceneBeatData(nodeKey);
+    const { command, status, takes, activeTake, incompleteTakes, streaming, collapsed } = useSceneBeatData(nodeKey);
     const { storyId, chapterId } = useChapterIdentity();
     const { generate, stop, mutate, abortActive, ownsRun, textBeforeNode, progress } = useSceneBeatGeneration(nodeKey);
     const isolatedRef = useRef<HTMLTextAreaElement | null>(null);
@@ -45,7 +46,8 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     // Stop button
     useEffect(() => {
         if (ownsRun() || (!streaming && !isGenerating)) return;
-        mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+        // A stream nobody owns never finished: its take is marked incomplete
+        mutate(node => $commitStreamingAsTake(node, true), HISTORY_MERGE_TAG);
     }, [streaming, isGenerating, ownsRun, mutate]);
 
     /**
@@ -100,6 +102,9 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
         mutate(node => {
             const remaining = takes.filter((_, i) => i !== index);
             $setState(node, takesState, remaining);
+            $setState(node, incompleteTakesState, prev =>
+                prev.filter(i => i !== index).map(i => (i > index ? i - 1 : i))
+            );
             // The displayed takes already include any folded legacy draft —
             // clear it, or an emptied takes list resurrects the deleted take
             $setState(node, generatedTextState, "");
@@ -160,15 +165,18 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
 
                     {isGenerating && (
                         <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">
-                            {streaming || (
-                                <GenerationProgress status={progress ?? { phase: "waiting", elapsedMs: 0 }} />
-                            )}
+                            {streaming}
+                            <GenerationProgress
+                                status={progress ?? { phase: "waiting", elapsedMs: 0 }}
+                                className={streaming ? "mt-1" : ""}
+                            />
                         </div>
                     )}
                     {!isGenerating && (
                         <TakeViewer
                             takes={takes}
                             activeTake={activeTake}
+                            incompleteTakes={incompleteTakes}
                             onSelect={selectTake}
                             onDelete={deleteTake}
                             onAccept={removeBeat => accept(removeBeat)}

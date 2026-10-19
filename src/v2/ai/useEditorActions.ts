@@ -54,17 +54,20 @@ export const useEditorActions = (chapter: Chapter) => {
     const lastRun = useRef<{ actionId: ActionId; editorContext: Record<string, string> } | null>(null);
     const [askPending, setAskPending] = useState(false);
     const attempts = useAttempts();
+    const { record } = attempts;
 
-    // Every run's result is kept as an attempt; failures add nothing, so
-    // earlier attempts survive a backend error
+    // Every run that produced text is kept as an attempt — a failure keeps
+    // what arrived as a partial one — so nothing the model wrote is lost
     const runAttempt = useCallback(
         (actionId: ActionId, editorContext?: Record<string, string>) => {
             lastRun.current = { actionId, editorContext: editorContext ?? {} };
             void generation
                 .run({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext })
-                .then(attempts.record);
+                .then(result => {
+                    if (result.outcome !== "superseded") record(result.text, result.outcome !== "complete");
+                });
         },
-        [generation, chapter.storyId, chapter.id, attempts.record]
+        [generation, chapter.storyId, chapter.id, record]
     );
 
     const docTextTail = useCallback(
@@ -260,6 +263,7 @@ export const useEditorActions = (chapter: Chapter) => {
             text: generation.phase === "streaming" ? generation.text : (attempts.current ?? ""),
             attemptIndex: attempts.index,
             attemptCount: attempts.count,
+            attemptPartial: attempts.currentPartial,
             onSelectAttempt: attempts.select,
             onAgain: active && !askPending ? onAgain : undefined,
             error: generation.error,

@@ -1,5 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -8,16 +8,11 @@ import { randomUUID } from "@/utils/crypto";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { BIBLE_STOP_NOTE } from "./FlowResults";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
-import {
-    type ContinuityIssue,
-    type EntryProposal,
-    type UpdateProposal,
-    parseContinuityIssues,
-    parseEntryProposals,
-    parseUpdateProposals
-} from "./parseProposals";
-import { useStorySweep } from "./useStorySweep";
+import type { UpdateProposal } from "./parseProposals";
+import { useFlowResults } from "./useFlowResults";
+import { describeSweepFailures, useStorySweep } from "./useStorySweep";
 
 export type BibleFlowMode = "extract-chapter" | "extract-story" | "extract-paste" | "updates" | "continuity";
 
@@ -51,37 +46,29 @@ export const ExtractSheet = ({
     const createEntry = useCreateLorebookMutation();
     const updateEntry = useUpdateLorebookMutation();
     const [pasted, setPasted] = useState(initialText ?? "");
-    const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
-    const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
-    const [issues, setIssues] = useState<ContinuityIssue[] | null>(null);
-    const [ticked, setTicked] = useState<Set<number>>(new Set());
+    const results = useFlowResults(entries);
+    const { proposals, updates, issues, ticked } = results;
     const [approving, setApproving] = useState(false);
+    const [sweepFailure, setSweepFailure] = useState<string | null>(null);
     const sweep = useStorySweep(storyId, chapters, generation);
-
-    const applyProposals = (parsed: EntryProposal[]) => {
-        const existingNames = new Set(entries.map(e => e.name.toLowerCase()));
-        setProposals(parsed);
-        setTicked(
-            new Set(
-                parsed
-                    .map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i))
-                    .filter(i => i >= 0)
-            )
-        );
-    };
 
     const run = async () => {
         if (mode === "extract-story") {
-            const gathered = await sweep.run();
-            applyProposals(gathered);
-            if (!gathered.length && !sweep.wasStopped()) toast.info("Nothing extractable found in any chapter");
+            const tally = { added: 0 };
+            const swept = await sweep.run(found => {
+                tally.added += results.addProposals(found);
+            });
+            const added = tally.added;
+            setSweepFailure(describeSweepFailures(swept, chapters.length));
+            if (!added && swept.failures.length === 0 && !sweep.wasStopped())
+                toast.info(proposals?.length ? "Nothing new found" : "Nothing extractable found in any chapter");
             return;
         }
         const actionId =
             mode === "updates" ? "propose_updates" : mode === "continuity" ? "check_continuity" : "extract_entries";
         // Chapter modes read from the server — land any pending editor save first
         if (mode !== "extract-paste" && chapterId) await flushChapterSave(chapterId);
-        const text = await generation.run({
+        const result = await generation.run({
             actionId,
             storyId,
             ...(mode !== "extract-paste" && chapterId ? { chapterId } : {}),
@@ -92,41 +79,38 @@ export const ExtractSheet = ({
                     : {})
             }
         });
-        if (!text) return;
-        if (mode === "continuity") {
-            const parsed = parseContinuityIssues(text);
-            setIssues(parsed);
-            if (!parsed.length) toast.success("No continuity issues found");
-            return;
-        }
-        if (mode === "updates") {
-            const parsed = parseUpdateProposals(text);
-            setUpdates(parsed);
-            if (!parsed.length) toast.info("No entry updates suggested");
-        } else {
-            // Dedupe within the batch; entries already in the bible start unticked
-            const seen = new Set<string>();
-            const parsed = parseEntryProposals(text).filter(proposal => {
-                const key = proposal.name.toLowerCase();
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-            applyProposals(parsed);
-            if (!parsed.length)
-                toast.info(
-                    text.trim().length > 40
-                        ? "The reply couldn't be read as entries — the model may have run out of tokens. Try again or raise max tokens for this action."
-                        : "Nothing extractable found"
-                );
-        }
+        // A failed or stopped run still offers whatever parses from what arrived —
+        // a reply can be complete before its stream fails; the error stays on screen
+        if (result.outcome === "superseded" || !result.text.trim()) return;
+        const notice = results.offerReply(
+            mode === "continuity" ? "issues" : mode === "updates" ? "updates" : "entries",
+            result.text,
+            result.outcome === "failed"
+        );
+        if (notice) toast.info(notice);
+    };
+
+    // Found-but-unadded entries are paid-for work: closing asks before discarding them
+    const close = () => {
+        const found = proposals?.length ?? 0;
+        const reviewable = found + (updates?.length ?? 0) + (issues?.length ?? 0);
+        const question = busy
+            ? `This is still running. Close and lose ${found ? `the ${found} entr${found === 1 ? "y" : "ies"} found so far` : "it"}?`
+            : ticked.size > 0
+              ? `Close without adding the ${ticked.size} ticked entr${ticked.size === 1 ? "y" : "ies"} to the bible?`
+              : reviewable > 0
+                ? "Close and discard these results? Getting them again means running it again."
+                : null;
+        if (question && !window.confirm(question)) return;
+        onClose();
     };
 
     const approveEntries = async () => {
         if (approving) return;
         setApproving(true);
-        const chosen = (proposals ?? []).filter((_, i) => ticked.has(i));
-        const results = await Promise.allSettled(
+        const chosenIndexes = [...ticked].sort((a, b) => a - b);
+        const chosen = chosenIndexes.map(i => (proposals ?? [])[i]);
+        const settled = await Promise.allSettled(
             chosen.map(proposal =>
                 createEntry.mutateAsync({
                     id: randomUUID(),
@@ -140,11 +124,17 @@ export const ExtractSheet = ({
                 })
             )
         );
-        const added = results.filter(r => r.status === "fulfilled").length;
-        const failed = results.length - added;
-        if (failed) toast.error(`${added} added, ${failed} failed — the failures were not saved`);
-        else toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
-        onClose();
+        const added = settled.filter(r => r.status === "fulfilled").length;
+        const failed = settled.length - added;
+        if (!failed) {
+            toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
+            onClose();
+            return;
+        }
+        // Failures stay listed and ticked to retry — the list is paid-for work
+        results.removeProposals(new Set(chosenIndexes.filter((_, n) => settled[n].status === "fulfilled")));
+        setApproving(false);
+        toast.error(`${added} added, ${failed} couldn't be saved — they're still ticked here to try again`);
     };
 
     const applyUpdate = async (proposal: UpdateProposal) => {
@@ -162,7 +152,7 @@ export const ExtractSheet = ({
             toast.error(`Couldn't update “${proposal.name}”`);
             return;
         }
-        setUpdates(current => (current ?? []).filter(u => u !== proposal));
+        results.removeUpdate(proposal);
     };
 
     // Handed-in work auto-runs: the nudge chip's names, or pre-filled text
@@ -177,7 +167,7 @@ export const ExtractSheet = ({
             ? (chapters.find(c => c.id === chapterId)?.title ?? null)
             : null;
     const needsPaste = mode === "extract-paste" && proposals === null;
-    const showRun = proposals === null && updates === null && issues === null;
+    const showRun = !results.hasResults;
 
     return (
         <div
@@ -193,7 +183,7 @@ export const ExtractSheet = ({
                             <span className="block truncate text-xs text-muted-foreground">“{chapterLabel}”</span>
                         )}
                     </span>
-                    <button type="button" onClick={onClose} aria-label="Close">
+                    <button type="button" onClick={close} aria-label="Close">
                         <X className="h-4 w-4" />
                     </button>
                 </header>
@@ -213,22 +203,19 @@ export const ExtractSheet = ({
                             {sweep.progress.found} entr{sweep.progress.found === 1 ? "y" : "ies"} found so far
                         </p>
                     )}
-                    {busy && <GenerationProgress status={generation.status} />}
-                    {generation.error && <p className="text-destructive">{generation.error}</p>}
+                    {busy && <GenerationProgress status={generation.status} stopNote={BIBLE_STOP_NOTE} />}
+                    {(sweepFailure ?? (!busy && generation.error)) && (
+                        <p className="text-destructive" role="alert">
+                            {sweepFailure ?? generation.error}
+                        </p>
+                    )}
 
                     {proposals && (
                         <ProposalList
                             proposals={proposals}
                             entries={entries}
                             ticked={ticked}
-                            onToggle={index =>
-                                setTicked(current => {
-                                    const next = new Set(current);
-                                    if (next.has(index)) next.delete(index);
-                                    else next.add(index);
-                                    return next;
-                                })
-                            }
+                            onToggle={results.toggle}
                         />
                     )}
                     {issues && <IssueList issues={issues} />}
@@ -236,9 +223,13 @@ export const ExtractSheet = ({
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">
-                    {showRun && busy && mode === "extract-story" ? (
-                        <button type="button" onClick={sweep.stop} className="rounded-md border px-4 py-2 text-sm">
-                            Stop (keep what's found)
+                    {busy ? (
+                        <button
+                            type="button"
+                            onClick={mode === "extract-story" ? sweep.stop : generation.abort}
+                            className="rounded-md border px-4 py-2 text-sm"
+                        >
+                            {mode === "extract-story" ? "Stop (keep what's found)" : "Stop"}
                         </button>
                     ) : showRun ? (
                         <button
@@ -249,17 +240,31 @@ export const ExtractSheet = ({
                         >
                             {busy ? "Working…" : generation.error ? "Try again" : "Run"}
                         </button>
-                    ) : proposals !== null ? (
-                        <button
-                            type="button"
-                            onClick={() => void approveEntries()}
-                            disabled={ticked.size === 0 || approving}
-                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
-                        >
-                            Add {ticked.size} to bible
-                        </button>
-                    ) : null}
-                    <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
+                    ) : (
+                        <>
+                            {proposals !== null && (
+                                <button
+                                    type="button"
+                                    onClick={() => void approveEntries()}
+                                    disabled={ticked.size === 0 || approving}
+                                    className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                                >
+                                    Add {ticked.size} to bible
+                                </button>
+                            )}
+                            {(mode !== "extract-paste" || pasted.trim()) && (
+                                <button
+                                    type="button"
+                                    onClick={() => void run()}
+                                    className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm"
+                                    title="Run again — anything new is added; nothing found so far is lost"
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5" /> Look again
+                                </button>
+                            )}
+                        </>
+                    )}
+                    <button type="button" onClick={close} className="rounded-md border px-4 py-2 text-sm">
                         Close
                     </button>
                 </footer>

@@ -75,6 +75,8 @@ export interface AIChat extends BaseEntity {
     storyId: string;
     title: string;
     messages: ChatMessage[];
+    /** Server-managed: moves on every messages write — concurrency between devices. */
+    revision?: number;
     updatedAt?: Date;
     lastUsedPromptId?: string;
     lastUsedModelId?: string;
@@ -87,6 +89,14 @@ export interface ChatMessage {
     timestamp: Date;
     /** Every regenerated version of an assistant reply; `content` is the one shown and sent as history. */
     versions?: string[];
+    /** Versions (indexes into `versions`, or 0 when there are none) cut short by a failure — kept, and labelled. */
+    interruptedVersions?: number[];
+    /** Which version `content` is — content alone can't say when two versions match. */
+    shownVersion?: number;
+    /** The change that added each version (null for older ones) — a retried save is recognised, not doubled. */
+    versionIds?: (string | null)[];
+    /** The change that last set the shown version — a stale choice never overrides a newer one. */
+    shownBy?: string;
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

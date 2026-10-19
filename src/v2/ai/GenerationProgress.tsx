@@ -12,19 +12,33 @@ const elapsed = (ms: number) => {
     return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
 };
 
+const STALL_NOTICE_MS = 10_000;
+
 /**
  * The one waiting indicator every AI surface uses: says which phase the
  * request is in and how long it's been, so the writer is never left
- * guessing whether anything is happening. Hidden once text is flowing.
+ * guessing whether anything is happening. Hidden while text is flowing —
+ * and back, as a stall notice, when it stops flowing mid-stream.
  */
 export const GenerationProgress = ({
     status,
-    className = ""
+    className = "",
+    stopNote = "Stop keeps what has arrived."
 }: {
     status: GenerationStatus | null;
     className?: string;
+    /** What Stop does here, said in the stall notice — surfaces differ in what they can keep. */
+    stopNote?: string;
 }) => {
-    if (!status || status.phase === "streaming") return null;
+    if (!status) return null;
+    if (status.phase === "streaming") {
+        if ((status.idleMs ?? 0) < STALL_NOTICE_MS) return null;
+        return (
+            <span role="status" aria-live="polite" className={`block text-xs text-muted-foreground ${className}`}>
+                No new text for {elapsed(status.idleMs ?? 0)} — the model may have stalled. {stopNote}
+            </span>
+        );
+    }
     const slow = status.elapsedMs >= 20_000;
     return (
         <span

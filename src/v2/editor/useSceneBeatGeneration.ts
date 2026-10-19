@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
+import { describeRequestFailure, describeStreamFailure } from "../ai/requestFailure";
 import { useChapterIdentity } from "./ChapterContext";
 import {
     $commitStreamingAsTake,
@@ -75,7 +76,13 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
 
     const generate = useCallback(
         async (command: string, guidance?: string) => {
-            cancelRef.current?.();
+            // A superseded run's partial becomes a take before the new run
+            // clears the stream — no generation is ever lost
+            if (cancelRef.current) {
+                cancelRef.current();
+                cancelRef.current = null;
+                mutate(node => $commitStreamingAsTake(node, true), HISTORY_MERGE_TAG);
+            }
             const requestId = randomUUID();
             const controller = new AbortController();
             const cancel = () => {
@@ -111,10 +118,11 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
 
             // Completion commits the streamed text (if any) as a NEW take;
             // failure with nothing streamed restores the pre-generation view
-            const finish = (errorMessage?: string) => {
+            const finish = (errorMessage?: string, stopped = false) => {
                 if (!owns()) return;
                 cancelRef.current = null;
-                mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+                // A take cut short (failure or Stop) is kept, and marked so it can't pass for a finished one
+                mutate(node => $commitStreamingAsTake(node, Boolean(errorMessage) || stopped), HISTORY_MERGE_TAG);
                 if (errorMessage) toast.error(errorMessage);
             };
 
@@ -138,11 +146,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 })
             );
             if (fetchError || !response) {
-                finish(
-                    (fetchError as Error)?.name === "AbortError"
-                        ? undefined
-                        : ((fetchError as Error)?.message ?? "Request failed")
-                );
+                finish((fetchError as Error)?.name === "AbortError" ? undefined : describeRequestFailure(fetchError));
                 return;
             }
             if (!response.ok || !response.body) {
@@ -163,6 +167,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                     );
                 },
                 onComplete: () => finish(),
+                onAborted: () => finish(undefined, true),
                 onError: error => finish(error.message)
             });
 
@@ -180,7 +185,8 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 }
             });
             if (readError)
-                finish((readError as Error).name === "AbortError" ? undefined : (readError as Error).message);
+                if ((readError as Error).name === "AbortError") finish(undefined, true);
+                else finish(describeStreamFailure(readError));
         },
         [mutate, editor, nodeKey, storyId, chapterId, textBeforeNode]
     );

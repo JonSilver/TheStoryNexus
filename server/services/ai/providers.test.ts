@@ -43,6 +43,19 @@ describe("buildOpenAICompatiblePayload", () => {
         expect(classic).not.toHaveProperty("max_completion_tokens");
     });
 
+    it("OpenAI reasoning models (gpt-5, o-series incl. o4) get max_completion_tokens and no samplers", () => {
+        for (const modelId of ["gpt-5.2", "o1", "o3-mini", "o4-mini"]) {
+            const payload = buildOpenAICompatiblePayload({
+                ...base,
+                provider: "openai",
+                modelId,
+                temperature: 0.2,
+                topP: 0.9
+            });
+            expect(payload).toEqual({ model: modelId, messages: expect.any(Array), max_completion_tokens: 512 });
+        }
+    });
+
     it("a zero-valued sampler is still sent (falsy ≠ unset)", () => {
         const payload = buildOpenAICompatiblePayload({ ...base, topP: 0, frequencyPenalty: 0 });
         expect(payload.top_p).toBe(0);
