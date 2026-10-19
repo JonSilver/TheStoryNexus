@@ -1,29 +1,10 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { toast } from "react-toastify";
-import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
-import { useCreateChapter } from "@/features/chapters/hooks/useChaptersQuery";
-import { brainstormApi } from "@/services/api/client";
+import { useEffect, useRef, useState } from "react";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
-import { usePrompt } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import {
-    type ChatOp,
-    addPending,
-    applyOps,
-    claimPending,
-    clearPending,
-    discardUnsaved as dropUnsaved,
-    op,
-    readPending,
-    readUnsaved,
-    pendingVersion,
-    removePending,
-    storageRefused,
-    subscribePending
-} from "./chatOps";
+import { op } from "./chatOps";
+import { useChatSync } from "./useChatSync";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
@@ -41,28 +22,11 @@ const replyFrom = (result: RunResult) =>
         ? { text: result.text, interrupted: result.outcome !== "complete" }
         : null;
 
-type WriteResult = { outcome: "ok" | "conflict"; chat: AIChat | null } | { outcome: "failed" } | { outcome: "gone" };
-
-const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<WriteResult> => {
-    const result = await brainstormApi.writeMessages(chat, messages);
-    if (result.ok) return { outcome: "ok", chat: result.data };
-    if (result.status === 404) return { outcome: "gone" };
-    if (result.status === 409)
-        return { outcome: "conflict", chat: (result.body as { current?: AIChat } | null)?.current ?? null };
-    return { outcome: "failed" };
-};
-
-// A conflict means another device wrote first: re-apply onto theirs and try again, a few times
-const MAX_ATTEMPTS = 3;
-
 /**
  * One brainstorm conversation on the action pipeline: chat history and the
- * new message go up as chat_history/user_message. Every change is a ChatOp
- * applied to the server's current conversation, written one at a time and
- * guarded by the chat's revision — two devices never erase each other's
- * turns. Nothing the model writes is lost: a reply cut short is kept and
- * labelled, regenerating keeps earlier versions, and changes that can't be
- * saved wait on this device (Save again) instead of vanishing.
+ * new message go up as chat_history/user_message; every change is saved as a
+ * ChatOp (useChatSync). Nothing the model writes is lost: a reply cut short
+ * is kept and labelled, and regenerating keeps earlier versions.
  */
 export const useChatConversation = (
     chat: AIChat | null,
@@ -70,7 +34,6 @@ export const useChatConversation = (
     lastChapterFor: (storyId: string) => string | null | undefined,
     generation: ReturnType<typeof useActionGeneration>
 ) => {
-    const queryClient = useQueryClient();
     // A reply can finish after the screen has gone (it's still saved); only
     // the screen's own state must not be touched then
     const alive = useRef(true);
@@ -80,63 +43,7 @@ export const useChatConversation = (
             alive.current = false;
         };
     }, []);
-    // The newest server copy seen, per chat — a write must build on it, not on a render's snapshot
-    const newest = useRef(new Map<string, AIChat>());
-    const know = (seen: AIChat) => {
-        const known = newest.current.get(seen.id);
-        if (!known || (known.revision ?? 0) <= (seen.revision ?? 0)) newest.current.set(seen.id, seen);
-    };
-    if (chat) know(chat);
-    const queue = useRef<Promise<unknown>>(Promise.resolve());
-    // Re-renders when this device's pending changes change — here, or in another tab
-    useSyncExternalStore(subscribePending, pendingVersion);
-    const pendingOps = chat ? readPending(chat.id) : [];
-    const messages = chat ? applyOps(chat.messages, pendingOps) : [];
-    // Shown at once, but only "unsaved" once nobody is saving it
-    const unsaved = chat && readUnsaved(chat.id).length ? { chatId: chat.id, deviceOnly: storageRefused() } : null;
-
-    /**
-     * Saves this device's pending changes plus `ops`, one write at a time.
-     * The new changes are stored on the device before the save starts and
-     * stay pending (Save again) until a save is confirmed — a failure can't
-     * tell "not saved" from "saved but the answer was lost", so dropping or
-     * re-sending would risk loss or duplicates.
-     */
-    const commit = (chatId: string, ops: ChatOp[]): Promise<boolean> => {
-        addPending(chatId, ops);
-        claimPending(chatId, ops, true);
-        const run = queue.current.then(async () => {
-            const all = readPending(chatId);
-            claimPending(chatId, all, true);
-            const attempt = async (server: AIChat | undefined, left: number): Promise<boolean> => {
-                if (!server) return false;
-                const result = await putMessages(server, applyOps(server.messages, all));
-                if (result.outcome === "gone") {
-                    // Deleted (here, elsewhere, or by a restore): there is nothing left to save these into
-                    clearPending(chatId);
-                    toast.info("That chat was deleted, so its unsaved changes were dropped.");
-                    return false;
-                }
-                if (result.outcome === "failed") return false;
-                if (result.chat) {
-                    know(result.chat);
-                    applyChatToCaches(queryClient, result.chat);
-                }
-                if (result.outcome === "ok") return true;
-                return left > 1 ? attempt(newest.current.get(chatId), left - 1) : false;
-            };
-            const saved = await attempt(newest.current.get(chatId), MAX_ATTEMPTS);
-            if (saved)
-                removePending(
-                    chatId,
-                    all.map(change => change.id)
-                );
-            else claimPending(chatId, all, false);
-            return saved;
-        });
-        queue.current = run.catch(() => undefined);
-        return run;
-    };
+    const { messages, unsaved, commit, saveAgain, discardUnsaved } = useChatSync(chat);
 
     // The chat a reply is being written for — switching chats mid-reply must not show it in, or let Stop cut it from, another
     const [generatingFor, setGeneratingFor] = useState<string | null>(null);
@@ -223,17 +130,7 @@ export const useChatConversation = (
         ]);
     };
 
-    /** Writes what this device still holds unsaved. */
-    const saveAgain = () => (chat ? commit(chat.id, []) : Promise.resolve(false));
-
-    /** The writer chooses the saved conversation over this device's unsaved changes. */
-    const discardUnsaved = () => {
-        if (!chat) return;
-        dropUnsaved(chat.id);
-    };
-
     return {
-        isMounted: () => alive.current,
         messages,
         unsaved,
         generatingFor,
@@ -243,24 +140,5 @@ export const useChatConversation = (
         regenerate,
         retryLast,
         showVersion
-    };
-};
-
-/** Brainstormed material flows onward: a new chapter carries the reply as its outline, ready to write against. */
-export const useChapterFromReply = (storyId: string | null) => {
-    const createChapter = useCreateChapter();
-    const prompt = usePrompt();
-    return async (content: string) => {
-        const title = await prompt({
-            title: "New chapter from this reply",
-            label: "Chapter title",
-            initial: content.split("\n")[0].slice(0, 60),
-            confirmLabel: "Create"
-        });
-        if (!title || !storyId) return;
-        createChapter.mutate(
-            { storyId, title, outline: content },
-            { onSuccess: () => toast.success(`Chapter “${title}” created with this as its outline`) }
-        );
     };
 };
