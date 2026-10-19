@@ -102,7 +102,7 @@ Overrides table `actionOverrides { id, actionId, storyId | null, template?, temp
 ```
 POST /api/generate/action
 { requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory? }, modelRef? }
-→ SSE: event: status {phase, elapsedMs} | token {text} | finish | error {message} | aborted
+→ SSE: event: status {phase, elapsedMs, idleMs?} | token {text} | finish | error {message} | aborted
 POST /api/generate/preview  — same body minus requestId; returns resolved messages + model + prompt token count (the inspector)
 POST /api/generate/abort { requestId }
 POST /api/generate          — raw-messages mode, v1-frontend compatibility only; deleted at cutover
@@ -115,7 +115,7 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 - One `AbortController` per `requestId`; client socket close aborts upstream; concurrent generations are independent.
 - SSE parsing (client) must buffer across chunk boundaries — v1's split-on-newline-per-chunk parser is banned.
 - Errors after tokens have streamed terminate with `error`; no automatic retry — including inside the provider SDK (`maxRetries: 0`), so a provider failure surfaces on the first attempt instead of after hidden backoff.
-- **Phases and timeouts** (`server/services/ai/generationRun.ts`, provider-agnostic): `waiting` (provider hasn't accepted the request — queued, loading a model, or stuck; 180s), `thinking` (accepted, no text yet; 120s), `streaming` (60s stall limit). A `status` heartbeat every 2s while waiting/thinking drives the client's shared `GenerationProgress` indicator. Each timeout and each provider error (404 unknown model, 401/403 key, 429, 5xx, unreachable) produces a specific message naming the model and server, and for a missing model, where it was chosen (action override vs default).
+- **Phases and timeouts** (`server/services/ai/generationRun.ts`, provider-agnostic): `waiting` (provider hasn't accepted the request — queued, loading a model, or stuck; 180s), `thinking` (accepted, no text yet; 120s), `streaming` (60s stall limit). A `status` heartbeat every 2s drives the client's shared `GenerationProgress` indicator; while streaming it carries `idleMs` (time since text last arrived), shown as a stall notice after 10s. Whitespace-only chunks are not progress: they neither leave `thinking` nor reset the stall timer. A failed run still delivers the text that arrived first; every surface keeps it (labelled incomplete) rather than discarding it. OpenAI reasoning models (gpt-5, o-series) get `max_completion_tokens` and no samplers. Each timeout and each provider error (404 unknown model, 401/403 key, 429, 5xx, unreachable) produces a specific message naming the model and server, and for a missing model, where it was chosen (action override vs default).
 - Background generation (auto-summarise) never fails silently: failures raise one persistent, de-duplicated warning.
 
 ## 7. Lorebook matching

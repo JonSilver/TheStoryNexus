@@ -2,6 +2,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
+import { describeRequestFailure, describeStreamFailure } from "./requestFailure";
 
 export type ActionId =
     | "continue"
@@ -36,6 +37,16 @@ export interface ActionRun {
 }
 
 export type GenerationPhase = "idle" | "streaming" | "done" | "error";
+
+/**
+ * What a run produced. A failed or stopped run still carries any text that
+ * arrived before it ended; "superseded" means a newer run took over.
+ */
+export interface RunResult {
+    text: string;
+    outcome: "complete" | "stopped" | "failed" | "superseded";
+    error?: string;
+}
 
 /**
  * Per-invocation action generation against POST /api/generate/action.
@@ -95,7 +106,7 @@ export const useActionGeneration = () => {
     }, []);
 
     const run = useCallback(
-        async (request: ActionRun): Promise<string> => {
+        async (request: ActionRun): Promise<RunResult> => {
             abort();
             const requestId = randomUUID();
             const controller = new AbortController();
@@ -106,10 +117,16 @@ export const useActionGeneration = () => {
             setStatus({ phase: "waiting", elapsedMs: 0 });
 
             const chunks: string[] = [];
-            const finished = { ok: false };
+            const outcome: { complete: boolean; streamError: string | null } = { complete: false, streamError: null };
             // Only the request that still owns `active` may touch state —
             // a superseded run's late callbacks must not clobber its successor
             const owns = () => active.current?.requestId === requestId;
+            const superseded: RunResult = { text: "", outcome: "superseded" };
+            const failed = (message: string): RunResult => {
+                setPhase("error");
+                setError(message);
+                return { text: chunks.join(""), outcome: "failed", error: message };
+            };
 
             const [fetchError, response] = await attemptPromise(() =>
                 fetch("/api/generate/action", {
@@ -121,24 +138,19 @@ export const useActionGeneration = () => {
             );
 
             if (fetchError || !response) {
-                if (!owns()) return "";
+                if (!owns()) return superseded;
                 active.current = null;
                 // AbortError = instant Stop before headers: end cleanly with
                 // no stranded streaming state; anything else is a real error
-                if ((fetchError as Error)?.name === "AbortError") setPhase("done");
-                else {
-                    setPhase("error");
-                    setError((fetchError as Error)?.message ?? "Request failed");
-                }
-                return "";
+                if ((fetchError as Error)?.name !== "AbortError") return failed(describeRequestFailure(fetchError));
+                setPhase("done");
+                return { text: "", outcome: "stopped" };
             }
             if (!response.ok) {
                 const body = await response.json().catch(() => ({}));
-                if (owns()) {
-                    setPhase("error");
-                    setError(body.error || `Generation failed (${response.status})`);
-                }
-                return "";
+                if (!owns()) return superseded;
+                active.current = null;
+                return failed(body.error || `Generation failed (${response.status})`);
             }
 
             const parser = createSSEParser({
@@ -151,22 +163,18 @@ export const useActionGeneration = () => {
                     setText(chunks.join(""));
                 },
                 onComplete: () => {
-                    finished.ok = true;
+                    outcome.complete = true;
                 },
                 onError: streamError => {
-                    if (!owns()) return;
-                    setPhase("error");
-                    setError(streamError.message);
+                    outcome.streamError = streamError.message;
                 }
             });
 
             const reader = response.body?.getReader();
             if (!reader) {
-                if (owns()) {
-                    setPhase("error");
-                    setError("No response stream");
-                }
-                return "";
+                if (!owns()) return superseded;
+                active.current = null;
+                return failed("No response stream");
             }
             const decoder = new TextDecoder();
             const [readError] = await attemptPromise(async () => {
@@ -181,22 +189,19 @@ export const useActionGeneration = () => {
                 }
             });
 
-            if (!owns()) return "";
+            if (!owns()) return superseded;
             active.current = null;
-            if (readError)
-                if ((readError as Error).name === "AbortError") {
-                    // Stopped mid-stream: keep the partial text and let the
-                    // user accept or discard it — callers that persist the
-                    // reply (brainstorm) get the partial too, not ""
-                    setPhase("done");
-                    return chunks.join("");
-                } else {
-                    setPhase("error");
-                    setError((readError as Error).message);
-                    return "";
-                }
-            if (finished.ok) setPhase("done");
-            return finished.ok ? chunks.join("") : "";
+            // Stopped mid-stream: what arrived is the writer's to accept or discard
+            if ((readError as Error)?.name === "AbortError") {
+                setPhase("done");
+                return { text: chunks.join(""), outcome: "stopped" };
+            }
+            // A failure keeps whatever text arrived first — callers decide how to offer it
+            if (readError) return failed(describeStreamFailure(readError));
+            if (outcome.streamError) return failed(outcome.streamError);
+            if (!outcome.complete) return failed("The response ended unexpectedly.");
+            setPhase("done");
+            return { text: chunks.join(""), outcome: "complete" };
         },
         [abort]
     );

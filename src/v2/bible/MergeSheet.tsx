@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useDeleteLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
+import { AttemptNav } from "../ai/AttemptNav";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { MergePicker } from "./MergePicker";
@@ -41,7 +42,12 @@ export const MergeSheet = ({
         if (!keepId) return setKeepId(entry.id);
         setDuplicateId(entry.id);
     };
-    const [merged, setMerged] = useState<EntryProposal | null>(null);
+    // Every merge result is kept, with the writer's edits to it — Try again
+    // adds another to compare, never replaces one
+    const [results, setResults] = useState<{ list: EntryProposal[]; shown: number }>({ list: [], shown: 0 });
+    const merged = results.list[results.shown] ?? null;
+    const setMerged = (next: EntryProposal) =>
+        setResults(prev => ({ ...prev, list: prev.list.map((r, i) => (i === prev.shown ? next : r)) }));
     // The pair the AI actually merged — fixed at run time, so changing the
     // picks mid-generation can never apply A+B's result to C and delete D
     const [mergedPair, setMergedPair] = useState<{ keepId: string; duplicateId: string } | null>(null);
@@ -55,20 +61,26 @@ export const MergeSheet = ({
         const pair = { keepId: keep.id, duplicateId: duplicate.id };
         const describe = (e: LorebookEntry) =>
             JSON.stringify({ name: e.name, category: e.category, description: e.description, tags: e.tags ?? [] });
-        const text = await generation.run({
+        const result = await generation.run({
             actionId: "merge_entries",
             storyId,
             editorContext: {
                 userMessage: `Entry A (keep):\n${describe(keep)}\n\nEntry B (duplicate):\n${describe(duplicate)}`
             }
         });
-        const [proposal] = parseEntryProposals(text);
+        // Failed or stopped: the error (if any) is on screen, earlier results stay
+        if (result.outcome !== "complete") return;
+        const [proposal] = parseEntryProposals(result.text);
         if (!proposal) {
             toast.error("The merge reply couldn't be read — try again");
             return;
         }
+        // A different pair starts a fresh comparison; the same pair adds an attempt
+        const samePair = mergedPair?.keepId === pair.keepId && mergedPair?.duplicateId === pair.duplicateId;
         setMergedPair(pair);
-        setMerged(proposal);
+        setResults(prev =>
+            samePair ? { list: [...prev.list, proposal], shown: prev.list.length } : { list: [proposal], shown: 0 }
+        );
     };
 
     const save = async () => {
@@ -159,6 +171,16 @@ export const MergeSheet = ({
                                     {generation.error} The previous merge result is still below.
                                 </p>
                             )}
+                            {results.list.length > 1 && (
+                                <AttemptNav
+                                    label="Merge"
+                                    index={results.shown}
+                                    count={results.list.length}
+                                    onSelect={shown => setResults(prev => ({ ...prev, shown }))}
+                                    disabled={busy}
+                                    className="flex items-center justify-center gap-3 text-sm"
+                                />
+                            )}
                             <input
                                 className="w-full rounded-md border bg-background px-3 py-2"
                                 aria-label="Merged name"
@@ -193,7 +215,15 @@ export const MergeSheet = ({
                     )}
                 </div>
                 <footer className="flex gap-2 border-t p-3">
-                    {!merged ? (
+                    {busy ? (
+                        <button
+                            type="button"
+                            onClick={generation.abort}
+                            className="rounded-md border px-4 py-2 text-sm"
+                        >
+                            Stop
+                        </button>
+                    ) : !merged ? (
                         <button
                             type="button"
                             onClick={() => void run()}
@@ -212,14 +242,14 @@ export const MergeSheet = ({
                             Save merged entry
                         </button>
                     )}
-                    {merged && (
+                    {merged && !busy && (
                         <button
                             type="button"
                             onClick={() => void run()}
-                            disabled={busy || saving}
+                            disabled={saving}
                             className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
                         >
-                            {busy ? "Merging…" : "Try again"}
+                            Try again
                         </button>
                     )}
                     <button type="button" onClick={onClose} className="ml-auto rounded-md border px-4 py-2 text-sm">

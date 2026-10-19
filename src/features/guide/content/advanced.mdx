@@ -44,11 +44,12 @@ Every message names the model and server involved and says what to do:
 | _…the API key was rejected_                         | Check the key under AI providers & models.                                                                                                     |
 | _…rate-limiting or too busy_                        | Wait a moment and **Try again**.                                                                                                               |
 | _…couldn't reach the model server_                  | The server is down, or its address in Settings is wrong.                                                                                       |
-| _…didn't start responding within 3 minutes_         | The server accepted the connection but never started — overloaded, still loading the model, or stuck.                                          |
+| _…didn't start responding within 3 minutes_         | The request reached the server but it never began to answer — overloaded, still loading the model, or stuck.                                   |
 | _…produced no text_ / _…without producing any text_ | Often a "thinking" model spending its whole budget on hidden reasoning — raise **Max tokens** for that action, or use a non-thinking model.    |
-| _…stopped sending text partway through_             | The stream stalled; what arrived is kept.                                                                                                      |
+| _…stopped sending text partway through_             | The stream stalled; what arrived is kept, marked incomplete.                                                                                   |
+| _Couldn't reach The Story Nexus server_             | The app's own server didn't answer — it may have stopped, or this device lost its connection.                                                  |
 
-Every failure offers **Try again** in place. The writing features — Continue, the selection actions, scene beats and Brainstorm — also keep your earlier results, so a failed or worse retry never costs a good one.
+Every failure offers **Try again** in place, and text that arrived before a failure is kept, marked incomplete. Continue, the selection actions, scene beats, Brainstorm and Merge keep your earlier results too, so a failed or worse retry never costs a good one. While text is arriving, a pause of more than ten seconds is shown, and **Stop** is always there.
 
 ## Exports, backups and restoring
 

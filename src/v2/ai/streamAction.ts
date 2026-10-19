@@ -1,6 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
+import { describeRequestFailure, describeStreamFailure } from "./requestFailure";
 import type { ActionEditorContext, ActionId } from "./useActionGeneration";
 
 export interface StreamActionRequest {
@@ -43,11 +44,7 @@ export const streamAction = (request: StreamActionRequest, handlers: StreamActio
             })
         );
         if (fetchError || !response) {
-            done(
-                (fetchError as Error)?.name === "AbortError"
-                    ? undefined
-                    : ((fetchError as Error)?.message ?? "Request failed")
-            );
+            done((fetchError as Error)?.name === "AbortError" ? undefined : describeRequestFailure(fetchError));
             return;
         }
         if (!response.ok || !response.body) {
@@ -75,7 +72,7 @@ export const streamAction = (request: StreamActionRequest, handlers: StreamActio
                 parser.push(decoder.decode(value, { stream: true }));
             }
         });
-        if (readError) done((readError as Error).name === "AbortError" ? undefined : (readError as Error).message);
+        if (readError) done((readError as Error).name === "AbortError" ? undefined : describeStreamFailure(readError));
     })();
 
     return {

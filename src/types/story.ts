@@ -87,6 +87,8 @@ export interface ChatMessage {
     timestamp: Date;
     /** Every regenerated version of an assistant reply; `content` is the one shown and sent as history. */
     versions?: string[];
+    /** Versions (indexes into `versions`, or 0 when there are none) cut short by a failure — kept, and labelled. */
+    interruptedVersions?: number[];
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

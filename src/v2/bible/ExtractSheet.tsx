@@ -1,5 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -10,14 +10,13 @@ import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
 import {
-    type ContinuityIssue,
-    type EntryProposal,
     type UpdateProposal,
     parseContinuityIssues,
     parseEntryProposals,
     parseUpdateProposals
 } from "./parseProposals";
-import { useStorySweep } from "./useStorySweep";
+import { useFlowResults } from "./useFlowResults";
+import { describeSweepFailures, useStorySweep } from "./useStorySweep";
 
 export type BibleFlowMode = "extract-chapter" | "extract-story" | "extract-paste" | "updates" | "continuity";
 
@@ -51,37 +50,26 @@ export const ExtractSheet = ({
     const createEntry = useCreateLorebookMutation();
     const updateEntry = useUpdateLorebookMutation();
     const [pasted, setPasted] = useState(initialText ?? "");
-    const [proposals, setProposals] = useState<EntryProposal[] | null>(null);
-    const [updates, setUpdates] = useState<UpdateProposal[] | null>(null);
-    const [issues, setIssues] = useState<ContinuityIssue[] | null>(null);
-    const [ticked, setTicked] = useState<Set<number>>(new Set());
+    const results = useFlowResults(entries);
+    const { proposals, updates, issues, ticked } = results;
     const [approving, setApproving] = useState(false);
+    const [sweepFailure, setSweepFailure] = useState<string | null>(null);
     const sweep = useStorySweep(storyId, chapters, generation);
-
-    const applyProposals = (parsed: EntryProposal[]) => {
-        const existingNames = new Set(entries.map(e => e.name.toLowerCase()));
-        setProposals(parsed);
-        setTicked(
-            new Set(
-                parsed
-                    .map((proposal, i) => (existingNames.has(proposal.name.toLowerCase()) ? -1 : i))
-                    .filter(i => i >= 0)
-            )
-        );
-    };
 
     const run = async () => {
         if (mode === "extract-story") {
-            const gathered = await sweep.run();
-            applyProposals(gathered);
-            if (!gathered.length && !sweep.wasStopped()) toast.info("Nothing extractable found in any chapter");
+            const swept = await sweep.run();
+            const added = results.addProposals(swept.gathered);
+            setSweepFailure(describeSweepFailures(swept, chapters.length));
+            if (!added && swept.failures.length === 0 && !sweep.wasStopped())
+                toast.info(proposals?.length ? "Nothing new found" : "Nothing extractable found in any chapter");
             return;
         }
         const actionId =
             mode === "updates" ? "propose_updates" : mode === "continuity" ? "check_continuity" : "extract_entries";
         // Chapter modes read from the server — land any pending editor save first
         if (mode !== "extract-paste" && chapterId) await flushChapterSave(chapterId);
-        const text = await generation.run({
+        const result = await generation.run({
             actionId,
             storyId,
             ...(mode !== "extract-paste" && chapterId ? { chapterId } : {}),
@@ -92,34 +80,31 @@ export const ExtractSheet = ({
                     : {})
             }
         });
-        if (!text) return;
+        // Failed or stopped: the error (if any) is on screen; structured replies
+        // cut short can't be parsed, so there's nothing partial to offer
+        if (result.outcome !== "complete") return;
+        const text = result.text;
+        const again = results.hasResults;
         if (mode === "continuity") {
-            const parsed = parseContinuityIssues(text);
-            setIssues(parsed);
-            if (!parsed.length) toast.success("No continuity issues found");
+            if (!results.addIssues(parseContinuityIssues(text)))
+                toast.success(again ? "Nothing new found" : "No continuity issues found");
             return;
         }
         if (mode === "updates") {
-            const parsed = parseUpdateProposals(text);
-            setUpdates(parsed);
-            if (!parsed.length) toast.info("No entry updates suggested");
-        } else {
-            // Dedupe within the batch; entries already in the bible start unticked
-            const seen = new Set<string>();
-            const parsed = parseEntryProposals(text).filter(proposal => {
-                const key = proposal.name.toLowerCase();
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-            applyProposals(parsed);
-            if (!parsed.length)
-                toast.info(
-                    text.trim().length > 40
-                        ? "The reply couldn't be read as entries — the model may have run out of tokens. Try again or raise max tokens for this action."
-                        : "Nothing extractable found"
-                );
+            if (!results.addUpdates(parseUpdateProposals(text)))
+                toast.info(again ? "Nothing new suggested" : "No entry updates suggested");
+            return;
         }
+        const parsed = parseEntryProposals(text);
+        const added = results.addProposals(parsed);
+        if (!added)
+            toast.info(
+                !parsed.length && text.trim().length > 40
+                    ? "The reply couldn't be read as entries — the model may have run out of tokens. Try again or raise max tokens for this action."
+                    : again
+                      ? "Nothing new found"
+                      : "Nothing extractable found"
+            );
     };
 
     const approveEntries = async () => {
@@ -162,7 +147,7 @@ export const ExtractSheet = ({
             toast.error(`Couldn't update “${proposal.name}”`);
             return;
         }
-        setUpdates(current => (current ?? []).filter(u => u !== proposal));
+        results.removeUpdate(proposal);
     };
 
     // Handed-in work auto-runs: the nudge chip's names, or pre-filled text
@@ -177,7 +162,7 @@ export const ExtractSheet = ({
             ? (chapters.find(c => c.id === chapterId)?.title ?? null)
             : null;
     const needsPaste = mode === "extract-paste" && proposals === null;
-    const showRun = proposals === null && updates === null && issues === null;
+    const showRun = !results.hasResults;
 
     return (
         <div
@@ -214,21 +199,18 @@ export const ExtractSheet = ({
                         </p>
                     )}
                     {busy && <GenerationProgress status={generation.status} />}
-                    {generation.error && <p className="text-destructive">{generation.error}</p>}
+                    {(sweepFailure ?? (!busy && generation.error)) && (
+                        <p className="text-destructive" role="alert">
+                            {sweepFailure ?? generation.error}
+                        </p>
+                    )}
 
                     {proposals && (
                         <ProposalList
                             proposals={proposals}
                             entries={entries}
                             ticked={ticked}
-                            onToggle={index =>
-                                setTicked(current => {
-                                    const next = new Set(current);
-                                    if (next.has(index)) next.delete(index);
-                                    else next.add(index);
-                                    return next;
-                                })
-                            }
+                            onToggle={results.toggle}
                         />
                     )}
                     {issues && <IssueList issues={issues} />}
@@ -236,9 +218,13 @@ export const ExtractSheet = ({
                 </div>
 
                 <footer className="flex gap-2 border-t p-3">
-                    {showRun && busy && mode === "extract-story" ? (
-                        <button type="button" onClick={sweep.stop} className="rounded-md border px-4 py-2 text-sm">
-                            Stop (keep what's found)
+                    {busy ? (
+                        <button
+                            type="button"
+                            onClick={mode === "extract-story" ? sweep.stop : generation.abort}
+                            className="rounded-md border px-4 py-2 text-sm"
+                        >
+                            {mode === "extract-story" ? "Stop (keep what's found)" : "Stop"}
                         </button>
                     ) : showRun ? (
                         <button
@@ -249,16 +235,30 @@ export const ExtractSheet = ({
                         >
                             {busy ? "Working…" : generation.error ? "Try again" : "Run"}
                         </button>
-                    ) : proposals !== null ? (
-                        <button
-                            type="button"
-                            onClick={() => void approveEntries()}
-                            disabled={ticked.size === 0 || approving}
-                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
-                        >
-                            Add {ticked.size} to bible
-                        </button>
-                    ) : null}
+                    ) : (
+                        <>
+                            {proposals !== null && (
+                                <button
+                                    type="button"
+                                    onClick={() => void approveEntries()}
+                                    disabled={ticked.size === 0 || approving}
+                                    className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                                >
+                                    Add {ticked.size} to bible
+                                </button>
+                            )}
+                            {(mode !== "extract-paste" || pasted.trim()) && (
+                                <button
+                                    type="button"
+                                    onClick={() => void run()}
+                                    className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm"
+                                    title="Run again — anything new is added; nothing found so far is lost"
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5" /> Look again
+                                </button>
+                            )}
+                        </>
+                    )}
                     <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
                         Close
                     </button>

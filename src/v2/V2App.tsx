@@ -144,6 +144,14 @@ const RootRoute = () => {
     return <Navigate replace to={pathFor("write", currentStoryId, chapterId)} />;
 };
 
+/** A story screen with no story in the URL: the remembered story's, at its real address — else the empty state. */
+const Storyless = ({ tool }: { tool: "write" | "brainstorm" | "story" }) => {
+    const { currentStoryId, lastChapterByStory } = getV2State();
+    if (!currentStoryId) return <Screen tool={tool} />;
+    const chapterId = tool === "write" ? (lastChapterByStory[currentStoryId] ?? null) : null;
+    return <Navigate replace to={pathFor(tool, currentStoryId, chapterId)} />;
+};
+
 const LegacyReader = () => <Navigate replace to={`/story/${useParams().storyId}/read`} />;
 
 export default function V2App() {
@@ -156,9 +164,9 @@ export default function V2App() {
             <main className="min-h-0 flex-1">
                 <Routes>
                     <Route path="/" element={<RootRoute />} />
-                    <Route path="/write" element={<Screen tool="write" />} />
-                    <Route path="/brainstorm" element={<Screen tool="brainstorm" />} />
-                    <Route path="/story" element={<Screen tool="story" />} />
+                    <Route path="/write" element={<Storyless tool="write" />} />
+                    <Route path="/brainstorm" element={<Storyless tool="brainstorm" />} />
+                    <Route path="/story" element={<Storyless tool="story" />} />
                     <Route path="/story/:storyId" element={<StoryScope />}>
                         <Route index element={<Screen tool="story" />} />
                         <Route path="write/:chapterId?" element={<Screen tool="write" />} />

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useRouteParams } from "./routeParams";
 import { getV2State } from "./state/useV2Store";
 
@@ -77,7 +77,6 @@ export const toolForPath = (pathname: string): V2Tool => {
  */
 export const useNav = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const route = useRouteParams();
 
     const goTo = useCallback(
@@ -92,14 +91,17 @@ export const useNav = () => {
 
     const goBack = useCallback(
         (fallback: V2Tool) => {
-            if (location.key !== "default") navigate(-1);
+            // React Router numbers this tab's in-app history entries; 0 means
+            // there is no app screen behind this one (a fresh tab, a link, a
+            // redirect replacing the landing entry) — back must not leave the app
+            if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
             else {
                 const state = getV2State();
                 const storyId = route.storyId ?? state.currentStoryId;
                 navigate(pathFor(fallback, storyId), { replace: true });
             }
         },
-        [navigate, location.key, route.storyId]
+        [navigate, route.storyId]
     );
 
     return { goTo, goBack, navigate };

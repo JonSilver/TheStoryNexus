@@ -12,7 +12,7 @@
 export type GenerationPhase = "waiting" | "thinking" | "streaming";
 
 export type GenerationEvent =
-    | { type: "status"; phase: GenerationPhase; elapsedMs: number }
+    | { type: "status"; phase: GenerationPhase; elapsedMs: number; idleMs?: number }
     | { type: "token"; text: string }
     | { type: "error"; message: string }
     | { type: "finish" }
@@ -109,12 +109,18 @@ export const runGeneration = async ({
         internal.abort();
     };
 
-    const emitStatus = () => emit({ type: "status", phase: state.phase, elapsedMs: now() - startedAt });
+    const lastText = { at: startedAt };
+    const emitStatus = () =>
+        emit({
+            type: "status",
+            phase: state.phase,
+            elapsedMs: now() - startedAt,
+            // While streaming, how long since text last arrived: a stall is visible, not just a frozen page
+            ...(state.phase === "streaming" && { idleMs: now() - lastText.at })
+        });
 
     const timers = {
-        heartbeat: setInterval(() => {
-            if (state.phase !== "streaming") emitStatus();
-        }, t.heartbeatMs),
+        heartbeat: setInterval(emitStatus, t.heartbeatMs),
         phase: null as ReturnType<typeof setTimeout> | null
     };
 
@@ -162,9 +168,13 @@ export const runGeneration = async ({
                     const next = await Promise.race([iterator.next(), abortedRace]);
                     if (next.done) break;
                     const token = next.value;
-                    if (state.phase !== "streaming") enter("streaming");
-                    if (token.trim()) produced.value = true;
                     emit({ type: "token", text: token });
+                    // Whitespace is not progress: a server trickling newlines while it
+                    // reasons must still meet the first-text and stall deadlines
+                    if (!token.trim()) continue;
+                    produced.value = true;
+                    lastText.at = now();
+                    if (state.phase !== "streaming") enter("streaming");
                     armPhaseTimer(
                         t.stallMs,
                         () =>

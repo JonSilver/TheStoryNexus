@@ -76,7 +76,7 @@ The URL is the source of truth for where the writer is (`src/v2/routing.tsx`, #8
 
 ```
 /                                   — resume: last story's Write screen (localStorage remembers only this)
-/write, /story, /brainstorm         — the same screens with no story chosen (empty states)
+/write, /story, /brainstorm         — no story in the URL: redirect to the remembered story's address, else empty states
 /story/:storyId                     — Story hub
 /story/:storyId/write/:chapterId?   — Write (URL chapter wins; missing/unknown → corrected in place)
 /story/:storyId/chapters|bible|notes|read
@@ -86,7 +86,7 @@ The URL is the source of truth for where the writer is (`src/v2/routing.tsx`, #8
 legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anything else → /
 ```
 
-- Screens navigate with `goTo(tool)` (pushes a real history entry; the story comes from the URL, else the store, read at call time) and back arrows with `goBack(fallback)` (history-back when the writer arrived from inside the app, else the fallback screen — back must never leave the app).
+- Screens navigate with `goTo(tool)` (pushes a real history entry; the story comes from the URL, else the store, read at call time) and back arrows with `goBack(fallback)` (history-back when React Router's history index says an app screen is behind this one, else the fallback screen — back must never leave the app or go dead).
 - `StoryScope` provides `RouteParamsContext` (story/chapter/chat ids) and shows a plain "story doesn't exist" screen for unknown ids. `useV2Store().currentStoryId` returns the URL's story inside a story route.
 - Full pages (AI settings, Series, Guide) render inside `EmbeddedPage`, which supplies the only back control — embedded pages must never add their own navigation.
 - Production Express serves the app for every non-API path; unknown `/api/*` paths are JSON 404s.
@@ -121,7 +121,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 ### Testing
 
 - Unit: Vitest, colocated `*.test.ts`. Server logic (registry/resolve/context/ingest/providers) and pure client modules (export, nameNudges, parseProposals, crypto).
-- E2E: `e2e/writer-journeys.spec.ts` + `e2e/helpers.ts`. Hermetic per run (temp SQLite, own ports, `mockGeneration` intercepts `/api/generate/action` with SSE fixtures). Journeys assert writer-visible outcomes. Add a journey when adding any user-facing flow.
+- E2E: `e2e/*.spec.ts` + `e2e/helpers.ts`. Hermetic per run (temp SQLite, own ports, `mockGeneration` intercepts `/api/generate/action` with SSE fixtures). `e2e/real-model-server.spec.ts` instead points the real backend at a fake OpenAI-compatible server, so server-side progress and error classification are exercised end to end. Journeys assert writer-visible outcomes. Add a journey when adding any user-facing flow.
 
 ### Code Quality & Style
 

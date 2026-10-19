@@ -1,6 +1,7 @@
 import { CornerDownRight, Loader2, RotateCcw, Square } from "lucide-react";
 import { useState } from "react";
 import type { GenerationStatus } from "@/services/ai/sseParser";
+import { AttemptNav } from "./AttemptNav";
 import { GenerationProgress } from "./GenerationProgress";
 import type { GenerationPhase } from "./useActionGeneration";
 
@@ -17,6 +18,7 @@ export const ActionSheet = ({
     status = null,
     attemptIndex = 0,
     attemptCount = 0,
+    attemptPartial = false,
     onSelectAttempt,
     onAgain,
     acceptLabel = "Accept",
@@ -34,6 +36,8 @@ export const ActionSheet = ({
     /** Earlier results are kept; the writer can flip between them. */
     attemptIndex?: number;
     attemptCount?: number;
+    /** The attempt shown was cut short by a failure. */
+    attemptPartial?: boolean;
     onSelectAttempt?: (index: number) => void;
     /** Run the same request again — after a failure or an unusable result. */
     onAgain?: () => void;
@@ -80,13 +84,24 @@ export const ActionSheet = ({
                             }}
                         />
                     ) : phase === "streaming" ? (
-                        text || <GenerationProgress status={status} />
+                        <>
+                            {text}
+                            <GenerationProgress status={status} className={text ? "mt-2" : ""} />
+                        </>
                     ) : (
                         <>
                             {error && (
                                 <p className="mb-2 text-destructive">
                                     {error}
-                                    {attemptCount > 0 && " Your earlier result is still here."}
+                                    {attemptCount > 0 &&
+                                        (attemptPartial
+                                            ? " What arrived is below."
+                                            : " Your earlier result is still here.")}
+                                </p>
+                            )}
+                            {text && attemptPartial && (
+                                <p className="mb-1 text-xs text-muted-foreground">
+                                    Incomplete — the model stopped partway through.
                                 </p>
                             )}
                             {text}
@@ -94,29 +109,7 @@ export const ActionSheet = ({
                     )}
                 </div>
                 {phase !== "streaming" && attemptCount > 1 && onSelectAttempt && (
-                    <div className="flex items-center justify-center gap-3 px-3 pb-2 text-sm">
-                        <button
-                            type="button"
-                            onClick={() => onSelectAttempt(attemptIndex - 1)}
-                            disabled={attemptIndex === 0}
-                            aria-label="Previous attempt"
-                            className="rounded-md border px-2 py-0.5 disabled:opacity-40"
-                        >
-                            ‹
-                        </button>
-                        <span className="text-muted-foreground">
-                            Attempt {attemptIndex + 1} of {attemptCount}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => onSelectAttempt(attemptIndex + 1)}
-                            disabled={attemptIndex === attemptCount - 1}
-                            aria-label="Next attempt"
-                            className="rounded-md border px-2 py-0.5 disabled:opacity-40"
-                        >
-                            ›
-                        </button>
-                    </div>
+                    <AttemptNav label="Attempt" index={attemptIndex} count={attemptCount} onSelect={onSelectAttempt} />
                 )}
                 {phase !== "streaming" && text && onRefine && (
                     <div className="flex gap-2 px-3 pb-2">

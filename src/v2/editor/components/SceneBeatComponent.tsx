@@ -160,9 +160,11 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
 
                     {isGenerating && (
                         <div className="whitespace-pre-wrap rounded-md border bg-background/60 p-2">
-                            {streaming || (
-                                <GenerationProgress status={progress ?? { phase: "waiting", elapsedMs: 0 }} />
-                            )}
+                            {streaming}
+                            <GenerationProgress
+                                status={progress ?? { phase: "waiting", elapsedMs: 0 }}
+                                className={streaming ? "mt-1" : ""}
+                            />
                         </div>
                     )}
                     {!isGenerating && (

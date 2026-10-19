@@ -9,6 +9,8 @@ export type GenerationPhase = "waiting" | "thinking" | "streaming";
 export interface GenerationStatus {
     phase: GenerationPhase;
     elapsedMs: number;
+    /** While streaming: time since text last arrived. */
+    idleMs?: number;
 }
 
 export interface SSEHandlers {
@@ -45,7 +47,12 @@ export const createSSEParser = ({ onStatus, onToken, onComplete, onError }: SSEH
 
         switch (eventMatch[1]) {
             case "status":
-                if (data?.phase) onStatus?.({ phase: data.phase, elapsedMs: Number(data.elapsedMs) || 0 });
+                if (data?.phase)
+                    onStatus?.({
+                        phase: data.phase,
+                        elapsedMs: Number(data.elapsedMs) || 0,
+                        ...(typeof data.idleMs === "number" && { idleMs: data.idleMs })
+                    });
                 return;
             case "token":
                 if (data?.text) onToken(data.text);

@@ -57,3 +57,10 @@ export const resetBackgroundBudget = async (page: Page) => {
     const response = await page.request.delete("/api/chapters/background-summary-budget");
     expect(response.status()).toBe(204);
 };
+
+/** Select the whole chapter and open Rework on it. */
+export const reworkAll = async (page: Page) => {
+    await editorLocator(page).click();
+    await page.keyboard.press("Control+A");
+    await page.getByRole("button", { name: "Rework selection" }).click();
+};
