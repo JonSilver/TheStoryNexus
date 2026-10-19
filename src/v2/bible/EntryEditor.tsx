@@ -1,21 +1,9 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
-import type { LorebookEntry } from "@/types/story";
+import { LOREBOOK_CATEGORIES, type LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import { BottomSheet } from "../components/BottomSheet";
 import { useGuardedClose } from "../components/Dialogs";
-
-const CATEGORIES = [
-    "character",
-    "location",
-    "item",
-    "event",
-    "note",
-    "synopsis",
-    "starting scenario",
-    "timeline"
-] as const;
 
 /**
  * Manual entry create/edit — extraction must never be the only door into
@@ -59,7 +47,7 @@ export const EntryEditor = ({
                 .filter(Boolean)
         };
         if (!payload.name) return;
-        const done = { onSuccess: onClose, onError: () => toast.error("Couldn't save the entry") };
+        const done = { onSuccess: onClose };
         if (entry) updateEntry.mutate({ id: entry.id, data: payload }, done);
         else
             createEntry.mutate(
@@ -109,7 +97,7 @@ export const EntryEditor = ({
                     value={category}
                     onChange={e => setCategory(e.target.value)}
                 >
-                    {CATEGORIES.map(c => (
+                    {LOREBOOK_CATEGORIES.map(c => (
                         <option key={c} value={c}>
                             {c}
                         </option>

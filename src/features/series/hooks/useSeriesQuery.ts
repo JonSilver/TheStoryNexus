@@ -1,27 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import { seriesApi } from "@/services/api/client";
+import { seriesKeys, storiesKeys } from "@/services/api/queryKeys";
 import type { Series } from "@/types/story";
 
-// Query keys factory (internal use only)
-const seriesKeys = {
-    all: ["series"] as const,
-    lists: () => [...seriesKeys.all, "list"] as const,
-    list: () => [...seriesKeys.lists()] as const,
-    details: () => [...seriesKeys.all, "detail"] as const,
-    detail: (id: string) => [...seriesKeys.details(), id] as const,
-    stories: (id: string) => [...seriesKeys.detail(id), "stories"] as const,
-    lorebook: (id: string) => [...seriesKeys.detail(id), "lorebook"] as const
-};
+export const useSeriesQuery = () => useQuery({ queryKey: seriesKeys.list, queryFn: seriesApi.getAll });
 
-// Query: List all series
-export const useSeriesQuery = () =>
-    useQuery({
-        queryKey: seriesKeys.list(),
-        queryFn: seriesApi.getAll
-    });
-
-// Query: Single series by ID
 export const useSingleSeriesQuery = (id: string | undefined) =>
     useQuery({
         queryKey: seriesKeys.detail(id ?? ""),
@@ -29,56 +12,30 @@ export const useSingleSeriesQuery = (id: string | undefined) =>
         enabled: !!id
     });
 
-// Mutation: Create series
-export const useCreateSeriesMutation = () => {
+const useSeriesWrite = <TVariables, TResult>(
+    mutationFn: (variables: TVariables) => Promise<TResult>,
+    failure: string
+) => {
     const queryClient = useQueryClient();
-
     return useMutation({
-        mutationFn: seriesApi.create,
+        mutationFn,
+        // Stories carry their series membership, so they refresh with it
         onSuccess: () => {
-            // Invalidate series list
-            queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-            toast.success("Series created successfully");
+            void queryClient.invalidateQueries({ queryKey: seriesKeys.all });
+            void queryClient.invalidateQueries({ queryKey: storiesKeys.all });
         },
-        onError: (error: Error) => {
-            toast.error(`Failed to create series: ${error.message}`);
-        }
+        meta: { failure }
     });
 };
 
-// Mutation: Update series
-export const useUpdateSeriesMutation = () => {
-    const queryClient = useQueryClient();
+export const useCreateSeriesMutation = () => useSeriesWrite(seriesApi.create, "Couldn't create the series");
 
-    return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Series, "id" | "createdAt">> }) =>
-            seriesApi.update(id, data),
-        onSuccess: (_data, variables) => {
-            // Invalidate specific series and list
-            queryClient.invalidateQueries({ queryKey: seriesKeys.detail(variables.id) });
-            queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-            toast.success("Series updated successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to update series: ${error.message}`);
-        }
-    });
-};
+export const useUpdateSeriesMutation = () =>
+    useSeriesWrite(
+        ({ id, data }: { id: string; data: Partial<Omit<Series, "id" | "createdAt">> }) => seriesApi.update(id, data),
+        "Couldn't save the series"
+    );
 
-// Mutation: Delete series
-export const useDeleteSeriesMutation = () => {
-    const queryClient = useQueryClient();
+export const useDeleteSeriesMutation = () => useSeriesWrite(seriesApi.delete, "Couldn't delete the series");
 
-    return useMutation({
-        mutationFn: seriesApi.delete,
-        onSuccess: () => {
-            // Invalidate series list and stories list (orphaned stories update)
-            queryClient.invalidateQueries({ queryKey: seriesKeys.lists() });
-            queryClient.invalidateQueries({ queryKey: ["stories"] });
-            toast.success("Series deleted successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to delete series: ${error.message}`);
-        }
-    });
-};
+export const useImportSeriesMutation = () => useSeriesWrite(seriesApi.importSeries, "Couldn't import that series");

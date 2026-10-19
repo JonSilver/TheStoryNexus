@@ -31,11 +31,9 @@ export const SeriesForm = ({ series, onSuccess }: SeriesFormProps) => {
         }
     });
 
-    const onSubmit = async (data: SeriesFormData) => {
-        if (series) await updateMutation.mutateAsync({ id: series.id, data });
-        else await createMutation.mutateAsync(data);
-
-        onSuccess?.();
+    const onSubmit = (data: SeriesFormData) => {
+        if (series) updateMutation.mutate({ id: series.id, data }, { onSuccess });
+        else createMutation.mutate(data, { onSuccess });
     };
 
     return (

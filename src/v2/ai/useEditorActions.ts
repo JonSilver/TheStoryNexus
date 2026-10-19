@@ -11,8 +11,9 @@ import {
 } from "lexical";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { chaptersKeys, useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
+import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi } from "@/services/api/client";
+import { chaptersKeys } from "@/services/api/queryKeys";
 import type { Chapter } from "@/types/story";
 import { $appendParagraphs } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";

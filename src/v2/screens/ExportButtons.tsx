@@ -1,7 +1,9 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { Download } from "lucide-react";
 import { toast } from "react-toastify";
+import { inRunningOrder } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi, storiesApi } from "@/services/api/client";
+import { downloadText } from "@/utils/download";
 import { useConfirm } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import {
@@ -58,7 +60,7 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
             const openChapter = lastChapterFor(storyId);
             if (openChapter) await flushChapterSave(openChapter);
             const [story, chapters] = await Promise.all([storiesApi.getById(storyId), chaptersApi.getByStory(storyId)]);
-            const ordered = [...chapters].sort((a, b) => a.order - b.order);
+            const ordered = inRunningOrder(chapters);
             if (!(await confirmUndecided(ordered))) return null;
             return { story, body: RENDERERS[format](ordered) };
         });
@@ -67,12 +69,7 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
             return;
         }
         if (!result) return;
-        const blob = new Blob([result.body], { type: `${MIME[format]};charset=utf-8` });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${result.story.title.replace(/[^\w-]+/g, "-")}.${format}`;
-        link.click();
-        URL.revokeObjectURL(link.href);
+        downloadText(result.story.title, format, result.body, MIME[format]);
     };
 
     return (

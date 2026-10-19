@@ -134,7 +134,7 @@ test("import: pasted manuscript becomes a story with chapters", async ({ page })
         .getByPlaceholder("Paste your manuscript here…")
         .fill("Chapter 1\n\nThe tide was wrong that morning.\n\nChapter 2\n\nBy noon the harbour was empty.");
     await page.getByRole("button", { name: "Analyse pasted text" }).click();
-    await expect(page.getByText(/Chapter 2/).first()).toBeVisible();
+    await expect(page.getByText("2 of 2 chapters selected")).toBeVisible();
     await page.getByRole("button", { name: /Create story/ }).click();
 
     // The promise: a real story with real chapters, opened for writing

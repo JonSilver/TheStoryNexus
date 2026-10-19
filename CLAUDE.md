@@ -96,7 +96,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 
 - `src/v2/` — the app. `V2App.tsx` shell; `screens/` (Write, Chapters, Stories, Bible, Brainstorm, Notes, Actions, More, Import, Export); `editor/` (Lexical composition, nodes, plugins, saver, auto-summarise); `ai/` (streamAction SSE client, useActionGeneration, ActionSheet, editor actions, ContextInspector); `bible/` (extraction flows, name nudges); `export/` (document JSON → blocks → md/html/txt renderers + undecided-draft detection); `drawer/` (action override editor); `state/useV2Store.ts` (localStorage UI state).
 - `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Legacy v1 feature components are gone; the survivors outside hooks are the pages the shell embeds (AI settings, series list, guide).
-- `src/services/api/` — fetch client; `src/services/ai/AIService.ts` — settings facade ONLY (generation goes through v2 streamAction).
+- `src/services/api/` — `request.ts` (the one fetch), `client.ts` (per-domain endpoints), `generation.ts` (SSE), `queryKeys.ts` (every cache key).
 
 ### Server layout
 
@@ -130,6 +130,8 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 - OxLint + Prettier. TypeScript `strict: false` but `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` enabled.
 - Error handling: only where recoverable; functional style with `@jfdi/attempt` (`const [error, result] = await attemptPromise(...)`).
 - Functional patterns; `const` not `let`; arrow functions; async/await; no explicit `any`; no classes except genuinely stateful resources; data-driven type-inference over switch/if-chains; factory/higher-order functions over boilerplate; custom hooks over in-component multi-hook logic; no `useEffect` for derived state.
+- Server state lives in TanStack Query only — no parallel module caches. Keys come from `queryKeys.ts`. Mutations declare `meta: { failure: "Couldn't …" }` and the mutation cache reports it once (`QueryProvider`); callers never toast a single mutation's failure, and own success messages (only where the outcome isn't already visible). Batch/partial-outcome callers opt out with `failure: false` and report one tally.
+- `localStorage` only through `@/utils/storage` (never throws; writes report refusal).
 - Comments extremely sparingly — only for constraints the code can't show.
 - Code volume is not a success metric. Prefer battle-hardened existing dependencies over new ones.
 - `crypto.randomUUID` is unavailable in insecure contexts (LAN http) — ALWAYS use `randomUUID` from `@/utils/crypto` for client-side ids.

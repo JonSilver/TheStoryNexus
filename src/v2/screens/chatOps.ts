@@ -1,5 +1,6 @@
 import type { ChatMessage } from "@/types/story";
 import { randomUUID } from "../../utils/crypto";
+import { storage } from "../../utils/storage";
 
 /**
  * Every change to a brainstorm conversation, as data with its own id. A write
@@ -127,16 +128,6 @@ const nextSeq = () => {
     return sequence.last;
 };
 
-const storageKeys = (): string[] => {
-    try {
-        return Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)).filter(
-            (key): key is string => !!key?.startsWith(PENDING_PREFIX)
-        );
-    } catch {
-        return [];
-    }
-};
-
 const persistence = { refused: false };
 
 /** True once the browser has refused to store an unsaved change: it then lasts only until a reload. */
@@ -144,59 +135,46 @@ export const storageRefused = () => persistence.refused;
 
 const store = (chatId: string, record: Stored) => {
     inMemory.set(keyFor(chatId, record.op.id), record);
-    try {
-        localStorage.setItem(keyFor(chatId, record.op.id), JSON.stringify(record));
-    } catch {
-        // Storage unavailable or full: the in-memory copy covers this session, and the writer is warned
-        persistence.refused = true;
-    }
+    // Refused: the in-memory copy covers this session, and the writer is warned
+    if (!storage.setJSON(keyFor(chatId, record.op.id), record)) persistence.refused = true;
 };
 
 const unstore = (key: string) => {
     inMemory.delete(key);
-    try {
-        localStorage.removeItem(key);
-    } catch {
-        // Unwritable storage: the in-memory removal still applies this session
-    }
+    storage.remove(key);
 };
 
 const migrateLegacy = (chatId: string) => {
-    try {
-        const raw = localStorage.getItem(PENDING_PREFIX + chatId);
-        if (!raw) return;
-        const stored = JSON.parse(raw) as { ops?: unknown; local?: unknown } | unknown[];
-        // A list of changes (kept as they are, ids and all), or an earlier build's message lists;
-        // anything else is left in place rather than thrown away unread
-        const changes = Array.isArray(stored)
+    const stored = storage.getJSON(PENDING_PREFIX + chatId) as
+        | { ops?: unknown; local?: unknown }
+        | unknown[]
+        | undefined;
+    // Absent or unreadable: an unreadable legacy record can't be recovered, and is left in place, harmlessly
+    if (!stored || typeof stored !== "object") return;
+    // A list of changes (kept as they are, ids and all), or an earlier build's message lists;
+    // anything else is left in place rather than thrown away unread
+    const changes = Array.isArray(stored)
+        ? fromLegacy(stored)
+        : Array.isArray(stored.ops)
+          ? (stored.ops as ChatOp[])
+          : Array.isArray(stored.local)
             ? fromLegacy(stored)
-            : Array.isArray(stored.ops)
-              ? (stored.ops as ChatOp[])
-              : Array.isArray(stored.local)
-                ? fromLegacy(stored)
-                : null;
-        if (!changes) return;
-        // Converted once into per-change keys, so the changes keep stable ids from here on
-        changes.forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }));
-        localStorage.removeItem(PENDING_PREFIX + chatId);
-    } catch {
-        // An unreadable legacy record can't be recovered; it's left in place, harmlessly
-    }
+            : null;
+    if (!changes) return;
+    // Converted once into per-change keys, so the changes keep stable ids from here on
+    changes.forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }));
+    storage.remove(PENDING_PREFIX + chatId);
 };
 
 const records = (chatId: string): Array<{ key: string } & Stored> => {
     migrateLegacy(chatId);
     const prefix = `${PENDING_PREFIX}${chatId}:`;
     const found = new Map<string, Stored>();
-    storageKeys()
-        .filter(key => key.startsWith(prefix))
-        .forEach(key => {
-            try {
-                found.set(key, JSON.parse(localStorage.getItem(key) ?? "") as Stored);
-            } catch {
-                // A corrupt entry is skipped rather than blocking the rest
-            }
-        });
+    storage.keysStartingWith(prefix).forEach(key => {
+        // A corrupt entry is skipped rather than blocking the rest
+        const record = storage.getJSON(key) as Stored | undefined;
+        if (record) found.set(key, record);
+    });
     inMemory.forEach((record, key) => {
         if (key.startsWith(prefix) && !found.has(key)) found.set(key, record);
     });

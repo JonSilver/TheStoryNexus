@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import type { LorebookEntry } from "@/types/story";
+import { LOREBOOK_CATEGORIES, type LorebookEntry } from "@/types/story";
 import type { ScreenProps } from "../V2App";
 import { EntryEditor } from "../bible/EntryEditor";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
@@ -23,8 +23,6 @@ import { useConfirm } from "../components/Dialogs";
 import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
 import { useCurrentStoryId, useUiState } from "../state/useV2Store";
 
-const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
-
 const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; needsChapter: boolean }> = [
     { mode: "extract-story", label: "Extract from whole story", icon: BookOpenCheck, needsChapter: true },
     { mode: "extract-chapter", label: "Extract from chapter", icon: FileScan, needsChapter: true },
@@ -34,7 +32,7 @@ const FLOWS: Array<{ mode: BibleFlowMode; label: string; icon: typeof FileScan; 
 ];
 
 const groupEntries = (entries: LorebookEntry[]) =>
-    CATEGORY_ORDER.map(category => ({
+    LOREBOOK_CATEGORIES.map(category => ({
         category,
         items: entries.filter(e => e.category === category).sort((a, b) => a.name.localeCompare(b.name))
     })).filter(group => group.items.length > 0);
@@ -59,7 +57,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
 
     if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
-    const chapterId = rememberedChapter ?? [...(chapters ?? [])].sort((a, b) => a.order - b.order)[0]?.id ?? null;
+    const chapterId = rememberedChapter ?? (chapters ?? [])[0]?.id ?? null;
     const groups = groupEntries((entries ?? []).filter(e => entryMatches(e, search)));
 
     return (
@@ -183,7 +181,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
                     mode={flow}
                     storyId={currentStoryId}
                     chapterId={chapterId}
-                    chapters={[...(chapters ?? [])].sort((a, b) => a.order - b.order)}
+                    chapters={chapters ?? []}
                     entries={entries ?? []}
                     focusNames={flow === "extract-chapter" ? focusNames : []}
                     onClose={() => setFlow(null)}

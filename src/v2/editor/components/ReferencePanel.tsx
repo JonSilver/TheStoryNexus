@@ -2,7 +2,8 @@ import { NotebookPen, Search, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
-import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { ideaNote, useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { entryMatches } from "../../bible/duplicates";
 
 /**
  * The mid-writing reference surface: consulting the bible or jotting a note
@@ -16,28 +17,17 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
     const [search, setSearch] = useState("");
     const [note, setNote] = useState("");
 
-    const needle = search.trim().toLowerCase();
-    const matches = (entries ?? []).filter(
-        e =>
-            !needle ||
-            e.name.toLowerCase().includes(needle) ||
-            (Array.isArray(e.tags) && e.tags.some(t => t.toLowerCase().includes(needle))) ||
-            e.description.toLowerCase().includes(needle)
-    );
+    const matches = (entries ?? []).filter(e => entryMatches(e, search));
 
     const saveNote = () => {
         const content = note.trim();
         if (!content) return;
-        createNote.mutate(
-            { storyId, title: content.split("\n")[0].slice(0, 60), content, type: "idea" },
-            {
-                onSuccess: () => {
-                    setNote("");
-                    toast.success("Noted");
-                },
-                onError: () => toast.error("Couldn't save the note")
+        createNote.mutate(ideaNote(storyId, content), {
+            onSuccess: () => {
+                setNote("");
+                toast.success("Noted");
             }
-        );
+        });
     };
 
     return (
@@ -81,7 +71,7 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
                     ))}
                     {matches.length === 0 && (
                         <p className="p-4 text-center text-sm text-muted-foreground">
-                            {needle ? "Nothing matches." : "No bible entries yet."}
+                            {search.trim() ? "Nothing matches." : "No bible entries yet."}
                         </p>
                     )}
                 </div>

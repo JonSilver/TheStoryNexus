@@ -2,9 +2,8 @@ import { attemptPromise } from "@jfdi/attempt";
 import { RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
+import { useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
-import { randomUUID } from "@/utils/crypto";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { BottomSheet } from "../components/BottomSheet";
@@ -13,6 +12,7 @@ import { flushChapterSave } from "../editor/useChapterSaver";
 import { BIBLE_STOP_NOTE } from "./FlowResults";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
 import type { UpdateProposal } from "./parseProposals";
+import { useAddProposals } from "./useAddProposals";
 import { useFlowResults } from "./useFlowResults";
 import { describeSweepFailures, useStorySweep } from "./useStorySweep";
 
@@ -46,8 +46,8 @@ export const ExtractSheet = ({
 }) => {
     const generation = useActionGeneration();
     const confirm = useConfirm();
-    const createEntry = useCreateLorebookMutation();
-    const updateEntry = useUpdateLorebookMutation();
+    const addProposals = useAddProposals(storyId);
+    const updateEntry = useUpdateLorebookMutation({ reportsOwnFailures: true });
     const [pasted, setPasted] = useState(initialText ?? "");
     const results = useFlowResults(entries);
     const { proposals, updates, issues, ticked } = results;
@@ -112,30 +112,16 @@ export const ExtractSheet = ({
         if (approving) return;
         setApproving(true);
         const chosenIndexes = [...ticked].sort((a, b) => a - b);
-        const chosen = chosenIndexes.map(i => (proposals ?? [])[i]);
-        const settled = await Promise.allSettled(
-            chosen.map(proposal =>
-                createEntry.mutateAsync({
-                    id: randomUUID(),
-                    level: "story",
-                    scopeId: storyId,
-                    name: proposal.name,
-                    description: proposal.description,
-                    category: proposal.category,
-                    tags: proposal.tags,
-                    isDisabled: false
-                })
-            )
-        );
-        const added = settled.filter(r => r.status === "fulfilled").length;
-        const failed = settled.length - added;
+        const landed = await addProposals(chosenIndexes.map(i => (proposals ?? [])[i]));
+        const added = landed.filter(Boolean).length;
+        const failed = landed.length - added;
         if (!failed) {
             toast.success(`${added} entr${added === 1 ? "y" : "ies"} added`);
             onClose();
             return;
         }
         // Failures stay listed and ticked to retry — the list is paid-for work
-        results.removeProposals(new Set(chosenIndexes.filter((_, n) => settled[n].status === "fulfilled")));
+        results.removeProposals(new Set(chosenIndexes.filter((_, n) => landed[n])));
         setApproving(false);
         toast.error(`${added} added, ${failed} couldn't be saved — they're still ticked here to try again`);
     };

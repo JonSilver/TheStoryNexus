@@ -1,4 +1,5 @@
 import { and, eq, type InferSelectModel, isNull, type SQL } from "drizzle-orm";
+import { z } from "zod";
 import { db, schema } from "../db/client.js";
 import { resolveChapterUpdate } from "../lib/chapterUpdate.js";
 import { createCrudRouter } from "../lib/crud.js";
@@ -6,6 +7,8 @@ import { parseJson } from "../lib/json.js";
 import { claimBackgroundSummary, resetBackgroundBudget } from "../services/actions/backgroundSummary.js";
 
 type Chapter = InferSelectModel<typeof schema.chapters>;
+
+const orderSchema = z.object({ ids: z.array(z.string()).max(10_000) });
 
 // revisionText is the server's change-measurement base, not chapter data
 const afterRead = ({ revisionText: _revisionText, ...ch }: Chapter) => ({
@@ -29,6 +32,37 @@ export default createCrudRouter({
                 resetBackgroundBudget();
                 res.status(204).end();
             });
+        // The story's whole running order in one write: per-chapter swaps could
+        // half-land and leave two chapters sharing a place
+        router.put("/story/:storyId/order", (req, res) => {
+            const parsed = orderSchema.safeParse(req.body);
+            if (!parsed.success) {
+                res.status(400).json({ error: "Expected { ids: string[] }" });
+                return;
+            }
+            const { ids } = parsed.data;
+            const storyId = req.params.storyId;
+            const rows = db.transaction(tx => {
+                const current = tx.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)).all();
+                const known = new Set(current.map(ch => ch.id));
+                if (ids.length !== known.size || new Set(ids).size !== ids.length || !ids.every(id => known.has(id)))
+                    return null;
+                const now = new Date();
+                ids.forEach((id, order) => {
+                    if (current.find(ch => ch.id === id)?.order !== order)
+                        tx.update(schema.chapters)
+                            .set({ order, updatedAt: now })
+                            .where(eq(schema.chapters.id, id))
+                            .run();
+                });
+                return tx.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)).all();
+            });
+            if (!rows) {
+                res.status(409).json({ error: "The chapter list changed — reload and try again" });
+                return;
+            }
+            res.json(rows.map(afterRead).sort((a, b) => a.order - b.order));
+        });
         router.put(
             "/:id",
             asyncHandler(async (req, res) => {

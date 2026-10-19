@@ -45,10 +45,11 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
             createSeries.mutate(
                 { name, description: "" },
                 {
-                    onSuccess: created => {
-                        updateStory.mutate({ id: storyId, data: { seriesId: created.id } });
-                        toast.success(`“${story.title}” joined the new series “${name}”`);
-                    }
+                    onSuccess: created =>
+                        updateStory.mutate(
+                            { id: storyId, data: { seriesId: created.id } },
+                            { onSuccess: () => toast.success(`“${story.title}” joined the new series “${name}”`) }
+                        )
                 }
             );
             return;
@@ -128,7 +129,12 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
                                         language: value.language.trim() || "British English"
                                     }
                                 },
-                                { onSuccess: () => setDraft(null) }
+                                {
+                                    onSuccess: () => {
+                                        setDraft(null);
+                                        toast.success("Story details saved");
+                                    }
+                                }
                             )
                         }
                     >

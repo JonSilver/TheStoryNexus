@@ -1,12 +1,13 @@
+import type { LorebookCategory } from "@/types/story";
+
 /**
  * Tolerant parsing of model-returned JSON arrays for bible extraction and
  * update proposals: strips code fences and surrounding prose, validates
  * shapes, and drops malformed items rather than failing wholesale.
  */
-
 export interface EntryProposal {
     name: string;
-    category: "character" | "location" | "item" | "event" | "note";
+    category: Extract<LorebookCategory, "character" | "location" | "item" | "event" | "note">;
     description: string;
     tags: string[];
 }

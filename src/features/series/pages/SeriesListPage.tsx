@@ -1,24 +1,19 @@
-import { attemptPromise } from "@jfdi/attempt";
-import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { SeriesImportService } from "@/services/export/SeriesImportService";
 import { useConfirm } from "../../../v2/components/Dialogs";
 import { SeriesCard } from "../components/SeriesCard";
 import { SeriesForm } from "../components/SeriesForm";
-import { useDeleteSeriesMutation, useSeriesQuery } from "../hooks/useSeriesQuery";
-
-const seriesImportService = new SeriesImportService();
+import { useDeleteSeriesMutation, useImportSeriesMutation, useSeriesQuery } from "../hooks/useSeriesQuery";
 
 const SeriesListPage = ({ onOpenSeries }: { onOpenSeries?: () => void }) => {
-    const queryClient = useQueryClient();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
     const { data: seriesList, isLoading } = useSeriesQuery();
     const deleteMutation = useDeleteSeriesMutation();
+    const importSeries = useImportSeriesMutation();
     const confirm = useConfirm();
 
     const handleDelete = async (id: string) => {
@@ -28,26 +23,13 @@ const SeriesListPage = ({ onOpenSeries }: { onOpenSeries?: () => void }) => {
                 confirmLabel: "Delete"
             })
         )
-            await deleteMutation.mutateAsync(id);
+            deleteMutation.mutate(id);
     };
 
-    const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files || event.target.files.length === 0) return;
-
-        const file = event.target.files[0];
-        const [error] = await attemptPromise(async () => await seriesImportService.importSeries(file));
-
-        if (error) {
-            console.error("Failed to import series:", error);
-            toast.error("Failed to import series");
-            return;
-        }
-
-        toast.success("Series imported successfully");
-        queryClient.invalidateQueries({ queryKey: ["series"] });
-
-        // Reset the input
+    const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
         event.target.value = "";
+        if (file) importSeries.mutate(file, { onSuccess: series => toast.success(`Imported “${series.name}”`) });
     };
 
     if (isLoading) return <div>Loading series...</div>;

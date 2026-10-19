@@ -43,7 +43,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
     const route = useRouteParams();
     const { navigate } = useNav();
     const resumeId = route.chapterId ?? rememberedChapter;
-    const orderedChapters = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
+    const orderedChapters = chapters ?? [];
     const currentChapterId =
         resumeId && orderedChapters.some(c => c.id === resumeId) ? resumeId : (orderedChapters[0]?.id ?? null);
 

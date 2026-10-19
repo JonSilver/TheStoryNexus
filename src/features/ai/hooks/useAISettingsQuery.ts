@@ -1,134 +1,67 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
-import { aiService } from "@/services/ai/AIService";
-import { adminApi } from "@/services/api/client";
+import { aiApi } from "@/services/api/client";
+import { aiSettingsKeys } from "@/services/api/queryKeys";
 import type { AIProvider, AISettings } from "@/types/story";
 
-export const aiSettingsKeys = {
-    all: ["ai"] as const,
-    settings: () => [...aiSettingsKeys.all, "settings"] as const,
-    models: () => [...aiSettingsKeys.all, "models"] as const,
-    modelsByProvider: (provider: AIProvider) => [...aiSettingsKeys.models(), provider] as const
+/** The server's answer to a model-list refresh says whether it had to replace a default that vanished. */
+type RefreshedSettings = AISettings & { healedDefault?: string | null };
+
+export const PROVIDER_NAMES: Record<AIProvider, string> = {
+    openai: "OpenAI",
+    openrouter: "OpenRouter",
+    gemini: "Google Gemini",
+    local: "Local"
+};
+
+export const DEFAULT_MODEL_FIELDS: Record<AIProvider, keyof AISettings> = {
+    local: "defaultLocalModel",
+    openai: "defaultOpenAIModel",
+    openrouter: "defaultOpenRouterModel",
+    gemini: "defaultGeminiModel"
 };
 
 export const useAISettingsQuery = () =>
-    useQuery<AISettings>({
-        queryKey: aiSettingsKeys.settings(),
-        queryFn: async () => {
-            await aiService.initialize();
-            const settings = aiService.getSettings();
-            if (!settings) throw new Error("Failed to load AI settings");
-            return settings;
-        },
-        staleTime: 5 * 60 * 1000
-    });
+    useQuery({ queryKey: aiSettingsKeys.settings, queryFn: aiApi.getSettings, staleTime: 5 * 60 * 1000 });
 
-type UpdateAPIKeyParams = { provider: AIProvider; key: string };
-
-export const useUpdateAPIKeyMutation = () => {
+/** Every settings write answers with the whole settings row: it replaces the cached one. */
+const useSettingsWrite = <TVariables>(
+    mutationFn: (variables: TVariables) => Promise<RefreshedSettings>,
+    failure: string
+) => {
     const queryClient = useQueryClient();
-
     return useMutation({
-        mutationFn: async ({ provider, key }: UpdateAPIKeyParams) => {
-            await aiService.updateKey(provider, key);
-            return aiService.getAvailableModels(provider, true);
-        },
-        onSuccess: (models, { provider }) => {
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.settings() });
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.models() });
-            queryClient.setQueryData(aiSettingsKeys.modelsByProvider(provider), models);
-            toast.success(`${providerName(provider)} models updated`);
-        },
-        onError: (_, { provider }) => {
-            toast.error(`Failed to update ${providerName(provider)} key`);
-        }
+        mutationFn,
+        onSuccess: settings => queryClient.setQueryData(aiSettingsKeys.settings, settings),
+        meta: { failure }
     });
 };
 
-export const useUpdateLocalApiUrlMutation = () => {
-    const queryClient = useQueryClient();
+/** Saving a key also loads that provider's models with it. */
+export const useUpdateAPIKeyMutation = () =>
+    useSettingsWrite(async ({ provider, key }: { provider: AIProvider; key: string }) => {
+        await aiApi.setKey(provider, key);
+        return aiApi.refreshModels(provider);
+    }, "Couldn't save the key");
 
-    return useMutation({
-        mutationFn: async (url: string) => {
-            await aiService.updateLocalApiUrl(url);
-            return aiService.getAvailableModels("local", true);
-        },
-        onSuccess: models => {
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.settings() });
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.models() });
-            queryClient.setQueryData(aiSettingsKeys.modelsByProvider("local"), models);
-            toast.success("Local API URL updated");
-        },
-        onError: (error: Error) => {
-            toast.error(error.message || "Failed to update local API URL");
-        }
-    });
-};
+/** Saving the URL tests the connection by loading the server's models. */
+export const useUpdateLocalApiUrlMutation = () =>
+    useSettingsWrite(async (url: string) => {
+        await aiApi.setLocalUrl(url);
+        return aiApi.refreshModels("local");
+    }, "Couldn't reach that local model server");
 
-type UpdateDefaultModelParams = { provider: AIProvider; modelId: string | undefined };
+export const useRefreshModelsMutation = () =>
+    useSettingsWrite((provider: AIProvider) => aiApi.refreshModels(provider), "Couldn't load the models");
 
+/** A default chosen in Settings is THE default: every action resolves against the global provider/model pair. */
 export const useUpdateDefaultModelMutation = () => {
     const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async ({ provider, modelId }: UpdateDefaultModelParams) => {
-            await aiService.updateDefaultModel(provider, modelId);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.settings() });
-            toast.success("Default model updated");
-        },
-        onError: () => {
-            toast.error("Failed to update default model");
-        }
-    });
-};
-
-export const useRefreshModelsMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (provider: AIProvider) => {
-            const models = await aiService.getAvailableModels(provider, true);
-            return { provider, models };
-        },
-        onSuccess: ({ provider, models }) => {
-            queryClient.invalidateQueries({ queryKey: aiSettingsKeys.settings() });
-            queryClient.setQueryData(aiSettingsKeys.modelsByProvider(provider), models);
-            const healed = (aiService.getSettings() as (AISettings & { healedDefault?: string | null }) | null)
-                ?.healedDefault;
-            if (healed) toast.info(`Default model was unavailable — switched to ${healed}`);
-            else toast.success(`${providerName(provider)} models refreshed`);
-        },
-        onError: (_, provider) => {
-            toast.error(`Failed to refresh ${providerName(provider)} models`);
-        }
-    });
-};
-
-export const useDeleteDemoDataMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async () => adminApi.deleteDemoData(),
-        onSuccess: ({ deleted }) => {
-            queryClient.invalidateQueries();
-            toast.success(
-                `Demo data deleted: ${deleted.stories} ${deleted.stories === 1 ? "story" : "stories"}, ${deleted.lorebookEntries} lorebook ${deleted.lorebookEntries === 1 ? "entry" : "entries"}`
-            );
-        },
-        onError: () => {
-            toast.error("Failed to delete demo data");
-        }
-    });
-};
-
-const providerName = (provider: AIProvider): string => {
-    const names: Record<AIProvider, string> = {
-        openai: "OpenAI",
-        openrouter: "OpenRouter",
-        local: "Local",
-        gemini: "Gemini"
-    };
-    return names[provider];
+    return useSettingsWrite(({ provider, modelId }: { provider: AIProvider; modelId: string | undefined }) => {
+        const settings = queryClient.getQueryData<AISettings>(aiSettingsKeys.settings);
+        if (!settings) throw new Error("Settings haven't loaded yet");
+        return aiApi.updateSettings(settings.id, {
+            [DEFAULT_MODEL_FIELDS[provider]]: modelId,
+            ...(modelId ? { defaultProvider: provider, defaultModelId: modelId } : {})
+        });
+    }, "Couldn't change the default model");
 };

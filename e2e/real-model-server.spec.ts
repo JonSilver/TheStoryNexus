@@ -11,7 +11,7 @@ test.describe.configure({ mode: "serial" });
  */
 test.describe("against a real model server", () => {
     type Mode = "missing-model" | "slow-start" | "stall";
-    const server = { mode: "slow-start" as Mode, instance: null as http.Server | null, settingsId: "" };
+    const server = { mode: "slow-start" as Mode, instance: null as http.Server | null, settingsId: "", url: "" };
 
     const chunk = (content: string) => `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content } }] })}\n\n`;
     const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -38,7 +38,8 @@ test.describe("against a real model server", () => {
         server.instance = instance;
         await new Promise<void>(resolve => instance.listen(0, "127.0.0.1", resolve));
         const { port } = instance.address() as AddressInfo;
-        const local = await request.put("/api/ai/local-url", { data: { url: `http://127.0.0.1:${port}/v1` } });
+        server.url = `http://127.0.0.1:${port}/v1`;
+        const local = await request.put("/api/ai/local-url", { data: { url: server.url } });
         expect(local.ok()).toBe(true);
         const settings = await (await request.get("/api/ai/settings")).json();
         server.settingsId = settings.id;
@@ -68,6 +69,32 @@ test.describe("against a real model server", () => {
         await reworkAll(page);
         return page.getByRole("dialog");
     };
+
+    test("settings: the server URL saves and tests, its model becomes the default, and both stick", async ({
+        page
+    }) => {
+        await page.goto("/settings/providers");
+        const field = page.getByLabel("Server URL (OpenAI-compatible)");
+        const save = page.getByRole("button", { name: "Save & test" });
+        await expect(field).toHaveValue(server.url);
+        // An emptied field stays empty — it doesn't spring back to the saved URL
+        await field.fill("");
+        await expect(field).toHaveValue("");
+        await expect(save).toBeDisabled();
+
+        await field.fill(server.url);
+        await save.click();
+        await expect(page.getByText("Local models loaded")).toBeVisible();
+        await page.getByLabel("Default model").click();
+        await page.getByRole("option", { name: "fake-model" }).click();
+        await expect(page.getByText(/^Default model: .*fake-model/)).toBeVisible();
+
+        await page.reload();
+        await expect(page.getByLabel("Default model")).toHaveText(/fake-model/);
+        const settings = await (await page.request.get("/api/ai/settings")).json();
+        expect(settings.defaultProvider).toBe("local");
+        expect(settings.defaultModelId).toMatch(/fake-model/);
+    });
 
     test("a slow start shows the waiting state, then the text", async ({ page }) => {
         server.mode = "slow-start";

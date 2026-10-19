@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
 import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { Chapter } from "@/types/story";
@@ -50,7 +49,7 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
                     ...(summaryEdited ? { summarySourceRevision: chapter.revision ?? 0 } : {})
                 } as Partial<Chapter>
             },
-            { onSuccess: onClose, onError: () => toast.error("Couldn't save chapter details") }
+            { onSuccess: onClose }
         );
     };
 

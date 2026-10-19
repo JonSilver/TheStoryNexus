@@ -1,5 +1,6 @@
 import { Loader2, Upload } from "lucide-react";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { useAnalyseFiles, useAnalyseText, useCommitImport } from "@/features/ingest/hooks/useIngest";
 import type { AnalysedChapter, ManuscriptAnalysis } from "@/services/api/client";
 import { BottomSheet } from "../components/BottomSheet";
@@ -41,7 +42,14 @@ export const ImportSheet = ({
         const chapters = review.filter(c => c.included).map(c => ({ index: c.index, title: c.title }));
         commitImport.mutate(
             { token: analysis.token, title: title.trim() || "Imported story", chapters },
-            { onSuccess: ({ storyId }) => onImported(storyId) }
+            {
+                onSuccess: ({ storyId, chapterCount }) => {
+                    toast.success(
+                        `Imported ${chapterCount} chapters — Story Bible → Extract from whole story builds your bible, and Story → Details, series & voice → Derive from my writing drafts your story's voice`
+                    );
+                    onImported(storyId);
+                }
+            }
         );
     };
 
