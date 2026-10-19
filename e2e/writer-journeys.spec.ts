@@ -206,10 +206,33 @@ test("series: join from story details, grouped in Stories, bible inherits", asyn
     await expect(page.getByText("joined the new series")).toBeVisible();
     await expect(page.getByText("Series bible entries are included")).toBeVisible();
 
+    // A series-level entry created from the first story…
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "New entry" }).click();
+    await page.getByLabel("Entry name").fill("Norland Park");
+    await page.getByLabel("Category").selectOption("location");
+    await page.getByLabel("Level").selectOption("series");
+    await page.getByLabel("Description").fill("The Dashwood family seat in Sussex.");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("The Dashwood family seat in Sussex.")).toBeVisible();
+
     // The library groups under the series heading
+    await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Switch story" }).click();
     await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Journey — series" })).toBeVisible();
+
+    // …is inherited by a second story that joins the same series
+    await page.getByPlaceholder("New story title").fill("Journey — series sequel");
+    await page.getByRole("button", { name: "Create" }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByText("Details, series & voice").click();
+    await page.getByLabel("Series").selectOption({ label: "The Dashwood Saga" });
+    await expect(page.getByText("Series bible entries are included")).toBeVisible();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await expect(page.getByText("The Dashwood family seat in Sussex.")).toBeVisible();
+    await expect(page.getByText("(series)")).toBeVisible();
 });
 
 test("bible entries: manual create and edit, no AI required", async ({ page }) => {

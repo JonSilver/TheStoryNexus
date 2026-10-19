@@ -120,8 +120,10 @@ export const writeStoryAssets = async (
     assets: Array<{ filename: string; data: string }>
 ): Promise<string[]> => {
     if (assets.length === 0) return [];
-    const dir = await ensureStoryDir(storyId);
-    if (!dir) return assets.map(asset => asset.filename);
+    // The DB rows are already committed by now: a directory failure must be
+    // reported as failed images, not thrown as a failed (and retried) import
+    const [dirError, dir] = await attemptPromise(() => ensureStoryDir(storyId));
+    if (dirError || !dir) return assets.map(asset => String(asset.filename));
     const failed: string[] = [];
     for (const asset of assets) {
         const target = resolveAssetPath(storyId, asset.filename);

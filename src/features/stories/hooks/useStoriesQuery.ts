@@ -60,6 +60,9 @@ export const useUpdateStoryMutation = () => {
 
                 // Also invalidate the old series (data contains the updated story with old seriesId still cached)
                 queryClient.invalidateQueries({ queryKey: ["series"] });
+                // Series membership changes which bible entries the story inherits —
+                // a cached combined bible would hide (or keep) series entries
+                queryClient.invalidateQueries({ queryKey: ["lorebook"] });
             }
             toast.success("Story updated successfully");
         },

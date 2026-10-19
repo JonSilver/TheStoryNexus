@@ -116,3 +116,46 @@ test("merge never offers series entries shared with other stories", async ({ pag
     await expect(sheet.getByRole("button", { name: /^Brandon \(character\)/ })).toHaveCount(0);
     await expect(sheet.getByText(/Colonel Brandon \+ Brandon/)).toHaveCount(0);
 });
+
+test("series backup round-trip restores the series bible and its stories", async ({ page }, testInfo) => {
+    await createStoryAndChapter(page, "Safety — saga book one", "One");
+    await editorLocator(page).click();
+    await page.keyboard.type("The first book's opening line.");
+    await waitForSaved(page);
+
+    await openStoryHub(page);
+    await page.getByText("Details, series & voice").click();
+    page.once("dialog", dialog => void dialog.accept("Backup Saga"));
+    await page.getByLabel("Series").selectOption("__new__");
+    await expect(page.getByText("Series bible entries are included")).toBeVisible();
+
+    await openStoryHub(page);
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "New entry" }).click();
+    await page.getByLabel("Entry name").fill("The Saga World");
+    await page.getByLabel("Level").selectOption("series");
+    await page.getByLabel("Description").fill("Shared across every book.");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Shared across every book.")).toBeVisible();
+
+    await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("button", { name: "Series" }).click();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Export Backup Saga" }).click();
+    const backupPath = testInfo.outputPath("backup.series.json");
+    await (await downloadPromise).saveAs(backupPath);
+
+    await page.locator("#import-series").setInputFiles(backupPath);
+    await expect(page.getByText("Backup Saga (Imported)")).toBeVisible();
+
+    // The restored series appears in the library with its story, which inherits the series bible
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Switch story" }).click();
+    await expect(page.getByRole("heading", { name: "Backup Saga (Imported)" })).toBeVisible();
+    const restored = page.getByRole("button", { name: /Safety — saga book one/ });
+    await expect(restored).toHaveCount(2);
+    await restored.last().click();
+    await openStoryHub(page);
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await expect(page.getByText("Shared across every book.")).toBeVisible();
+});

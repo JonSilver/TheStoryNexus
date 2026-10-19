@@ -1,4 +1,4 @@
-import { BookOpen, Trash2 } from "lucide-react";
+import { BookOpen, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Series } from "@/types/story";
@@ -20,9 +20,20 @@ export const SeriesCard = ({ series, onDelete, onClick }: SeriesCardProps) => (
                     </CardTitle>
                     {series.description && <CardDescription className="mt-2">{series.description}</CardDescription>}
                 </div>
+                <a
+                    href={`/api/series/${series.id}/export`}
+                    download
+                    aria-label={`Export ${series.name}`}
+                    title="Download a JSON backup of the whole series"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <Download className="w-4 h-4" />
+                </a>
                 <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Delete ${series.name}`}
                     onClick={e => {
                         e.stopPropagation();
                         onDelete();

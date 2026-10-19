@@ -41,6 +41,9 @@ export const MergeSheet = ({
         setDuplicateId(entry.id);
     };
     const [merged, setMerged] = useState<EntryProposal | null>(null);
+    // The pair the AI actually merged — fixed at run time, so changing the
+    // picks mid-generation can never apply A+B's result to C and delete D
+    const [mergedPair, setMergedPair] = useState<{ keepId: string; duplicateId: string } | null>(null);
     const [saving, setSaving] = useState(false);
 
     const keep = entries.find(e => e.id === keepId);
@@ -48,6 +51,7 @@ export const MergeSheet = ({
 
     const run = async () => {
         if (!keep || !duplicate) return;
+        const pair = { keepId: keep.id, duplicateId: duplicate.id };
         const describe = (e: LorebookEntry) =>
             JSON.stringify({ name: e.name, category: e.category, description: e.description, tags: e.tags ?? [] });
         const text = await generation.run({
@@ -62,15 +66,18 @@ export const MergeSheet = ({
             toast.error("The merge reply couldn't be read — try again");
             return;
         }
+        setMergedPair(pair);
         setMerged(proposal);
     };
 
     const save = async () => {
-        if (!merged || !keep || !duplicate || saving) return;
+        const target = entries.find(e => e.id === mergedPair?.keepId);
+        const folded = entries.find(e => e.id === mergedPair?.duplicateId);
+        if (!merged || !target || !folded || saving) return;
         setSaving(true);
         const [error] = await attemptPromise(() =>
             updateEntry.mutateAsync({
-                id: keep.id,
+                id: target.id,
                 data: {
                     name: merged.name,
                     description: merged.description,
@@ -86,7 +93,7 @@ export const MergeSheet = ({
         }
         // Await completion BEFORE closing: unmounting mid-mutation skips the
         // cache invalidation and leaves a ghost of the deleted duplicate on screen
-        const [deleteError] = await attemptPromise(() => deleteEntry.mutateAsync(duplicate.id));
+        const [deleteError] = await attemptPromise(() => deleteEntry.mutateAsync(folded.id));
         if (deleteError) {
             setSaving(false);
             toast.error("Merged entry saved, but the duplicate couldn't be deleted — remove it manually");
@@ -120,24 +127,26 @@ export const MergeSheet = ({
                                     shared with other stories and can't be merged from here.
                                 </p>
                             )}
-                            <MergePicker
-                                entries={entries}
-                                keep={keep ?? null}
-                                duplicate={duplicate ?? null}
-                                onPick={pick}
-                                onPickPair={(a, b) => {
-                                    setKeepId(a.id);
-                                    setDuplicateId(b.id);
-                                }}
-                                onSwap={() => {
-                                    setKeepId(duplicateId);
-                                    setDuplicateId(keepId);
-                                }}
-                                onClear={() => {
-                                    setKeepId("");
-                                    setDuplicateId("");
-                                }}
-                            />
+                            <fieldset disabled={busy} className="contents">
+                                <MergePicker
+                                    entries={entries}
+                                    keep={keep ?? null}
+                                    duplicate={duplicate ?? null}
+                                    onPick={pick}
+                                    onPickPair={(a, b) => {
+                                        setKeepId(a.id);
+                                        setDuplicateId(b.id);
+                                    }}
+                                    onSwap={() => {
+                                        setKeepId(duplicateId);
+                                        setDuplicateId(keepId);
+                                    }}
+                                    onClear={() => {
+                                        setKeepId("");
+                                        setDuplicateId("");
+                                    }}
+                                />
+                            </fieldset>
                             {busy && (
                                 <p className="flex items-center gap-2 text-muted-foreground">
                                     <Loader2 className="h-4 w-4 animate-spin" /> Merging…
@@ -174,7 +183,8 @@ export const MergeSheet = ({
                                 }
                             />
                             <p className="text-xs text-muted-foreground">
-                                Saving updates “{keep?.name}” and deletes “{duplicate?.name}”.
+                                Saving updates “{entries.find(e => e.id === mergedPair?.keepId)?.name}” and deletes “
+                                {entries.find(e => e.id === mergedPair?.duplicateId)?.name}”.
                             </p>
                         </>
                     )}

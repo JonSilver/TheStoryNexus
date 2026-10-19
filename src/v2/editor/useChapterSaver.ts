@@ -58,7 +58,17 @@ const RETRY_MS = 5000;
 const inFlightSaves = new Map<string, Promise<void>>();
 
 export const hasInFlightSave = (chapterId: string) => inFlightSaves.has(chapterId);
-export const whenSavesSettle = (chapterId: string): Promise<void> => inFlightSaves.get(chapterId) ?? Promise.resolve();
+/**
+ * Resolves only when the chapter's WHOLE save queue has drained. When a save
+ * finishes, a queued newer save starts in the same tick chain — so after each
+ * one, yield a macrotask and look again rather than trusting the first promise.
+ */
+export const whenSavesSettle = async (chapterId: string): Promise<void> => {
+    while (inFlightSaves.has(chapterId)) {
+        await inFlightSaves.get(chapterId);
+        await new Promise(resolve => setTimeout(resolve, 0));
+    }
+};
 
 // Live saver instances by chapter, so chapter-based AI actions can force the
 // debounced save down to disk before the server reads the chapter — the

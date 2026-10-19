@@ -47,6 +47,22 @@ const upload = multer({
 
 // One field name, one-or-many files: multi-part stories arrive as separate
 // files (a file per chapter or per part), uploaded together in reading order
+// Multer's limits are per file: 50 × 20 MB would buffer ~1 GB in memory before
+// any aggregate check ran. Reject oversized requests from the declared length,
+// before a single byte is buffered.
+const MAX_TOTAL_UPLOAD_BYTES = 60 * 1024 * 1024;
+
+export const declaredSizeFailure = (
+    req: Pick<express.Request, "headers">
+): { status: number; error: string } | null => {
+    const declared = Number(req.headers["content-length"]);
+    if (!Number.isFinite(declared) || declared <= 0)
+        return { status: 411, error: "Upload size must be declared (Content-Length)" };
+    if (declared > MAX_TOTAL_UPLOAD_BYTES)
+        return { status: 413, error: "The upload exceeds the 60 MB total limit — import fewer files at once" };
+    return null;
+};
+
 const receiveUpload = (req: express.Request, res: express.Response) =>
     new Promise<void>((resolve, reject) => {
         upload.array("files", MAX_UPLOAD_FILES)(req, res, (error?: unknown) => (error ? reject(error) : resolve()));
@@ -81,6 +97,11 @@ const analysisResponse = (res: express.Response, title: string, chapters: SplitC
 router.post(
     "/analyse",
     asyncHandler(async (req, res) => {
+        const sizeFailure = declaredSizeFailure(req);
+        if (sizeFailure) {
+            res.status(sizeFailure.status).json({ error: sizeFailure.error });
+            return;
+        }
         const [uploadError] = await attemptPromise(() => receiveUpload(req, res));
         if (uploadError) {
             const failure = uploadFailures[(uploadError as { code?: string }).code ?? ""];

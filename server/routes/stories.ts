@@ -3,8 +3,9 @@ import { and, eq } from "drizzle-orm";
 import multer from "multer";
 import { db, schema } from "../db/client.js";
 import { createCrudRouter } from "../lib/crud.js";
-import { deleteStoryAssets, readStoryAssets, writeStoryAssets } from "../services/assets/storage.js";
+import { deleteStoryAssets, writeStoryAssets } from "../services/assets/storage.js";
 import { generateEpub } from "../services/epubGenerator.js";
+import { commitStoryImport, exportStoryBackup } from "../services/stories/backup.js";
 import { type StoryBackup, buildStoryImport } from "../services/stories/portable.js";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 250 * 1024 * 1024 } });
@@ -20,48 +21,9 @@ export default createCrudRouter({
                 const storyId = req.params.id;
 
                 const [error, data] = await attemptPromise(async () => {
-                    const [story] = await db.select().from(schema.stories).where(eq(schema.stories.id, storyId));
-                    if (!story) throw new Error("Story not found");
-
-                    // Fetch series if story belongs to one
-                    let seriesData;
-                    if (story.seriesId) {
-                        const [seriesResult] = await db
-                            .select()
-                            .from(schema.series)
-                            .where(eq(schema.series.id, story.seriesId));
-                        if (seriesResult) seriesData = seriesResult;
-                    }
-
-                    // Fetch story-level lorebook entries only (not inherited ones)
-                    const lorebookEntries = await db
-                        .select()
-                        .from(schema.lorebookEntries)
-                        .where(
-                            and(eq(schema.lorebookEntries.level, "story"), eq(schema.lorebookEntries.scopeId, storyId))
-                        );
-
-                    const [chapters, aiChats, notes, actionOverrides] = await Promise.all([
-                        db.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)),
-                        db.select().from(schema.aiChats).where(eq(schema.aiChats.storyId, storyId)),
-                        db.select().from(schema.notes).where(eq(schema.notes.storyId, storyId)),
-                        db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.storyId, storyId))
-                    ]);
-
-                    return {
-                        version: "1.0",
-                        type: "story",
-                        exportDate: new Date().toISOString(),
-                        story,
-                        series: seriesData,
-                        chapters,
-                        lorebookEntries,
-                        aiChats,
-                        notes,
-                        actionOverrides,
-                        // Images travel inside the backup, or restoring loses them
-                        assets: await readStoryAssets(storyId)
-                    };
+                    const backup = await exportStoryBackup(storyId);
+                    if (!backup) throw new Error("Story not found");
+                    return backup;
                 });
 
                 if (error) {
@@ -112,18 +74,7 @@ export default createCrudRouter({
 
                 // All-or-nothing: a half-restored backup is worse than none.
                 // better-sqlite3 transactions are synchronous — .run() each insert.
-                const [error] = await attemptPromise(async () =>
-                    db.transaction(tx => {
-                        tx.insert(schema.stories).values(rows.story).run();
-                        if (rows.chapters.length) tx.insert(schema.chapters).values(rows.chapters).run();
-                        if (rows.lorebookEntries.length)
-                            tx.insert(schema.lorebookEntries).values(rows.lorebookEntries).run();
-                        if (rows.aiChats.length) tx.insert(schema.aiChats).values(rows.aiChats).run();
-                        if (rows.notes.length) tx.insert(schema.notes).values(rows.notes).run();
-                        if (rows.actionOverrides.length)
-                            tx.insert(schema.actionOverrides).values(rows.actionOverrides).run();
-                    })
-                );
+                const [error] = await attemptPromise(async () => commitStoryImport(rows));
 
                 if (error) {
                     console.error("Error importing story:", error);
