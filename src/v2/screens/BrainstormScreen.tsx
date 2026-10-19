@@ -19,6 +19,8 @@ import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
 import { MarkdownView } from "../components/MarkdownView";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { useRouteParams } from "../routeParams";
+import { pathFor, useNav } from "../routing";
 import { useV2Store } from "../state/useV2Store";
 
 const historyText = (messages: ChatMessage[]) =>
@@ -36,7 +38,7 @@ const chatMessage = (role: ChatMessage["role"], content: string): ChatMessage =>
  * up as chat_history/user_message; matched bible entries and story voice are
  * assembled server-side like every other action.
  */
-export const BrainstormScreen = ({ goTo }: ScreenProps) => {
+export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
     const { currentStoryId, lastChapterFor } = useV2Store();
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
     const createChat = useCreateBrainstormMutation();
@@ -44,7 +46,13 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
     const deleteChat = useDeleteBrainstormMutation();
     const createNote = useCreateNoteMutation();
     const generation = useActionGeneration();
-    const [chatId, setChatId] = useState<string | null>(null);
+    // The open chat lives in the URL: back/forward and refresh keep it
+    const { chatId } = useRouteParams();
+    const { navigate } = useNav();
+    const setChatId = (id: string | null) => {
+        const list = pathFor("brainstorm", currentStoryId);
+        navigate(id ? `${list}/${encodeURIComponent(id)}` : list);
+    };
     const [extracting, setExtracting] = useState<string | null>(null);
     const { data: bibleEntries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: storyChapters } = useChaptersByStoryQuery(currentStoryId ?? "");
@@ -173,7 +181,7 @@ export const BrainstormScreen = ({ goTo }: ScreenProps) => {
         return (
             <div className="flex h-full flex-col">
                 <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                    <button type="button" onClick={() => goTo("story")} aria-label="Back">
+                    <button type="button" onClick={() => goBack("story")} aria-label="Back">
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-lg font-semibold">Brainstorm</h1>

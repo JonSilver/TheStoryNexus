@@ -4,6 +4,8 @@ import { useChapterQuery, useChaptersByStoryQuery } from "@/features/chapters/ho
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
 import { ChapterEditor } from "../editor/ChapterEditor";
+import { useRouteParams } from "../routeParams";
+import { pathFor, useNav } from "../routing";
 import { useV2Store } from "../state/useV2Store";
 
 const Empty = ({ message, actionLabel, onAction }: { message: string; actionLabel: string; onAction: () => void }) => (
@@ -41,10 +43,20 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
         }
     }, [currentStoryId, storyGone, setCurrentStory, goTo]);
 
-    const resumeId = currentStoryId ? lastChapterFor(currentStoryId) : null;
+    // The URL's chapter wins; otherwise resume the last one, else the first
+    const route = useRouteParams();
+    const { navigate } = useNav();
+    const resumeId = route.chapterId ?? (currentStoryId ? lastChapterFor(currentStoryId) : null);
     const orderedChapters = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
     const currentChapterId =
         resumeId && orderedChapters.some(c => c.id === resumeId) ? resumeId : (orderedChapters[0]?.id ?? null);
+
+    // Keep the URL naming the chapter actually shown (fills it in, or corrects a
+    // stale/unknown id) without adding a history entry
+    useEffect(() => {
+        if (!route.storyId || !currentChapterId || route.chapterId === currentChapterId) return;
+        navigate(pathFor("write", route.storyId, currentChapterId), { replace: true });
+    }, [route.storyId, route.chapterId, currentChapterId, navigate]);
 
     const { data: chapter, isLoading: chapterLoading } = useChapterQuery(currentChapterId ?? "");
 
@@ -83,7 +95,10 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
                     <select
                         className="max-w-[70vw] truncate bg-transparent text-sm font-medium outline-none"
                         value={chapter.id}
-                        onChange={e => setLastChapter(currentStoryId, e.target.value)}
+                        onChange={e => {
+                            setLastChapter(currentStoryId, e.target.value);
+                            goTo("write");
+                        }}
                         aria-label="Chapter"
                     >
                         {orderedChapters.map(c => (

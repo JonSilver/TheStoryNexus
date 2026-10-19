@@ -9,7 +9,7 @@ import { useV2Store } from "../state/useV2Store";
  * The advanced drawer (contracts Phase 8): per-action template and parameter
  * overrides, globally or per story. Present, optional, out of the writing path.
  */
-export const ActionsScreen = ({ goTo }: ScreenProps) => {
+export const ActionsScreen = ({ goBack }: ScreenProps) => {
     const { currentStoryId } = useV2Store();
     const [scope, setScope] = useState<"global" | "story">("global");
     const storyId = scope === "story" ? currentStoryId : null;
@@ -20,7 +20,7 @@ export const ActionsScreen = ({ goTo }: ScreenProps) => {
     return (
         <div className="flex h-full flex-col">
             <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goTo("settings")} aria-label="Back">
+                <button type="button" onClick={() => goBack("settings")} aria-label="Back">
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="text-lg font-semibold">AI Actions (advanced)</h1>

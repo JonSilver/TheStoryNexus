@@ -6,21 +6,19 @@ import type { ScreenProps } from "../V2App";
 import { useV2Store } from "../state/useV2Store";
 
 /** Reading mode inside the shell: the whole story as one continuous scroll. */
-export const ReadScreen = ({ goTo }: ScreenProps) => {
+export const ReadScreen = ({ goBack }: ScreenProps) => {
     const { currentStoryId } = useV2Store();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
 
-    if (!currentStoryId) {
-        goTo("story");
-        return null;
-    }
+    // Only routed inside /story/:storyId, so a story is always present
+    if (!currentStoryId) return null;
     const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
 
     return (
         <div className="flex h-full flex-col">
             <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goTo("story")} aria-label="Back">
+                <button type="button" onClick={() => goBack("story")} aria-label="Back">
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="min-w-0 truncate text-lg font-semibold">{story?.title}</h1>

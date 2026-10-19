@@ -38,7 +38,7 @@ const groupEntries = (entries: LorebookEntry[]) =>
         items: entries.filter(e => e.category === category).sort((a, b) => a.name.localeCompare(b.name))
     })).filter(group => group.items.length > 0);
 
-export const BibleScreen = ({ goTo }: ScreenProps) => {
+export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
     const { currentStoryId, lastChapterFor } = useV2Store();
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
@@ -73,7 +73,7 @@ export const BibleScreen = ({ goTo }: ScreenProps) => {
     return (
         <div className="flex h-full flex-col">
             <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goTo("story")} aria-label="Back">
+                <button type="button" onClick={() => goBack("story")} aria-label="Back">
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h1 className="text-lg font-semibold">Story Bible</h1>

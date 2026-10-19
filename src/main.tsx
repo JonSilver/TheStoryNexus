@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
 // Styles
 import "react-toastify/dist/ReactToastify.css";
@@ -28,17 +28,8 @@ ReactDOM.createRoot(rootElement).render(
                 <BrowserRouter>
                     <Suspense fallback={<PageLoadingFallback />}>
                         <Routes>
-                            <Route path="/" element={<V2App />} />
-                            {/* Old bookmarks and links land somewhere real, never a blank page */}
-                            <Route path="/v2" element={<Navigate to="/" replace />} />
-                            <Route path="/stories" element={<Navigate to="/" replace />} />
-                            {/* Former standalone pages now live inside the app — open them there */}
-                            <Route path="/settings" element={<Navigate to="/?tool=providers" replace />} />
-                            <Route path="/series" element={<Navigate to="/?tool=serieslist" replace />} />
-                            <Route path="/series/:seriesId" element={<Navigate to="/?tool=serieslist" replace />} />
-                            <Route path="/guide" element={<Navigate to="/?tool=guidepage" replace />} />
-                            <Route path="/stories/:storyId/read" element={<Navigate to="/?tool=read" replace />} />
-                            <Route path="*" element={<Navigate to="/" replace />} />
+                            {/* The app owns all routing (#81) */}
+                            <Route path="/*" element={<V2App />} />
                         </Routes>
                     </Suspense>
                     <ToastContainer />
