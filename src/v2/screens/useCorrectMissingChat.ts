@@ -4,9 +4,9 @@ import { toast } from "react-toastify";
 import { pathFor, useNav } from "../routing";
 
 /**
- * A link to a chat that no longer exists: say so, and put the URL right.
- * Asks the server rather than trusting the cached list — a chat created a
- * moment ago may not be in it yet.
+ * A link to a chat this story's list doesn't show: ask the server (a chat
+ * created a moment ago may not be listed yet). Gone — say so and put the URL
+ * right; another story's — open it there; unanswerable — say that too.
  */
 export const useCorrectMissingChat = (chatId: string | null | undefined, unlisted: boolean, storyId: string | null) => {
     const { navigate } = useNav();
@@ -14,10 +14,22 @@ export const useCorrectMissingChat = (chatId: string | null | undefined, unliste
         if (!unlisted || !chatId) return;
         const cancelled = { value: false };
         void (async () => {
-            const [, response] = await attemptPromise(() => fetch(`/api/brainstorm/${encodeURIComponent(chatId)}`));
-            if (cancelled.value || response?.status !== 404) return;
-            toast.info("That chat no longer exists");
-            navigate(pathFor("brainstorm", storyId), { replace: true });
+            const [error, response] = await attemptPromise(() =>
+                fetch(`/api/brainstorm/${encodeURIComponent(chatId)}`)
+            );
+            if (cancelled.value) return;
+            if (response?.status === 404) {
+                toast.info("That chat no longer exists");
+                navigate(pathFor("brainstorm", storyId), { replace: true });
+                return;
+            }
+            if (error || !response?.ok) {
+                toast.error("Couldn't check that chat — the server didn't answer. Showing this story's chats.");
+                return;
+            }
+            const [, found] = await attemptPromise(() => response.json() as Promise<{ storyId?: string }>);
+            if (!cancelled.value && found?.storyId && found.storyId !== storyId)
+                navigate(`${pathFor("brainstorm", found.storyId)}/${encodeURIComponent(chatId)}`, { replace: true });
         })();
         return () => {
             cancelled.value = true;

@@ -89,6 +89,8 @@ export interface ChatMessage {
     versions?: string[];
     /** Versions (indexes into `versions`, or 0 when there are none) cut short by a failure — kept, and labelled. */
     interruptedVersions?: number[];
+    /** Which version `content` is — content alone can't say when two versions match. */
+    shownVersion?: number;
     // Optional edit metadata
     originalContent?: string; // the original content before the first edit
     editedAt?: string; // ISO timestamp when last edited

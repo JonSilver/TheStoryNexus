@@ -22,11 +22,6 @@ const openNewChat = async (page: Page) => {
     await page.getByRole("button", { name: "New chat" }).click();
 };
 
-const send = async (page: Page, message: string) => {
-    await page.getByPlaceholder("Bounce an idea around…").fill(message);
-    await page.getByRole("button", { name: "Send" }).click();
-};
-
 const storyIdOf = (page: Page) => new URL(page.url()).pathname.split("/")[2];
 
 test("rework: text that arrived before a failure is kept, marked incomplete, and usable", async ({ page }) => {
@@ -42,63 +37,6 @@ test("rework: text that arrived before a failure is kept, marked incomplete, and
     await expect(sheet.getByText(/Incomplete/)).toBeVisible();
     await sheet.getByRole("button", { name: "Replace selection" }).click();
     await expect(editorLocator(page)).toContainText("Half a better sentence");
-});
-
-test("brainstorm: a reply cut short is kept and labelled, and survives a reload", async ({ page }) => {
-    await script(page, [{ partial: "A reply that was cut", error: STALL }]);
-    await createStoryAndChapter(page, "Fixes — brainstorm partial", "One");
-    await openNewChat(page);
-    await send(page, "What happens next?");
-
-    await expect(page.getByText("A reply that was cut")).toBeVisible();
-    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
-    await page.reload();
-    await expect(page.getByText("A reply that was cut")).toBeVisible();
-    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
-});
-
-test("brainstorm: a reply that couldn't be saved stays on screen until it is", async ({ page }) => {
-    await script(page, [{ text: "A reply worth keeping." }]);
-    await createStoryAndChapter(page, "Fixes — unsaved reply", "One");
-    await openNewChat(page);
-
-    const writes = { count: 0 };
-    await page.route("**/api/brainstorm/*", route => {
-        if (route.request().method() !== "PUT") return route.fallback();
-        writes.count += 1;
-        // The writer's message saves; the reply's write fails
-        return writes.count === 2
-            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
-            : route.fallback();
-    });
-    await send(page, "Give me an idea");
-    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
-    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
-
-    // Leaving and reloading before it's saved must not lose it
-    await page.reload();
-    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
-    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
-
-    await page.getByRole("button", { name: "Save again" }).click();
-    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
-    await page.reload();
-    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
-});
-
-test("brainstorm: leaving mid-reply leaves the message answerable, not stranded", async ({ page }) => {
-    await script(page, [{ hold: true }, { text: "Answered at last." }]);
-    await createStoryAndChapter(page, "Fixes — left mid-reply", "One");
-    await openNewChat(page);
-    await send(page, "A question left hanging");
-    await expect(page.getByRole("status")).toBeVisible();
-
-    await page.getByRole("button", { name: "Write" }).click();
-    await page.getByRole("button", { name: "Brainstorm" }).click();
-    await page.getByText("A question left hanging").click();
-    await expect(page.getByText("This message hasn't been answered.")).toBeVisible();
-    await page.getByRole("button", { name: "Try again" }).click();
-    await expect(page.getByText("Answered at last.")).toBeVisible();
 });
 
 test("continue: after a reload, a failed Again never costs the continuation already there", async ({ page }) => {
@@ -193,17 +131,45 @@ test("scene beat: a take cut short is kept and marked incomplete, even after a r
     await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
 });
 
-test("brainstorm: a reply being written stays in its own chat", async ({ page }) => {
-    await script(page, [{ hold: true }]);
-    await createStoryAndChapter(page, "Fixes — chat binding", "One");
+test("a chat link under the wrong story opens the chat in its own story", async ({ page }) => {
+    await createStoryAndChapter(page, "Fixes — chat home", "One");
     await openNewChat(page);
-    await send(page, "Question for chat one");
-    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    await expect(page).toHaveURL(/\/brainstorm\/.+/);
+    const chatPath = new URL(page.url()).pathname;
+    const chatId = chatPath.split("/").pop();
 
-    await page.getByRole("button", { name: "Back to chats" }).click();
-    await page.getByRole("button", { name: "New chat" }).click();
-    await expect(page.getByText(/A reply is still being written in another chat/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Stop" })).toHaveCount(0);
-    await page.getByPlaceholder("Bounce an idea around…").fill("Something else");
-    await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
+    await page.goto("/library");
+    await page.getByPlaceholder("New story title").fill("Fixes — other story");
+    await page.getByRole("button", { name: "Create" }).click();
+    await expect(page).toHaveURL(/\/story\/[^/]+\/chapters$/);
+    const otherStory = storyIdOf(page);
+    await page.goto(`/story/${otherStory}/brainstorm/${chatId}`);
+    await expect(page).toHaveURL(new RegExp(`${chatPath}$`));
+});
+
+test("scene beat: a stream that never finished (orphaned by a crash) comes back marked incomplete", async ({
+    page
+}) => {
+    await createStoryAndChapter(page, "Fixes — orphaned beat", "One");
+    await typeInEditor(page, "Setup paragraph.");
+    await page.getByRole("button", { name: "Insert scene beat" }).click();
+    await page.getByPlaceholder("Describe what happens in this beat…").fill("A storm hits the harbour");
+    await waitForSaved(page);
+    const chapterId = new URL(page.url()).pathname.split("/").pop();
+    const url = `/api/chapters/${chapterId}`;
+    await expect.poll(async () => (await (await page.request.get(url)).json()).content).toContain("storm hits");
+
+    // As a crash mid-generation leaves it: text streamed, status generating, no take yet
+    const chapter = await (await page.request.get(url)).json();
+    const doc = JSON.parse(chapter.content);
+    const beat = doc.root.children.find((node: { type: string }) => node.type === "scene-beat-v2");
+    Object.assign(beat, { status: "generating", streaming: "Half a storm that never" });
+    const put = await page.request.put(url, {
+        data: { content: JSON.stringify(doc), wordCount: 2, expectedSaveVersion: chapter.saveVersion }
+    });
+    expect(put.ok()).toBe(true);
+
+    await page.reload();
+    await expect(page.getByText("Half a storm that never")).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
 });

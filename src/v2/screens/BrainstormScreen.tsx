@@ -18,6 +18,7 @@ import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
 import { useV2Store } from "../state/useV2Store";
 import { ChatBubble, UnsavedBanner } from "./ChatBubble";
+import { writeUnsaved } from "./unsavedChat";
 import { useChapterFromReply, useChatConversation } from "./useChatConversation";
 import { useCorrectMissingChat } from "./useCorrectMissingChat";
 
@@ -118,7 +119,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                                 type="button"
                                 onClick={() =>
                                     window.confirm(`Delete “${c.title}” and its whole conversation?`) &&
-                                    deleteChat.mutate(c.id)
+                                    deleteChat.mutate(c.id, { onSuccess: () => writeUnsaved(c.id, null) })
                                 }
                                 aria-label={`Delete ${c.title}`}
                                 className="text-muted-foreground"
@@ -184,7 +185,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         {generation.error} The earlier reply is still here.
                     </p>
                 )}
-                {idle && unanswered && (
+                {!streamingHere && unanswered && (
                     <div className="space-y-2 text-sm" role="alert">
                         <p className={generation.error ? "text-destructive" : "text-muted-foreground"}>
                             {generation.error ?? "This message hasn't been answered."}
@@ -192,6 +193,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                         <button
                             type="button"
                             onClick={() => void conversation.retryLast()}
+                            disabled={streamingElsewhere}
                             className="flex items-center gap-1 rounded-md border px-3 py-1"
                         >
                             <RotateCcw className="h-3.5 w-3.5" /> Try again

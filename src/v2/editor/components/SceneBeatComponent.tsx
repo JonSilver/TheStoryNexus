@@ -46,7 +46,8 @@ export const SceneBeatComponent = ({ nodeKey }: { nodeKey: NodeKey }) => {
     // Stop button
     useEffect(() => {
         if (ownsRun() || (!streaming && !isGenerating)) return;
-        mutate(node => $commitStreamingAsTake(node), HISTORY_MERGE_TAG);
+        // A stream nobody owns never finished: its take is marked incomplete
+        mutate(node => $commitStreamingAsTake(node, true), HISTORY_MERGE_TAG);
     }, [streaming, isGenerating, ownsRun, mutate]);
 
     /**

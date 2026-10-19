@@ -119,6 +119,11 @@ export const MergeSheet = ({
     };
 
     const busy = generation.phase === "streaming";
+    // A merge result (and any edits to it) is paid-for work: closing asks first
+    const close = () => {
+        if ((busy || merged) && !window.confirm("Close and discard the merge result?")) return;
+        onClose();
+    };
 
     return (
         <div
@@ -129,7 +134,7 @@ export const MergeSheet = ({
             <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
                 <header className="flex items-center justify-between px-4 py-3">
                     <span className="font-medium">Merge duplicate entries</span>
-                    <button type="button" onClick={onClose} aria-label="Close">
+                    <button type="button" onClick={close} aria-label="Close">
                         <X className="h-4 w-4" />
                     </button>
                 </header>
@@ -254,7 +259,7 @@ export const MergeSheet = ({
                             Try again
                         </button>
                     )}
-                    <button type="button" onClick={onClose} className="ml-auto rounded-md border px-4 py-2 text-sm">
+                    <button type="button" onClick={close} className="ml-auto rounded-md border px-4 py-2 text-sm">
                         Cancel
                     </button>
                 </footer>

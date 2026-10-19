@@ -1,0 +1,158 @@
+import { expect, type Page, test } from "@playwright/test";
+import { STALL, createStoryAndChapter, scriptGeneration as script } from "./helpers";
+
+/**
+ * Brainstorm never loses a reply: cut short, it's kept and labelled; unsaved,
+ * it stays on this device (merged with, never instead of, what other devices
+ * saved); a reply being written belongs to its own chat.
+ */
+
+test.describe.configure({ mode: "serial" });
+
+const openNewChat = async (page: Page) => {
+    await page.getByRole("button", { name: "Brainstorm" }).click();
+    await page.getByRole("button", { name: "New chat" }).click();
+};
+const send = async (page: Page, message: string) => {
+    await page.getByPlaceholder("Bounce an idea around…").fill(message);
+    await page.getByRole("button", { name: "Send" }).click();
+};
+
+test("brainstorm: a reply cut short is kept and labelled, and survives a reload", async ({ page }) => {
+    await script(page, [{ partial: "A reply that was cut", error: STALL }]);
+    await createStoryAndChapter(page, "Fixes — brainstorm partial", "One");
+    await openNewChat(page);
+    await send(page, "What happens next?");
+
+    await expect(page.getByText("A reply that was cut")).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("A reply that was cut")).toBeVisible();
+    await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
+});
+
+test("brainstorm: a reply that couldn't be saved stays on screen until it is", async ({ page }) => {
+    await script(page, [{ text: "A reply worth keeping." }]);
+    await createStoryAndChapter(page, "Fixes — unsaved reply", "One");
+    await openNewChat(page);
+
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        // The writer's message saves; the reply's write fails
+        return writes.count === 2
+            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+            : route.fallback();
+    });
+    await send(page, "Give me an idea");
+    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+
+    // Leaving and reloading before it's saved must not lose it
+    await page.reload();
+    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText("A reply worth keeping.")).toBeVisible();
+});
+
+test("brainstorm: leaving mid-reply leaves the message answerable, not stranded", async ({ page }) => {
+    await script(page, [{ hold: true }, { text: "Answered at last." }]);
+    await createStoryAndChapter(page, "Fixes — left mid-reply", "One");
+    await openNewChat(page);
+    await send(page, "A question left hanging");
+    await expect(page.getByRole("status")).toBeVisible();
+
+    await page.getByRole("button", { name: "Write" }).click();
+    await page.getByRole("button", { name: "Brainstorm" }).click();
+    await page.getByText("A question left hanging").click();
+    await expect(page.getByText("This message hasn't been answered.")).toBeVisible();
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByText("Answered at last.")).toBeVisible();
+});
+
+test("brainstorm: a reply being written stays in its own chat", async ({ page }) => {
+    await script(page, [{ hold: true }]);
+    await createStoryAndChapter(page, "Fixes — chat binding", "One");
+    await openNewChat(page);
+    await send(page, "Question for chat one");
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Back to chats" }).click();
+    await page.getByRole("button", { name: "New chat" }).click();
+    await expect(page.getByText(/A reply is still being written in another chat/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stop" })).toHaveCount(0);
+    await page.getByPlaceholder("Bounce an idea around…").fill("Something else");
+    await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
+});
+
+test("brainstorm: a reply this device couldn't save never overwrites what another device saved", async ({
+    page,
+    browser
+}) => {
+    await script(page, [{ text: "Reply from this device." }]);
+    await createStoryAndChapter(page, "Fixes — two devices chat", "One");
+    await openNewChat(page);
+    await expect(page).toHaveURL(/\/brainstorm\/.+/);
+    const chatUrl = page.url();
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        return writes.count === 2
+            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+            : route.fallback();
+    });
+    await send(page, "Question here");
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+
+    // Another device, its own browser: adds to the same chat successfully
+    const other = await (await browser.newContext()).newPage();
+    await script(other, [{ text: "Reply from the other device." }]);
+    await other.goto(chatUrl);
+    await send(other, "Question there");
+    await expect(other.getByText("Reply from the other device.")).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText("Reply from the other device.")).toBeVisible();
+    await expect(page.getByText("Reply from this device.")).toBeVisible();
+    await page.getByRole("button", { name: "Save again" }).click();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+
+    await other.reload();
+    await expect(other.getByText("Reply from the other device.")).toBeVisible();
+    await expect(other.getByText("Reply from this device.")).toBeVisible();
+});
+
+test("brainstorm: a message sent after an unsaved reply saves it too, even if its own reply fails", async ({
+    page
+}) => {
+    await script(page, [{ text: "The reply that failed to save." }, { error: STALL }]);
+    await createStoryAndChapter(page, "Fixes — send after unsaved", "One");
+    await openNewChat(page);
+    const writes = { count: 0 };
+    await page.route("**/api/brainstorm/*", route => {
+        if (route.request().method() !== "PUT") return route.fallback();
+        writes.count += 1;
+        return writes.count === 2
+            ? route.fulfill({ status: 500, contentType: "application/json", body: "{}" })
+            : route.fallback();
+    });
+    await send(page, "First question");
+    await expect(page.getByText(/isn't saved yet/)).toBeVisible();
+
+    // The second message's write carries the unsaved reply with it; its own reply then fails
+    await send(page, "Second question");
+    await expect(
+        page.getByText("This message hasn't been answered.").or(page.getByText(/stopped sending/))
+    ).toBeVisible();
+    await expect(page.getByText(/isn't saved yet/)).toHaveCount(0);
+    await expect(page.getByText("Second question")).toBeVisible();
+    await page.reload();
+    for (const text of ["First question", "The reply that failed to save.", "Second question"])
+        await expect(page.getByText(text)).toBeVisible();
+});

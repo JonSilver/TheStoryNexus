@@ -4,7 +4,7 @@ import { AttemptNav } from "../ai/AttemptNav";
 import { MarkdownView } from "../components/MarkdownView";
 
 const versionShown = (message: ChatMessage) =>
-    message.versions ? Math.max(0, message.versions.lastIndexOf(message.content)) : 0;
+    message.versions ? (message.shownVersion ?? Math.max(0, message.versions.lastIndexOf(message.content))) : 0;
 
 const ACTION = "mt-1 flex items-center gap-1 text-xs text-muted-foreground";
 

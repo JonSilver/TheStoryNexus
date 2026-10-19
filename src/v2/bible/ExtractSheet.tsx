@@ -93,11 +93,14 @@ export const ExtractSheet = ({
     // Found-but-unadded entries are paid-for work: closing asks before discarding them
     const close = () => {
         const found = proposals?.length ?? 0;
+        const reviewable = found + (updates?.length ?? 0) + (issues?.length ?? 0);
         const question = busy
-            ? `Extraction is still running. Close and lose ${found ? `the ${found} entr${found === 1 ? "y" : "ies"} found so far` : "it"}?`
+            ? `This is still running. Close and lose ${found ? `the ${found} entr${found === 1 ? "y" : "ies"} found so far` : "it"}?`
             : ticked.size > 0
               ? `Close without adding the ${ticked.size} ticked entr${ticked.size === 1 ? "y" : "ies"} to the bible?`
-              : null;
+              : reviewable > 0
+                ? "Close and discard these results? Getting them again means running it again."
+                : null;
         if (question && !window.confirm(question)) return;
         onClose();
     };

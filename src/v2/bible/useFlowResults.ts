@@ -41,8 +41,14 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
     const addProposals = (parsed: EntryProposal[]) => {
         const inBible = new Set(entries.map(e => e.name.toLowerCase()));
         const current = latest.current.proposals ?? [];
+        // De-duplicated against the list AND within this reply
         const listed = new Set(current.map(p => p.name.toLowerCase()));
-        const fresh = parsed.filter(p => !listed.has(p.name.toLowerCase()));
+        const fresh = parsed.filter(p => {
+            const key = p.name.toLowerCase();
+            if (listed.has(key)) return false;
+            listed.add(key);
+            return true;
+        });
         // New finds start ticked unless the bible already has them
         const ticked = new Set(latest.current.ticked);
         fresh.forEach((p, i) => {

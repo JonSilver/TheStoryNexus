@@ -48,11 +48,12 @@ test.describe("against a real model server", () => {
         expect(chosen.ok()).toBe(true);
     });
 
+    // Runs even when setup or a test failed: later spec files must not inherit a dead model server
     test.afterAll(async ({ request }) => {
-        await request.put(`/api/ai/settings/${server.settingsId}`, {
-            data: { defaultProvider: null, defaultModelId: null }
-        });
-        await new Promise(resolve => server.instance?.close(resolve));
+        const settings = server.settingsId || (await (await request.get("/api/ai/settings")).json()).id;
+        await request.put(`/api/ai/settings/${settings}`, { data: { defaultProvider: null, defaultModelId: null } });
+        server.instance?.closeAllConnections();
+        await new Promise(resolve => (server.instance ? server.instance.close(resolve) : resolve(undefined)));
     });
 
     const reworkWithRealServer = async (page: Page, title: string) => {

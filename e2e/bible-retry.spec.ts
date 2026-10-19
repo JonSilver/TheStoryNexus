@@ -201,3 +201,32 @@ test("bible: entries that couldn't be added stay listed and ticked to try again"
     await expect(page.getByText("The younger sister.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Add 1 to bible" })).toBeVisible();
 });
+
+test("bible: one reply naming the same entry twice offers it once — and closing with results asks", async ({
+    page
+}) => {
+    const twice = JSON.stringify([
+        { name: "Mara", category: "character", description: "A pilot.", tags: [] },
+        { name: "mara", category: "character", description: "Flies north.", tags: [] }
+    ]);
+    await script(page, [{ text: twice }]);
+    await createStoryAndChapter(page, "Fixes — duplicate in reply", "One");
+    await typeInEditor(page, "Mara flew north.");
+    await waitForSaved(page);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await page.getByRole("button", { name: "Extract from chapter" }).click();
+    await page.getByRole("button", { name: "Run" }).click();
+    await expect(page.getByRole("button", { name: "Add 1 to bible" })).toBeVisible();
+
+    // Unticking everything doesn't make the results free to throw away
+    await page.getByRole("checkbox").first().uncheck();
+    const asked: string[] = [];
+    page.once("dialog", dialog => {
+        asked.push(dialog.message());
+        void dialog.dismiss();
+    });
+    await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
+    await expect.poll(() => asked.length).toBe(1);
+    await expect(page.getByText("A pilot.")).toBeVisible();
+});

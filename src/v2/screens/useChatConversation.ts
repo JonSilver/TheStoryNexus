@@ -1,5 +1,5 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useUpdateBrainstormMutation } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
@@ -7,6 +7,7 @@ import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { RunResult, useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { mergeUnsaved, readUnsaved, writeUnsaved } from "./unsavedChat";
 
 const historyText = (messages: ChatMessage[]) =>
     messages.map(m => `${m.role === "user" ? "Writer" : "Assistant"}: ${m.content}`).join("\n\n");
@@ -17,33 +18,6 @@ const chatMessage = (role: ChatMessage["role"], content: string): ChatMessage =>
     content,
     timestamp: new Date()
 });
-
-// A conversation the server refused to save is kept in this browser until it
-// is saved — leaving the screen or reloading must not lose a paid-for reply.
-// Memory backs it up where storage is unavailable (private browsing).
-const UNSAVED_PREFIX = "storynexus-unsaved-chat:";
-const unsavedInMemory = new Map<string, ChatMessage[]>();
-
-const readUnsaved = (chatId: string): ChatMessage[] | null => {
-    try {
-        const raw = localStorage.getItem(UNSAVED_PREFIX + chatId);
-        if (raw) return JSON.parse(raw) as ChatMessage[];
-    } catch {
-        // Unreadable storage: fall back to this session's copy
-    }
-    return unsavedInMemory.get(chatId) ?? null;
-};
-
-const writeUnsaved = (chatId: string, messages: ChatMessage[] | null) => {
-    if (messages) unsavedInMemory.set(chatId, messages);
-    else unsavedInMemory.delete(chatId);
-    try {
-        if (messages) localStorage.setItem(UNSAVED_PREFIX + chatId, JSON.stringify(messages));
-        else localStorage.removeItem(UNSAVED_PREFIX + chatId);
-    } catch {
-        // Storage unavailable or full: the in-memory copy still covers this session
-    }
-};
 
 /** A reply that produced text is kept — cut short (a failure, Stop, or leaving mid-reply), it's kept and labelled incomplete. */
 const replyFrom = (result: RunResult) =>
@@ -65,15 +39,28 @@ export const useChatConversation = (
     generation: ReturnType<typeof useActionGeneration>
 ) => {
     const updateChat = useUpdateBrainstormMutation();
+    // A reply can finish after the screen has gone (it's still saved); only
+    // the screen's own state must not be touched then
+    const alive = useRef(true);
+    useEffect(() => {
+        alive.current = true;
+        return () => {
+            alive.current = false;
+        };
+    }, []);
     // Re-render after the browser-stored copy changes; the copy itself is the truth
     const [, setStoredVersion] = useState(0);
     const remember = (chatId: string, next: ChatMessage[] | null) => {
         writeUnsaved(chatId, next);
-        setStoredVersion(v => v + 1);
+        if (alive.current) setStoredVersion(v => v + 1);
     };
+    const serverMessages = chat?.messages ?? [];
     const stored = chat ? readUnsaved(chat.id) : null;
-    const unsaved = chat && stored ? { chatId: chat.id, messages: stored } : null;
-    const messages = stored ?? chat?.messages ?? [];
+    const merged = stored ? mergeUnsaved(serverMessages, stored) : null;
+    // Unsaved only while it holds something the server doesn't
+    const pending = merged && JSON.stringify(merged) !== JSON.stringify(serverMessages) ? merged : null;
+    const unsaved = chat && pending ? { chatId: chat.id, messages: pending } : null;
+    const messages = pending ?? serverMessages;
 
     // The chat a reply is being written for — switching chats mid-reply must not show it in, or let Stop cut it from, another
     const [generatingFor, setGeneratingFor] = useState<string | null>(null);
@@ -82,7 +69,7 @@ export const useChatConversation = (
         if (!storyId || !chat) return { text: "", outcome: "superseded" };
         setGeneratingFor(chat.id);
         const result = await runFor(history, userMessage);
-        setGeneratingFor(null);
+        if (alive.current) setGeneratingFor(null);
         return result;
     };
 
@@ -120,7 +107,7 @@ export const useChatConversation = (
             ...withUser,
             { ...chatMessage("assistant", reply.text), ...(reply.interrupted && { interruptedVersions: [0] }) }
         ]);
-        generation.reset();
+        if (alive.current) generation.reset();
     };
 
     /** False when the writer's own message couldn't be saved — nothing was sent. */
@@ -133,6 +120,8 @@ export const useChatConversation = (
             updateChat.mutateAsync({ id: chat.id, data: { messages: withUser } })
         );
         if (userWriteError) return false;
+        // That write carried everything on screen, unsaved messages included — they're saved now
+        remember(chat.id, null);
         await answer(messages, userMessage, withUser);
         return true;
     };
@@ -156,9 +145,15 @@ export const useChatConversation = (
         ];
         await saveMessages([
             ...kept,
-            { ...last, content: reply.text, versions, ...(interruptedVersions.length && { interruptedVersions }) }
+            {
+                ...last,
+                content: reply.text,
+                versions,
+                shownVersion: versions.length - 1,
+                ...(interruptedVersions.length && { interruptedVersions })
+            }
         ]);
-        generation.reset();
+        if (alive.current) generation.reset();
     };
 
     /** The writer's message is saved but unanswered (a failure, or they left mid-reply): send it again. */
@@ -172,7 +167,9 @@ export const useChatConversation = (
     const showVersion = (message: ChatMessage, index: number) => {
         const chosen = message.versions?.[index];
         if (!chat || chosen === undefined) return;
-        void saveMessages(messages.map(m => (m.id === message.id ? { ...m, content: chosen } : m)));
+        void saveMessages(
+            messages.map(m => (m.id === message.id ? { ...m, content: chosen, shownVersion: index } : m))
+        );
     };
 
     /** The writer chooses the saved version over the unsaved one. */
