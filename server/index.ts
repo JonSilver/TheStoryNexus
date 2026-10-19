@@ -72,6 +72,11 @@ app.get("/api/health", (_, res) => {
     res.json({ status: "ok" });
 });
 
+// Unknown API paths are a 404 with a JSON error — never the app's HTML
+app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "Not found" });
+});
+
 // Serve static files in production
 if (NODE_ENV === "production") {
     const staticPath = path.join(__dirname, "../../client");

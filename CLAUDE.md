@@ -69,14 +69,24 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 
 ### Routing
 
+The URL is the source of truth for where the writer is (`src/v2/routing.tsx`, #81). `main.tsx` hands every path to `V2App`, which owns the routes:
+
 ```
-/            — the app (V2App): stateful shell, tools switched in-component
-/settings, /series, /guide, /stories/:id/read
-             — redirect to /?tool=… and open that screen inside the app
-(everything else redirects to /)
+/                                   — resume: last story's Write screen (localStorage remembers only this)
+/write, /story, /brainstorm         — the same screens with no story chosen (empty states)
+/story/:storyId                     — Story hub
+/story/:storyId/write/:chapterId?   — Write (URL chapter wins; missing/unknown → corrected in place)
+/story/:storyId/chapters|bible|notes|read
+/story/:storyId/brainstorm/:chatId? — Brainstorm, with the open chat
+/library
+/settings, /settings/actions, /settings/providers, /settings/series, /guide
+legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anything else → /
 ```
 
-Every screen the app links to renders inside the shell (bottom nav present). Full pages such as AI settings, Series and the Guide are hosted via `EmbeddedPage`, which supplies the only back control — embedded pages must never add their own navigation.
+- Screens navigate with `goTo(tool)` (pushes a real history entry; the story comes from the URL, else the store, read at call time) and back arrows with `goBack(fallback)` (history-back when the writer arrived from inside the app, else the fallback screen — back must never leave the app).
+- `StoryScope` provides `RouteParamsContext` (story/chapter/chat ids) and shows a plain "story doesn't exist" screen for unknown ids. `useV2Store().currentStoryId` returns the URL's story inside a story route.
+- Full pages (AI settings, Series, Guide) render inside `EmbeddedPage`, which supplies the only back control — embedded pages must never add their own navigation.
+- Production Express serves the app for every non-API path; unknown `/api/*` paths are JSON 404s.
 
 ### Frontend layout
 

@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { useRouteParams } from "../routeParams";
 
 /**
  * v2 UI state, persisted to localStorage: current story, per-story last
@@ -49,13 +50,19 @@ const setState = (update: Partial<V2State>) => {
     store.listeners.forEach(listener => listener());
 };
 
+/** Read at call time, outside React — e.g. to build a URL right after setCurrentStory. */
+export const getV2State = (): V2State => store.state;
+
 const subscribe = (listener: () => void) => {
     store.listeners.add(listener);
     return () => store.listeners.delete(listener);
 };
 
 export const useV2Store = () => {
-    const state = useSyncExternalStore(subscribe, () => store.state);
+    const stored = useSyncExternalStore(subscribe, () => store.state);
+    // Inside a story URL, the URL — not the remembered last story — says which story this is
+    const route = useRouteParams();
+    const state = route.storyId ? { ...stored, currentStoryId: route.storyId } : stored;
 
     const setCurrentStory = useCallback((storyId: string | null) => setState({ currentStoryId: storyId }), []);
 

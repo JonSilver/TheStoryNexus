@@ -389,7 +389,8 @@ test("import: multiple files become one story in filename order", async ({ page 
     await page.getByRole("button", { name: /Create story \(3 chapters\)/ }).click();
     await expect(page.getByPlaceholder("New chapter title (optional)")).toBeVisible();
 
-    // Order and per-file titles both honoured
+    // Order and per-file titles both honoured (wait for the list — allTextContents doesn't)
+    await expect(page.getByRole("button", { name: /^part 10\b/ })).toBeVisible();
     const titles = await page.locator("li span.truncate").allTextContents();
     const order = titles.filter(t => /^part /.test(t));
     if (order.join("|") !== "part 1|part 2|part 10") throw new Error(`Wrong order: ${order.join(", ")}`);
@@ -472,15 +473,17 @@ test("settings screens stay inside the app: one back button, never out of it", a
         await expect(page.getByRole("button", { name: "Back" })).toHaveCount(1);
         await page.getByRole("button", { name: "Back" }).click();
         await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
-        expect(new URL(page.url()).pathname).toBe("/");
+        expect(new URL(page.url()).pathname).toBe("/settings");
     }
 });
 
 test("old standalone page URLs open the right screen inside the app", async ({ page }) => {
-    await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "AI providers & models" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
     await page.goto("/guide");
     await expect(page.getByRole("heading", { name: "Guide", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
+    await page.goto("/series");
+    await expect(page.getByRole("heading", { name: "Series", exact: true })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/settings/series");
+    await page.goto("/?tool=providers");
+    await expect(page.getByRole("heading", { name: "AI providers & models" })).toBeVisible();
 });
