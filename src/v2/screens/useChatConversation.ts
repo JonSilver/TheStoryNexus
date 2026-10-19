@@ -177,7 +177,18 @@ export const useChatConversation = (
         if (chat) remember(chat.id, null);
     };
 
-    return { messages, unsaved, generatingFor, saveMessages, discardUnsaved, send, regenerate, retryLast, showVersion };
+    return {
+        isMounted: () => alive.current,
+        messages,
+        unsaved,
+        generatingFor,
+        saveMessages,
+        discardUnsaved,
+        send,
+        regenerate,
+        retryLast,
+        showVersion
+    };
 };
 
 /** Brainstormed material flows onward: a new chapter carries the reply as its outline, ready to write against. */

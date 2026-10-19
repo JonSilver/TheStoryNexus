@@ -23,12 +23,18 @@ export const useCorrectMissingChat = (chatId: string | null | undefined, unliste
                 navigate(pathFor("brainstorm", storyId), { replace: true });
                 return;
             }
-            if (error || !response?.ok) {
-                toast.error("Couldn't check that chat — the server didn't answer. Showing this story's chats.");
+            const [decodeError, found] = await attemptPromise(async () => {
+                if (error || !response?.ok) throw new Error("no answer");
+                return (await response.json()) as { storyId?: string };
+            });
+            if (cancelled.value) return;
+            if (decodeError || !found?.storyId) {
+                toast.error(
+                    "Couldn't check that chat — the server didn't answer properly. Showing this story's chats."
+                );
                 return;
             }
-            const [, found] = await attemptPromise(() => response.json() as Promise<{ storyId?: string }>);
-            if (!cancelled.value && found?.storyId && found.storyId !== storyId)
+            if (found.storyId !== storyId)
                 navigate(`${pathFor("brainstorm", found.storyId)}/${encodeURIComponent(chatId)}`, { replace: true });
         })();
         return () => {

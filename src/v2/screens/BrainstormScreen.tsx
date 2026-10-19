@@ -60,6 +60,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
         const userMessage = draft.trim();
         setDraft("");
         if (!(await conversation.send(userMessage))) {
+            if (!conversation.isMounted()) return;
             setDraft(userMessage); // give the message back rather than losing it
             toast.error("Couldn't save your message — try again");
             return;
