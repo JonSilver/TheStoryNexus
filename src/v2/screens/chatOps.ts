@@ -165,8 +165,19 @@ const migrateLegacy = (chatId: string) => {
     try {
         const raw = localStorage.getItem(PENDING_PREFIX + chatId);
         if (!raw) return;
+        const stored = JSON.parse(raw) as { ops?: unknown; local?: unknown } | unknown[];
+        // A list of changes (kept as they are, ids and all), or an earlier build's message lists;
+        // anything else is left in place rather than thrown away unread
+        const changes = Array.isArray(stored)
+            ? fromLegacy(stored)
+            : Array.isArray(stored.ops)
+              ? (stored.ops as ChatOp[])
+              : Array.isArray(stored.local)
+                ? fromLegacy(stored)
+                : null;
+        if (!changes) return;
         // Converted once into per-change keys, so the changes keep stable ids from here on
-        fromLegacy(JSON.parse(raw)).forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }));
+        changes.forEach(change => store(chatId, { op: change, seq: nextSeq(), savingUntil: 0 }));
         localStorage.removeItem(PENDING_PREFIX + chatId);
     } catch {
         // An unreadable legacy record can't be recovered; it's left in place, harmlessly

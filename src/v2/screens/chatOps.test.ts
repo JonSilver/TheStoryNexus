@@ -158,4 +158,17 @@ describe("pending changes", () => {
         localStorage.setItem("storynexus-unsaved-chat:c1", JSON.stringify({ base: before, local: after }));
         expect(applyOps(before, readPending("c1"))[1]).toMatchObject({ content: "B", shownVersion: 1 });
     });
+
+    it("keeps the list of changes this morning's build stored, ids and all", () => {
+        const reply = op({ type: "append", message: msg("a9", "A reply"), after: null });
+        localStorage.setItem("storynexus-unsaved-chat:c1", JSON.stringify({ ops: [reply] }));
+        expect(readPending("c1").map(change => change.id)).toEqual([reply.id]);
+        expect(localStorage.getItem("storynexus-unsaved-chat:c1")).toBeNull();
+    });
+
+    it("leaves a stored record it doesn't recognise in place instead of deleting it unread", () => {
+        localStorage.setItem("storynexus-unsaved-chat:c1", JSON.stringify({ something: "else" }));
+        expect(readPending("c1")).toEqual([]);
+        expect(localStorage.getItem("storynexus-unsaved-chat:c1")).not.toBeNull();
+    });
 });
