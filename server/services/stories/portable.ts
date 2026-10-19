@@ -42,7 +42,7 @@ const optStr = (value: unknown): string | null => (typeof value === "string" ? v
 const optNum = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
 const num = (value: unknown, fallback: number): number => optNum(value) ?? fallback;
 const optCount = (value: unknown): number | null =>
-    Number.isInteger(value) && (value as number) >= 0 ? (value as number) : null;
+    Number.isSafeInteger(value) && (value as number) >= 0 ? (value as number) : null;
 const strings = (value: unknown): string[] =>
     Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 
@@ -98,10 +98,11 @@ export const buildStoryImport = (
             order: num(chapter.order, index),
             content: rewriteAssetUrls(str(chapter.content), oldStoryId, newStoryId),
             revision: optCount(chapter.revision) ?? 0,
-            // A summary can't be fresher than the prose it summarises
+            // A summary can't be fresher than the prose it summarises — or exist without text
             summarySourceRevision: (() => {
                 const source = optCount(chapter.summarySourceRevision);
-                return source !== null && source <= (optCount(chapter.revision) ?? 0) ? source : null;
+                const hasSummary = Boolean(optStr(chapter.summary)?.trim());
+                return hasSummary && source !== null && source <= (optCount(chapter.revision) ?? 0) ? source : null;
             })(),
             // The base small edits accumulate against — without it a restore forgets them
             revisionText: optStr(chapter.revisionText),

@@ -30,8 +30,9 @@ export const proseOf = (content: string): string | null => {
 
 const words = (text: string): string[] => text.toLowerCase().match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) ?? [];
 
-// The diff runs synchronously inside the save request: bounded in time, and
-// a measurement that can't finish counts as significant (SOP 6 — an unknown
+// The diff runs synchronously inside the save request: time-boxed (jsdiff
+// checks the budget between edit-distance layers, so it's a practical bound,
+// not a hard one), and a measurement that can't finish counts as significant (SOP 6 — an unknown
 // defaults towards keeping summaries honest, not towards silence)
 const DIFF_BUDGET_MS = 50;
 

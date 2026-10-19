@@ -137,3 +137,21 @@ describe("buildSeriesImport", () => {
         expect(rows.stories[0].rows.notes).toHaveLength(1);
     });
 });
+
+describe("imported revision counters", () => {
+    const chapterWith = (fields: Record<string, unknown>) =>
+        buildStoryImport({ ...backup, chapters: [{ ...backup.chapters?.[0], ...fields }] }, NEW, ids(), now)
+            .chapters[0];
+
+    it("refuses counters that aren't safe non-negative integers", () => {
+        expect(chapterWith({ revision: 1e100 }).revision).toBe(0);
+        expect(chapterWith({ revision: -3 }).revision).toBe(0);
+        expect(chapterWith({ revision: 2.5 }).revision).toBe(0);
+    });
+
+    it("never marks a missing or future summary as fresh", () => {
+        expect(chapterWith({ revision: 4, summary: null, summarySourceRevision: 4 }).summarySourceRevision).toBeNull();
+        expect(chapterWith({ revision: 4, summary: "S", summarySourceRevision: 9 }).summarySourceRevision).toBeNull();
+        expect(chapterWith({ revision: 4, summary: "S", summarySourceRevision: 4 }).summarySourceRevision).toBe(4);
+    });
+});
