@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
+import { useEvent } from "../hooks/useEvent";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "failed" | "conflict";
 
@@ -86,8 +87,7 @@ export const useChapterSaver = (
     onSaved?: (chapter: Chapter) => void
 ) => {
     const [status, setStatus] = useState<SaveStatus>("idle");
-    const onSavedRef = useRef(onSaved);
-    onSavedRef.current = onSaved;
+    const notifySaved = useEvent((saved: Chapter) => onSaved?.(saved));
     const queryClient = useQueryClient();
     const internals = useRef({
         pending: null as SavePayload | null,
@@ -124,7 +124,7 @@ export const useChapterSaver = (
                 s.saveVersion = result.chapter.saveVersion ?? s.saveVersion;
                 s.lastSavedDocument = payload.doc;
                 applyChapterToCaches(queryClient, result.chapter);
-                onSavedRef.current?.(result.chapter);
+                notifySaved(result.chapter);
                 if (s.pending) void drain();
                 else setStatus("saved");
                 return;
@@ -140,7 +140,7 @@ export const useChapterSaver = (
             clearTimeout(s.retryTimer);
             s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
         },
-        [chapterId, queryClient]
+        [chapterId, queryClient, notifySaved]
     );
 
     // Compared as documents, not strings: serialisation order is not identity

@@ -1,7 +1,6 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
     $getNodeByKey,
-    $getRoot,
     $getState,
     $setState,
     HISTORY_MERGE_TAG,
@@ -16,6 +15,7 @@ import type { GenerationStatus } from "@/services/ai/sseParser";
 import { abortGeneration, streamGeneration } from "@/services/api/generation";
 import { randomUUID } from "@/utils/crypto";
 import { useChapterIdentity } from "./ChapterContext";
+import { $textBefore } from "./lexicalText";
 import {
     $commitStreamingAsTake,
     $isSceneBeatNode,
@@ -25,8 +25,6 @@ import {
     statusState,
     streamingState
 } from "./nodes/SceneBeatNode";
-
-const RECENT_PROSE_CHAR_CAP = 100_000;
 
 /**
  * Streams the scene_beat action into the node's streaming field — previous
@@ -58,18 +56,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     useEffect(() => () => cancelRef.current?.(), []);
 
     const textBeforeNode = useCallback(
-        () =>
-            editor
-                .getEditorState()
-                .read(() => {
-                    const pieces: string[] = [];
-                    for (const child of $getRoot().getChildren()) {
-                        if (child.getKey() === nodeKey) break;
-                        pieces.push(child.getTextContent());
-                    }
-                    return pieces.join("\n\n");
-                })
-                .slice(-RECENT_PROSE_CHAR_CAP),
+        () => editor.getEditorState().read(() => $textBefore(nodeKey)),
         [editor, nodeKey]
     );
 

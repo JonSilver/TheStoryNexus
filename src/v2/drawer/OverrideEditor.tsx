@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { PromptMessage } from "@/types/story";
+import { randomUUID } from "@/utils/crypto";
 import { BottomSheet } from "../components/BottomSheet";
 import { OverrideParamFields, type OverrideParams } from "./OverrideParamFields";
 import { type ActionDefinition, type OverrideRow, useResetOverride, useSaveOverride } from "./useActionOverrides";
@@ -22,7 +23,12 @@ export const OverrideEditor = ({
 }) => {
     const saveOverride = useSaveOverride();
     const resetOverride = useResetOverride();
-    const [messages, setMessages] = useState<PromptMessage[]>(override?.template ?? def.defaultTemplate);
+    // Blocks are added, edited and removed: each carries an id for as long as it's being edited
+    const [messages, setMessages] = useState<Array<PromptMessage & { id: string }>>(() =>
+        (override?.template ?? def.defaultTemplate).map(message => ({ ...message, id: randomUUID() }))
+    );
+    const change = (id: string, patch: Partial<PromptMessage>) =>
+        setMessages(current => current.map(m => (m.id === id ? { ...m, ...patch } : m)));
     const [params, setParams] = useState<OverrideParams>({
         temperature: override?.temperature ?? def.defaultParams.temperature,
         maxTokens: override?.maxTokens ?? def.defaultParams.maxTokens,
@@ -36,7 +42,7 @@ export const OverrideEditor = ({
         const ok = await saveOverride({
             actionId: def.id,
             storyId,
-            template: messages,
+            template: messages.map(({ role, content }) => ({ role, content })),
             temperature: params.temperature,
             maxTokens: params.maxTokens,
             topP: params.topP,
@@ -82,19 +88,13 @@ export const OverrideEditor = ({
                 </>
             }
         >
-            {messages.map((message, index) => (
-                <div key={index} className="space-y-1">
+            {messages.map(message => (
+                <div key={message.id} className="space-y-1">
                     <div className="flex items-center gap-2 text-xs">
                         <select
                             className="rounded-md border bg-background px-2 py-1"
                             value={message.role}
-                            onChange={e =>
-                                setMessages(current =>
-                                    current.map((m, i) =>
-                                        i === index ? { ...m, role: e.target.value as PromptMessage["role"] } : m
-                                    )
-                                )
-                            }
+                            onChange={e => change(message.id, { role: e.target.value as PromptMessage["role"] })}
                         >
                             <option value="system">system</option>
                             <option value="user">user</option>
@@ -103,7 +103,7 @@ export const OverrideEditor = ({
                         <button
                             type="button"
                             className="text-muted-foreground"
-                            onClick={() => setMessages(current => current.filter((_, i) => i !== index))}
+                            onClick={() => setMessages(current => current.filter(m => m.id !== message.id))}
                             disabled={messages.length === 1}
                         >
                             remove
@@ -112,18 +112,14 @@ export const OverrideEditor = ({
                     <textarea
                         className="min-h-24 w-full resize-y rounded-md border bg-background p-2 text-sm"
                         value={message.content}
-                        onChange={e =>
-                            setMessages(current =>
-                                current.map((m, i) => (i === index ? { ...m, content: e.target.value } : m))
-                            )
-                        }
+                        onChange={e => change(message.id, { content: e.target.value })}
                     />
                 </div>
             ))}
             <button
                 type="button"
                 className="rounded-md border px-3 py-1 text-sm"
-                onClick={() => setMessages(current => [...current, { role: "user", content: "" }])}
+                onClick={() => setMessages(current => [...current, { role: "user", content: "", id: randomUUID() }])}
             >
                 + message
             </button>

@@ -6,6 +6,7 @@ import type { LorebookEntry } from "@/types/story";
 import { AttemptNav } from "../ai/AttemptNav";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { useAttempts } from "../ai/useAttempts";
 import { BottomSheet } from "../components/BottomSheet";
 import { useConfirm } from "../components/Dialogs";
 import { BIBLE_STOP_NOTE } from "./FlowResults";
@@ -47,10 +48,9 @@ export const MergeSheet = ({
     };
     // Every merge result is kept, with the writer's edits to it — Try again
     // adds another to compare, never replaces one
-    const [results, setResults] = useState<{ list: EntryProposal[]; shown: number }>({ list: [], shown: 0 });
-    const merged = results.list[results.shown] ?? null;
-    const setMerged = (next: EntryProposal) =>
-        setResults(prev => ({ ...prev, list: prev.list.map((r, i) => (i === prev.shown ? next : r)) }));
+    const results = useAttempts<EntryProposal>();
+    const merged = results.current;
+    const setMerged = results.edit;
     // The pair the AI actually merged — fixed at run time, so changing the
     // picks mid-generation can never apply A+B's result to C and delete D
     const [mergedPair, setMergedPair] = useState<{ keepId: string; duplicateId: string } | null>(null);
@@ -82,9 +82,8 @@ export const MergeSheet = ({
         // A different pair starts a fresh comparison; the same pair adds an attempt
         const samePair = mergedPair?.keepId === pair.keepId && mergedPair?.duplicateId === pair.duplicateId;
         setMergedPair(pair);
-        setResults(prev =>
-            samePair ? { list: [...prev.list, proposal], shown: prev.list.length } : { list: [proposal], shown: 0 }
-        );
+        if (!samePair) results.clear();
+        results.record(proposal);
     };
 
     const save = async () => {
@@ -218,12 +217,12 @@ export const MergeSheet = ({
                     {generation.error && !busy && (
                         <p className="text-destructive">{generation.error} The previous merge result is still below.</p>
                     )}
-                    {results.list.length > 1 && (
+                    {results.count > 1 && (
                         <AttemptNav
                             label="Merge"
-                            index={results.shown}
-                            count={results.list.length}
-                            onSelect={shown => setResults(prev => ({ ...prev, shown }))}
+                            index={results.index}
+                            count={results.count}
+                            onSelect={results.select}
                             disabled={busy}
                             className="flex items-center justify-center gap-3 text-sm"
                         />

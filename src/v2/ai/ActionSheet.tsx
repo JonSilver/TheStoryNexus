@@ -1,9 +1,10 @@
-import { CornerDownRight, Loader2, RotateCcw, Square } from "lucide-react";
+import { Loader2, RotateCcw, Square } from "lucide-react";
 import { useState } from "react";
 import type { GenerationStatus } from "@/services/ai/sseParser";
 import { BottomSheet } from "../components/BottomSheet";
 import { AttemptNav } from "./AttemptNav";
 import { GenerationProgress } from "./GenerationProgress";
+import { RefineInput } from "./RefineInput";
 import type { GenerationPhase } from "./useActionGeneration";
 
 /**
@@ -50,17 +51,11 @@ export const ActionSheet = ({
     inputRequest?: { placeholder: string; onSubmit: (value: string) => void } | null;
 }) => {
     const [draft, setDraft] = useState("");
-    const [refineText, setRefineText] = useState("");
 
     const submitDraft = () => {
         if (!draft.trim() || !inputRequest) return;
         inputRequest.onSubmit(draft.trim());
         setDraft("");
-    };
-    const submitRefine = () => {
-        if (!refineText.trim() || !onRefine) return;
-        onRefine(refineText.trim());
-        setRefineText("");
     };
     return (
         <BottomSheet
@@ -172,24 +167,7 @@ export const ActionSheet = ({
                 <AttemptNav label="Attempt" index={attemptIndex} count={attemptCount} onSelect={onSelectAttempt} />
             )}
             {phase !== "streaming" && text && onRefine && (
-                <div className="flex gap-2 px-3 pb-2">
-                    <input
-                        className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-sm"
-                        maxLength={5000}
-                        placeholder="Refine: e.g. darker, tighter, less dialogue…"
-                        value={refineText}
-                        onChange={e => setRefineText(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && submitRefine()}
-                    />
-                    <button
-                        type="button"
-                        onClick={submitRefine}
-                        disabled={!refineText.trim()}
-                        className="flex items-center gap-1 rounded-md border px-2 py-1 text-sm disabled:opacity-50"
-                    >
-                        <CornerDownRight className="h-4 w-4" /> Refine
-                    </button>
-                </div>
+                <RefineInput onRefine={onRefine} className="flex gap-2 px-3 pb-2" />
             )}
         </BottomSheet>
     );

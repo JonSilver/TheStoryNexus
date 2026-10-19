@@ -1,17 +1,12 @@
-import { Maximize2, MessageSquareQuote, Minimize2, RefreshCw, Wand2 } from "lucide-react";
+import { MessageSquareQuote, Wand2 } from "lucide-react";
+import { SELECTION_ACTIONS, type SelectionActionId } from "../../ai/selectionActions";
 
 export interface ToolbarActions {
     onContinue: () => void;
     onSummarise: () => void;
-    onSelectionAction: (actionId: "rework" | "expand" | "shorten", label: string) => void;
+    onSelectionAction: (actionId: SelectionActionId) => void;
     onAsk: () => void;
 }
-
-const SELECTION_ACTIONS = [
-    ["rework", "Rework", RefreshCw],
-    ["expand", "Expand", Maximize2],
-    ["shorten", "Shorten", Minimize2]
-] as const;
 
 export const AiActionButtons = ({
     actions,
@@ -36,12 +31,12 @@ export const AiActionButtons = ({
         )}
         {hasSelection && (
             <>
-                {SELECTION_ACTIONS.map(([actionId, label, Icon]) => (
+                {SELECTION_ACTIONS.map(({ actionId, label, icon: Icon }) => (
                     <button
                         key={actionId}
                         type="button"
                         className={className}
-                        onClick={() => actions.onSelectionAction(actionId, label)}
+                        onClick={() => actions.onSelectionAction(actionId)}
                         aria-label={`${label} selection`}
                         title={`${label} selection`}
                     >
