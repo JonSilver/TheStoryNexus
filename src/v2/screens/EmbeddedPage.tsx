@@ -1,5 +1,6 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
+import { ScreenHeader } from "../components/ScreenParts";
 
 /**
  * Hosts a full page inside the v2 shell: back header + scrolling body, with
@@ -16,12 +17,7 @@ export const EmbeddedPage = ({
     children: ReactNode;
 }) => (
     <div className="flex h-full flex-col">
-        <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <button type="button" onClick={onBack} aria-label="Back">
-                <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h1 className="text-lg font-semibold">{title}</h1>
-        </header>
+        <ScreenHeader title={title} onBack={onBack} />
         <div className="min-h-0 flex-1 overflow-y-auto">
             <Suspense
                 fallback={

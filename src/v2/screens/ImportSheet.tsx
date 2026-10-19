@@ -1,7 +1,8 @@
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { useState } from "react";
 import { useAnalyseFiles, useAnalyseText, useCommitImport } from "@/features/ingest/hooks/useIngest";
 import type { AnalysedChapter, ManuscriptAnalysis } from "@/services/api/client";
+import { BottomSheet } from "../components/BottomSheet";
 
 interface ReviewChapter extends AnalysedChapter {
     index: number;
@@ -45,98 +46,12 @@ export const ImportSheet = ({
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
-            role="dialog"
-            aria-label="Import manuscript"
-        >
-            <div className="flex max-h-[90dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
-                <header className="flex items-center justify-between px-4 py-3">
-                    <span className="font-medium">Import a manuscript</span>
-                    <button type="button" onClick={onClose} aria-label="Close">
-                        <X className="h-4 w-4" />
-                    </button>
-                </header>
-
-                <div className="min-h-[10rem] flex-1 space-y-3 overflow-y-auto px-4 pb-4 text-sm">
-                    {!analysis ? (
-                        <>
-                            <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3">
-                                <Upload className="h-4 w-4" />
-                                Upload .txt, .md, .docx or .epub — several files welcome (one per chapter or part;
-                                ordered by filename)
-                                <input
-                                    type="file"
-                                    accept=".txt,.md,.docx,.epub"
-                                    multiple
-                                    className="hidden"
-                                    disabled={busy}
-                                    onChange={e => {
-                                        const files = Array.from(e.target.files ?? []);
-                                        e.target.value = "";
-                                        if (files.length > 0 && !busy)
-                                            analyseFiles.mutate(files, { onSuccess: applyAnalysis });
-                                    }}
-                                />
-                            </label>
-                            <p className="text-center text-xs text-muted-foreground">or</p>
-                            <textarea
-                                className="min-h-32 w-full resize-y rounded-md border bg-background p-2"
-                                placeholder="Paste your manuscript here…"
-                                value={pasted}
-                                onChange={e => setPasted(e.target.value)}
-                            />
-                            {busy && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-                        </>
-                    ) : (
-                        <>
-                            <input
-                                className="w-full rounded-md border bg-background px-3 py-2"
-                                value={title}
-                                onChange={e => setTitle(e.target.value)}
-                                placeholder="Story title"
-                                aria-label="Story title"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                {review.filter(c => c.included).length} of {review.length} chapters selected — untick to
-                                drop, edit titles freely.
-                            </p>
-                            {review.map(chapter => (
-                                <div key={chapter.index} className="flex items-start gap-2 rounded-md border p-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={chapter.included}
-                                        onChange={() =>
-                                            setReview(current =>
-                                                current.map(c =>
-                                                    c.index === chapter.index ? { ...c, included: !c.included } : c
-                                                )
-                                            )
-                                        }
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <input
-                                            className="w-full rounded-md border bg-background px-2 py-1"
-                                            value={chapter.title}
-                                            onChange={e =>
-                                                setReview(current =>
-                                                    current.map(c =>
-                                                        c.index === chapter.index ? { ...c, title: e.target.value } : c
-                                                    )
-                                                )
-                                            }
-                                        />
-                                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                                            {chapter.wordCount} words · {chapter.preview}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </>
-                    )}
-                </div>
-
-                <footer className="flex gap-2 border-t p-3">
+        <BottomSheet
+            title="Import a manuscript"
+            onClose={onClose}
+            bodyClassName="min-h-[10rem] space-y-3 px-4 pb-4 text-sm"
+            footer={
+                <>
                     {!analysis ? (
                         <button
                             type="button"
@@ -159,8 +74,83 @@ export const ImportSheet = ({
                     <button type="button" onClick={onClose} className="ml-auto rounded-md border px-4 py-2 text-sm">
                         Cancel
                     </button>
-                </footer>
-            </div>
-        </div>
+                </>
+            }
+        >
+            {!analysis ? (
+                <>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3">
+                        <Upload className="h-4 w-4" />
+                        Upload .txt, .md, .docx or .epub — several files welcome (one per chapter or part; ordered by
+                        filename)
+                        <input
+                            type="file"
+                            accept=".txt,.md,.docx,.epub"
+                            multiple
+                            className="hidden"
+                            disabled={busy}
+                            onChange={e => {
+                                const files = Array.from(e.target.files ?? []);
+                                e.target.value = "";
+                                if (files.length > 0 && !busy) analyseFiles.mutate(files, { onSuccess: applyAnalysis });
+                            }}
+                        />
+                    </label>
+                    <p className="text-center text-xs text-muted-foreground">or</p>
+                    <textarea
+                        className="min-h-32 w-full resize-y rounded-md border bg-background p-2"
+                        placeholder="Paste your manuscript here…"
+                        value={pasted}
+                        onChange={e => setPasted(e.target.value)}
+                    />
+                    {busy && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+                </>
+            ) : (
+                <>
+                    <input
+                        className="w-full rounded-md border bg-background px-3 py-2"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="Story title"
+                        aria-label="Story title"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        {review.filter(c => c.included).length} of {review.length} chapters selected — untick to drop,
+                        edit titles freely.
+                    </p>
+                    {review.map(chapter => (
+                        <div key={chapter.index} className="flex items-start gap-2 rounded-md border p-2">
+                            <input
+                                type="checkbox"
+                                checked={chapter.included}
+                                onChange={() =>
+                                    setReview(current =>
+                                        current.map(c =>
+                                            c.index === chapter.index ? { ...c, included: !c.included } : c
+                                        )
+                                    )
+                                }
+                            />
+                            <div className="min-w-0 flex-1">
+                                <input
+                                    className="w-full rounded-md border bg-background px-2 py-1"
+                                    value={chapter.title}
+                                    onChange={e =>
+                                        setReview(current =>
+                                            current.map(c =>
+                                                c.index === chapter.index ? { ...c, title: e.target.value } : c
+                                            )
+                                        )
+                                    }
+                                />
+                                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                    {chapter.wordCount} words · {chapter.preview}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
+        </BottomSheet>
     );
 };

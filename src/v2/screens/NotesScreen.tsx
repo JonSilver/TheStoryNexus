@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
     useCreateNoteMutation,
@@ -8,7 +8,11 @@ import {
 } from "@/features/notes/hooks/useNotesQuery";
 import type { Note } from "@/types/story";
 import type { ScreenProps } from "../V2App";
+import { BottomSheet } from "../components/BottomSheet";
+import { useGuardedClose } from "../components/Dialogs";
+import { useConfirm } from "../components/Dialogs";
 import { MarkdownView } from "../components/MarkdownView";
+import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
 import { useCurrentStoryId } from "../state/useV2Store";
 
 const NOTE_TYPES = ["idea", "research", "todo", "other"] as const;
@@ -21,6 +25,8 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
     const [type, setType] = useState<Note["type"]>(note?.type ?? "idea");
     // Existing notes open in reading mode — markdown rendered, not raw
     const [previewing, setPreviewing] = useState(Boolean(note?.content));
+    const dirty = title !== (note?.title ?? "") || content !== (note?.content ?? "") || type !== (note?.type ?? "idea");
+    const close = useGuardedClose(dirty, onClose);
 
     const save = () => {
         const data = { title: title.trim() || "Untitled", content, type };
@@ -29,62 +35,12 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" role="dialog" aria-label="Note">
-            <div className="flex max-h-[85dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
-                <header className="flex items-center justify-between px-4 py-3">
-                    <span className="font-medium">{note ? "Edit note" : "New note"}</span>
-                    <button type="button" onClick={onClose} aria-label="Close">
-                        <X className="h-4 w-4" />
-                    </button>
-                </header>
-                <div className="space-y-2 overflow-y-auto px-4 pb-4">
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        placeholder="Title"
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                    />
-                    <select
-                        className="rounded-md border bg-background px-2 py-1.5 text-sm"
-                        value={type}
-                        onChange={e => setType(e.target.value as Note["type"])}
-                    >
-                        {NOTE_TYPES.map(t => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </select>
-                    <div className="flex gap-1 text-xs">
-                        <button
-                            type="button"
-                            onClick={() => setPreviewing(false)}
-                            className={`rounded-md border px-2 py-1 ${previewing ? "" : "bg-accent"}`}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setPreviewing(true)}
-                            className={`rounded-md border px-2 py-1 ${previewing ? "bg-accent" : ""}`}
-                        >
-                            Preview
-                        </button>
-                    </div>
-                    {previewing ? (
-                        <div className="min-h-40 rounded-md border p-3 text-sm">
-                            <MarkdownView>{content || "*Nothing yet.*"}</MarkdownView>
-                        </div>
-                    ) : (
-                        <textarea
-                            className="min-h-40 w-full resize-y rounded-md border bg-background p-2 text-sm"
-                            placeholder="Write your note… (markdown supported)"
-                            value={content}
-                            onChange={e => setContent(e.target.value)}
-                        />
-                    )}
-                </div>
-                <footer className="flex gap-2 border-t p-3">
+        <BottomSheet
+            title={note ? "Edit note" : "New note"}
+            onClose={close}
+            bodyClassName="space-y-2 px-4 pb-4"
+            footer={
+                <>
                     <button
                         type="button"
                         onClick={save}
@@ -92,12 +48,58 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
                     >
                         Save
                     </button>
-                    <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">
+                    <button type="button" onClick={close} className="rounded-md border px-4 py-2 text-sm">
                         Cancel
                     </button>
-                </footer>
+                </>
+            }
+        >
+            <input
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                placeholder="Title"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+            />
+            <select
+                className="rounded-md border bg-background px-2 py-1.5 text-sm"
+                value={type}
+                onChange={e => setType(e.target.value as Note["type"])}
+            >
+                {NOTE_TYPES.map(t => (
+                    <option key={t} value={t}>
+                        {t}
+                    </option>
+                ))}
+            </select>
+            <div className="flex gap-1 text-xs">
+                <button
+                    type="button"
+                    onClick={() => setPreviewing(false)}
+                    className={`rounded-md border px-2 py-1 ${previewing ? "" : "bg-accent"}`}
+                >
+                    Edit
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setPreviewing(true)}
+                    className={`rounded-md border px-2 py-1 ${previewing ? "bg-accent" : ""}`}
+                >
+                    Preview
+                </button>
             </div>
-        </div>
+            {previewing ? (
+                <div className="min-h-40 rounded-md border p-3 text-sm">
+                    <MarkdownView>{content || "*Nothing yet.*"}</MarkdownView>
+                </div>
+            ) : (
+                <textarea
+                    className="min-h-40 w-full resize-y rounded-md border bg-background p-2 text-sm"
+                    placeholder="Write your note… (markdown supported)"
+                    value={content}
+                    onChange={e => setContent(e.target.value)}
+                />
+            )}
+        </BottomSheet>
     );
 };
 
@@ -105,33 +107,18 @@ export const NotesScreen = ({ goTo, goBack }: ScreenProps) => {
     const currentStoryId = useCurrentStoryId();
     const { data: notes } = useNotesByStoryQuery(currentStoryId ?? "");
     const deleteNote = useDeleteNoteMutation();
+    const confirm = useConfirm();
     const [editing, setEditing] = useState<Note | null | "new">(null);
 
-    if (!currentStoryId)
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-muted-foreground">Pick a story first.</p>
-                <button
-                    type="button"
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("library")}
-                >
-                    Choose a story
-                </button>
-            </div>
-        );
+    if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     return (
         <div className="flex h-full flex-col">
-            <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goBack("story")} aria-label="Back">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-lg font-semibold">Notes</h1>
-                <button type="button" onClick={() => setEditing("new")} aria-label="New note" className="ml-auto">
+            <ScreenHeader title="Notes" onBack={() => goBack("story")}>
+                <button type="button" onClick={() => setEditing("new")} aria-label="New note">
                     <Plus className="h-5 w-5" />
                 </button>
-            </header>
+            </ScreenHeader>
             <ul className="min-h-0 flex-1 divide-y overflow-y-auto">
                 {(notes ?? []).map(note => (
                     <li key={note.id} className="flex items-start gap-2 px-4 py-3">
@@ -143,9 +130,15 @@ export const NotesScreen = ({ goTo, goBack }: ScreenProps) => {
                         </button>
                         <button
                             type="button"
-                            onClick={() =>
-                                window.confirm(`Delete the note “${note.title}”?`) && deleteNote.mutate(note.id)
-                            }
+                            onClick={async () => {
+                                if (
+                                    await confirm({
+                                        message: `Delete the note “${note.title}”?`,
+                                        confirmLabel: "Delete"
+                                    })
+                                )
+                                    deleteNote.mutate(note.id);
+                            }}
                             aria-label={`Delete ${note.title}`}
                             className="mt-1 text-muted-foreground"
                         >

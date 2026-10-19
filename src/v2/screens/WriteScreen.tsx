@@ -3,19 +3,11 @@ import { useEffect } from "react";
 import { useChapterQuery, useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
+import { EmptyState } from "../components/ScreenParts";
 import { ChapterEditor } from "../editor/ChapterEditor";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
 import { uiState, useCurrentStoryId, useUiState } from "../state/useV2Store";
-
-const Empty = ({ message, actionLabel, onAction }: { message: string; actionLabel: string; onAction: () => void }) => (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="text-muted-foreground">{message}</p>
-        <button type="button" className="rounded-md bg-primary px-4 py-2 text-primary-foreground" onClick={onAction}>
-            {actionLabel}
-        </button>
-    </div>
-);
 
 const Spinner = () => (
     <div className="flex h-full items-center justify-center">
@@ -66,7 +58,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
 
     if (!currentStoryId)
         return (
-            <Empty
+            <EmptyState
                 message="Pick a story to start writing."
                 actionLabel="Choose a story"
                 onAction={() => goTo("library")}
@@ -74,7 +66,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
         );
     if (chaptersFailed || (storyError && !storyGone))
         return (
-            <Empty
+            <EmptyState
                 message="Couldn't reach the server — your work is safe on disk."
                 actionLabel="Try again"
                 onAction={() => void refetchChapters()}
@@ -83,7 +75,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
     if (chaptersLoading || (currentChapterId && chapterLoading)) return <Spinner />;
     if (!currentChapterId)
         return (
-            <Empty
+            <EmptyState
                 message="This story has no chapters yet."
                 actionLabel="Create a chapter"
                 onAction={() => goTo("chapters")}

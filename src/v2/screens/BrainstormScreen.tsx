@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, RotateCcw, Send, Square, Trash2 } from "lucide-react";
+import { Plus, RotateCcw, Send, Square, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
     useBrainstormByStoryQuery,
@@ -13,6 +13,8 @@ import type { ScreenProps } from "../V2App";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { ExtractSheet } from "../bible/ExtractSheet";
+import { useConfirm } from "../components/Dialogs";
+import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
 import { useEvent } from "../hooks/useEvent";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
@@ -33,6 +35,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
     const createChat = useCreateBrainstormMutation();
     const deleteChat = useDeleteBrainstormMutation();
+    const confirm = useConfirm();
     const createNote = useCreateNoteMutation();
     const generation = useActionGeneration();
     // The open chat lives in the URL: back/forward and refresh keep it
@@ -94,32 +97,16 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
         );
     };
 
-    if (!currentStoryId)
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-muted-foreground">Pick a story first.</p>
-                <button
-                    type="button"
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("library")}
-                >
-                    Choose a story
-                </button>
-            </div>
-        );
+    if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     if (!chat)
         return (
             <div className="flex h-full flex-col">
-                <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                    <button type="button" onClick={() => goBack("story")} aria-label="Back">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <h1 className="text-lg font-semibold">Brainstorm</h1>
-                    <button type="button" onClick={newChat} aria-label="New chat" className="ml-auto">
+                <ScreenHeader title="Brainstorm" onBack={() => goBack("story")}>
+                    <button type="button" onClick={newChat} aria-label="New chat">
                         <Plus className="h-5 w-5" />
                     </button>
-                </header>
+                </ScreenHeader>
                 <ul className="min-h-0 flex-1 divide-y overflow-y-auto">
                     {(chats ?? []).map(c => (
                         <li key={c.id} className="flex items-center gap-2 px-4 py-3">
@@ -131,10 +118,15 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
                             </button>
                             <button
                                 type="button"
-                                onClick={() =>
-                                    window.confirm(`Delete “${c.title}” and its whole conversation?`) &&
-                                    deleteChat.mutate(c.id, { onSuccess: () => clearPending(c.id) })
-                                }
+                                onClick={async () => {
+                                    if (
+                                        await confirm({
+                                            message: `Delete “${c.title}” and its whole conversation?`,
+                                            confirmLabel: "Delete"
+                                        })
+                                    )
+                                        deleteChat.mutate(c.id, { onSuccess: () => clearPending(c.id) });
+                                }}
                                 aria-label={`Delete ${c.title}`}
                                 className="text-muted-foreground"
                             >
@@ -151,12 +143,7 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
 
     return (
         <div className="flex h-full flex-col">
-            <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goBack("brainstorm")} aria-label="Back to chats">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
-            </header>
+            <ScreenHeader title={chat.title} onBack={() => goBack("brainstorm")} backLabel="Back to chats" />
             <div ref={scrollerRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                 {messages.map(message => (
                     <ChatBubble

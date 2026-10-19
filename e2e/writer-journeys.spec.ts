@@ -201,8 +201,9 @@ test("series: join from story details, grouped in Stories, bible inherits", asyn
     await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByText("Details, series & voice").click();
 
-    page.once("dialog", dialog => void dialog.accept("The Dashwood Saga"));
     await page.getByLabel("Series").selectOption("__new__");
+    await page.getByLabel("Series name").fill("The Dashwood Saga");
+    await page.getByRole("button", { name: "Create" }).click();
     await expect(page.getByText("joined the new series")).toBeVisible();
     await expect(page.getByText("Series bible entries are included")).toBeVisible();
 
@@ -257,6 +258,10 @@ test("bible entries: manual create and edit, no AI required", async ({ page }) =
 
     await page.getByRole("button", { name: "Edit Mrs Jennings" }).click();
     await page.getByLabel("Description").fill("A good-humoured meddler with a sharp eye.");
+    // Closing with unsaved edits asks first; keeping them loses nothing
+    await page.keyboard.press("Escape");
+    await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByLabel("Description")).toHaveValue("A good-humoured meddler with a sharp eye.");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("A good-humoured meddler with a sharp eye.")).toBeVisible();
 });
@@ -300,8 +305,9 @@ test("brainstorm reply becomes a chapter outline", async ({ page }) => {
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByText("The storm should arrive in chapter two.")).toBeVisible();
 
-    page.once("dialog", dialog => void dialog.accept("The Storm"));
     await page.getByRole("button", { name: "New chapter from this" }).click();
+    await page.getByLabel("Chapter title").fill("The Storm");
+    await page.getByRole("button", { name: "Create" }).click();
     await expect(page.getByText("created with this as its outline")).toBeVisible();
 
     await page.getByRole("button", { name: "Story", exact: true }).click();
@@ -412,8 +418,8 @@ test("read: the whole story renders inside the shell", async ({ page }) => {
 test("delete story: confirmed, gone from the library", async ({ page }) => {
     await createStoryAndChapter(page, "Journey — doomed", "One");
     await page.getByRole("button", { name: "Story", exact: true }).click();
-    page.once("dialog", dialog => void dialog.accept());
     await page.getByRole("button", { name: "Delete this story…" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete story" }).click();
     await expect(page.getByPlaceholder("New story title")).toBeVisible();
     await expect(page.getByText("Journey — doomed")).toHaveCount(0);
 });

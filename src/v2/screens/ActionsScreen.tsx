@@ -1,6 +1,7 @@
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import type { ScreenProps } from "../V2App";
+import { ScreenHeader } from "../components/ScreenParts";
 import { OverrideEditor } from "../drawer/OverrideEditor";
 import { type ActionDefinition, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
 import { useCurrentStoryId } from "../state/useV2Store";
@@ -19,12 +20,7 @@ export const ActionsScreen = ({ goBack }: ScreenProps) => {
 
     return (
         <div className="flex h-full flex-col">
-            <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goBack("settings")} aria-label="Back">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-lg font-semibold">AI Actions (advanced)</h1>
-            </header>
+            <ScreenHeader title="AI Actions (advanced)" onBack={() => goBack("settings")} />
 
             <div className="flex gap-2 border-b p-3 text-sm">
                 <button

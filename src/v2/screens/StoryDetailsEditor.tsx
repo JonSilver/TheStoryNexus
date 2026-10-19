@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateSeriesMutation, useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
+import { usePrompt } from "../components/Dialogs";
 
 const NEW_SERIES = "__new__";
 
@@ -16,6 +17,7 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
     const { data: allSeries } = useSeriesQuery();
     const updateStory = useUpdateStoryMutation();
     const createSeries = useCreateSeriesMutation();
+    const prompt = usePrompt();
     const [draft, setDraft] = useState<{ title: string; synopsis: string; author: string; language: string } | null>(
         null
     );
@@ -36,9 +38,9 @@ export const StoryDetailsEditor = ({ storyId }: { storyId: string }) => {
             value.author !== (story.author ?? "") ||
             value.language !== (story.language ?? ""));
 
-    const setSeries = (selected: string) => {
+    const setSeries = async (selected: string) => {
         if (selected === NEW_SERIES) {
-            const name = window.prompt("Name for the new series")?.trim();
+            const name = await prompt({ title: "New series", label: "Series name", confirmLabel: "Create" });
             if (!name) return;
             createSeries.mutate(
                 { name, description: "" },

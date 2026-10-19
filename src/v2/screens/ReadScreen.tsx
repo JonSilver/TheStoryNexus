@@ -1,8 +1,9 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { ChapterReader } from "@/features/stories/components/ChapterReader";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
+import { ScreenHeader } from "../components/ScreenParts";
 import { useCurrentStoryId } from "../state/useV2Store";
 
 /** Reading mode inside the shell: the whole story as one continuous scroll. */
@@ -17,12 +18,7 @@ export const ReadScreen = ({ goBack }: ScreenProps) => {
 
     return (
         <div className="flex h-full flex-col">
-            <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goBack("story")} aria-label="Back">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="min-w-0 truncate text-lg font-semibold">{story?.title}</h1>
-            </header>
+            <ScreenHeader title={story?.title} onBack={() => goBack("story")} />
             <div className="min-h-0 flex-1 overflow-y-auto">
                 <div className="mx-auto max-w-2xl space-y-12 px-4 py-8">
                     {isLoading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}

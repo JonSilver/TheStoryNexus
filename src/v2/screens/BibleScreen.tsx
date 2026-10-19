@@ -1,5 +1,4 @@
 import {
-    ArrowLeft,
     GitMerge,
     BookOpenCheck,
     ClipboardPaste,
@@ -20,6 +19,8 @@ import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { MergeSheet } from "../bible/MergeSheet";
 import { entryMatches } from "../bible/duplicates";
 import { takeNudgeHandoff } from "../bible/nameNudges";
+import { useConfirm } from "../components/Dialogs";
+import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
 import { useCurrentStoryId, useUiState } from "../state/useV2Store";
 
 const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
@@ -46,6 +47,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const deleteEntry = useDeleteLorebookMutation();
+    const confirm = useConfirm();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const [editing, setEditing] = useState<LorebookEntry | null | "new">(null);
     const [merging, setMerging] = useState(false);
@@ -55,34 +57,18 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
     const [focusNames] = useState(takeNudgeHandoff);
     const [flow, setFlow] = useState<BibleFlowMode | null>(focusNames.length > 0 ? "extract-chapter" : null);
 
-    if (!currentStoryId)
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-muted-foreground">Pick a story first.</p>
-                <button
-                    type="button"
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("library")}
-                >
-                    Choose a story
-                </button>
-            </div>
-        );
+    if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     const chapterId = rememberedChapter ?? [...(chapters ?? [])].sort((a, b) => a.order - b.order)[0]?.id ?? null;
     const groups = groupEntries((entries ?? []).filter(e => entryMatches(e, search)));
 
     return (
         <div className="flex h-full flex-col">
-            <header className="flex items-center gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <button type="button" onClick={() => goBack("story")} aria-label="Back">
-                    <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-lg font-semibold">Story Bible</h1>
-                <button type="button" onClick={() => setEditing("new")} aria-label="New entry" className="ml-auto">
+            <ScreenHeader title="Story Bible" onBack={() => goBack("story")}>
+                <button type="button" onClick={() => setEditing("new")} aria-label="New entry">
                     <Plus className="h-5 w-5" />
                 </button>
-            </header>
+            </ScreenHeader>
 
             <div className="flex gap-2 overflow-x-auto border-b p-3">
                 <button
@@ -159,10 +145,15 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
                                     {entry.level === "story" && (
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                window.confirm(`Delete the bible entry “${entry.name}”?`) &&
-                                                deleteEntry.mutate(entry.id)
-                                            }
+                                            onClick={async () => {
+                                                if (
+                                                    await confirm({
+                                                        message: `Delete the bible entry “${entry.name}”?`,
+                                                        confirmLabel: "Delete"
+                                                    })
+                                                )
+                                                    deleteEntry.mutate(entry.id);
+                                            }}
                                             aria-label={`Delete ${entry.name}`}
                                             className="mt-1 text-muted-foreground"
                                         >

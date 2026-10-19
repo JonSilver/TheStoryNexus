@@ -4,6 +4,7 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { useConfirm } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 
 const VOICE_CHAR_CAP = 2000;
@@ -30,6 +31,7 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     const { data: story } = useStoryQuery(storyId);
     const updateStory = useUpdateStoryMutation();
     const generation = useActionGeneration();
+    const confirm = useConfirm();
     const { data: chapters } = useChaptersByStoryQuery(storyId);
     const [draft, setDraftState] = useState<string | null>(() => readDraft(storyId));
     const [derived, setDerived] = useState(false);
@@ -51,7 +53,14 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     // The draft lands in the box for review and editing — nothing is saved until the writer saves it
     const hasProse = (chapters ?? []).some(c => (c.wordCount ?? 0) > 0);
     const derive = async () => {
-        if (dirty && !window.confirm("Replace your unsaved changes to the voice with a drafted one?")) return;
+        if (
+            dirty &&
+            !(await confirm({
+                message: "Replace your unsaved changes to the voice with a drafted one?",
+                confirmLabel: "Replace"
+            }))
+        )
+            return;
         // Read what's on screen, not a second-old save
         await Promise.all((chapters ?? []).map(c => flushChapterSave(c.id)));
         const result = await generation.run({ actionId: "derive_voice", storyId });

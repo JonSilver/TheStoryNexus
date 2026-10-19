@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
-import { Eye, Loader2, X } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { generateApi, type PromptPreview } from "@/services/api/client";
+import { BottomSheet } from "../components/BottomSheet";
 import type { ActionEditorContext, ActionId } from "./useActionGeneration";
 
 /**
@@ -39,29 +40,19 @@ export const ContextInspector = ({
                 <Eye className="h-4 w-4" />
             </button>
             {open && (
-                <div
-                    className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40"
-                    role="dialog"
-                    aria-label="Context preview"
+                <BottomSheet
+                    title="What gets sent"
+                    onClose={() => setOpen(false)}
+                    bodyClassName="min-h-[8rem] space-y-3 px-4 pb-4 text-xs"
                 >
-                    <div className="flex max-h-[80dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)]">
-                        <header className="flex items-center justify-between px-4 py-3">
-                            <span className="font-medium">What gets sent</span>
-                            <button type="button" onClick={() => setOpen(false)} aria-label="Close">
-                                <X className="h-4 w-4" />
-                            </button>
-                        </header>
-                        <div className="min-h-[8rem] flex-1 space-y-3 overflow-y-auto px-4 pb-4 text-xs">
-                            {preview.isPending ? (
-                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                            ) : preview.isError ? (
-                                <p className="text-destructive">{preview.error.message}</p>
-                            ) : preview.data ? (
-                                <PreviewBody preview={preview.data} />
-                            ) : null}
-                        </div>
-                    </div>
-                </div>
+                    {preview.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : preview.isError ? (
+                        <p className="text-destructive">{preview.error.message}</p>
+                    ) : preview.data ? (
+                        <PreviewBody preview={preview.data} />
+                    ) : null}
+                </BottomSheet>
             )}
         </>
     );
