@@ -67,7 +67,8 @@ const LABELS = [
     "Save summary",
     "Scene Beat",
     "Server URL",
-    "Look again"
+    "Look again",
+    "Derive from my writing"
 ];
 
 const TOOLS: V2Tool[] = [

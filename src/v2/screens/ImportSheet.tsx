@@ -99,7 +99,9 @@ export const ImportSheet = ({
         }
         const { storyId, chapterCount } = await response.json();
         void queryClient.invalidateQueries();
-        toast.success(`Imported ${chapterCount} chapters — try Story Bible → Extract to build your bible`);
+        toast.success(
+            `Imported ${chapterCount} chapters — Story Bible → Extract from whole story builds your bible, and Story → Details, series & voice → Derive from my writing drafts your story's voice`
+        );
         onImported(storyId);
     };
 

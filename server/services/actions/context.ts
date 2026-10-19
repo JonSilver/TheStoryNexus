@@ -37,6 +37,9 @@ export interface AssembledContext {
 }
 
 const PROSE_SHARE_OF_BUDGET = 0.6;
+// Enough prose to read a style from; more costs money without telling the model anything new
+const STYLE_SAMPLE_TOKENS = 6000;
+const STYLE_SAMPLE_POINTS = [0, 0.25, 0.5, 0.75, 1];
 
 export const chapterPlainText = (content: string): string => {
     const [, text] = attempt(() => blocksToPlainText(parseSerialisedDocument(content)));
@@ -138,6 +141,29 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
                       trimToTokens(fullText, Math.floor(contentBudget * 0.35), "tail")
                   ].join("")
         );
+    }
+
+    if (needs.has("story_samples")) {
+        // Opening, middle and late chapters — a book's voice drifts, and chapter one alone misleads
+        const ordered = chapters
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map(c => ({ c, text: chapterPlainText(c.content) }))
+            .filter(({ text }) => text.trim());
+        const picked = [
+            ...new Set(STYLE_SAMPLE_POINTS.map(point => Math.round(point * Math.max(ordered.length - 1, 0))))
+        ].map(i => ordered[i]);
+        const each = Math.floor(
+            Math.min(STYLE_SAMPLE_TOKENS, Math.max(remaining.budget, 0) * 0.85) / Math.max(picked.length, 1)
+        );
+        const samples = picked
+            .filter(Boolean)
+            .map(
+                ({ c, text }) => `--- From chapter ${c.order + 1} (${c.title}) ---\n${trimToTokens(text, each, "head")}`
+            );
+        // Nothing to read: refuse before anything is paid for, rather than describe a generic voice
+        if (!samples.length) throw new Error("This story has no prose yet — write or import some first.");
+        context.story_samples = spend(samples.join("\n\n"));
     }
 
     if (needs.has("chat_history") && editorContext.chatHistory)

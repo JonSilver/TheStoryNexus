@@ -18,7 +18,8 @@ export const CONTEXT_KEYS = [
     "chapter_content",
     "chat_history",
     "user_message",
-    "guidance"
+    "guidance",
+    "story_samples"
 ] as const;
 
 export type ContextKey = (typeof CONTEXT_KEYS)[number];
@@ -35,7 +36,8 @@ export const ACTION_IDS = [
     "propose_updates",
     "ask",
     "check_continuity",
-    "merge_entries"
+    "merge_entries",
+    "derive_voice"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -272,5 +274,22 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "{{user_message}}" }
         ],
         defaultParams: { temperature: 1.0, maxTokens: 16384 }
+    },
+    derive_voice: {
+        id: "derive_voice",
+        label: "Derive Story Voice",
+        // It describes the voice; following one would bias the description
+        voiceApplies: false,
+        contextNeeds: ["story_samples", "story_language"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You are an editor describing an author\'s prose style so that another writer can continue the book in the same voice. Read the passages and write a concise style guide as direct instructions ("Write in past tense…"), in plain sentences without headings or bullet points, under 250 words. Cover: tense and point of view; sentence length and rhythm; paragraphing; dialogue habits (tags, punctuation, dialect); vocabulary register and recurring stylistic devices; spelling conventions ({{story_language}} unless the passages show otherwise). Describe only what the passages show; do not mention plot, characters or setting.'
+            },
+            { role: "user", content: "Passages from across the story:\n{{story_samples}}" }
+        ],
+        // Headroom for thinking models; the guide itself is short
+        defaultParams: { temperature: 0.3, maxTokens: 4096 }
     }
 };
