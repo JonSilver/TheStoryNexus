@@ -11,9 +11,9 @@ import {
     type NodeKey,
     type UpdateTag
 } from "lexical";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { createSSEParser } from "@/services/ai/sseParser";
+import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
 import { randomUUID } from "@/utils/crypto";
 import { useChapterIdentity } from "./ChapterContext";
 import {
@@ -40,6 +40,8 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     const [editor] = useLexicalComposerContext();
     const { storyId, chapterId } = useChapterIdentity();
     const cancelRef = useRef<(() => void) | null>(null);
+    // Waiting phase + elapsed from the server, for the beat's progress line
+    const [progress, setProgress] = useState<GenerationStatus | null>(null);
 
     const mutate = useCallback(
         (fn: (node: SceneBeatNode) => void, tag: UpdateTag | UpdateTag[]) =>
@@ -150,6 +152,9 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
             }
 
             const parser = createSSEParser({
+                onStatus: next => {
+                    if (owns()) setProgress(next);
+                },
                 onToken: token => {
                     if (!owns()) return;
                     mutate(
@@ -188,5 +193,5 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
     const abortActive = useCallback(() => cancelRef.current?.(), []);
     const ownsRun = useCallback(() => cancelRef.current !== null, []);
 
-    return { generate, stop, mutate, textBeforeNode, abortActive, ownsRun };
+    return { generate, stop, mutate, textBeforeNode, abortActive, ownsRun, progress };
 };

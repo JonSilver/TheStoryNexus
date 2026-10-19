@@ -1,5 +1,7 @@
 import { CornerDownRight, Loader2, Square } from "lucide-react";
 import { useState } from "react";
+import type { GenerationStatus } from "@/services/ai/sseParser";
+import { GenerationProgress } from "./GenerationProgress";
 import type { GenerationPhase } from "./useActionGeneration";
 
 /**
@@ -12,6 +14,7 @@ export const ActionSheet = ({
     phase,
     text,
     error,
+    status = null,
     acceptLabel = "Accept",
     onAccept,
     onDiscard,
@@ -23,6 +26,7 @@ export const ActionSheet = ({
     phase: GenerationPhase;
     text: string;
     error: string | null;
+    status?: GenerationStatus | null;
     acceptLabel?: string;
     onAccept: () => void;
     onDiscard: () => void;
@@ -67,8 +71,10 @@ export const ActionSheet = ({
                         />
                     ) : error ? (
                         <span className="text-destructive">{error}</span>
+                    ) : text ? (
+                        text
                     ) : (
-                        text || "…"
+                        <GenerationProgress status={status} />
                     )}
                 </div>
                 {phase === "done" && text && onRefine && (

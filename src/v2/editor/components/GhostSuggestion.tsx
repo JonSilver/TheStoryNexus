@@ -11,9 +11,11 @@ import {
     type LexicalNode,
     type NodeKey
 } from "lexical";
-import { Check, CornerDownRight, Loader2, X } from "lucide-react";
+import { Check, CornerDownRight, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import type { GenerationStatus } from "@/services/ai/sseParser";
+import { GenerationProgress } from "../../ai/GenerationProgress";
 import { streamAction } from "../../ai/streamAction";
 import { useChapterIdentity } from "../ChapterContext";
 import {
@@ -35,6 +37,7 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
     const { storyId, chapterId } = useChapterIdentity();
     const { text, ghostStatus } = useGhostData(nodeKey);
     const [refineText, setRefineText] = useState("");
+    const [status, setStatus] = useState<GenerationStatus | null>(null);
     const abortRef = useRef<(() => void) | null>(null);
     const startedRef = useRef(false);
 
@@ -74,6 +77,7 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                     }
                 },
                 {
+                    onStatus: setStatus,
                     onToken: token =>
                         editor.update(
                             () => {
@@ -84,6 +88,7 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
                         ),
                     onDone: error => {
                         abortRef.current = null;
+                        setStatus(null);
                         editor.update(
                             () => {
                                 const node = $getNodeByKey(nodeKey);
@@ -169,9 +174,7 @@ export const GhostSuggestion = ({ nodeKey }: { nodeKey: NodeKey }) => {
         <div className="my-2 border-l-2 border-primary/40 pl-3" data-ghost>
             <div className="whitespace-pre-wrap italic leading-relaxed text-muted-foreground">
                 {text || (
-                    <span className="flex items-center gap-2 not-italic text-sm">
-                        <Loader2 className="h-4 w-4 animate-spin" /> continuing…
-                    </span>
+                    <GenerationProgress status={status ?? { phase: "waiting", elapsedMs: 0 }} className="not-italic" />
                 )}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">

@@ -1,10 +1,11 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useCreateLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
+import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { FLOW_TITLES, IssueList, ProposalList, UpdateList } from "./FlowResults";
@@ -206,15 +207,13 @@ export const ExtractSheet = ({
                             onChange={e => setPasted(e.target.value)}
                         />
                     )}
-                    {busy && (
-                        <p className="flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            {sweep.progress
-                                ? `Reading chapter ${sweep.progress.current} of ${sweep.progress.total}: “${sweep.progress.title}”… ` +
-                                  `${sweep.progress.found} entr${sweep.progress.found === 1 ? "y" : "ies"} found so far`
-                                : "Reading…"}
+                    {busy && sweep.progress && (
+                        <p className="text-sm text-muted-foreground">
+                            Chapter {sweep.progress.current} of {sweep.progress.total}: “{sweep.progress.title}” —{" "}
+                            {sweep.progress.found} entr{sweep.progress.found === 1 ? "y" : "ies"} found so far
                         </p>
                     )}
+                    {busy && <GenerationProgress status={generation.status} />}
                     {generation.error && <p className="text-destructive">{generation.error}</p>}
 
                     {proposals && (

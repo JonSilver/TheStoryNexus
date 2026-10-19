@@ -248,6 +248,7 @@ export const useEditorActions = (chapter: Chapter) => {
             phase: generation.phase,
             text: generation.text,
             error: generation.error,
+            status: generation.status,
             acceptLabel: active ? ACCEPT_LABELS[active.kind] : undefined,
             onAccept,
             onDiscard: close,

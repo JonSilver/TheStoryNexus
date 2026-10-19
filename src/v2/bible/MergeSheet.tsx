@@ -1,9 +1,10 @@
 import { attemptPromise } from "@jfdi/attempt";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useDeleteLorebookMutation, useUpdateLorebookMutation } from "@/features/lorebook/hooks/useLorebookQuery";
 import type { LorebookEntry } from "@/types/story";
+import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { MergePicker } from "./MergePicker";
 import { type EntryProposal, parseEntryProposals } from "./parseProposals";
@@ -147,11 +148,7 @@ export const MergeSheet = ({
                                     }}
                                 />
                             </fieldset>
-                            {busy && (
-                                <p className="flex items-center gap-2 text-muted-foreground">
-                                    <Loader2 className="h-4 w-4 animate-spin" /> Merging…
-                                </p>
-                            )}
+                            {busy && <GenerationProgress status={generation.status} />}
                             {generation.error && <p className="text-destructive">{generation.error}</p>}
                         </>
                     ) : (

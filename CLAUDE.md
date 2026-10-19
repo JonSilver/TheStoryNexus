@@ -93,14 +93,14 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 ### Key mechanisms (details in docs/v2-contracts.md)
 
 - **Actions, not prompts**: built-in actions (scene_beat, continue, rework, expand, shorten, ask, summarise_chapter, brainstorm, extract_entries, propose_updates, check_continuity) with per-action overrides (model, samplers, template) stored in `actionOverrides`. Per-story voice (`stories.aiInstructions`) appended to prose actions.
-- **Generation**: client posts `{requestId, actionId, storyId, chapterId, editorContext}` → server assembles context (lorebook matching, summaries, budgeting) → SSE `token/finish/error/aborted`. Zero-content streams are errors. `/api/generate/preview` returns the resolved prompt (the "What gets sent" inspector).
+- **Generation**: client posts `{requestId, actionId, storyId, chapterId, editorContext}` → server assembles context (lorebook matching, summaries, budgeting) → SSE `status/token/finish/error/aborted`. A provider-agnostic runner (`generationRun.ts`) narrates phases (waiting / thinking / streaming) with per-phase timeouts and writer-readable errors naming model and server; no hidden SDK retries. Zero-content streams are errors. `/api/generate/preview` returns the resolved prompt (the "What gets sent" inspector).
 - **Scene beats** live IN the document (`scene-beat-v2` NodeState): multi-take model — no generation is ever lost; streaming goes to a durable `streaming` field (history-merge tagged) and commits as a take. Orphaned streams recover as takes on mount.
 - **Ghost continuations** (`suggestion-v2`): inline greyed prose, Keep/Refine/Dismiss; a runtime-only freshness marker prevents rehydrated ghosts from auto-firing generations.
 - **Selection context menu**: right-click / Android long-press on selected text opens the app's menu (rework/expand/shorten/ask + formatting). iOS Safari doesn't fire contextmenu on long-press — the toolbar selection buttons are the touch path there.
-- **Series**: joined from Story details (More); Stories screen groups by series; series-level bible entries flow into member stories' AI context automatically.
+- **Series**: joined from Story → Details, series & voice; the library groups stories by series; series-level bible entries flow into member stories' AI context automatically.
 - **Brainstorm bridges**: replies can become notes, bible entries (auto-run extraction), or new chapters (reply lands as the chapter outline). Chapter POV/outline/summary edit via the Chapters screen details sheet.
 - **Saves**: revision-aware (expectedRevision → 409 conflict banner with draft download; editor locks). Cross-module save flushing (`flushChapterSave`) before chapter-based AI actions and exports. All chapter writes sync the TanStack caches (`applyChapterToCaches`, revision-monotonic).
-- **Auto-summarise**: 90s idle → stale summary regenerates (revision-pinned, failure-capped, toggleable in More).
+- **Auto-summarise**: 90s idle → stale summary regenerates (revision-pinned, failure-capped, skips writer-locked summaries, toggleable in Settings); failures raise a persistent warning.
 - **Exports**: document JSON → block list → per-target renderers; scene beats/ghosts omitted (with an undecided-drafts warning); EPUB server-side. Backup via SQLite online backup API (`/api/admin/backup`) — never bare .db copies (WAL).
 
 ### Testing

@@ -1,10 +1,19 @@
 /**
  * Incremental parser for the server's generation SSE stream
- * (event: token | error | finish | aborted). Buffers across chunk
+ * (event: status | token | error | finish | aborted). Buffers across chunk
  * boundaries, tolerates CRLF, and treats stream end without a terminal
  * frame as an error — truncated output must never pass as success.
  */
+export type GenerationPhase = "waiting" | "thinking" | "streaming";
+
+export interface GenerationStatus {
+    phase: GenerationPhase;
+    elapsedMs: number;
+}
+
 export interface SSEHandlers {
+    /** Heartbeat while waiting on the provider — which phase, and for how long. */
+    onStatus?: (status: GenerationStatus) => void;
     onToken: (text: string) => void;
     onComplete: () => void;
     onError: (error: Error) => void;
@@ -15,7 +24,7 @@ export interface SSEParser {
     end: () => void;
 }
 
-export const createSSEParser = ({ onToken, onComplete, onError }: SSEHandlers): SSEParser => {
+export const createSSEParser = ({ onStatus, onToken, onComplete, onError }: SSEHandlers): SSEParser => {
     const state = { buffer: "", terminated: false };
 
     const dispatchFrame = (frame: string): void => {
@@ -35,6 +44,9 @@ export const createSSEParser = ({ onToken, onComplete, onError }: SSEHandlers): 
         if (data === null) return;
 
         switch (eventMatch[1]) {
+            case "status":
+                if (data?.phase) onStatus?.({ phase: data.phase, elapsedMs: Number(data.elapsedMs) || 0 });
+                return;
             case "token":
                 if (data?.text) onToken(data.text);
                 return;

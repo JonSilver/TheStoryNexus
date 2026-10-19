@@ -1,6 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import type { Chapter } from "@/types/story";
 import { streamAction } from "../ai/streamAction";
@@ -15,8 +16,8 @@ const MAX_CONSECUTIVE_FAILURES = 3;
  * settled and the editor has been idle, a stale summary regenerates silently
  * via the summarise action (which respects its per-action model override).
  * The freshness fields (summarySourceRevision vs revision) both trigger the
- * run and prevent loops; failures stay silent — this is bookkeeping, not a
- * feature the writer should ever notice.
+ * run and prevent loops. Failures are surfaced (persistently, once): a
+ * broken background job the writer can't see is a silent data-quality bug.
  */
 export const useAutoSummarise = (chapter: Chapter) => {
     const timer = useRef<ReturnType<typeof setTimeout> | 0>(0);
@@ -68,6 +69,14 @@ export const useAutoSummarise = (chapter: Chapter) => {
                     running.current = false;
                     const summary = chunks.join("").trim();
                     if (error || !summary) {
+                        // Background work must never fail silently: one persistent,
+                        // de-duplicated warning that says what broke and what to do
+                        toast.error(
+                            `Background chapter summaries aren't working: ${
+                                error ?? "the model returned an empty summary"
+                            } Turn this off in Settings if you don't need it.`,
+                            { toastId: "auto-summarise-failure", autoClose: false }
+                        );
                         rearmAfterFailure();
                         return;
                     }
