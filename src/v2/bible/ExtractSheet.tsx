@@ -247,7 +247,7 @@ export const ExtractSheet = ({
                             disabled={busy || (mode === "extract-paste" && !pasted.trim())}
                             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                         >
-                            {busy ? "Working…" : "Run"}
+                            {busy ? "Working…" : generation.error ? "Try again" : "Run"}
                         </button>
                     ) : proposals !== null ? (
                         <button
