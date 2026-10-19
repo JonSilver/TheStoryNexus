@@ -1,21 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { brainstormApi } from "@/services/api/client";
+import { brainstormKeys } from "@/services/api/queryKeys";
 import type { AIChat } from "@/types/story";
-
-// Query keys
-const brainstormKeys = {
-    all: ["brainstorm"] as const,
-    byStory: (storyId: string) => ["brainstorm", "story", storyId] as const,
-    detail: (id: string) => ["brainstorm", id] as const
-};
 
 /**
  * Push a server-returned chat into both caches. Writes outside a mutation
  * (the conversation's guarded message writes) MUST call this. Revision-
  * monotonic: a late, older answer never replaces a newer cached chat.
  */
-export const applyChatToCaches = (queryClient: ReturnType<typeof useQueryClient>, chat: AIChat) => {
+export const applyChatToCaches = (queryClient: QueryClient, chat: AIChat) => {
     const newer = (cached?: AIChat) => !cached || (cached.revision ?? 0) <= (chat.revision ?? 0);
     if (newer(queryClient.getQueryData<AIChat>(brainstormKeys.detail(chat.id))))
         queryClient.setQueryData(brainstormKeys.detail(chat.id), chat);
@@ -24,7 +17,6 @@ export const applyChatToCaches = (queryClient: ReturnType<typeof useQueryClient>
     );
 };
 
-// Fetch brainstorm chats by story
 export const useBrainstormByStoryQuery = (storyId: string) => {
     const queryClient = useQueryClient();
     return useQuery({
@@ -50,34 +42,22 @@ export const useBrainstormChatQuery = (chatId: string | null | undefined, enable
         enabled: enabled && !!chatId
     });
 
-// Create brainstorm chat mutation
 export const useCreateBrainstormMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: brainstormApi.create,
-        onSuccess: newChat => {
-            queryClient.invalidateQueries({ queryKey: brainstormKeys.byStory(newChat.storyId) });
-            toast.success("Brainstorm chat created successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to create brainstorm chat: ${error.message}`);
-        }
+        onSuccess: chat => queryClient.invalidateQueries({ queryKey: brainstormKeys.byStory(chat.storyId) }),
+        meta: { failure: "Couldn't start a chat" }
     });
 };
 
-// Delete brainstorm chat mutation
 export const useDeleteBrainstormMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: brainstormApi.delete,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: brainstormKeys.all });
-            toast.success("Brainstorm chat deleted successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to delete brainstorm chat: ${error.message}`);
-        }
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: brainstormKeys.all }),
+        meta: { failure: "Couldn't delete the chat" }
     });
 };

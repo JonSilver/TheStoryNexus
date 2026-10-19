@@ -1,7 +1,9 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
+import { storage } from "@/utils/storage";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { useConfirm } from "../components/Dialogs";
@@ -11,21 +13,10 @@ const VOICE_CHAR_CAP = 2000;
 
 // An unsaved voice draft (often a paid derivation) outlives leaving the screen, on this device
 const DRAFT_KEY = "storynexus-voice-draft:";
-const readDraft = (storyId: string): string | null => {
-    try {
-        return localStorage.getItem(DRAFT_KEY + storyId);
-    } catch {
-        return null;
-    }
-};
-const keepDraft = (storyId: string, draft: string | null) => {
-    try {
-        if (draft === null) localStorage.removeItem(DRAFT_KEY + storyId);
-        else localStorage.setItem(DRAFT_KEY + storyId, draft);
-    } catch {
-        // No storage: the draft lasts while the screen is open, as before
-    }
-};
+const readDraft = (storyId: string) => storage.get(DRAFT_KEY + storyId);
+// No storage: the draft lasts while the screen is open
+const keepDraft = (storyId: string, draft: string | null) =>
+    draft === null ? storage.remove(DRAFT_KEY + storyId) : storage.set(DRAFT_KEY + storyId, draft);
 
 export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     const { data: story } = useStoryQuery(storyId);
@@ -145,6 +136,7 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
                                         onSuccess: () => {
                                             setDraft(null);
                                             setDerived(false);
+                                            toast.success("Story voice saved — generation follows it from now on");
                                         }
                                     }
                                 )

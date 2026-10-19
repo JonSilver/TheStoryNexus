@@ -15,6 +15,7 @@ import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
 import { useConfirm } from "../components/Dialogs";
+import { EmptyState } from "../components/ScreenParts";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
 import { StoryDetailsEditor } from "./StoryDetailsEditor";
@@ -35,11 +36,11 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
     const deleteStory = useDeleteStoryMutation();
     const confirm = useConfirm();
 
+    const wordCount = (chapters ?? []).reduce((sum, c) => sum + (c.wordCount ?? 0), 0);
+
     const removeStory = async () => {
         if (!story) return;
-        const summary = `${chapters?.length ?? 0} chapter${(chapters?.length ?? 0) === 1 ? "" : "s"}, ${(chapters ?? [])
-            .reduce((sum, c) => sum + (c.wordCount ?? 0), 0)
-            .toLocaleString()} words`;
+        const summary = `${chapters?.length ?? 0} chapter${(chapters?.length ?? 0) === 1 ? "" : "s"}, ${wordCount.toLocaleString()} words`;
         const message = `Delete “${story.title}” (${summary})? Chapters, bible entries, notes and chats go with it. This cannot be undone.`;
         if (!(await confirm({ message, confirmLabel: "Delete story" }))) return;
         deleteStory.mutate(story.id, {
@@ -52,19 +53,13 @@ export const StoryHubScreen = ({ goTo }: ScreenProps) => {
 
     if (!currentStoryId)
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <p className="text-muted-foreground">Pick a story to see its workspace.</p>
-                <button
-                    type="button"
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-                    onClick={() => goTo("library")}
-                >
-                    Open the library
-                </button>
-            </div>
+            <EmptyState
+                message="Pick a story to see its workspace."
+                actionLabel="Open the library"
+                onAction={() => goTo("library")}
+            />
         );
 
-    const wordCount = (chapters ?? []).reduce((sum, c) => sum + (c.wordCount ?? 0), 0);
     const rowClass = "flex w-full items-center gap-3 px-4 py-3 text-left";
     const rows = [
         {

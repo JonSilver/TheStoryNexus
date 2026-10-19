@@ -1,54 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import { lorebookApi } from "@/services/api/client";
+import { lorebookKeys } from "@/services/api/queryKeys";
 import type { LorebookEntry } from "@/types/story";
 
-// Query keys
-export const lorebookKeys = {
-    all: ["lorebook"] as const,
-    lists: () => [...lorebookKeys.all, "list"] as const,
-    list: (storyId?: string) => [...lorebookKeys.lists(), storyId ?? "all"] as const,
-    details: () => [...lorebookKeys.all, "detail"] as const,
-    detail: (id: string) => [...lorebookKeys.details(), id] as const,
-
-    // Level-based query keys
-    global: () => [...lorebookKeys.all, "global"] as const,
-    series: (seriesId: string) => [...lorebookKeys.all, "series", seriesId] as const,
-    story: (storyId: string) => [...lorebookKeys.all, "story", storyId] as const,
-    hierarchical: (storyId: string) => [...lorebookKeys.all, "hierarchical", storyId] as const,
-
-    // Legacy keys (backward compatibility)
-    byStory: (storyId: string) => ["lorebook", "story", storyId] as const,
-    byCategory: (storyId: string, category: string) => ["lorebook", "story", storyId, "category", category] as const,
-    byTag: (storyId: string, tag: string) => ["lorebook", "story", storyId, "tag", tag] as const
-};
-
-// Fetch lorebook entries by story (legacy - returns hierarchical)
-export const useLorebookByStoryQuery = (storyId: string) =>
-    useQuery({
-        queryKey: lorebookKeys.byStory(storyId),
-        queryFn: () => lorebookApi.getByStory(storyId),
-        enabled: !!storyId
-    });
-
-// Query: Series-level lorebook entries
-export const useSeriesLorebookQuery = (seriesId: string | undefined) =>
-    useQuery({
-        queryKey: lorebookKeys.series(seriesId ?? ""),
-        queryFn: () => lorebookApi.getBySeries(seriesId ?? ""),
-        enabled: !!seriesId
-    });
-
-// Query: Story-level lorebook entries only
-export const useStoryLorebookQuery = (storyId: string | undefined) =>
-    useQuery({
-        queryKey: lorebookKeys.story(storyId ?? ""),
-        queryFn: () => lorebookApi.getByStory(storyId ?? ""),
-        enabled: !!storyId
-    });
-
-// Query: Hierarchical lorebook (global + series + story)
-// CRITICAL: This is what prompt context should use
+/** Global + series + story entries — what prompt context uses, so what the writer should see. */
 export const useHierarchicalLorebookQuery = (storyId: string | undefined) =>
     useQuery({
         queryKey: lorebookKeys.hierarchical(storyId ?? ""),
@@ -56,59 +11,33 @@ export const useHierarchicalLorebookQuery = (storyId: string | undefined) =>
         enabled: !!storyId
     });
 
-// Create lorebook entry mutation
-export const useCreateLorebookMutation = () => {
+/**
+ * Any entry write can change every story's view (series and global entries
+ * are inherited), so each one refreshes all bible queries. `reportsOwnFailures`:
+ * the caller words failures itself — batches report one tally, not a toast per entry.
+ */
+const useLorebookWrite = <TVariables, TResult>(
+    mutationFn: (variables: TVariables) => Promise<TResult>,
+    failure: string,
+    reportsOwnFailures = false
+) => {
     const queryClient = useQueryClient();
-
     return useMutation({
-        mutationFn: lorebookApi.create,
-        onSuccess: () => {
-            // Level-scoped invalidation missed every story's hierarchical view
-            // for series/global entries — they stayed invisible until an
-            // unrelated refetch. Invalidate all lorebook queries.
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
-
-            toast.success("Lorebook entry created successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to create lorebook entry: ${error.message}`);
-        }
+        mutationFn,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: lorebookKeys.all }),
+        meta: { failure: reportsOwnFailures ? false : failure }
     });
 };
 
-// Update lorebook entry mutation
-export const useUpdateLorebookMutation = () => {
-    const queryClient = useQueryClient();
+export const useCreateLorebookMutation = ({ reportsOwnFailures = false } = {}) =>
+    useLorebookWrite(lorebookApi.create, "Couldn't add the bible entry", reportsOwnFailures);
 
-    return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<LorebookEntry> }) => lorebookApi.update(id, data),
-        onSuccess: () => {
-            // Just invalidate ALL lorebook queries - simpler and actually works
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
+export const useUpdateLorebookMutation = ({ reportsOwnFailures = false } = {}) =>
+    useLorebookWrite(
+        ({ id, data }: { id: string; data: Partial<LorebookEntry> }) => lorebookApi.update(id, data),
+        "Couldn't save the bible entry",
+        reportsOwnFailures
+    );
 
-            toast.success("Lorebook entry updated successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to update lorebook entry: ${error.message}`);
-        }
-    });
-};
-
-// Delete lorebook entry mutation
-export const useDeleteLorebookMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: lorebookApi.delete,
-        onSuccess: () => {
-            // Scoped invalidation keyed off the detail cache never worked —
-            // nothing populates it, so deletions left ghosts on screen.
-            // Invalidate ALL lorebook queries: simple and actually works.
-            queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
-            toast.success("Lorebook entry deleted successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to delete lorebook entry: ${error.message}`);
-        }
-    });
-};
+export const useDeleteLorebookMutation = ({ reportsOwnFailures = false } = {}) =>
+    useLorebookWrite(lorebookApi.delete, "Couldn't delete the bible entry", reportsOwnFailures);

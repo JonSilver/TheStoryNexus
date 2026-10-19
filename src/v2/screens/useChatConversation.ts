@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
-import { useChaptersByStoryQuery, useCreateChapterMutation } from "@/features/chapters/hooks/useChaptersQuery";
+import { useCreateChapter } from "@/features/chapters/hooks/useChaptersQuery";
 import { brainstormApi } from "@/services/api/client";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
@@ -261,8 +261,7 @@ export const useChatConversation = (
 
 /** Brainstormed material flows onward: a new chapter carries the reply as its outline, ready to write against. */
 export const useChapterFromReply = (storyId: string | null) => {
-    const { data: storyChapters } = useChaptersByStoryQuery(storyId ?? "");
-    const createChapter = useCreateChapterMutation();
+    const createChapter = useCreateChapter();
     const prompt = usePrompt();
     return async (content: string) => {
         const title = await prompt({
@@ -273,16 +272,7 @@ export const useChapterFromReply = (storyId: string | null) => {
         });
         if (!title || !storyId) return;
         createChapter.mutate(
-            {
-                id: randomUUID(),
-                storyId,
-                title,
-                order: storyChapters?.length ?? 0,
-                content: "",
-                revision: 0,
-                wordCount: 0,
-                outline: { content, lastUpdated: new Date() }
-            },
+            { storyId, title, outline: content },
             { onSuccess: () => toast.success(`Chapter “${title}” created with this as its outline`) }
         );
     };

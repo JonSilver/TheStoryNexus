@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { aiApi } from "@/services/api/client";
+import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
 
 export interface OverrideParams {
     temperature: number;
@@ -38,11 +37,7 @@ export const OverrideParamFields = ({
     params: OverrideParams;
     onChange: (next: OverrideParams) => void;
 }) => {
-    const { data: settings } = useQuery({
-        queryKey: ["v2-settings-for-drawer"],
-        queryFn: () => aiApi.getSettings(),
-        staleTime: 60_000
-    });
+    const { data: settings } = useAISettingsQuery();
     const models = settings?.availableModels ?? [];
 
     return (

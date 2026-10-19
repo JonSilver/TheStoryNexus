@@ -10,6 +10,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode } from "@lexical/rich-text";
 import { Component, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import type { Chapter } from "@/types/story";
+import { downloadText } from "@/utils/download";
 import { ActionSheet } from "../ai/ActionSheet";
 import { useEditorActions } from "../ai/useEditorActions";
 import { setNudgeHandoff } from "../bible/nameNudges";
@@ -84,12 +85,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     const downloadDraft = () => {
         const serialised = JSON.stringify(editor.getEditorState().toJSON());
         const markdown = blocksToMarkdown(parseSerialisedDocument(serialised));
-        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${chapter.title.replace(/[^\w-]+/g, "-")}-my-version.md`;
-        link.click();
-        URL.revokeObjectURL(link.href);
+        downloadText(`${chapter.title}-my-version`, "md", markdown, "text/markdown");
     };
     const scroll = useScrollMemory(chapter.id);
     const actions = useEditorActions(chapter);

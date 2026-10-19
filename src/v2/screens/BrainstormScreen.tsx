@@ -1,12 +1,13 @@
 import { Plus, RotateCcw, Send, Square, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
+import { toast } from "react-toastify";
 import {
     useBrainstormByStoryQuery,
     useCreateBrainstormMutation,
     useDeleteBrainstormMutation
 } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
-import { useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { ideaNote, useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
 import type { AIChat, ChatMessage } from "@/types/story";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
@@ -62,11 +63,8 @@ export const BrainstormScreen = ({ goTo, goBack }: ScreenProps) => {
     // Stable, so memoised bubbles skip re-rendering while a reply streams
     const saveNote = useEvent((message: ChatMessage) => {
         if (!currentStoryId) return;
-        createNote.mutate({
-            storyId: currentStoryId,
-            title: message.content.slice(0, 60),
-            content: message.content,
-            type: "idea"
+        createNote.mutate(ideaNote(currentStoryId, message.content), {
+            onSuccess: () => toast.success("Saved to Notes")
         });
     });
     const toBible = useEvent((message: ChatMessage) => setExtracting(message.content));

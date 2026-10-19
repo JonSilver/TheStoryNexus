@@ -33,8 +33,8 @@ export const MergeSheet = ({
     const inheritedCount = allEntries.length - entries.length;
     const generation = useActionGeneration();
     const confirm = useConfirm();
-    const updateEntry = useUpdateLorebookMutation();
-    const deleteEntry = useDeleteLorebookMutation();
+    const updateEntry = useUpdateLorebookMutation({ reportsOwnFailures: true });
+    const deleteEntry = useDeleteLorebookMutation({ reportsOwnFailures: true });
     const [keepId, setKeepId] = useState("");
     const [duplicateId, setDuplicateId] = useState("");
 

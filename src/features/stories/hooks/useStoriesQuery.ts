@@ -1,22 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import { storiesApi } from "@/services/api/client";
+import { lorebookKeys, seriesKeys, storiesKeys } from "@/services/api/queryKeys";
 import type { Story } from "@/types/story";
 
-// Query keys
-export const storiesKeys = {
-    all: ["stories"] as const,
-    detail: (id: string) => ["stories", id] as const
-};
+export const useStoriesQuery = () => useQuery({ queryKey: storiesKeys.all, queryFn: storiesApi.getAll });
 
-// Fetch all stories
-export const useStoriesQuery = () =>
-    useQuery({
-        queryKey: storiesKeys.all,
-        queryFn: storiesApi.getAll
-    });
-
-// Fetch single story
 export const useStoryQuery = (id: string) =>
     useQuery({
         queryKey: storiesKeys.detail(id),
@@ -24,66 +12,50 @@ export const useStoryQuery = (id: string) =>
         enabled: !!id
     });
 
-// Create story mutation
 export const useCreateStoryMutation = () => {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: storiesApi.create,
-        onSuccess: data => {
-            queryClient.invalidateQueries({ queryKey: storiesKeys.all });
-            // Invalidate series stories list if story is assigned to a series
-            if (data.seriesId) queryClient.invalidateQueries({ queryKey: ["series", data.seriesId, "stories"] });
-
-            toast.success("Story created successfully");
+        onSuccess: story => {
+            void queryClient.invalidateQueries({ queryKey: storiesKeys.all });
+            if (story.seriesId) void queryClient.invalidateQueries({ queryKey: seriesKeys.all });
         },
-        onError: (error: Error) => {
-            toast.error(`Failed to create story: ${error.message}`);
-        }
+        meta: { failure: "Couldn't create the story" }
     });
 };
 
-// Update story mutation
 export const useUpdateStoryMutation = () => {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: ({ id, data }: { id: string; data: Partial<Story> }) => storiesApi.update(id, data),
-        onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: storiesKeys.all });
-            queryClient.invalidateQueries({ queryKey: storiesKeys.detail(variables.id) });
-            // Invalidate series stories list if seriesId was updated
-            if (variables.data.seriesId !== undefined) {
-                // Invalidate the new series
-                if (variables.data.seriesId)
-                    queryClient.invalidateQueries({ queryKey: ["series", variables.data.seriesId, "stories"] });
-
-                // Also invalidate the old series (data contains the updated story with old seriesId still cached)
-                queryClient.invalidateQueries({ queryKey: ["series"] });
-                // Series membership changes which bible entries the story inherits —
-                // a cached combined bible would hide (or keep) series entries
-                queryClient.invalidateQueries({ queryKey: ["lorebook"] });
-            }
-            toast.success("Story updated successfully");
+        onSuccess: (story, { data }) => {
+            queryClient.setQueryData(storiesKeys.detail(story.id), story);
+            void queryClient.invalidateQueries({ queryKey: storiesKeys.all });
+            if (data.seriesId === undefined) return;
+            // Membership moves the story between series lists, and changes which
+            // bible entries it inherits
+            void queryClient.invalidateQueries({ queryKey: seriesKeys.all });
+            void queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
         },
-        onError: (error: Error) => {
-            toast.error(`Failed to update story: ${error.message}`);
-        }
+        meta: { failure: "Couldn't save the story" }
     });
 };
 
-// Delete story mutation
+/** A story JSON backup: it can bring chapters, bible, notes and images, so everything refreshes. */
+export const useImportStoryMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: storiesApi.importStory,
+        onSuccess: () => queryClient.invalidateQueries(),
+        meta: { failure: "Couldn't import that JSON" }
+    });
+};
+
 export const useDeleteStoryMutation = () => {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: storiesApi.delete,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: storiesKeys.all });
-            toast.success("Story deleted successfully");
-        },
-        onError: (error: Error) => {
-            toast.error(`Failed to delete story: ${error.message}`);
-        }
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: storiesKeys.all }),
+        meta: { failure: "Couldn't delete the story" }
     });
 };

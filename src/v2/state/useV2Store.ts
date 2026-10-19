@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { storage } from "@/utils/storage";
 import { useRouteParams } from "../routeParams";
 
 /**
@@ -19,25 +20,15 @@ const STORAGE_KEY = "v2-state";
 const SCROLL_MEMORY = 100;
 
 const load = (): V2State => {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : {};
-        return {
-            currentStoryId: typeof parsed.currentStoryId === "string" ? parsed.currentStoryId : null,
-            lastChapterByStory: parsed.lastChapterByStory ?? {},
-            scrollByChapter: parsed.scrollByChapter ?? {},
-            dismissedNudgesByStory: parsed.dismissedNudgesByStory ?? {},
-            autoSummarise: parsed.autoSummarise !== false
-        };
-    } catch {
-        return {
-            currentStoryId: null,
-            lastChapterByStory: {},
-            scrollByChapter: {},
-            dismissedNudgesByStory: {},
-            autoSummarise: true
-        };
-    }
+    const stored = storage.getJSON(STORAGE_KEY);
+    const parsed = (stored && typeof stored === "object" ? stored : {}) as Partial<V2State>;
+    return {
+        currentStoryId: typeof parsed.currentStoryId === "string" ? parsed.currentStoryId : null,
+        lastChapterByStory: parsed.lastChapterByStory ?? {},
+        scrollByChapter: parsed.scrollByChapter ?? {},
+        dismissedNudgesByStory: parsed.dismissedNudgesByStory ?? {},
+        autoSummarise: parsed.autoSummarise !== false
+    };
 };
 
 const store = {
@@ -47,11 +38,8 @@ const store = {
 
 const setState = (update: Partial<V2State>) => {
     store.state = { ...store.state, ...update };
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store.state));
-    } catch {
-        // Private mode or full storage: UI state lasts this session only — nothing the writer made is at stake
-    }
+    // Refused (private mode, full storage): UI state lasts this session only — nothing the writer made is at stake
+    storage.setJSON(STORAGE_KEY, store.state);
     store.listeners.forEach(listener => listener());
 };
 

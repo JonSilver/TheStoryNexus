@@ -14,7 +14,7 @@ export const ReadScreen = ({ goBack }: ScreenProps) => {
 
     // Only routed inside /story/:storyId, so a story is always present
     if (!currentStoryId) return null;
-    const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
+    const ordered = chapters ?? [];
 
     return (
         <div className="flex h-full flex-col">

@@ -2,13 +2,12 @@ import { ChevronDown, ChevronUp, Loader2, Plus, Pencil, Trash2 } from "lucide-re
 import { useState } from "react";
 import {
     useChaptersByStoryQuery,
-    useCreateChapterMutation,
+    useCreateChapter,
     useDeleteChapterMutation,
-    useUpdateChapterMutation
+    useMoveChapter
 } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { Chapter } from "@/types/story";
-import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { useConfirm } from "../components/Dialogs";
 import { NoStoryChosen } from "../components/ScreenParts";
@@ -20,43 +19,29 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
     const { setLastChapter } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
-    const createChapter = useCreateChapterMutation();
-    const updateChapter = useUpdateChapterMutation();
+    const createChapter = useCreateChapter();
+    const moveChapter = useMoveChapter();
     const deleteChapter = useDeleteChapterMutation();
     const confirm = useConfirm();
 
     const [details, setDetails] = useState<Chapter | null>(null);
 
-    // Swap the order values of adjacent chapters — reorder without dnd
-    const move = (index: number, direction: -1 | 1) => {
-        const a = ordered[index];
-        const b = ordered[index + direction];
-        if (!a || !b) return;
-        updateChapter.mutate({ id: a.id, data: { order: b.order } });
-        updateChapter.mutate({ id: b.id, data: { order: a.order } });
-    };
+    const move = (index: number, direction: -1 | 1) =>
+        moveChapter.mutate({ chapters: ordered, from: index, to: index + direction });
 
     const remove = async (id: string, title: string, words: number) => {
         const message = `Delete “${title}”${words ? ` (${words} words)` : ""}? This cannot be undone.`;
         if (await confirm({ message, confirmLabel: "Delete" })) deleteChapter.mutate(id);
     };
     const [newTitle, setNewTitle] = useState("");
-    const ordered = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
+    const ordered = chapters ?? [];
 
     if (!currentStoryId) return <NoStoryChosen onChoose={() => goTo("library")} />;
 
     const create = () => {
         const title = newTitle.trim() || `Chapter ${ordered.length + 1}`;
         createChapter.mutate(
-            {
-                id: randomUUID(),
-                storyId: currentStoryId,
-                title,
-                order: ordered.length,
-                content: "",
-                revision: 0,
-                wordCount: 0
-            },
+            { storyId: currentStoryId, title },
             {
                 onSuccess: chapter => {
                     setNewTitle("");
@@ -87,7 +72,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                     <button
                                         type="button"
                                         onClick={() => move(index, -1)}
-                                        disabled={index === 0}
+                                        disabled={index === 0 || moveChapter.isPending}
                                         aria-label={`Move ${chapter.title} up`}
                                         className="px-2 pt-2 text-muted-foreground disabled:opacity-30"
                                     >
@@ -96,7 +81,7 @@ export const ChaptersScreen = ({ goTo }: ScreenProps) => {
                                     <button
                                         type="button"
                                         onClick={() => move(index, 1)}
-                                        disabled={index === ordered.length - 1}
+                                        disabled={index === ordered.length - 1 || moveChapter.isPending}
                                         aria-label={`Move ${chapter.title} down`}
                                         className="px-2 pb-2 text-muted-foreground disabled:opacity-30"
                                     >

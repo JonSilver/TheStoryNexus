@@ -1,11 +1,13 @@
-import { attemptPromise } from "@jfdi/attempt";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookUp, Loader2, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useDemoExistsQuery, useRestoreDemoMutation } from "@/features/demo/hooks/useDemoData";
 import { useSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import { useCreateStoryMutation, useStoriesQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { adminApi, storiesApi } from "@/services/api/client";
+import {
+    useCreateStoryMutation,
+    useImportStoryMutation,
+    useStoriesQuery
+} from "@/features/stories/hooks/useStoriesQuery";
 import { randomUUID } from "@/utils/crypto";
 import type { ScreenProps } from "../V2App";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
@@ -27,42 +29,24 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
     const createStory = useCreateStoryMutation();
     const [newTitle, setNewTitle] = useState("");
     const [importing, setImporting] = useState(false);
-    const queryClient = useQueryClient();
-    const { data: demoExists } = useQuery({
-        queryKey: ["demo-exists"],
-        queryFn: () => adminApi.checkDemoExists().then(r => r.exists)
-    });
+    const { data: demoExists } = useDemoExistsQuery();
+    const restoreDemo = useRestoreDemoMutation();
+    const importStory = useImportStoryMutation();
 
-    const restoreDemo = async () => {
-        const [error] = await attemptPromise(() => adminApi.importDemoData());
-        if (error) {
-            toast.error("Couldn't restore the sample story");
-            return;
-        }
-        void queryClient.invalidateQueries();
-        toast.success("Sample story restored");
-    };
-
-    const importJson = async (file: File) => {
-        const [error, result] = await attemptPromise(() => storiesApi.importStory(file));
-        if (error || !result?.storyId) {
-            toast.error(`Couldn't import that JSON${error ? `: ${error.message}` : ""}`);
-            return;
-        }
-        await queryClient.invalidateQueries();
-        const counts = result.imported;
-        toast.success(
-            `Restored “${result.title}” — ${counts.chapters ?? 0} chapters, ${counts.lorebookEntries ?? 0} bible entries, ` +
-                `${counts.notes ?? 0} notes, ${counts.assets ?? 0} images`
-        );
-        if (result.assetsFailed.length > 0)
-            toast.error(
-                `${result.assetsFailed.length} image(s) couldn't be restored: ${result.assetsFailed.join(", ")}`
-            );
-        // Land in the restored story, not back at the list
-        setCurrentStory(result.storyId);
-        goTo("story");
-    };
+    const importJson = (file: File) =>
+        importStory.mutate(file, {
+            onSuccess: ({ storyId, title, imported, assetsFailed }) => {
+                toast.success(
+                    `Restored “${title}” — ${imported.chapters ?? 0} chapters, ${imported.lorebookEntries ?? 0} bible entries, ` +
+                        `${imported.notes ?? 0} notes, ${imported.assets ?? 0} images`
+                );
+                if (assetsFailed.length > 0)
+                    toast.error(`${assetsFailed.length} image(s) couldn't be restored: ${assetsFailed.join(", ")}`);
+                // Land in the restored story, not back at the list
+                setCurrentStory(storyId);
+                goTo("story");
+            }
+        });
 
     const create = () => {
         const title = newTitle.trim();
@@ -93,7 +77,7 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
                         onChange={e => {
                             const file = e.target.files?.[0];
                             e.target.value = "";
-                            if (file) void importJson(file);
+                            if (file) importJson(file);
                         }}
                     />
                 </label>
@@ -179,7 +163,10 @@ export const StoriesScreen = ({ goTo }: ScreenProps) => {
             {demoExists === false && (
                 <button
                     type="button"
-                    onClick={() => void restoreDemo()}
+                    onClick={() =>
+                        restoreDemo.mutate(undefined, { onSuccess: () => toast.success("Sample story restored") })
+                    }
+                    disabled={restoreDemo.isPending}
                     className="flex items-center gap-2 border-t px-4 py-3 text-left text-sm text-muted-foreground"
                 >
                     <Sparkles className="h-4 w-4" /> Restore the sample story (Shadows Over Berlin)

@@ -1,18 +1,5 @@
 import type { ActionDefinition, ActionId, OverridePayload, OverrideRow } from "@/types/actions";
-import type {
-    AIChat,
-    AISettings,
-    Chapter,
-    DatabaseExport,
-    GlobalLorebookExport,
-    LorebookEntry,
-    Note,
-    PromptMessage,
-    Series,
-    SeriesExport,
-    Story,
-    StoryExport
-} from "@/types/story";
+import type { AIChat, AISettings, Chapter, LorebookEntry, Note, PromptMessage, Series, Story } from "@/types/story";
 import type { ActionEditorContext } from "@/v2/ai/useActionGeneration";
 import { fetchJSON, request, uploadFile } from "./request";
 
@@ -32,7 +19,6 @@ export const storiesApi = {
     create: (data: Omit<Story, "createdAt">) => fetchJSON<Story>("/stories", { method: "POST", json: data }),
     update: (id: string, data: Partial<Story>) => fetchJSON<Story>(`/stories/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/stories/${id}`, { method: "DELETE" }),
-    exportStory: (id: string) => fetchJSON<StoryExport>(`/stories/${id}/export`),
     importStory: (file: File) => uploadFile<StoryImportResult>("/stories/import", file)
 };
 
@@ -40,13 +26,10 @@ export const storiesApi = {
 export const seriesApi = {
     getAll: () => fetchJSON<Series[]>("/series"),
     getById: (id: string) => fetchJSON<Series>(`/series/${id}`),
-    getStories: (seriesId: string) => fetchJSON<Story[]>(`/series/${seriesId}/stories`),
-    getLorebook: (seriesId: string) => fetchJSON<LorebookEntry[]>(`/series/${seriesId}/lorebook`),
     create: (data: Omit<Series, "id" | "createdAt">) => fetchJSON<Series>("/series", { method: "POST", json: data }),
     update: (id: string, data: Partial<Omit<Series, "id" | "createdAt">>) =>
         fetchJSON<Series>(`/series/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/series/${id}`, { method: "DELETE" }),
-    exportSeries: (id: string) => fetchJSON<SeriesExport>(`/series/${id}/export`),
     importSeries: (file: File) => uploadFile<Series>("/series/import", file)
 };
 
@@ -58,6 +41,9 @@ export const chaptersApi = {
     update: (id: string, data: Partial<Chapter>) =>
         fetchJSON<Chapter>(`/chapters/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/chapters/${id}`, { method: "DELETE" }),
+    /** The story's whole running order at once; 409 when the list changed meanwhile. */
+    reorder: (storyId: string, ids: string[]) =>
+        fetchJSON<Chapter[]>(`/chapters/story/${storyId}/order`, { method: "PUT", json: { ids } }),
     /**
      * The editor's content save: a value, not a throw — the saver needs 409
      * (conflict, with the current chapter) apart from any other failure.
@@ -95,21 +81,12 @@ export type BackgroundClaim =
 
 // Lorebook API
 export const lorebookApi = {
-    getByStory: (storyId: string) => fetchJSON<LorebookEntry[]>(`/lorebook/story/${storyId}`),
-    getByCategory: (storyId: string, category: string) =>
-        fetchJSON<LorebookEntry[]>(`/lorebook/story/${storyId}/category/${category}`),
-    getByTag: (storyId: string, tag: string) => fetchJSON<LorebookEntry[]>(`/lorebook/story/${storyId}/tag/${tag}`),
-    getById: (id: string) => fetchJSON<LorebookEntry>(`/lorebook/${id}`),
     create: (data: Omit<LorebookEntry, "createdAt">) =>
         fetchJSON<LorebookEntry>("/lorebook", { method: "POST", json: data }),
     update: (id: string, data: Partial<LorebookEntry>) =>
         fetchJSON<LorebookEntry>(`/lorebook/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/lorebook/${id}`, { method: "DELETE" }),
-    getGlobal: () => fetchJSON<LorebookEntry[]>("/lorebook/global"),
-    getBySeries: (seriesId: string) => fetchJSON<LorebookEntry[]>(`/lorebook/series/${seriesId}`),
-    getHierarchical: (storyId: string) => fetchJSON<LorebookEntry[]>(`/lorebook/story/${storyId}/hierarchical`),
-    exportGlobal: () => fetchJSON<GlobalLorebookExport>("/lorebook/global/export"),
-    importGlobal: (file: File) => uploadFile<{ success: boolean }>("/lorebook/global/import", file)
+    getHierarchical: (storyId: string) => fetchJSON<LorebookEntry[]>(`/lorebook/story/${storyId}/hierarchical`)
 };
 
 // AI Settings API
@@ -142,7 +119,6 @@ export const brainstormApi = {
 // Notes API
 export const notesApi = {
     getByStory: (storyId: string) => fetchJSON<Note[]>(`/notes/story/${storyId}`),
-    getById: (id: string) => fetchJSON<Note>(`/notes/${id}`),
     create: (data: Omit<Note, "id" | "createdAt" | "updatedAt">) =>
         fetchJSON<Note>("/notes", { method: "POST", json: data }),
     update: (id: string, data: Partial<Note>) => fetchJSON<Note>(`/notes/${id}`, { method: "PUT", json: data }),
@@ -151,8 +127,6 @@ export const notesApi = {
 
 // Admin/Migration API
 export const adminApi = {
-    exportDatabase: () => fetchJSON<DatabaseExport>("/admin/export"),
-    importDatabase: (file: File) => uploadFile<{ success: boolean }>("/admin/import", file),
     checkDemoExists: () => fetchJSON<{ exists: boolean }>("/admin/demo/exists"),
     importDemoData: () => fetchJSON<{ success: boolean; message: string }>("/admin/demo/import", { method: "POST" }),
     deleteDemoData: () =>

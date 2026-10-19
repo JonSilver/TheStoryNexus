@@ -53,23 +53,6 @@ export interface ChapterNotes {
     lastUpdated: Date;
 }
 
-// SceneBeat structure
-export interface SceneBeat extends BaseEntity {
-    storyId: string;
-    chapterId: string;
-    command: string;
-    povType?: "First Person" | "Third Person Limited" | "Third Person Omniscient";
-    povCharacter?: string;
-    generatedContent?: string; // To store the last generated content
-    accepted?: boolean; // Whether the generated content was accepted
-    metadata?: {
-        useMatchedChapter?: boolean;
-        useMatchedSceneBeat?: boolean;
-        useCustomContext?: boolean;
-        [key: string]: unknown;
-    };
-}
-
 // AI Chat types
 export interface AIChat extends BaseEntity {
     storyId: string;
@@ -110,28 +93,6 @@ export interface PromptMessage {
     content: string;
 }
 
-export interface AllowedModel {
-    id: string;
-    provider: AIProvider;
-    name: string;
-}
-
-export interface Prompt extends BaseEntity {
-    name: string;
-    description?: string;
-    promptType: "scene_beat" | "gen_summary" | "selection_specific" | "continue_writing" | "other" | "brainstorm";
-    messages: PromptMessage[];
-    allowedModels: AllowedModel[];
-    storyId?: string;
-    isSystem?: boolean; // Flag to identify system prompts
-    temperature?: number;
-    maxTokens?: number;
-    top_p?: number; // Nucleus sampling: 1.0 means consider all tokens, 0 means disabled
-    top_k?: number; // Limit sampling to top k tokens: 50 is default, 0 means disabled
-    repetition_penalty?: number; // Penalty for repeating tokens: 1.0 means no penalty, 0 means disabled
-    min_p?: number; // Minimum probability for sampling: 0.0 is default, 1.0 means only consider most likely tokens
-}
-
 // AI Provider and Model types
 export type AIProvider = "openai" | "openrouter" | "local" | "gemini";
 
@@ -170,12 +131,25 @@ export interface Note extends BaseEntity {
 // Lorebook types
 export type LorebookLevel = "global" | "series" | "story";
 
+/** In the order the bible lists them. */
+export const LOREBOOK_CATEGORIES = [
+    "character",
+    "location",
+    "item",
+    "event",
+    "note",
+    "synopsis",
+    "starting scenario",
+    "timeline"
+] as const;
+export type LorebookCategory = (typeof LOREBOOK_CATEGORIES)[number];
+
 export interface LorebookEntry extends BaseEntity {
     level: LorebookLevel;
     scopeId?: string; // seriesId when level='series', storyId when level='story'
     name: string;
     description: string;
-    category: "character" | "location" | "item" | "event" | "note" | "synopsis" | "starting scenario" | "timeline";
+    category: LorebookCategory;
     // Tags are stored as an array of strings, can contain spaces and special characters
     tags: string[];
     metadata?: {
@@ -192,58 +166,7 @@ export interface LorebookEntry extends BaseEntity {
     isDisabled?: boolean;
 }
 
-// Prompt Parser types
-export interface PromptParserConfig {
-    storyId: string;
-    chapterId?: string;
-    promptId: string;
-    scenebeat?: string;
-    cursorPosition?: number;
-    previousWords?: string;
-    matchedEntries?: Set<LorebookEntry>;
-    additionalContext?: Record<string, unknown>;
-    chapterMatchedEntries?: Set<LorebookEntry>;
-    sceneBeatMatchedEntries?: Set<LorebookEntry>;
-    povCharacter?: string;
-    povType?: "First Person" | "Third Person Limited" | "Third Person Omniscient";
-    storyLanguage?: string;
-    sceneBeatContext?: {
-        useMatchedChapter: boolean;
-        useMatchedSceneBeat: boolean;
-        useCustomContext: boolean;
-        customContextItems?: string[]; // IDs of selected lorebook items
-    };
-}
-
-export interface PromptContext {
-    storyId: string;
-    chapterId?: string;
-    scenebeat?: string;
-    cursorPosition?: number;
-    previousWords?: string;
-    matchedEntries?: Set<LorebookEntry>;
-    chapters?: Chapter[];
-    currentChapter?: Chapter;
-    additionalContext?: Record<string, unknown>;
-    chapterMatchedEntries?: Set<LorebookEntry>;
-    sceneBeatMatchedEntries?: Set<LorebookEntry>;
-    povCharacter?: string;
-    povType?: "First Person" | "Third Person Limited" | "Third Person Omniscient";
-    storyLanguage?: string;
-    sceneBeatContext?: {
-        useMatchedChapter: boolean;
-        useMatchedSceneBeat: boolean;
-        useCustomContext: boolean;
-        customContextItems?: string[]; // IDs of selected lorebook items
-    };
-}
-
-export interface ParsedPrompt {
-    messages: PromptMessage[];
-    error?: string;
-}
-
-// Story Export/Import types
+/** A story backup file, as the server writes and reads it (the demo story ships as one). */
 export interface StoryExport {
     version: string;
     type: "story";
@@ -252,39 +175,6 @@ export interface StoryExport {
     series?: Series;
     chapters: Chapter[];
     lorebookEntries: LorebookEntry[];
-    sceneBeats: SceneBeat[];
     aiChats: AIChat[];
     notes?: Note[];
-}
-
-export interface SeriesExport {
-    version: string;
-    type: "series";
-    exportDate: string;
-    series: Series;
-    lorebookEntries: LorebookEntry[];
-    stories: StoryExport[];
-    [key: string]: unknown;
-}
-
-export interface GlobalLorebookExport {
-    version: string;
-    type: "global-lorebook";
-    exportDate: string;
-    lorebookEntries: LorebookEntry[];
-}
-
-export interface DatabaseExport {
-    version: string;
-    exportedAt: string;
-    tables: {
-        stories: Story[];
-        chapters: Chapter[];
-        prompts: Prompt[];
-        lorebookEntries: LorebookEntry[];
-        aiChats: AIChat[];
-        sceneBeats: SceneBeat[];
-        notes: Note[];
-        aiSettings: AISettings[];
-    };
 }
