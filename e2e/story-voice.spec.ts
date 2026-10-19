@@ -46,6 +46,12 @@ test("derive the story's voice from its prose, review it, and it steers generati
     await expect(voice).toHaveValue(GUIDE);
     await expect(page.getByText(/Drafted from your writing/)).toBeVisible();
 
+    // Leaving the screen doesn't lose the paid-for draft
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByText("Details, series & voice").click();
+    await expect(voice).toHaveValue(GUIDE);
+
     // Not saved until the writer saves it
     const before = await (await page.request.get(`/api/stories/${storyId}`)).json();
     expect(before.aiInstructions ?? "").toBe("");
@@ -57,4 +63,11 @@ test("derive the story's voice from its prose, review it, and it steers generati
         await page.request.post("/api/generate/preview", { data: preview(storyId, "continue", chapterId) })
     ).json();
     expect(JSON.stringify(continuePrompt)).toContain("Never name the narrator.");
+});
+
+test("a story with no prose yet can't spend a request deriving a voice from nothing", async ({ page }) => {
+    await createStoryAndChapter(page, "Voice — empty", "One");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByText("Details, series & voice").click();
+    await expect(page.getByRole("button", { name: "Derive from my writing" })).toBeDisabled();
 });

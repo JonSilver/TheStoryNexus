@@ -161,7 +161,9 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
             .map(
                 ({ c, text }) => `--- From chapter ${c.order + 1} (${c.title}) ---\n${trimToTokens(text, each, "head")}`
             );
-        if (samples.length) context.story_samples = spend(samples.join("\n\n"));
+        // Nothing to read: refuse before anything is paid for, rather than describe a generic voice
+        if (!samples.length) throw new Error("This story has no prose yet — write or import some first.");
+        context.story_samples = spend(samples.join("\n\n"));
     }
 
     if (needs.has("chat_history") && editorContext.chatHistory)

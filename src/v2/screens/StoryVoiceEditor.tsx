@@ -1,20 +1,45 @@
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery, useUpdateStoryMutation } from "@/features/stories/hooks/useStoriesQuery";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import { useActionGeneration } from "../ai/useActionGeneration";
+import { flushChapterSave } from "../editor/useChapterSaver";
 
 const VOICE_CHAR_CAP = 2000;
+
+// An unsaved voice draft (often a paid derivation) outlives leaving the screen, on this device
+const DRAFT_KEY = "storynexus-voice-draft:";
+const readDraft = (storyId: string): string | null => {
+    try {
+        return localStorage.getItem(DRAFT_KEY + storyId);
+    } catch {
+        return null;
+    }
+};
+const keepDraft = (storyId: string, draft: string | null) => {
+    try {
+        if (draft === null) localStorage.removeItem(DRAFT_KEY + storyId);
+        else localStorage.setItem(DRAFT_KEY + storyId, draft);
+    } catch {
+        // No storage: the draft lasts while the screen is open, as before
+    }
+};
 
 export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     const { data: story } = useStoryQuery(storyId);
     const updateStory = useUpdateStoryMutation();
     const generation = useActionGeneration();
-    const [draft, setDraft] = useState<string | null>(null);
+    const { data: chapters } = useChaptersByStoryQuery(storyId);
+    const [draft, setDraftState] = useState<string | null>(() => readDraft(storyId));
     const [derived, setDerived] = useState(false);
+    const setDraft = (next: string | null) => {
+        keepDraft(storyId, next);
+        setDraftState(next);
+    };
 
     useEffect(() => {
-        setDraft(null);
+        setDraftState(readDraft(storyId));
         setDerived(false);
     }, [storyId]);
 
@@ -24,7 +49,11 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
     const deriving = generation.phase === "streaming";
 
     // The draft lands in the box for review and editing — nothing is saved until the writer saves it
+    const hasProse = (chapters ?? []).some(c => (c.wordCount ?? 0) > 0);
     const derive = async () => {
+        if (dirty && !window.confirm("Replace your unsaved changes to the voice with a drafted one?")) return;
+        // Read what's on screen, not a second-old save
+        await Promise.all((chapters ?? []).map(c => flushChapterSave(c.id)));
         const result = await generation.run({ actionId: "derive_voice", storyId });
         if (result.outcome !== "complete" || !result.text.trim()) return;
         setDraft(result.text.trim().slice(0, VOICE_CHAR_CAP));
@@ -70,9 +99,14 @@ export const StoryVoiceEditor = ({ storyId }: { storyId: string }) => {
                 ) : (
                     <button
                         type="button"
-                        className="ml-auto flex items-center gap-1 rounded-md border px-3 py-1"
+                        className="ml-auto flex items-center gap-1 rounded-md border px-3 py-1 disabled:opacity-50"
                         onClick={() => void derive()}
-                        title="Reads passages from across the story and drafts its voice for you to review"
+                        disabled={!hasProse}
+                        title={
+                            hasProse
+                                ? "Reads passages from across the story and drafts its voice for you to review"
+                                : "Write or import some prose first"
+                        }
                     >
                         <Sparkles className="h-3.5 w-3.5" /> Derive from my writing
                     </button>
