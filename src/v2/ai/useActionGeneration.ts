@@ -16,7 +16,8 @@ export type ActionId =
     | "propose_updates"
     | "ask"
     | "check_continuity"
-    | "merge_entries";
+    | "merge_entries"
+    | "derive_voice";
 
 export interface ActionEditorContext {
     selection?: string;

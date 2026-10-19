@@ -28,6 +28,7 @@ Each action's template may use these `{{variables}}`, filled in when it runs:
 | Propose Bible Updates        | No          | `chapter_content` `matched_entries`                                                      |
 | Check Continuity             | No          | `chapter_content` `matched_entries`                                                      |
 | Merge Bible Entries          | No          | `user_message`                                                                           |
+| Derive Story Voice           | No          | `story_samples` `story_language`                                                         |
 
 `guidance` carries a Refine steer. An unknown variable is refused when you save, and if an override ever becomes invalid the built-in template is used instead.
 
