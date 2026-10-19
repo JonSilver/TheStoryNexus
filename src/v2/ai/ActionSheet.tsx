@@ -50,7 +50,6 @@ export const ActionSheet = ({
 }) => {
     const [draft, setDraft] = useState("");
     const [refineText, setRefineText] = useState("");
-    if (phase === "idle" && !inputRequest) return null;
 
     const submitDraft = () => {
         if (!draft.trim() || !inputRequest) return;
@@ -83,6 +82,9 @@ export const ActionSheet = ({
                                 }
                             }}
                         />
+                    ) : phase === "idle" ? (
+                        // Opened, not yet sent (a save is landing first): Discard here costs nothing
+                        <GenerationProgress status={{ phase: "waiting", elapsedMs: 0 }} />
                     ) : phase === "streaming" ? (
                         <>
                             {text}
@@ -133,14 +135,23 @@ export const ActionSheet = ({
                 )}
                 <footer className="flex gap-2 border-t p-3">
                     {phase === "idle" && inputRequest ? (
-                        <button
-                            type="button"
-                            onClick={submitDraft}
-                            disabled={!draft.trim()}
-                            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
-                        >
-                            Go
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={submitDraft}
+                                disabled={!draft.trim()}
+                                className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                            >
+                                Go
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onDiscard}
+                                className="ml-auto rounded-md border px-4 py-2 text-sm"
+                            >
+                                Cancel
+                            </button>
+                        </>
                     ) : phase === "streaming" ? (
                         <button
                             type="button"

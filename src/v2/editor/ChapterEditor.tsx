@@ -80,12 +80,6 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     const { noteActivity, noteSaved } = useAutoSummarise(chapter);
     const { status, scheduleSave } = useChapterSaver(chapter.id, chapter.saveVersion ?? 0, chapter.content, noteSaved);
 
-    // A conflicted editor must not keep accepting words it will never save —
-    // lock it so "typing works" and "nothing is saved" can't coexist
-    useEffect(() => {
-        editor.setEditable(status !== "conflict");
-    }, [editor, status]);
-
     // The writer's conflicting draft is still on screen — it must be savable
     // BEFORE Reload replaces it with the server copy
     const downloadDraft = () => {
@@ -103,6 +97,12 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
     const scrollerRef = useRef<HTMLDivElement | null>(null);
     const persistScroll = useRef(debounce((chapterId: string, top: number) => setScroll(chapterId, top), 500)).current;
     const actions = useEditorActions(chapter);
+    // The one place editability is decided. A conflicted editor must not keep accepting words it
+    // will never save; a selection sheet freezes the document under its saved selection
+    const editable = status !== "conflict" && !actions.locksEditor;
+    useEffect(() => {
+        editor.setEditable(editable);
+    }, [editor, editable]);
     const { data: bibleEntries } = useHierarchicalLorebookQuery(chapter.storyId);
     const [nudgeNames, setNudgeNames] = useState<string[]>([]);
     const [referenceOpen, setReferenceOpen] = useState(false);
@@ -148,7 +148,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                     actions={actions.toolbarActions}
                     onToggleReference={() => setReferenceOpen(open => !open)}
                 />
-                <ActionSheet {...actions.sheetProps} />
+                {actions.sheetOpen && <ActionSheet {...actions.sheetProps} />}
                 {nudgeNames.length > 0 && (
                     <div className="flex items-center gap-2 border-b bg-primary/5 px-3 py-1.5 text-xs">
                         <span className="min-w-0 truncate">
