@@ -124,7 +124,7 @@ export default function SettingsPage() {
                                     <Input
                                         id="local-api-url"
                                         type="text"
-                                        placeholder="e.g. http://192.168.1.47:11434/v1 (Ollama) or http://localhost:1234/v1 (LM Studio)"
+                                        placeholder="e.g. http://localhost:11434/v1 (Ollama) or http://localhost:1234/v1 (LM Studio)"
                                         value={currentLocalUrl}
                                         onChange={e => setLocalApiUrlInput(e.target.value)}
                                     />

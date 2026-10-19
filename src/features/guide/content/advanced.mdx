@@ -1,59 +1,83 @@
 # Advanced
 
-Nothing here is needed to write a novel. It's here for when you want to change how the machinery behaves, get your words out, or run the whole thing off your own hardware.
+Nothing here is needed to write a novel. It's for changing how the machinery behaves, getting your words out safely, running your own models, and understanding what went wrong when something does.
 
-## The AI Actions drawer
+## AI actions
 
-**More → AI Actions (advanced overrides)** lists every action the app can run, each marked **built-in** or **customised**, and noting which ones follow your story voice.
+**Settings → AI actions (advanced overrides)** lists every action the app runs, each marked **built-in** or **customised**, and whether it follows your story voice. Choose a scope — **All stories**, or **This story** (which beats the global one) — then tap an action:
 
-Pick a scope first:
+- **Model for this action** — e.g. a small fast model for summaries and your best model for prose. Leave it unset to use your default model.
+- **Temperature**, **Top-p**, **Freq. penalty**, **Pres. penalty**, **Max tokens** — blank means the model's own default.
+- **The template** — role-tagged messages (system, user, assistant) you can edit, add to or remove.
 
-- **All stories** — a global override, used everywhere unless a story overrides it too.
-- **This story** — applies to the current story only, and beats the global one.
-
-Tap an action to edit it. Its template is a list of role-tagged messages (**system**, **user**, **assistant**); edit the text, add messages with **+ message**, remove ones you don't want. Below them sit **Temperature** and **Max tokens**. **Save override** stores it, **Reset to built-in** throws your version away, **Cancel** leaves everything alone.
+**Save override** stores it; **Reset to built-in** discards yours.
 
 ### Variables
 
-The header of the editor lists the `{{variables}}` that action is allowed to use — the same context the built-in template draws on. They're substituted at generation time:
+Each action's template may use these `{{variables}}`, filled in when it runs:
 
-| Action                    | Follows story voice | Variables available                                          |
-| ------------------------- | ------------------- | ------------------------------------------------------------ |
-| Scene Beat                | Yes                 | `matched_entries` `summaries` `recent_prose` `pov` `command` |
-| Continue Writing          | Yes                 | `matched_entries` `summaries` `recent_prose` `pov`           |
-| Rework / Expand / Shorten | Yes                 | `selection` `recent_prose` `pov` `story_language`            |
-| Brainstorm                | Yes                 | `matched_entries` `chat_history` `user_message`              |
-| Summarise Chapter         | No                  | `chapter_content`                                            |
-| Extract Bible Entries     | No                  | `chapter_content` `user_message` `matched_entries`           |
-| Propose Bible Updates     | No                  | `chapter_content` `matched_entries`                          |
+| Action                       | Story voice | Variables                                                                                |
+| ---------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
+| Continue Writing             | Yes         | `matched_entries` `summaries` `recent_prose` `pov` `story_language` `guidance`           |
+| Rework / Expand / Shorten    | Yes         | `selection` `recent_prose` `pov` `story_language` `guidance`                             |
+| Ask (free-form on selection) | Yes         | `selection` `recent_prose` `pov` `story_language` `user_message` `guidance`              |
+| Scene Beat                   | Yes         | `matched_entries` `summaries` `recent_prose` `pov` `command` `story_language` `guidance` |
+| Brainstorm                   | Yes         | `matched_entries` `summaries` `chapter_content` `chat_history` `user_message`            |
+| Summarise Chapter            | No          | `chapter_content`                                                                        |
+| Extract Bible Entries        | No          | `chapter_content` `user_message` `matched_entries` `guidance`                            |
+| Propose Bible Updates        | No          | `chapter_content` `matched_entries`                                                      |
+| Check Continuity             | No          | `chapter_content` `matched_entries`                                                      |
+| Merge Bible Entries          | No          | `user_message`                                                                           |
 
-An unknown variable is a **save-time error**, not a silent passthrough — you'll be told rather than discovering a literal `{{summarie}}` in your prose three chapters later. If an override somehow becomes invalid, generation falls back to the built-in template rather than failing.
-
-> [!NOTE]
-> **Max tokens** is a ceiling, not a promise: a request can never reserve more than half the model's context window for output, and the context the app assembles is trimmed to fit whatever's left — oldest prose first, then the lowest-ranked bible entries, then the most distant chapter summaries.
+`guidance` carries a Refine steer. An unknown variable is refused when you save, and if an override ever becomes invalid the built-in template is used instead.
 
 > [!TIP]
-> Before you rewrite a template, use the **eye** icon on a scene beat to read the resolved prompt. Most disappointing output is a context problem, not a wording problem.
+> Before rewriting a template, open the **eye** on a scene beat to read exactly what's sent. Disappointing output is more often a context problem than a wording problem.
 
-## Exporting your story
+## When generation goes wrong
 
-**More → Export story** downloads the whole story — every chapter in order, chapter titles as headings — in whichever format you tap:
+Every message names the model and server involved and says what to do:
 
-| Format       | Notes                                                                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Markdown** | Headings, lists, emphasis and rules as Markdown                                                                                               |
-| **Text**     | Plain prose, no markup                                                                                                                        |
-| **HTML**     | Escaped, standalone markup                                                                                                                    |
-| **EPUB**     | A real e-book, built on the server: cover page with your title, author and synopsis, a table of contents, and any images embedded in the file |
+| You see                                             | It means                                                                                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| _…doesn't have this model_                          | The model was renamed or removed on the server. The message says whether your default or an action's override chose it — fix that in Settings. |
+| _…the API key was rejected_                         | Check the key under AI providers & models.                                                                                                     |
+| _…rate-limiting or too busy_                        | Wait a moment and **Try again**.                                                                                                               |
+| _…couldn't reach the model server_                  | The server is down, or its address in Settings is wrong.                                                                                       |
+| _…didn't start responding within 3 minutes_         | The server accepted the connection but never started — overloaded, still loading the model, or stuck.                                          |
+| _…produced no text_ / _…without producing any text_ | Often a "thinking" model spending its whole budget on hidden reasoning — raise **Max tokens** for that action, or use a non-thinking model.    |
+| _…stopped sending text partway through_             | The stream stalled; what arrived is kept.                                                                                                      |
 
-Scene beats are omitted from every format; they're instructions to the AI, not part of the book.
+Every failure offers **Try again** in place. The writing features — Continue, the selection actions, scene beats and Brainstorm — also keep your earlier results, so a failed or worse retry never costs a good one.
+
+## Exports, backups and restoring
+
+**Story → Export** downloads the story in the format you tap:
+
+| Format            | Notes                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Markdown**      | Headings, lists, emphasis and dividers                                                                                 |
+| **Text**          | Plain prose                                                                                                            |
+| **HTML**          | Standalone markup                                                                                                      |
+| **EPUB**          | A real e-book: cover page, table of contents, images embedded                                                          |
+| **JSON (backup)** | Everything about this story — chapters, bible, notes, brainstorm chats, per-story AI overrides and images — restorable |
+
+Scene beats and pending suggestions are left out of the book formats; if any have unaccepted takes, the app warns you first.
+
+- **Restore a story:** **Story → Switch story → JSON**, pick the file. It comes back as a new story titled "… (Imported)", restored completely or not at all.
+- **Series:** **Settings → Series** — each series has a download button for a backup of the series bible and every story in it; **Import Series** restores one.
+- **Everything:** **Settings → Backup → Download backup** is a consistent snapshot of the whole database, safe to take while you write. Images live separately under `data/assets/` on the server — back that folder up too.
+
+## Series
+
+Put a story in a series under **Story → Details, series & voice** (pick one, or **+ New series…**). Series-level bible entries then reach every story in it, and the library groups stories by series. **Settings → Series** lists them, with create, import and export.
 
 ## Running a local model
 
-AI generation happens on the **server**, not in your browser. The local model URL you set in **AI Settings → Local Models → Advanced Settings** must therefore be reachable _from wherever The Story Nexus server is running_ — not from your phone. That's what makes local models work from a phone at all.
+Generation runs on the **server**, so the **Server URL** under **AI providers & models → Local Models** must be reachable _from wherever The Story Nexus server runs_ — not from your phone. Any OpenAI-compatible server works: Ollama (usually port 11434), LM Studio (1234), llama.cpp, vLLM and others.
 
-- **Server and LM Studio on the same machine:** the default `http://localhost:1234/v1` is right.
-- **Docker on Linux, model on the host:** `localhost` inside a container is the container. Add a host gateway to `docker-compose.yml` and use it:
+- **Same machine as the app:** e.g. `http://localhost:11434/v1`.
+- **Docker on Linux, model on the host:** `localhost` inside the container is the container. Add a host gateway to `docker-compose.yml` and use `http://host.docker.internal:<port>/v1`:
 
     ```yaml
     services:
@@ -62,30 +86,18 @@ AI generation happens on the **server**, not in your browser. The local model UR
                 - "host.docker.internal:host-gateway"
     ```
 
-    Then set the URL to `http://host.docker.internal:1234/v1`.
+- **Docker Desktop (Mac or Windows):** `http://host.docker.internal:<port>/v1` works as-is.
+- **Another machine on your network:** use its LAN address, and make sure the model server listens on the network, not just on loopback.
 
-- **Docker Desktop (Mac or Windows):** `http://host.docker.internal:1234/v1` works as-is.
-- **Model on another machine on your network:** use that machine's LAN address, e.g. `http://192.168.1.50:1234/v1`, and make sure the model server is listening on the network rather than only on loopback.
-
-Saving the URL tests the connection and fetches the model list. If saving fails, the server can't reach the model host — that's the thing to fix, and `docs/DEPLOYMENT.md` has the full detail.
+Saving the URL tests it and fetches the models; if that fails, the error says why. `docs/DEPLOYMENT.md` has more.
 
 ## Writing from other devices
 
-The app is a normal web app on your network. Find your server's address and open it from anything with a browser:
-
-```bash
-# Linux/Mac
-hostname -I
-
-# Windows
-ipconfig
-```
-
-Then visit `http://YOUR-SERVER-IP:3000` — for example `http://192.168.1.100:3000` — from a phone or tablet on the same network. Your work, your bible and your keys all live on the server, so a phone is just another window onto the same desk.
+Open the app's address from any browser on your network — `http://YOUR-SERVER-IP:3000` for the Docker or production server (find the IP with `hostname -I` on Linux/Mac or `ipconfig` on Windows). Every screen has its own address, so a chapter you bookmark on your laptop opens on your phone too.
 
 > [!WARNING]
-> There's no login. Anyone who can reach that address can read and edit everything. It's built for a trusted home network — don't expose the port to the internet.
+> There's no login. Anyone who can reach that address can read and edit everything. Keep it to a trusted home network; don't expose it to the internet.
 
 ## Two devices, one chapter
 
-Editing the same chapter on two devices in sequence is fine — each save carries the revision it was based on. If a chapter has moved on underneath you, saving stops, the editor says **This chapter was changed on another device**, and offers **Reload**. Nothing gets silently overwritten. Editing the same chapter on two devices _simultaneously_ isn't supported.
+Each save carries the version of the chapter it was based on. If the chapter has changed elsewhere in the meantime, saving stops and the editor locks with **This chapter was changed elsewhere**: **Download my version** keeps what's on your screen, **Reload** shows the other one. Nothing is overwritten silently.

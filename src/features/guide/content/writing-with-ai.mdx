@@ -1,76 +1,88 @@
 # Writing with AI
 
-Every AI action works the same way: it streams into a sheet, you read it, and **nothing touches your chapter until you accept it**. There are no prompts to pick, no models to choose and no context toggles to get wrong — the app assembles the context for you.
+The AI works where you write. **Nothing it produces touches your chapter until you accept it**, nothing it produces is thrown away when you ask for another go, and there are no prompts to pick or context toggles to set — the app gathers the relevant bible entries, chapter summaries and nearby prose for you.
 
 ## Continue writing
 
-Tap the **wand** in the toolbar. The app sends the chapter so far, plus the relevant story bible entries and earlier chapter summaries, and streams the next stretch of prose into a sheet.
+Tap the **wand**. The continuation streams in **greyed out, right in your chapter** where the caret was — you judge it in context.
 
-- **Stop** ends the stream early and keeps whatever arrived.
-- **Insert** adds the text to the end of the chapter as new paragraphs, in one undo step.
-- **Discard** throws it away.
+- **Keep** turns it into ordinary paragraphs (one undo reverts it).
+- **Again** asks for a different continuation. Earlier ones are kept — flip between them with **‹ ›**.
+- **Refine…** — type a steer ("slower, more dread") and press Enter.
+- **Dismiss** removes it.
+- **Stop** ends a continuation early and keeps what arrived.
 
-## Rework, Expand, Shorten
+If a continuation fails, it stays put and says why, with **Try again** and **Dismiss** — you're not left re-clicking the wand.
 
-Select some text and three more buttons appear in the toolbar:
+## Rework, Expand, Shorten — and Ask
 
-| Action      | What it does                                   |
-| ----------- | ---------------------------------------------- |
-| **Rework**  | Rephrases, keeping the meaning, style and tone |
-| **Expand**  | Adds detail, atmosphere and texture            |
-| **Shorten** | Tightens it without losing anything essential  |
+Select some text. The toolbar (or the right-click / long-press menu) offers:
 
-Each one streams a rewrite into the sheet. **Replace selection** swaps your selection for it; **Discard** leaves the chapter untouched. Your original is never overwritten in place, and the editor is held read-only while the sheet is open so the selection can't drift out from under the result.
+| Action      | What it does                                                             |
+| ----------- | ------------------------------------------------------------------------ |
+| **Rework**  | Rephrases, keeping the meaning, style and tone                           |
+| **Expand**  | Adds detail, atmosphere and texture                                      |
+| **Shorten** | Tightens it without losing anything essential                            |
+| **Ask**     | Anything else — type an instruction ("make the threat implicit"), **Go** |
 
-> [!TIP]
-> These actions see the prose leading up to your selection as well as the selection itself, so a reworked line still fits what came before it.
+The result streams into a sheet. Then:
 
-## Summarise the chapter
+- **Replace selection** swaps your selection for the result shown.
+- **Try again** runs the same request again. **Every result is kept**: _Attempt 2 of 3_, with **‹ ›** to compare — whichever you're looking at is the one **Replace selection** uses.
+- **Refine** re-runs it with a steer, as another attempt.
+- **Discard** leaves your chapter untouched.
 
-The **document icon** in the toolbar summarises the chapter you're in — a few hundred words, third person, plot and character beats only. **Save summary** stores it against the chapter.
-
-Summaries earn their keep later: when you write **chapter five**, the summaries of chapters one to four go into the context, nearest first, so the AI knows what's already happened without you pasting anything.
-
-> [!NOTE]
-> The app tracks whether a summary still matches the chapter it came from. If you've edited the chapter since, the summary is still used — continuity beats a gap — but it's passed to the AI flagged as _may be outdated_. Re-summarise when a chapter changes substantially.
+The editor is held read-only while the sheet is open, so the selection can't drift.
 
 ## Scene beats
 
-A scene beat is a note to the AI, living inline in your chapter: _what should happen here_. Insert one three ways:
+A scene beat is a note to the AI living inline in your chapter: _what should happen here_. Insert one with:
 
-1. Tap the **sparkles** button in the toolbar.
-2. Type **`/`** on its own at the start of an empty line, then tap **Scene Beat** in the bar that appears.
-3. Press **Alt+S** (**Option+S** on a Mac).
+1. the **sparkles** in the toolbar,
+2. **`/`** at the start of an empty line, then **Scene Beat**, or
+3. **Alt+S** (**Option+S** on a Mac).
 
-Then:
+Describe the beat — "She finally admits she recognised him at the funeral; he doesn't take it well." Optionally pick a **POV type** and **POV character** (otherwise the chapter's point of view applies). Then **Generate**.
 
-- **Type the beat** — "She finally admits she recognised him at the funeral; he doesn't take it well."
-- **Generate** streams prose into the beat. **Stop** ends it early.
-- **Accept** drops the prose into the chapter as ordinary paragraphs just after the beat — one undo reverts the whole thing. **Reject** clears it and leaves no trace.
-- After accepting, the button becomes **Regenerate**, so a beat stays as a reusable instruction.
-- The **chevron** collapses a beat out of the way; the **bin** deletes it (and stops any generation in progress).
+Every generation becomes a **take**. **New take** asks for another; nothing is ever overwritten, even if a generation fails. Flip between takes with **‹ ›**, delete one you don't want, or type a steer in **Refine** and regenerate.
 
-Scene beats are scaffolding, not manuscript: they never appear in an export and never count towards your word count.
+- **Accept** drops the take you're viewing into the chapter after the beat and keeps the beat (with all its takes) for later.
+- **Accept & tidy** does the same and removes the beat.
+- The **chevron** collapses a beat; the **bin** deletes it.
 
-### See exactly what's being sent
+You can accept several takes in turn to cherry-pick from each. Beats are scaffolding: they never appear in exports or the word count. The **eye** shows exactly what will be sent to the AI — messages, model, approximate token count — without generating.
 
-The **eye** icon on a scene beat opens **What gets sent** — the resolved messages, verbatim, exactly as the model will receive them, along with the model being used, the approximate prompt token count, and the temperature and max-tokens settings. Nothing is generated; it's a look, not a run.
+## While you wait
 
-Use it when a beat produces something odd. Usually the answer is visible right there: a bible entry that didn't match, or a summary that's out of date.
+Every AI action shows what's happening: _Waiting for the model server to respond… 12s_, then _The model is working on it…_, then the text. A slow start usually means the server is loading the model or busy; **Stop** is always there. If something goes wrong you get a specific message naming the model and server — the **Advanced** guide explains them.
+
+## Chapter summaries
+
+**… → Summarise chapter** writes a short summary of the chapter you're in; **Save summary** stores it. Summaries are how the AI knows what happened in earlier chapters when you write later ones.
+
+With **Settings → Refresh chapter summaries automatically** on, a chapter whose summary is out of date gets a fresh one in the background after you pause writing (it costs tokens on your model; turn it off if you'd rather not). A summary you write yourself — **Story → Chapters → pencil → Summary** — is marked **Keep this summary** and is never replaced automatically. If background summaries start failing, a warning tells you why.
 
 ## Your story's voice
 
-**More → Story voice & framing** is a free-text box, up to 2,000 characters, attached to the current story:
+**Story → Details, series & voice** has a **Story voice & framing** box, up to 2,000 characters:
 
-> Past tense, third person limited. Dry wit, short sentences. Never name the narrator.
+> Past tense, third person limited. Dry wit, short sentences. British English spelling.
 
-Every prose action follows it — Continue, Rework, Expand, Shorten, scene beats and Brainstorm. It is deliberately kept out of the mechanical actions: summarising, bible extraction and update proposals don't see it, so your style rules can't warp the app's bookkeeping.
+Every prose action follows it — Continue, Rework, Expand, Shorten, Ask, scene beats and Brainstorm. Mechanical actions (summaries, bible extraction) don't, so style rules can't warp the bookkeeping. The **Language** field alongside it (e.g. _British English_) also steers spelling and grammar.
 
 > [!TIP]
-> **Facts belong in the bible; voice belongs here.** If you find yourself writing "Miriam is a retired diver" into the voice box, that's a bible entry.
+> **Facts belong in the bible; voice belongs here.** "Miriam is a retired diver" is a bible entry.
 
 ## Brainstorm
 
-**More → Brainstorm** is a chat that already knows your story. Tap **+** for a new chat, then talk to it — the matched bible entries and your story voice ride along with every message, so you don't have to explain the setting each time.
+The **Brainstorm** tab is a chat with a critical development editor that has read your story — summaries, the chapter you're on, and the bible entries that matter. It will tell you plainly when an idea works against the story, then help you find a better one. **+** starts a new chat; Enter sends, Shift+Enter is a new line, the square stops a reply.
 
-Enter sends, Shift+Enter starts a new line, and the square button stops a reply mid-flow. Chats are saved per story, so you can come back to a thread; the bin removes one.
+Each reply can go further:
+
+- **Save as note**, **To bible** (extract entries from it, to review and approve), or **To chapter** (a new chapter with the reply as its outline).
+- **Regenerate** the latest reply — earlier versions are kept (_Version 2 of 2_, **‹ ›**).
+- If a reply fails, **Try again** resends your message.
+
+## New names
+
+When a capitalised name keeps turning up in your chapter but isn't in the bible, a strip appears: _New name spotted: Okonkwo_. **Add to bible** opens a focused extraction for it; the **×** dismisses it for this story.
