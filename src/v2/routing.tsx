@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useRouteParams } from "./routeParams";
-import { getV2State } from "./state/useV2Store";
+import { uiState } from "./state/useV2Store";
 
 /**
  * URL routing for the shell (#81): the URL is the source of truth for where
@@ -81,7 +81,7 @@ export const useNav = () => {
 
     const goTo = useCallback(
         (tool: V2Tool) => {
-            const state = getV2State();
+            const state = uiState.get();
             const storyId = route.storyId ?? state.currentStoryId;
             const chapterId = storyId ? (state.lastChapterByStory[storyId] ?? null) : null;
             navigate(pathFor(tool, storyId, chapterId));
@@ -96,7 +96,7 @@ export const useNav = () => {
             // redirect replacing the landing entry) — back must not leave the app
             if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
             else {
-                const state = getV2State();
+                const state = uiState.get();
                 const storyId = route.storyId ?? state.currentStoryId;
                 navigate(pathFor(fallback, storyId), { replace: true });
             }

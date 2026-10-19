@@ -9,7 +9,7 @@ import {
 import type { Note } from "@/types/story";
 import type { ScreenProps } from "../V2App";
 import { MarkdownView } from "../components/MarkdownView";
-import { useV2Store } from "../state/useV2Store";
+import { useCurrentStoryId } from "../state/useV2Store";
 
 const NOTE_TYPES = ["idea", "research", "todo", "other"] as const;
 
@@ -102,7 +102,7 @@ const NoteEditor = ({ note, storyId, onClose }: { note: Note | null; storyId: st
 };
 
 export const NotesScreen = ({ goTo, goBack }: ScreenProps) => {
-    const { currentStoryId } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
     const { data: notes } = useNotesByStoryQuery(currentStoryId ?? "");
     const deleteNote = useDeleteNoteMutation();
     const [editing, setEditing] = useState<Note | null | "new">(null);

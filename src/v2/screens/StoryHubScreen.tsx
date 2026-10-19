@@ -14,7 +14,7 @@ import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLoreb
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
 import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import type { ScreenProps } from "../V2App";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
 import { StoryDetailsEditor } from "./StoryDetailsEditor";
 import { StoryVoiceEditor } from "./StoryVoiceEditor";
@@ -25,7 +25,8 @@ import { StoryVoiceEditor } from "./StoryVoiceEditor";
  * away — not a dumping ground.
  */
 export const StoryHubScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId, setCurrentStory } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const { setCurrentStory } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);

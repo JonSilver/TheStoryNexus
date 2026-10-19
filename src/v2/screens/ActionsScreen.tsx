@@ -3,14 +3,14 @@ import { useState } from "react";
 import type { ScreenProps } from "../V2App";
 import { OverrideEditor } from "../drawer/OverrideEditor";
 import { type ActionDefinition, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
-import { useV2Store } from "../state/useV2Store";
+import { useCurrentStoryId } from "../state/useV2Store";
 
 /**
  * The advanced drawer (contracts Phase 8): per-action template and parameter
  * overrides, globally or per story. Present, optional, out of the writing path.
  */
 export const ActionsScreen = ({ goBack }: ScreenProps) => {
-    const { currentStoryId } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
     const [scope, setScope] = useState<"global" | "story">("global");
     const storyId = scope === "story" ? currentStoryId : null;
     const { data: registry } = useActionRegistry();

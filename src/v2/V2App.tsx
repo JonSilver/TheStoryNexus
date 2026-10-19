@@ -15,7 +15,7 @@ import { ReadScreen } from "./screens/ReadScreen";
 import { StoriesScreen } from "./screens/StoriesScreen";
 import { StoryHubScreen } from "./screens/StoryHubScreen";
 import { WriteScreen } from "./screens/WriteScreen";
-import { getV2State, useV2Store } from "./state/useV2Store";
+import { uiState } from "./state/useV2Store";
 
 export type { V2Tool } from "./routing";
 
@@ -84,7 +84,6 @@ const Embedded = ({ title, children }: { title: string; children: (goTo: (tool: 
 
 const StoryNotFound = () => {
     const { goTo } = useNav();
-    const { setCurrentStory } = useV2Store();
     return (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
             <p className="text-muted-foreground">That story doesn't exist — it may have been deleted.</p>
@@ -92,7 +91,7 @@ const StoryNotFound = () => {
                 type="button"
                 className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
                 onClick={() => {
-                    setCurrentStory(null);
+                    uiState.setCurrentStory(null);
                     goTo("library");
                 }}
             >
@@ -110,7 +109,6 @@ const StoryNotFound = () => {
 const StoryScope = () => {
     const params = useParams();
     const storyId = params.storyId ?? null;
-    const { setCurrentStory, setLastChapter } = useV2Store();
     const { error } = useStoryQuery(storyId ?? "");
     const routeParams = useMemo(
         () => ({ storyId, chapterId: params.chapterId ?? null, chatId: params.chatId ?? null }),
@@ -118,11 +116,11 @@ const StoryScope = () => {
     );
 
     useEffect(() => {
-        if (storyId && getV2State().currentStoryId !== storyId) setCurrentStory(storyId);
-    }, [storyId, setCurrentStory]);
+        if (storyId && uiState.get().currentStoryId !== storyId) uiState.setCurrentStory(storyId);
+    }, [storyId]);
     useEffect(() => {
-        if (storyId && params.chapterId) setLastChapter(storyId, params.chapterId);
-    }, [storyId, params.chapterId, setLastChapter]);
+        if (storyId && params.chapterId) uiState.setLastChapter(storyId, params.chapterId);
+    }, [storyId, params.chapterId]);
 
     if ((error as { status?: number } | null)?.status === 404) return <StoryNotFound />;
     return (
@@ -139,14 +137,14 @@ const RootRoute = () => {
     const location = useLocation();
     const requested = new URLSearchParams(location.search).get("tool") as V2Tool | null;
     if (requested && LEGACY_TOOL_PARAM.has(requested)) return <Navigate replace to={pathFor(requested, null)} />;
-    const { currentStoryId, lastChapterByStory } = getV2State();
+    const { currentStoryId, lastChapterByStory } = uiState.get();
     const chapterId = currentStoryId ? (lastChapterByStory[currentStoryId] ?? null) : null;
     return <Navigate replace to={pathFor("write", currentStoryId, chapterId)} />;
 };
 
 /** A story screen with no story in the URL: the remembered story's, at its real address — else the empty state. */
 const Storyless = ({ tool }: { tool: "write" | "brainstorm" | "story" }) => {
-    const { currentStoryId, lastChapterByStory } = getV2State();
+    const { currentStoryId, lastChapterByStory } = uiState.get();
     if (!currentStoryId) return <Screen tool={tool} />;
     const chapterId = tool === "write" ? (lastChapterByStory[currentStoryId] ?? null) : null;
     return <Navigate replace to={pathFor(tool, currentStoryId, chapterId)} />;

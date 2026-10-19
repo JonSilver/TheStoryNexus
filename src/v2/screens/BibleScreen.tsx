@@ -20,7 +20,7 @@ import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { MergeSheet } from "../bible/MergeSheet";
 import { entryMatches } from "../bible/duplicates";
 import { takeNudgeHandoff } from "../bible/nameNudges";
-import { useV2Store } from "../state/useV2Store";
+import { useCurrentStoryId, useUiState } from "../state/useV2Store";
 
 const CATEGORY_ORDER = ["character", "location", "item", "event", "note", "synopsis", "starting scenario", "timeline"];
 
@@ -39,7 +39,10 @@ const groupEntries = (entries: LorebookEntry[]) =>
     })).filter(group => group.items.length > 0);
 
 export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
-    const { currentStoryId, lastChapterFor } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const rememberedChapter = useUiState(state =>
+        currentStoryId ? (state.lastChapterByStory[currentStoryId] ?? null) : null
+    );
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const deleteEntry = useDeleteLorebookMutation();
@@ -66,8 +69,7 @@ export const BibleScreen = ({ goTo, goBack }: ScreenProps) => {
             </div>
         );
 
-    const chapterId =
-        lastChapterFor(currentStoryId) ?? [...(chapters ?? [])].sort((a, b) => a.order - b.order)[0]?.id ?? null;
+    const chapterId = rememberedChapter ?? [...(chapters ?? [])].sort((a, b) => a.order - b.order)[0]?.id ?? null;
     const groups = groupEntries((entries ?? []).filter(e => entryMatches(e, search)));
 
     return (

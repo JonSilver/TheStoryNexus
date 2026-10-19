@@ -6,7 +6,7 @@ import type { ScreenProps } from "../V2App";
 import { ChapterEditor } from "../editor/ChapterEditor";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
-import { useV2Store } from "../state/useV2Store";
+import { uiState, useCurrentStoryId, useUiState } from "../state/useV2Store";
 
 const Empty = ({ message, actionLabel, onAction }: { message: string; actionLabel: string; onAction: () => void }) => (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
@@ -24,7 +24,11 @@ const Spinner = () => (
 );
 
 export const WriteScreen = ({ goTo }: ScreenProps) => {
-    const { currentStoryId, lastChapterFor, setLastChapter, setCurrentStory } = useV2Store();
+    const currentStoryId = useCurrentStoryId();
+    const rememberedChapter = useUiState(state =>
+        currentStoryId ? (state.lastChapterByStory[currentStoryId] ?? null) : null
+    );
+    const { setLastChapter, setCurrentStory } = uiState;
     const { data: story, error: storyError } = useStoryQuery(currentStoryId ?? "");
     const {
         data: chapters,
@@ -46,7 +50,7 @@ export const WriteScreen = ({ goTo }: ScreenProps) => {
     // The URL's chapter wins; otherwise resume the last one, else the first
     const route = useRouteParams();
     const { navigate } = useNav();
-    const resumeId = route.chapterId ?? (currentStoryId ? lastChapterFor(currentStoryId) : null);
+    const resumeId = route.chapterId ?? rememberedChapter;
     const orderedChapters = [...(chapters ?? [])].sort((a, b) => a.order - b.order);
     const currentChapterId =
         resumeId && orderedChapters.some(c => c.id === resumeId) ? resumeId : (orderedChapters[0]?.id ?? null);
