@@ -12,7 +12,7 @@ export const exportStoryBackup = async (storyId: string) => {
     const [story] = await db.select().from(schema.stories).where(eq(schema.stories.id, storyId));
     if (!story) return null;
 
-    const [chapters, lorebookEntries, aiChats, notes, actionOverrides, assets] = await Promise.all([
+    const [chapters, lorebookEntries, aiChats, notes, actionOverrides, transpositions, assets] = await Promise.all([
         db.select().from(schema.chapters).where(eq(schema.chapters.storyId, storyId)),
         // Story-level only — inherited series/global entries belong to their own scope
         db
@@ -22,6 +22,7 @@ export const exportStoryBackup = async (storyId: string) => {
         db.select().from(schema.aiChats).where(eq(schema.aiChats.storyId, storyId)),
         db.select().from(schema.notes).where(eq(schema.notes.storyId, storyId)),
         db.select().from(schema.actionOverrides).where(eq(schema.actionOverrides.storyId, storyId)),
+        db.select().from(schema.transpositions).where(eq(schema.transpositions.storyId, storyId)),
         // Images travel inside the backup, or restoring loses them
         readStoryAssets(storyId)
     ]);
@@ -36,6 +37,7 @@ export const exportStoryBackup = async (storyId: string) => {
         aiChats,
         notes,
         actionOverrides,
+        transposition: transpositions[0] ?? null,
         assets
     };
 };
@@ -63,7 +65,7 @@ export const exportSeriesBackup = async (seriesId: string) => {
     };
 };
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Synchronous by design: better-sqlite3 transactions must not await. */
 const insertStoryRows = (tx: Tx, rows: StoryImportRows) => {
@@ -73,10 +75,16 @@ const insertStoryRows = (tx: Tx, rows: StoryImportRows) => {
     if (rows.aiChats.length) tx.insert(schema.aiChats).values(rows.aiChats).run();
     if (rows.notes.length) tx.insert(schema.notes).values(rows.notes).run();
     if (rows.actionOverrides.length) tx.insert(schema.actionOverrides).values(rows.actionOverrides).run();
+    if (rows.transposition) tx.insert(schema.transpositions).values(rows.transposition).run();
 };
 
 /** All-or-nothing: a half-restored backup is worse than none. */
-const commitStoryImport = (rows: StoryImportRows) => db.transaction(tx => insertStoryRows(tx, rows));
+/** `also` writes in the same transaction — what must exist with the story or not at all. */
+const commitStoryImport = (rows: StoryImportRows, also?: (tx: Tx, rows: StoryImportRows) => void) =>
+    db.transaction(tx => {
+        insertStoryRows(tx, rows);
+        also?.(tx, rows);
+    });
 
 export const commitSeriesImport = (rows: SeriesImportRows) =>
     db.transaction(tx => {
@@ -91,12 +99,17 @@ export const commitSeriesImport = (rows: SeriesImportRows) =>
  */
 export const restoreStory = async (
     backup: StoryBackup,
-    options: { seriesId?: string | null; title?: string; titleSuffix?: string } = {}
+    options: {
+        seriesId?: string | null;
+        title?: string;
+        titleSuffix?: string;
+        also?: (tx: Tx, rows: StoryImportRows) => void;
+    } = {}
 ) => {
     const storyId = crypto.randomUUID();
     const rows = buildStoryImport(backup, storyId, () => crypto.randomUUID(), new Date(), options);
     if (options.title) rows.story.title = options.title;
-    commitStoryImport(rows);
+    commitStoryImport(rows, options.also);
     const assetsFailed = await writeStoryAssets(storyId, backup.assets ?? []);
     return {
         success: true,

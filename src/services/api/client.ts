@@ -1,6 +1,7 @@
 import type { ActionDefinition, ActionId, OverridePayload, OverrideRow } from "@/types/actions";
 import type { AIChat, AISettings, Chapter, LorebookEntry, Note, PromptMessage, Series, Story } from "@/types/story";
 import type { ActionEditorContext } from "@/v2/ai/useActionGeneration";
+import type { Transposition, TranspositionOp } from "@/v2/transpose/state";
 import { fetchJSON, request, uploadFile } from "./request";
 
 export interface StoryImportResult {
@@ -198,4 +199,13 @@ export const assetsApi = {
         form.append("file", file);
         return request<{ url: string }>(`/assets/${storyId}`, { form });
     }
+};
+
+// Transpositions (#77): a copy of a story being moved to another time or place
+export const transpositionsApi = {
+    start: (data: { sourceStoryId: string; target: string }) =>
+        fetchJSON<StoryImportResult>("/transpositions", { method: "POST", json: data }),
+    get: (storyId: string) => fetchJSON<Transposition | null>(`/transpositions/${storyId}`),
+    apply: ({ storyId, op }: { storyId: string; op: TranspositionOp }) =>
+        fetchJSON<Transposition>(`/transpositions/${storyId}/ops`, { method: "POST", json: op })
 };

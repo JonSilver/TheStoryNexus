@@ -1,32 +1,26 @@
-import { useIsMutating } from "@tanstack/react-query";
 import {
     BookOpen,
     BookOpenText,
     ChevronRight,
-    Copy,
     Download,
     Library,
     ListOrdered,
     NotebookPen,
+    Shuffle,
     SlidersHorizontal,
     Trash2
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "react-toastify";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import {
-    useDeleteStoryMutation,
-    useDuplicateStoryMutation,
-    useStoryQuery
-} from "@/features/stories/hooks/useStoriesQuery";
-import { useConfirm, usePrompt } from "../components/Dialogs";
+import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
+import { useTranspositionQuery } from "@/features/transpositions/hooks/useTranspositionQuery";
+import { useConfirm } from "../components/Dialogs";
 import { EmptyState } from "../components/ScreenParts";
-import { flushChapterSave } from "../editor/useChapterSaver";
 import { useNav } from "../routing";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
+import { StoryCopyActions } from "./StoryCopyActions";
 import { StoryDetailsEditor } from "./StoryDetailsEditor";
 import { StoryVoiceEditor } from "./StoryVoiceEditor";
 
@@ -38,18 +32,14 @@ import { StoryVoiceEditor } from "./StoryVoiceEditor";
 export const StoryHubScreen = () => {
     const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
-    const { setCurrentStory, lastChapterFor } = uiState;
+    const { setCurrentStory } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const deleteStory = useDeleteStoryMutation();
-    const duplicateStory = useDuplicateStoryMutation();
+    const { data: transposition } = useTranspositionQuery(currentStoryId);
     const confirm = useConfirm();
-    const prompt = usePrompt();
-    const saving = useIsMutating();
-    const [flushing, setFlushing] = useState(false);
-    const duplicating = flushing || duplicateStory.isPending;
 
     const wordCount = (chapters ?? []).reduce((sum, c) => sum + (c.wordCount ?? 0), 0);
 
@@ -64,32 +54,6 @@ export const StoryHubScreen = () => {
                 goTo("library");
             }
         });
-    };
-
-    const duplicate = async () => {
-        if (!story) return;
-        const title = await prompt({
-            title: "Duplicate story",
-            label: "Title of the copy",
-            initial: `${story.title} (copy)`,
-            confirmLabel: "Duplicate"
-        });
-        if (!title) return;
-        // The copy must hold the last keystrokes, not race the debounce
-        const openChapter = lastChapterFor(story.id);
-        setFlushing(true);
-        if (openChapter) await flushChapterSave(openChapter);
-        setFlushing(false);
-        duplicateStory.mutate(
-            { id: story.id, title },
-            {
-                onSuccess: ({ storyId, assetsFailed }) => {
-                    if (assetsFailed.length > 0)
-                        toast.error(`${assetsFailed.length} image(s) couldn't be copied: ${assetsFailed.join(", ")}`);
-                    goTo("story", { storyId });
-                }
-            }
-        );
     };
 
     if (!currentStoryId)
@@ -112,6 +76,17 @@ export const StoryHubScreen = () => {
         { label: "Story Bible", detail: `${entries?.length ?? 0}`, icon: BookOpenText, onClick: () => goTo("bible") },
         { label: "Notes", detail: "", icon: NotebookPen, onClick: () => goTo("notes") },
         { label: "Read", detail: "", icon: BookOpen, onClick: () => goTo("read") },
+        // A copy being transposed: back to where the writer left it
+        ...(transposition
+            ? [
+                  {
+                      label: "Transposition",
+                      detail: transposition.target,
+                      icon: Shuffle,
+                      onClick: () => goTo("transpose")
+                  }
+              ]
+            : []),
         { label: "Switch story", detail: "", icon: Library, onClick: () => goTo("library") }
     ];
 
@@ -161,15 +136,7 @@ export const StoryHubScreen = () => {
                 <ExportButtons storyId={currentStoryId} />
             </details>
 
-            <button
-                type="button"
-                onClick={duplicate}
-                // A save still on its way (details, series, voice) would be missing from the copy
-                disabled={!story || duplicating || saving > 0}
-                className="mt-auto flex w-full items-center gap-3 px-4 py-3 text-left text-sm disabled:opacity-50"
-            >
-                <Copy className="h-4 w-4" /> {duplicating ? "Duplicating…" : "Duplicate this story…"}
-            </button>
+            <StoryCopyActions story={story} />
             <button
                 type="button"
                 onClick={removeStory}

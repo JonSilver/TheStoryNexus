@@ -19,7 +19,12 @@ export const CONTEXT_KEYS = [
     "chat_history",
     "user_message",
     "guidance",
-    "story_samples"
+    "story_samples",
+    "transposition_target",
+    "transposition_brief",
+    "story_synopsis",
+    "story_bible",
+    "story_summaries"
 ] as const;
 
 export type ContextKey = (typeof CONTEXT_KEYS)[number];
@@ -37,7 +42,10 @@ export const ACTION_IDS = [
     "ask",
     "check_continuity",
     "merge_entries",
-    "derive_voice"
+    "derive_voice",
+    "transpose_brief",
+    "transpose_synopsis",
+    "transpose_entry"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -307,5 +315,70 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         ],
         // Headroom for thinking models; the guide itself is short
         defaultParams: { temperature: 0.3, maxTokens: 4096 }
+    },
+    transpose_brief: {
+        id: "transpose_brief",
+        label: "Transpose: Brief",
+        voiceApplies: false,
+        contextNeeds: ["transposition_target", "story_synopsis", "story_bible", "story_summaries", "guidance"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    "You are a story editor planning how to transpose a novel to a different time, place or background. From the story's synopsis, bible and chapter summaries, write the transposition brief that every later rewrite will follow. Use these plain headings:\n" +
+                    "Setting: where and when, in concrete terms.\n" +
+                    "Equivalents: each important place, institution, technology, custom, form of address and idiom in the story, and its counterpart in the new setting, as 'Original → New: why'.\n" +
+                    "Social pressures: what in the new setting creates the constraints and stakes that drive the plot, as the original world's did, so the story's tensions survive rather than becoming a costume change.\n" +
+                    "Names: how character and place names are adapted.\n" +
+                    "Language: register, dialect and period idiom for narration and dialogue.\n" +
+                    "What must not change: the plot's events, the relationships and the emotional beats.\n" +
+                    "Be specific and decisive: choose, don't list options. Under 900 words."
+            },
+            {
+                role: "user",
+                content:
+                    "The new setting: {{transposition_target}}\n\nSynopsis:\n{{story_synopsis}}\n\nStory bible:\n{{story_bible}}\n\nChapter summaries:\n{{story_summaries}}"
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ],
+        defaultParams: { temperature: 0.7, maxTokens: 4096 }
+    },
+    transpose_synopsis: {
+        id: "transpose_synopsis",
+        label: "Transpose: Synopsis",
+        voiceApplies: false,
+        contextNeeds: ["transposition_brief", "story_bible", "story_synopsis", "guidance"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    "You rewrite a story's synopsis for its transposed version, following the transposition brief exactly: the same plot, roles and arcs, in the new setting and with the new names. Reply with the synopsis alone, about as long as the original.\nTransposition brief:\n{{transposition_brief}}"
+            },
+            {
+                role: "user",
+                content: "The story bible:\n{{story_bible}}\n\nThe original synopsis:\n{{story_synopsis}}"
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ],
+        defaultParams: { temperature: 0.7, maxTokens: 2048 }
+    },
+    transpose_entry: {
+        id: "transpose_entry",
+        label: "Transpose: Bible Entry",
+        voiceApplies: false,
+        contextNeeds: ["transposition_brief", "story_bible", "user_message", "guidance"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    'You transpose one story-bible entry to the story\'s new setting, following the transposition brief. Keep what the entry does in the story (its role, relationships and significance); change names, places, period details and idiom to suit the new setting, consistently with the entries already transposed. Return ONLY a JSON array containing exactly one object — no prose, no code fences — shaped: {"name": string, "description": string, "tags": string[]}. Tags are the aliases, nicknames or titles used for it in the new setting.\nTransposition brief:\n{{transposition_brief}}'
+            },
+            {
+                role: "user",
+                content: "The story bible so far:\n{{story_bible}}\n\nThe entry to transpose:\n{{user_message}}"
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ],
+        defaultParams: { temperature: 0.5, maxTokens: 2048 }
     }
 };

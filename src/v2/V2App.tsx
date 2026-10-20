@@ -16,6 +16,7 @@ import { StoriesScreen } from "./screens/StoriesScreen";
 import { StoryHubScreen } from "./screens/StoryHubScreen";
 import { WriteScreen } from "./screens/WriteScreen";
 import { uiState } from "./state/useV2Store";
+import { TransposeScreen } from "./transpose/TransposeScreen";
 
 export type { V2Tool } from "./routing";
 
@@ -46,7 +47,8 @@ const SCREENS = {
     library: StoriesScreen,
     notes: NotesScreen,
     read: ReadScreen,
-    actions: ActionsScreen
+    actions: ActionsScreen,
+    transpose: TransposeScreen
 } as const;
 
 /** Which bottom tab each screen belongs under. */
@@ -63,7 +65,8 @@ const TAB_FOR: Record<V2Tool, (typeof TABS)[number]["id"]> = {
     actions: "settings",
     providers: "settings",
     serieslist: "settings",
-    guidepage: "settings"
+    guidepage: "settings",
+    transpose: "story"
 };
 
 const Screen = ({ tool }: { tool: keyof typeof SCREENS }) => {
@@ -173,6 +176,7 @@ export default function V2App() {
                         <Route path="notes" element={<Screen tool="notes" />} />
                         <Route path="read" element={<Screen tool="read" />} />
                         <Route path="brainstorm/:chatId?" element={<Screen tool="brainstorm" />} />
+                        <Route path="transpose" element={<Screen tool="transpose" />} />
                     </Route>
                     <Route path="/library" element={<Screen tool="library" />} />
                     <Route path="/settings" element={<Screen tool="settings" />} />

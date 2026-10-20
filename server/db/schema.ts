@@ -185,3 +185,21 @@ export const notes = sqliteTable(
         typeIdx: index("note_type_idx").on(table.type)
     })
 );
+
+// A story being transposed to another time or place (#77): one per copy, never on the original
+export const transpositions = sqliteTable("transpositions", {
+    id: text("id").primaryKey(),
+    storyId: text("storyId")
+        .notNull()
+        .unique()
+        .references(() => stories.id, { onDelete: "cascade" }),
+    sourceStoryId: text("sourceStoryId").references(() => stories.id, { onDelete: "set null" }),
+    target: text("target").notNull(),
+    // The accepted brief: every later step is written against it
+    brief: text("brief"),
+    stage: text("stage").notNull().default("brief"), // 'brief' | 'synopsis' | 'bible' | 'chapters' | 'done'
+    // JSON: drafts and decisions per layer (src/v2/transpose/state.ts)
+    state: text("state", { mode: "json" }).notNull(),
+    createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
+});

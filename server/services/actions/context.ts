@@ -5,6 +5,7 @@ import { parseSerialisedDocument } from "../../../src/v2/export/blocks.js";
 import { blocksToPlainText } from "../../../src/v2/export/toPlainText.js";
 import { db, schema } from "../../db/client.js";
 import { matchEntries } from "../lorebook/matching.js";
+import { TRANSPOSITION_KEYS, transpositionContext } from "../transpose/context.js";
 import type { ContextKey } from "./registry.js";
 
 type ChapterRow = typeof schema.chapters.$inferSelect;
@@ -123,6 +124,16 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
             editorContext.povCharacter ?? chapter?.povCharacter
         );
     if (needs.has("story_language")) context.story_language = story.language;
+
+    if (TRANSPOSITION_KEYS.some(key => needs.has(key))) {
+        const filled = await transpositionContext({
+            storyId,
+            chapters,
+            needs,
+            budget: Math.max(remaining.budget, 0)
+        });
+        for (const [key, text] of Object.entries(filled)) context[key as ContextKey] = spend(text ?? "");
+    }
 
     if (needs.has("chapter_content") && chapter) {
         // The primary payload for summarise/extract, but still bounded: an

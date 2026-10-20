@@ -159,6 +159,28 @@ Model context limits come from provider metadata where available, else a conserv
 - `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default models were dropped (migrations 0016–0017; decision 2026-10-20) — they were never read by generation. In their place, `aiSettings.favouriteModels` (`{ provider, modelId }[]`, existing per-provider defaults converted) lists the writer's starred models first in every model selector (`ModelSelector`: search, Favourites group, then models by provider); old backups convert the same way on import.
 - Settings GET returns `hasOpenaiKey`-style booleans — never key material. Keys set via `PUT /api/ai/keys/:provider` (write-only). Keys stripped from full-DB export. (Keys remain plaintext at rest — accepted for trusted-LAN scope.)
 
+## 11a. Transposition (#77)
+
+A story is moved to another time, place or background on a **copy**, never the original (decision 2026-10-20). `POST /api/transpositions { sourceStoryId, target }` copies it through the backup path (`restoreStory`), out of its series: the series' entries come with it as story-level entries, since they belong to other stories too. Global entries are shared by every story and aren't transposed.
+
+The copy's `transpositions` row (one per story) holds the `target`, the accepted `brief`, the `stage` (`brief → synopsis → bible → chapters → done`, forward only) and `state` JSON (`src/v2/transpose/state.ts`, read through `readState` — untrusted in backups). State keeps every draft (`briefAttempts`, `synopsis.attempts`, per-entry `attempts`), so nothing generated is lost, plus each entry's `original` and its decision (`pending` / `accepted` / `kept`).
+
+Changes are single ops (`POST /api/transpositions/:storyId/ops`) applied to what's stored, each allowed only in its stage (409 otherwise). An accept writes the story change and the decision in one transaction:
+
+- `acceptSynopsis` sets the story's synopsis (`null` keeps it);
+- `acceptEntry` writes the entry's name, description and aliases;
+- `keepEntry` writes back the original;
+- `finishBible` requires every entry decided.
+
+Actions `transpose_brief`, `transpose_synopsis` and `transpose_entry` (JSON) are overridable like the rest. Context keys:
+
+- `transposition_target`, `transposition_brief`;
+- `story_synopsis` (the original's);
+- `story_bible`: each entry as `original → transposed`, or marked unchanged / not yet transposed, from the live entries;
+- `story_summaries` (every chapter's).
+
+Story backups, duplicates, series backups and the full-database export carry the row, with entry ids remapped on restore. `sourceStoryId` is cleared on restore, since the original may not exist there. The full-database import also restores `actionOverrides` now, which it exported but never imported before.
+
 ## 12. Schema change summary
 
 | Table             | Change                                                                                                             | When                            |
@@ -170,6 +192,7 @@ Model context limits come from provider metadata where available, else a conserv
 | `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                                  | Phase 2                         |
 | `aiSettings`      | + `favouriteModels` (per-provider defaults converted into it); − the four per-provider default columns (0016–0017) | 2026-10-20                      |
 | `actionOverrides` | new                                                                                                                | Phase 2 (storage), Phase 8 (UI) |
+| `transpositions`  | new (0018): one per story being transposed — target, brief, stage, drafts and decisions (§11a)                     | 2026-10-20                      |
 | `sceneBeats`      | retired (dropped)                                                                                                  | Phase 5                         |
 | `prompts`         | retired in favour of registry + overrides                                                                          | Phase 8                         |
 | —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format                  | Phase 3                         |

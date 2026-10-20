@@ -82,6 +82,7 @@ The URL is the source of truth for where the writer is (`src/v2/routing.tsx`, #8
 /story/:storyId/write/:chapterId?   — Write (URL chapter wins; missing/unknown → corrected in place)
 /story/:storyId/chapters|bible|notes|read
 /story/:storyId/brainstorm/:chatId? — Brainstorm, with the open chat
+/story/:storyId/transpose           — Transpose (a copy being moved to another time or place, #77)
 /library
 /settings, /settings/actions, /settings/providers, /settings/series, /guide
 legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anything else → /
@@ -119,13 +120,14 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 - **Brainstorm bridges**: replies can become notes, bible entries (auto-run extraction), or new chapters (reply lands as the chapter outline). Chapter POV/outline/summary edit via the Chapters screen details sheet.
 - **Saves**: `saveVersion`-aware (expectedSaveVersion → 409 conflict banner with draft download; editor locks). Documents are compared structurally, never as serialised strings; an identical save writes nothing. `revision` moves only on significant prose change (`server/lib/proseChange.ts`) and drives summary freshness. Cross-module save flushing (`flushChapterSave`) before chapter-based AI actions and exports. All chapter writes sync the TanStack caches (`applyChapterToCaches`, revision-monotonic).
 - **Auto-summarise**: client asks only after THIS device saved a significant change + 90s idle; the server gate (`backgroundSummary.ts`) allows once per revision across all devices and ≤6/hour app-wide; never on merely opening a chapter; never lands over a summary the writer saved meanwhile; toggleable in Settings; failures (including an unsaved result) raise a persistent warning.
+- **Transposition** (#77, contracts §11a): a story moved to another setting on a copy (out of its series, series entries copied in), layer by layer — brief → synopsis → bible → chapters — each settled before the next; every draft kept in `transpositions.state`; accepts write the story and the decision in one transaction (`server/services/transpose/`, `src/v2/transpose/`).
 - **Exports**: document JSON → block list → per-target renderers; scene beats/ghosts omitted (with an undecided-drafts warning); EPUB server-side. Backup via SQLite online backup API (`/api/admin/backup`) — never bare .db copies (WAL).
 
 ### Testing
 
 - Unit: Vitest, colocated `*.test.ts`. Server logic (registry/resolve/context/ingest/providers) and pure client modules (export, nameNudges, parseProposals, crypto).
 - E2E: `e2e/*.spec.ts` + `e2e/helpers.ts`. Hermetic per run (temp SQLite, own ports, `mockGeneration` intercepts `/api/generate/action` with SSE fixtures). `e2e/real-model-server.spec.ts` instead points the real backend at a fake OpenAI-compatible server, so server-side progress and error classification are exercised end to end. Journeys assert writer-visible outcomes. Add a journey when adding any user-facing flow.
-- Never edit a checkout while its gate runs — Vite reloads the app under the tests and the result means nothing; stop the gate first. One E2E run at a time across all checkouts (ports 3101/5273).
+- Never edit a checkout while its gate runs — Vite reloads the app under the tests and the result means nothing; stop the gate first. One E2E run at a time across all checkouts (ports 3101/5273; `E2E_API_PORT` / `E2E_WEB_PORT` override them when something else on the machine holds them).
 - A mutation check disables only the behaviour under test (e.g. `false &&`), and the unrelated journeys must still pass — reverting files to an older commit crashes the app and "proves" everything.
 - A negative assertion (`toHaveCount(0)`, `not.toContainText`) needs a positive anchor first (the screen is showing), or it passes before the page renders. Claims about keys are tested with real keystrokes, not `.fill()`.
 

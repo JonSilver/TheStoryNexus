@@ -16,6 +16,7 @@ import notesRouter from "./routes/notes.js";
 import seriesRouter from "./routes/series.js";
 // Import routes
 import storiesRouter from "./routes/stories.js";
+import transpositionsRouter from "./routes/transpositions.js";
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -66,6 +67,7 @@ app.use("/api/notes", notesRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/assets", assetsRouter);
 app.use("/api/ingest", ingestRouter);
+app.use("/api/transpositions", transpositionsRouter);
 
 // Health check
 app.get("/api/health", (_, res) => {

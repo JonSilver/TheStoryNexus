@@ -16,6 +16,8 @@ type ImportedLorebookEntry = typeof schema.lorebookEntries.$inferSelect;
 type ImportedAiChat = typeof schema.aiChats.$inferSelect;
 type ImportedNote = typeof schema.notes.$inferSelect;
 type ImportedAiSetting = typeof schema.aiSettings.$inferSelect;
+type ImportedActionOverride = typeof schema.actionOverrides.$inferSelect;
+type ImportedTransposition = typeof schema.transpositions.$inferSelect;
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
@@ -47,7 +49,8 @@ router.get("/export", async (_, res) => {
             db.select().from(schema.aiChats),
             db.select().from(schema.notes),
             db.select().from(schema.aiSettings),
-            db.select().from(schema.actionOverrides)
+            db.select().from(schema.actionOverrides),
+            db.select().from(schema.transpositions)
         ])
     );
 
@@ -57,7 +60,8 @@ router.get("/export", async (_, res) => {
         return;
     }
 
-    const [series, stories, chapters, lorebookEntries, aiChats, notes, aiSettings, actionOverrides] = tables;
+    const [series, stories, chapters, lorebookEntries, aiChats, notes, aiSettings, actionOverrides, transpositions] =
+        tables;
     // API keys never leave the server, including via export
     const sanitisedAiSettings = aiSettings.map(({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...rest }) => rest);
     res.json({
@@ -71,7 +75,8 @@ router.get("/export", async (_, res) => {
             aiChats,
             notes,
             aiSettings: sanitisedAiSettings,
-            actionOverrides
+            actionOverrides,
+            transpositions
         }
     });
 });
@@ -189,6 +194,8 @@ router.post("/import", upload.single("file"), async (req, res) => {
             };
 
             console.log("[Import] Clearing existing data...");
+            tx.delete(schema.transpositions).run();
+            tx.delete(schema.actionOverrides).run();
             tx.delete(schema.notes).run();
             tx.delete(schema.lorebookEntries).run();
             tx.delete(schema.aiChats).run();
@@ -237,6 +244,23 @@ router.post("/import", upload.single("file"), async (req, res) => {
                         favouriteModels: favouritesFromLegacy(s),
                         createdAt: new Date(s.createdAt),
                         lastModelsFetch: s.lastModelsFetch ? new Date(s.lastModelsFetch) : undefined
+                    })
+                ),
+                // Exported all along, but never restored: every per-action setting was lost on import
+                actionOverrides: importTable(
+                    "actionOverrides",
+                    schema.actionOverrides,
+                    tables.actionOverrides,
+                    (o: ImportedActionOverride) => ({ ...o, createdAt: new Date(o.createdAt) })
+                ),
+                transpositions: importTable(
+                    "transpositions",
+                    schema.transpositions,
+                    tables.transpositions,
+                    (t: ImportedTransposition) => ({
+                        ...t,
+                        createdAt: new Date(t.createdAt),
+                        updatedAt: new Date(t.updatedAt)
                     })
                 )
             };

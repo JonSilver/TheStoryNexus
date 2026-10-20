@@ -46,4 +46,9 @@ export const actionKeys = {
     overridesFor: (storyId: string | null) => ["actions", "overrides", storyId ?? "global"] as const
 };
 
+export const transpositionKeys = {
+    all: ["transpositions"] as const,
+    detail: (storyId: string) => ["transpositions", storyId] as const
+};
+
 export const demoKeys = { exists: ["demo-exists"] as const };
