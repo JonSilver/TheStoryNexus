@@ -129,6 +129,8 @@ export const assembleContext = async (input: AssemblyInput): Promise<AssembledCo
         const filled = await transpositionContext({
             storyId,
             chapters,
+            chapterId,
+            selection: editorContext.selection,
             needs,
             budget: Math.max(remaining.budget, 0)
         });

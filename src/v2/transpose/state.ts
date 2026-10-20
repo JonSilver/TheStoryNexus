@@ -23,12 +23,22 @@ export interface EntryState {
     status: "pending" | "accepted" | "kept";
 }
 
+export interface ChapterDraft {
+    outlineAttempts: string[];
+    /** The chapter's saveVersion its pieces were drafted from: the drafts fit that text and no other. */
+    sourceSaveVersion: number | null;
+    /** Every draft of each prose piece, in order (pieces.ts). */
+    pieces: string[][];
+    status: "pending" | "accepted";
+}
+
 export interface TranspositionState {
     briefAttempts: string[];
     synopsis: { original: string; attempts: string[] };
     entries: Record<string, EntryState>;
     /** The bible's order on screen and in prompts. */
     entryOrder: string[];
+    chapters: Record<string, ChapterDraft>;
 }
 
 export interface Transposition {
@@ -69,6 +79,25 @@ const readEntry = (value: unknown): EntryState => {
     };
 };
 
+export const emptyChapter = (): ChapterDraft => ({
+    outlineAttempts: [],
+    sourceSaveVersion: null,
+    pieces: [],
+    status: "pending"
+});
+
+const readChapter = (value: unknown): ChapterDraft => {
+    const chapter = isRecord(value) ? value : {};
+    return {
+        outlineAttempts: strings(chapter.outlineAttempts),
+        sourceSaveVersion: Number.isSafeInteger(chapter.sourceSaveVersion)
+            ? (chapter.sourceSaveVersion as number)
+            : null,
+        pieces: Array.isArray(chapter.pieces) ? chapter.pieces.map(strings) : [],
+        status: chapter.status === "accepted" ? "accepted" : "pending"
+    };
+};
+
 export const readState = (value: unknown): TranspositionState => {
     const state = isRecord(value) ? value : {};
     const synopsis = isRecord(state.synopsis) ? state.synopsis : {};
@@ -80,7 +109,13 @@ export const readState = (value: unknown): TranspositionState => {
         synopsis: { original: str(synopsis.original), attempts: strings(synopsis.attempts) },
         entries,
         // Only entries that exist, each once; any missing from the order go last
-        entryOrder: [...new Set([...strings(state.entryOrder), ...Object.keys(entries)])].filter(id => id in entries)
+        entryOrder: [...new Set([...strings(state.entryOrder), ...Object.keys(entries)])].filter(id => id in entries),
+        chapters: Object.fromEntries(
+            Object.entries(isRecord(state.chapters) ? state.chapters : {}).map(([id, chapter]) => [
+                id,
+                readChapter(chapter)
+            ])
+        )
     };
 };
 
@@ -123,23 +158,30 @@ export const initialState = (synopsis: string, entries: Array<{ id: string } & E
     entries: Object.fromEntries(
         entries.map(({ id, ...original }) => [id, { original, attempts: [], status: "pending" as const }])
     ),
-    entryOrder: entries.map(entry => entry.id)
+    entryOrder: entries.map(entry => entry.id),
+    chapters: {}
 });
 
-/** The state with its entry and chapter ids moved to a restored copy's (backups, duplicates). */
-export const remapState = (state: TranspositionState, entryIds: Map<string, string>): TranspositionState => {
-    const entries = Object.fromEntries(
-        Object.entries(state.entries).flatMap(([id, entry]) => {
-            const next = entryIds.get(id);
-            return next ? [[next, entry]] : [];
+const rekeyed = <T>(record: Record<string, T>, ids: Map<string, string>): Record<string, T> =>
+    Object.fromEntries(
+        Object.entries(record).flatMap(([id, value]) => {
+            const next = ids.get(id);
+            return next ? [[next, value]] : [];
         })
     );
-    return {
-        ...state,
-        entries,
-        entryOrder: state.entryOrder.map(id => entryIds.get(id)).filter((id): id is string => Boolean(id))
-    };
-};
+
+/** The state with its entry and chapter ids moved to a restored copy's (backups, duplicates). */
+export const remapState = (
+    state: TranspositionState,
+    entryIds: Map<string, string>,
+    chapterIds: Map<string, string>
+): TranspositionState => ({
+    ...state,
+    entries: rekeyed(state.entries, entryIds),
+    entryOrder: state.entryOrder.map(id => entryIds.get(id)).filter((id): id is string => Boolean(id)),
+    // Restored chapters keep their saveVersion, so drafts made from them still fit
+    chapters: rekeyed(state.chapters, chapterIds)
+});
 
 /** One change to a transposition, applied by the server to what it has stored. */
 export type TranspositionOp =
@@ -153,4 +195,18 @@ export type TranspositionOp =
     | { op: "finishBible" }
     | { op: "editBriefDraft"; index: number; text: string }
     | { op: "editSynopsisDraft"; index: number; text: string }
-    | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> };
+    | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> }
+    | { op: "addOutlineAttempt"; chapterId: string; text: string }
+    | {
+          op: "addPieceAttempt";
+          chapterId: string;
+          /** The chapter version the piece was drafted from, and how many pieces it has. */
+          sourceSaveVersion: number;
+          pieceCount: number;
+          index: number;
+          text: string;
+      }
+    | { op: "editOutlineDraft"; chapterId: string; index: number; text: string }
+    | { op: "editPieceDraft"; chapterId: string; piece: number; index: number; text: string }
+    | { op: "acceptChapter"; chapterId: string; outline: string; rewrites: string[] }
+    | { op: "finishChapters" };

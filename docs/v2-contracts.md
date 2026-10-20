@@ -179,7 +179,24 @@ Actions `transpose_brief`, `transpose_synopsis` and `transpose_entry` (JSON) are
 - `story_bible`: each entry as `original → transposed`, or marked unchanged / not yet transposed, from the live entries;
 - `story_summaries` (every chapter's).
 
-Story backups, duplicates, series backups and the full-database export carry the row, with entry ids remapped on restore. `sourceStoryId` is cleared on restore, since the original may not exist there. The full-database import also restores `actionOverrides` now, which it exported but never imported before.
+**Chapters.** `src/v2/transpose/pieces.ts`, shared by client and server, cuts a chapter's top-level nodes into pieces:
+
+- prose runs, split at scene breaks and images and kept to about 1,200 words each, so a rewrite of the same length fits a 16k window;
+- scene breaks and images, kept in place as they are;
+- scene beats and pending suggestions, dropped, with a warning.
+
+Each chapter is drafted outline first (`transpose_outline`: the brief, the bible, the chapters before it as transposed, and the chapter's own summary or its text). Then each piece is drafted (`transpose_prose`, `insertsProse`):
+
+- `selection` is the piece;
+- `user_message` is the outline;
+- `recent_prose` is the tail of the previous part's rewrite;
+- `story_bible` is narrowed to the entries the piece names by their original names.
+
+Drafts are stored per piece against the chapter's `saveVersion` (`addPieceAttempt`). A chapter edited after drafting starts its pieces afresh, and the review says it changed. `acceptChapter` rebuilds the chapter on the server from the pieces it computes itself, with each rewrite as plain paragraphs (inline formatting isn't kept) and kept nodes untouched. It saves through `resolveChapterUpdate`, so revision and saveVersion move as usual, and sets the outline as a fresh summary. It is refused (409) when the chapter isn't the version drafted from. `finishChapters` requires every chapter accepted.
+
+The batch ("Draft the remaining chapters") is client-driven: sequential, Stop keeps everything, two failing chapters in a row stop it, and running it again drafts only what's missing. Nothing runs without a press.
+
+Story backups, duplicates, series backups and the full-database export carry the row, with entry and chapter ids remapped on restore. Chapters keep their `saveVersion`, so drafts still fit. `sourceStoryId` is cleared on restore, since the original may not exist there. The full-database import also restores `actionOverrides` now, which it exported but never imported before.
 
 ## 12. Schema change summary
 

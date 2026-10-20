@@ -19,7 +19,8 @@ describe("transposition state", () => {
             briefAttempts: [],
             synopsis: { original: "", attempts: [] },
             entries: {},
-            entryOrder: []
+            entryOrder: [],
+            chapters: {}
         });
         const state = readState({
             briefAttempts: ["one", 2],
@@ -40,7 +41,15 @@ describe("transposition state", () => {
             { id: "old1", ...hester },
             { id: "old2", ...hester, name: "Gone" }
         ]);
-        const moved = remapState(state, new Map([["old1", "new1"]]));
+        const moved = remapState(
+            {
+                ...state,
+                chapters: { c1: { outlineAttempts: ["o"], sourceSaveVersion: 3, pieces: [], status: "pending" } }
+            },
+            new Map([["old1", "new1"]]),
+            new Map([["c1", "c9"]])
+        );
+        expect(Object.keys(moved.chapters)).toEqual(["c9"]);
         expect(Object.keys(moved.entries)).toEqual(["new1"]);
         expect(moved.entryOrder).toEqual(["new1"]);
         expect(moved.entries.new1.original.name).toBe("Aunt Hester");
