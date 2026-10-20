@@ -118,6 +118,10 @@ test.describe("against a real model server", () => {
         // Type to search: only the match is offered
         await page.getByPlaceholder("Search models…").fill("zeta");
         await expect(list.getByRole("option")).toHaveCount(1);
+        // Search matches what the writer sees (names, ids, providers), nothing internal
+        await page.getByPlaceholder("Search models…").fill("all");
+        await expect(page.getByText("No model matches.")).toBeVisible();
+        await page.getByPlaceholder("Search models…").fill("zeta");
         await page.getByRole("button", { name: "Favourite zeta-model" }).click();
         await expect(page.getByRole("button", { name: "Unfavourite zeta-model" }).first()).toBeVisible();
         await page.getByPlaceholder("Search models…").fill("");

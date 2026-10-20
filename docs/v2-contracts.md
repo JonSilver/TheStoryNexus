@@ -157,17 +157,18 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 12. Schema change summary
 
-| Table             | Change                                                                                             | When                            |
-| ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                 | Phase 3                         |
-| `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only | 2026-10-19                      |
-| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                | 2026-10-19                      |
-| `stories`         | + `aiInstructions`                                                                                 | Phase 4                         |
-| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                  | Phase 2                         |
-| `actionOverrides` | new                                                                                                | Phase 2 (storage), Phase 8 (UI) |
-| `sceneBeats`      | retired (dropped)                                                                                  | Phase 5                         |
-| `prompts`         | retired in favour of registry + overrides                                                          | Phase 8                         |
-| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format  | Phase 3                         |
+| Table             | Change                                                                                                             | When                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                                 | Phase 3                         |
+| `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only                 | 2026-10-19                      |
+| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                                | 2026-10-19                      |
+| `stories`         | + `aiInstructions`                                                                                                 | Phase 4                         |
+| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                                  | Phase 2                         |
+| `aiSettings`      | + `favouriteModels` (per-provider defaults converted into it); − the four per-provider default columns (0016–0017) | 2026-10-20                      |
+| `actionOverrides` | new                                                                                                                | Phase 2 (storage), Phase 8 (UI) |
+| `sceneBeats`      | retired (dropped)                                                                                                  | Phase 5                         |
+| `prompts`         | retired in favour of registry + overrides                                                                          | Phase 8                         |
+| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format                  | Phase 3                         |
 
 ## Appendix A — editor choice & serialisation (decided 2026-09-05)
 

@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown, Star } from "lucide-react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,6 +11,12 @@ import {
 } from "@/features/ai/hooks/useAISettingsQuery";
 import { cn } from "@/lib/utils";
 import type { AIModel, AIProvider, ModelChoice } from "@/types/story";
+
+const matches = (search: string, keywords: string[] = []) =>
+    search
+        .toLowerCase()
+        .split(/\s+/)
+        .every(term => keywords.some(keyword => keyword.toLowerCase().includes(term)));
 
 const choiceOf = (model: AIModel): ModelChoice => ({ provider: model.provider, modelId: model.id });
 
@@ -34,7 +40,6 @@ export const ModelSelector = ({
     ariaLabel?: string;
 }) => {
     const [open, setOpen] = useState(false);
-    const listId = useId();
     const { data: settings } = useAISettingsQuery();
     const toggleFavourite = useToggleFavouriteModel();
     const models = settings?.availableModels ?? [];
@@ -73,7 +78,8 @@ export const ModelSelector = ({
                     type="button"
                     aria-label={`${starred ? "Unfavourite" : "Favourite"} ${model.name}`}
                     aria-pressed={starred}
-                    className="ml-2 shrink-0 rounded p-0.5 hover:bg-accent"
+                    // A thumb-sized target: a near miss would choose the model instead
+                    className="-my-1 ml-1 shrink-0 rounded p-2 hover:bg-accent"
                     // Starring must not also choose the model
                     onPointerDown={e => e.stopPropagation()}
                     onClick={e => {
@@ -93,9 +99,8 @@ export const ModelSelector = ({
                 <Button
                     id={id}
                     variant="outline"
-                    role="combobox"
+                    aria-haspopup="dialog"
                     aria-expanded={open}
-                    aria-controls={listId}
                     aria-label={ariaLabel}
                     className="w-full justify-between font-normal"
                 >
@@ -110,7 +115,8 @@ export const ModelSelector = ({
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] min-w-72 p-0">
-                <Command id={listId}>
+                {/* Search the model, not the item's internal value */}
+                <Command filter={(_value, search, keywords) => (matches(search, keywords) ? 1 : 0)}>
                     <CommandInput placeholder="Search models…" />
                     <CommandList>
                         <CommandEmpty>
