@@ -65,7 +65,15 @@ test("transpose a story: a copy, its brief, synopsis and bible moved in turn; th
     // Drafts are kept: leaving and coming back finds it
     await page.reload();
     await expect(draft).toHaveValue(BRIEF);
+    // The writer's edits are kept like the draft
     await draft.fill(`${BRIEF} Keep it wry.`);
+    await expect
+        .poll(
+            async () => (await (await page.request.get(`/api/transpositions/${copyId}`)).json()).state.briefAttempts[0]
+        )
+        .toBe(`${BRIEF} Keep it wry.`);
+    await page.reload();
+    await expect(draft).toHaveValue(`${BRIEF} Keep it wry.`);
     await page.getByRole("button", { name: "Accept the brief" }).click();
 
     await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");
@@ -159,4 +167,54 @@ test("a transposition in progress survives a story backup and restore", async ({
     }>;
     expect(transposition.brief).toBe(BRIEF);
     expect(transposition.state.entryOrder.sort()).toEqual(bible.map(e => e.id).sort());
+});
+
+test("the bible step follows the copy's bible: deleted entries leave, new ones join, edits made there are kept", async ({
+    page
+}) => {
+    await mockGeneration(page, () => BRIEF);
+    const { storyId } = await seedOriginal(page);
+    const started = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "1990s Belfast" }
+    });
+    const { storyId: copyId } = (await started.json()) as { storyId: string };
+    const op = (data: object) => page.request.post(`/api/transpositions/${copyId}/ops`, { data });
+    await op({ op: "acceptBrief", brief: BRIEF });
+    await op({ op: "acceptSynopsis", synopsis: null });
+
+    const bible = async () =>
+        (await (await page.request.get(`/api/lorebook/story/${copyId}/hierarchical`)).json()) as Array<{
+            id: string;
+            name: string;
+            description: string;
+        }>;
+    const [hester, hall] = ["Aunt Hester", "Whitwell Hall"].map(name =>
+        bible().then(all => all.find(e => e.name === name))
+    );
+    // In the copy's Bible screen, the writer deletes one entry, edits another and adds a third
+    await page.request.delete(`/api/lorebook/${(await hall)?.id}`);
+    await page.request.put(`/api/lorebook/${(await hester)?.id}`, { data: { description: "Edited by hand." } });
+    await page.request.post("/api/lorebook", {
+        data: {
+            level: "story",
+            scopeId: copyId,
+            name: "Belfast Lough",
+            description: "Grey.",
+            category: "location",
+            tags: []
+        }
+    });
+
+    await page.goto(`/story/${copyId}/transpose`);
+    await expect(page.getByRole("listitem", { name: "Belfast Lough" })).toBeVisible();
+    await expect(page.getByRole("listitem", { name: "Whitwell Hall" })).toHaveCount(0);
+    const hesterCard = page.getByRole("listitem", { name: "Aunt Hester" });
+    await expect(hesterCard.getByText("Edited by hand.")).toBeVisible();
+
+    // Keeping an entry leaves it exactly as it is, hand edits and all
+    await hesterCard.getByRole("button", { name: "Keep as it was" }).click();
+    await page.getByRole("listitem", { name: "Belfast Lough" }).getByRole("button", { name: "Keep as it was" }).click();
+    await page.getByRole("button", { name: "Go on to the chapters" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Chapters");
+    expect((await bible()).find(e => e.name === "Aunt Hester")?.description).toBe("Edited by hand.");
 });

@@ -5,6 +5,7 @@ import {
     pendingEntries,
     readStage,
     readState,
+    syncEntries,
     type Stage,
     type Transposition,
     type TranspositionState
@@ -22,15 +23,37 @@ import { exportStoryBackup, restoreStory, type Tx } from "../stories/backup.js";
 
 type Row = typeof schema.transpositions.$inferSelect;
 
-const toTransposition = (row: Row): Transposition => ({
-    id: row.id,
-    storyId: row.storyId,
-    sourceStoryId: row.sourceStoryId,
-    target: row.target,
-    brief: row.brief,
-    stage: readStage(row.stage),
-    state: readState(row.state)
-});
+// Until the bible is settled, the transposition follows the copy's live bible (syncEntries)
+const FOLLOWS_BIBLE = new Set<Stage>(["brief", "synopsis", "bible"]);
+
+const liveEntries = (q: Tx | typeof db, storyId: string) =>
+    q
+        .select()
+        .from(schema.lorebookEntries)
+        .where(and(eq(schema.lorebookEntries.level, "story"), eq(schema.lorebookEntries.scopeId, storyId)))
+        .all()
+        .map(entry => ({
+            id: entry.id,
+            name: entry.name,
+            category: entry.category,
+            description: entry.description,
+            tags: Array.isArray(entry.tags) ? (entry.tags as string[]) : []
+        }));
+
+/** A stored row as the writer should see it now. */
+export const readTransposition = (q: Tx | typeof db, row: Row): Transposition => {
+    const stage = readStage(row.stage);
+    const state = readState(row.state);
+    return {
+        id: row.id,
+        storyId: row.storyId,
+        sourceStoryId: row.sourceStoryId,
+        target: row.target,
+        brief: row.brief,
+        stage,
+        state: FOLLOWS_BIBLE.has(stage) ? syncEntries(state, liveEntries(q, row.storyId)) : state
+    };
+};
 
 const TITLE_TARGET_CHARS = 60;
 
@@ -87,10 +110,11 @@ export const createTransposition = async (sourceStoryId: string, target: string)
 
 export const getTransposition = async (storyId: string): Promise<Transposition | null> => {
     const [row] = await db.select().from(schema.transpositions).where(eq(schema.transpositions.storyId, storyId));
-    return row ? toTransposition(row) : null;
+    return row ? readTransposition(db, row) : null;
 };
 
 const text = z.string().trim().min(1).max(200_000);
+const index = z.number().int().min(0);
 const entryValue = z.object({
     name: z.string().trim().min(1).max(500),
     description: z.string().max(50_000),
@@ -106,7 +130,11 @@ export const opSchema = z.discriminatedUnion("op", [
     z.object({ op: z.literal("addEntryAttempt"), entryId: z.string().min(1), value: entryValue }),
     z.object({ op: z.literal("acceptEntry"), entryId: z.string().min(1), value: entryValue }),
     z.object({ op: z.literal("keepEntry"), entryId: z.string().min(1) }),
-    z.object({ op: z.literal("finishBible") })
+    z.object({ op: z.literal("finishBible") }),
+    // The writer's edits to a draft are kept like the draft itself
+    z.object({ op: z.literal("editBriefDraft"), index, text }),
+    z.object({ op: z.literal("editSynopsisDraft"), index, text }),
+    z.object({ op: z.literal("editEntryDraft"), entryId: z.string().min(1), index, value: entryValue })
 ]);
 
 type TranspositionOp = z.infer<typeof opSchema>;
@@ -120,7 +148,10 @@ const OP_STAGE: Record<TranspositionOp["op"], Stage> = {
     addEntryAttempt: "bible",
     acceptEntry: "bible",
     keepEntry: "bible",
-    finishBible: "bible"
+    finishBible: "bible",
+    editBriefDraft: "brief",
+    editSynopsisDraft: "synopsis",
+    editEntryDraft: "bible"
 };
 
 type Outcome = { ok: true; transposition: Transposition } | { ok: false; status: number; error: string };
@@ -144,6 +175,8 @@ const writeEntry = (tx: Tx, storyId: string, entryId: string, value: z.infer<typ
             )
         )
         .run().changes > 0;
+
+const replaced = <T>(list: T[], at: number, value: T): T[] => list.map((item, i) => (i === at ? value : item));
 
 type Change = { state?: TranspositionState; brief?: string; stage?: Stage };
 type Failure = Extract<Outcome, { ok: false }>;
@@ -179,20 +212,43 @@ const HANDLERS: Handlers = {
         writeEntry(tx, storyId, op.entryId, op.value)
             ? { state: withEntry(state, op.entryId, entry => ({ ...entry, status: "accepted" })) }
             : fail(404, "That entry has been deleted from the story bible"),
-    // Keeping undoes an earlier accept: the entry goes back to how it was
+    // Keeping after an accept puts the entry back as it was; otherwise it's left exactly as it is
     keepEntry: (op, state, tx, storyId) =>
+        state.entries[op.entryId].status !== "accepted" ||
         writeEntry(tx, storyId, op.entryId, state.entries[op.entryId].original)
             ? { state: withEntry(state, op.entryId, entry => ({ ...entry, status: "kept" })) }
             : fail(404, "That entry has been deleted from the story bible"),
     finishBible: (_op, state) =>
-        pendingEntries(state).length ? fail(409, "Some entries haven't been decided yet") : { stage: "chapters" }
+        pendingEntries(state).length ? fail(409, "Some entries haven't been decided yet") : { stage: "chapters" },
+    editBriefDraft: (op, state) =>
+        op.index < state.briefAttempts.length
+            ? { state: { ...state, briefAttempts: replaced(state.briefAttempts, op.index, op.text) } }
+            : fail(404, "That draft doesn't exist"),
+    editSynopsisDraft: (op, state) =>
+        op.index < state.synopsis.attempts.length
+            ? {
+                  state: {
+                      ...state,
+                      synopsis: { ...state.synopsis, attempts: replaced(state.synopsis.attempts, op.index, op.text) }
+                  }
+              }
+            : fail(404, "That draft doesn't exist"),
+    editEntryDraft: (op, state) =>
+        op.index < state.entries[op.entryId].attempts.length
+            ? {
+                  state: withEntry(state, op.entryId, entry => ({
+                      ...entry,
+                      attempts: replaced(entry.attempts, op.index, { ...op.value, category: entry.original.category })
+                  }))
+              }
+            : fail(404, "That draft doesn't exist")
 };
 
 export const applyOp = (storyId: string, op: TranspositionOp): Outcome =>
     db.transaction(tx => {
         const [row] = tx.select().from(schema.transpositions).where(eq(schema.transpositions.storyId, storyId)).all();
         if (!row) return fail(404, "This story isn't being transposed");
-        const current = toTransposition(row);
+        const current = readTransposition(tx, row);
         if (current.stage !== OP_STAGE[op.op])
             return fail(409, `That step is finished — this transposition is at ${current.stage}`);
         if ("entryId" in op && !(op.entryId in current.state.entries))
@@ -214,5 +270,5 @@ export const applyOp = (storyId: string, op: TranspositionOp): Outcome =>
             .where(eq(schema.transpositions.id, row.id))
             .returning()
             .all();
-        return { ok: true, transposition: toTransposition(saved) };
+        return { ok: true, transposition: readTransposition(tx, saved) };
     });

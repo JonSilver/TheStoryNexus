@@ -51,7 +51,8 @@ const BriefStep = ({ transposition }: { transposition: Transposition }) => {
         storyId: transposition.storyId,
         action: { id: "transpose_brief", label: "the brief" },
         saved: transposition.state.briefAttempts,
-        record: text => record({ op: "addBriefAttempt", text })
+        record: text => record({ op: "addBriefAttempt", text }),
+        saveEdit: (index, text) => record({ op: "editBriefDraft", index, text })
     });
     return (
         <DraftLayer
@@ -71,7 +72,8 @@ const SynopsisStep = ({ transposition }: { transposition: Transposition }) => {
         storyId: transposition.storyId,
         action: { id: "transpose_synopsis", label: "the synopsis" },
         saved: transposition.state.synopsis.attempts,
-        record: text => record({ op: "addSynopsisAttempt", text })
+        record: text => record({ op: "addSynopsisAttempt", text }),
+        saveEdit: (index, text) => record({ op: "editSynopsisDraft", index, text })
     });
     const keepIt = (
         <button

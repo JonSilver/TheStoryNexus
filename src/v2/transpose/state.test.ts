@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialState, pendingEntries, readStage, readState, remapState } from "./state";
+import { initialState, pendingEntries, readStage, readState, remapState, syncEntries } from "./state";
 
 const hester = { name: "Aunt Hester", category: "character", description: "Formidable.", tags: ["Hetty"] };
 
@@ -44,5 +44,29 @@ describe("transposition state", () => {
         expect(Object.keys(moved.entries)).toEqual(["new1"]);
         expect(moved.entryOrder).toEqual(["new1"]);
         expect(moved.entries.new1.original.name).toBe("Aunt Hester");
+    });
+});
+
+describe("syncEntries", () => {
+    it("follows the live bible until it's settled: deleted entries leave, new ones join, undecided ones update", () => {
+        const base = initialState("", [
+            { id: "e1", ...hester },
+            { id: "e2", ...hester, name: "Deleted" },
+            { id: "e3", ...hester, name: "Decided" }
+        ]);
+        const decided = {
+            ...base,
+            entries: { ...base.entries, e3: { ...base.entries.e3, status: "accepted" as const } }
+        };
+        const synced = syncEntries(decided, [
+            { id: "e1", ...hester, description: "Edited in the Bible screen." },
+            { id: "e3", ...hester, name: "Mrs Brennan" },
+            { id: "e4", ...hester, name: "New" }
+        ]);
+        expect(synced.entryOrder).toEqual(["e1", "e3", "e4"]);
+        expect(synced.entries.e1.original.description).toBe("Edited in the Bible screen.");
+        // A decided entry keeps how it was before it was transposed
+        expect(synced.entries.e3.original.name).toBe("Decided");
+        expect(synced.entries.e4.status).toBe("pending");
     });
 });

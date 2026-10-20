@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ActionId } from "@/types/actions";
 import { type ActionEditorContext, useActionGeneration } from "../ai/useActionGeneration";
 import { useSheetModel } from "../ai/useSheetModel";
+import { useDraftEdits } from "./useDraftEdits";
 
 /**
  * One layer of a transposition drafted as text (the brief, the synopsis):
@@ -14,6 +15,7 @@ export const useDraftLayer = ({
     action,
     saved,
     record,
+    saveEdit,
     editorContext = {}
 }: {
     storyId: string;
@@ -22,12 +24,16 @@ export const useDraftLayer = ({
     saved: string[];
     /** Stores a draft; resolves false when it couldn't. */
     record: (text: string) => Promise<boolean>;
+    /** Stores the writer's edit to a saved draft. */
+    saveEdit: (index: number, text: string) => Promise<boolean>;
     editorContext?: ActionEditorContext;
 }) => {
     const generation = useActionGeneration();
     const [unsaved, setUnsaved] = useState<string[]>([]);
     const [chosen, setChosen] = useState<number | null>(null);
-    const [edits, setEdits] = useState<Record<number, string>>({});
+    const { edits, edit } = useDraftEdits<string>((at, text) =>
+        at < saved.length ? saveEdit(at, text) : Promise.resolve(false)
+    );
     const drafts = [...saved, ...unsaved];
     // The newest draft unless the writer flipped back to an earlier one
     const index = chosen === null ? drafts.length - 1 : Math.min(chosen, drafts.length - 1);
@@ -62,7 +68,7 @@ export const useDraftLayer = ({
         select: setChosen,
         /** The draft on show, with the writer's edits. */
         shown: index >= 0 ? (edits[index] ?? drafts[index]) : null,
-        edit: (text: string) => setEdits(current => ({ ...current, [index]: text })),
+        edit: (text: string) => edit(index, text),
         unsavedCount: unsaved.length,
         saveAgain: () => unsaved.forEach(text => void keep(text)),
         run,

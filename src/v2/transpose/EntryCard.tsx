@@ -1,8 +1,10 @@
+import { attemptPromise } from "@jfdi/attempt";
 import { RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { AttemptNav } from "../ai/AttemptNav";
 import { GenerationProgress } from "../ai/GenerationProgress";
 import type { EntryState, EntryValue } from "./state";
+import { useDraftEdits } from "./useDraftEdits";
 import type { useEntryDrafting } from "./useEntryDrafting";
 
 type Draft = Omit<EntryValue, "category">;
@@ -30,12 +32,18 @@ export const EntryCard = ({
 }) => {
     const drafts: Draft[] = [...entry.attempts, ...(drafting.unsaved[entryId] ?? [])];
     const [chosen, setChosen] = useState<number | null>(null);
-    const [edits, setEdits] = useState<Record<number, Draft>>({});
+    const savedCount = entry.attempts.length;
+    const { edits, edit: editDraft } = useDraftEdits<Draft>(async (at, value) => {
+        if (at >= savedCount) return false;
+        const [error] = await attemptPromise(() =>
+            drafting.apply.mutateAsync({ op: "editEntryDraft", entryId, index: at, value })
+        );
+        return !error;
+    });
     const [reopened, setReopened] = useState(false);
     const index = chosen === null ? drafts.length - 1 : Math.min(chosen, drafts.length - 1);
     const shown = index >= 0 ? (edits[index] ?? drafts[index]) : null;
-    const edit = (patch: Partial<Draft>) =>
-        shown && setEdits(current => ({ ...current, [index]: { ...shown, ...patch } }));
+    const edit = (patch: Partial<Draft>) => shown && editDraft(index, { ...shown, ...patch });
     const running = drafting.running === entryId;
     const busy = drafting.running !== null || drafting.progress !== null;
     const decided = entry.status !== "pending" && !reopened;

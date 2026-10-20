@@ -86,6 +86,33 @@ export const readState = (value: unknown): TranspositionState => {
 
 export const readStage = (value: unknown): Stage => (STAGES.includes(value as Stage) ? (value as Stage) : "brief");
 
+/**
+ * Until the bible is settled the transposition follows the copy's live bible:
+ * an entry deleted there leaves it, one added there joins as undecided, and
+ * an undecided entry's "original" is what it is now (edits made in the Bible
+ * screen count). Decided entries keep their record of how they were.
+ */
+export const syncEntries = (
+    state: TranspositionState,
+    live: Array<{ id: string } & EntryValue>
+): TranspositionState => {
+    const liveIds = new Set(live.map(entry => entry.id));
+    return {
+        ...state,
+        entries: Object.fromEntries(
+            live.map(({ id, ...value }) => {
+                const known = state.entries[id];
+                if (!known) return [id, { original: value, attempts: [], status: "pending" as const }];
+                return [id, known.status === "pending" ? { ...known, original: value } : known];
+            })
+        ),
+        entryOrder: [
+            ...state.entryOrder.filter(id => liveIds.has(id)),
+            ...live.map(entry => entry.id).filter(id => !(id in state.entries))
+        ]
+    };
+};
+
 export const pendingEntries = (state: TranspositionState): string[] =>
     state.entryOrder.filter(id => state.entries[id]?.status === "pending");
 
@@ -123,4 +150,7 @@ export type TranspositionOp =
     | { op: "addEntryAttempt"; entryId: string; value: Omit<EntryValue, "category"> }
     | { op: "acceptEntry"; entryId: string; value: Omit<EntryValue, "category"> }
     | { op: "keepEntry"; entryId: string }
-    | { op: "finishBible" };
+    | { op: "finishBible" }
+    | { op: "editBriefDraft"; index: number; text: string }
+    | { op: "editSynopsisDraft"; index: number; text: string }
+    | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> };

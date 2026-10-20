@@ -1,8 +1,9 @@
 import { inArray, eq } from "drizzle-orm";
 import { countTokens } from "gpt-tokenizer";
-import { readState, type EntryState, type EntryValue } from "../../../src/v2/transpose/state.js";
+import type { EntryState, EntryValue } from "../../../src/v2/transpose/state.js";
 import { db, schema } from "../../db/client.js";
 import type { ContextKey } from "../actions/registry.js";
+import { readTransposition } from "./transpositions.js";
 
 /**
  * Context for the transposition actions (#77): the target, the accepted
@@ -55,7 +56,7 @@ export const transpositionContext = async ({
 }): Promise<Partial<Record<ContextKey, string>>> => {
     const [row] = await db.select().from(schema.transpositions).where(eq(schema.transpositions.storyId, storyId));
     if (!row) throw new Error("This story isn't being transposed — start from Transpose story on the original.");
-    const state = readState(row.state);
+    const { state } = readTransposition(db, row);
     const fixed: Partial<Record<ContextKey, string>> = {
         ...(needs.has("transposition_target") && { transposition_target: row.target }),
         ...(needs.has("transposition_brief") && { transposition_brief: row.brief ?? "" }),
