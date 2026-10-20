@@ -18,6 +18,7 @@ import type { Chapter } from "@/types/story";
 import { $appendParagraphs, $captureSelection, $textBefore } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { checkReply, firstParagraphs, type ReplyAction } from "./replyCheck";
 import { SELECTION_ACTIONS, type SelectionActionId } from "./selectionActions";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 import { useAttempts } from "./useAttempts";
@@ -240,6 +241,24 @@ export const useEditorActions = (chapter: Chapter) => {
         [onContinue, onSummarise, onSelectionAction, onAsk]
     );
 
+    // A replacement that looks like more than the passage is called out, never trimmed silently
+    const shownReply = generation.phase === "streaming" ? null : attempts.current;
+    const replyAction = active && active.kind !== "summarise" ? (active.id as ReplyAction) : null;
+    const check = shownReply && replyAction ? checkReply(replyAction, savedSelectionText.current, shownReply) : null;
+    const suspect =
+        check && shownReply && check.concerns.length > 0
+            ? {
+                  concerns: check.concerns,
+                  keepPassage: check.hasExtraParagraphs
+                      ? {
+                            paragraphs: check.passageParagraphs,
+                            // A new attempt: the full reply stays one tap away
+                            keep: () => record(firstParagraphs(shownReply, check.passageParagraphs))
+                        }
+                      : undefined
+              }
+            : null;
+
     return {
         // The saved selection is positional: the document stays frozen while a
         // selection sheet is up, so accept can't land on shifted or deleted nodes
@@ -254,6 +273,7 @@ export const useEditorActions = (chapter: Chapter) => {
             attemptIndex: attempts.index,
             attemptCount: attempts.count,
             attemptPartial: attempts.currentPartial,
+            suspect,
             onSelectAttempt: attempts.select,
             onAgain: active && !askPending ? onAgain : undefined,
             error: generation.error,

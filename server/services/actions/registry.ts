@@ -135,7 +135,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Rewrite the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
-        defaultParams: { temperature: 1.0, maxTokens: 8192 }
+        defaultParams: { temperature: 0.7, maxTokens: 8192 }
     },
     expand: {
         id: "expand",
@@ -152,7 +152,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Expand the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
-        defaultParams: { temperature: 1.0, maxTokens: 8192 }
+        defaultParams: { temperature: 0.7, maxTokens: 8192 }
     },
     shorten: {
         id: "shorten",
@@ -169,7 +169,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Shorten the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
-        defaultParams: { temperature: 1.0, maxTokens: 8192 }
+        defaultParams: { temperature: 0.7, maxTokens: 8192 }
     },
     summarise_chapter: {
         id: "summarise_chapter",

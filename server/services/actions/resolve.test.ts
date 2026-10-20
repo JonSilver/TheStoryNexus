@@ -52,7 +52,7 @@ describe("resolveAction precedence", () => {
     it("returns built-in defaults with no overrides", () => {
         const resolved = resolveAction("rework", "story-1", []);
         expect(resolved.template).toBe(BUILTIN_ACTIONS.rework.defaultTemplate);
-        expect(resolved.params.temperature).toBe(1.0);
+        expect(resolved.params.temperature).toBe(BUILTIN_ACTIONS.rework.defaultParams.temperature);
         expect(resolved.modelRef).toBeUndefined();
     });
 
@@ -111,7 +111,7 @@ describe("resolveAction precedence", () => {
 
     it("ignores other stories' overrides", () => {
         const resolved = resolveAction("rework", "story-1", [override({ storyId: "story-2", temperature: 0.1 })]);
-        expect(resolved.params.temperature).toBe(1.0);
+        expect(resolved.params.temperature).toBe(BUILTIN_ACTIONS.rework.defaultParams.temperature);
     });
 });
 
