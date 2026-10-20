@@ -107,6 +107,19 @@ describe("resolveAction precedence", () => {
             override({ storyId: null, modelRef: "local::local/qwen3:8b" })
         ];
         expect(resolveAction("rework", "story-1", rows).modelRef).toBe("local::local/qwen3:8b");
+        expect(resolveAction("rework", "story-1", rows).modelScope).toBe("global");
+    });
+
+    it("says which scope chose the model", () => {
+        const rows = [
+            override({ storyId: "story-1", modelRef: "openrouter::a/story-model" }),
+            override({ storyId: null, modelRef: "local::local/qwen3:8b" })
+        ];
+        expect(resolveAction("rework", "story-1", rows)).toMatchObject({
+            modelRef: "openrouter::a/story-model",
+            modelScope: "story"
+        });
+        expect(resolveAction("rework", "story-1", []).modelScope).toBeUndefined();
     });
 
     it("ignores other stories' overrides", () => {

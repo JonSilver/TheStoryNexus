@@ -1,9 +1,12 @@
 import { useCallback, useState } from "react";
+import type { AnsweredModel } from "@/types/actions";
 
 interface Attempt<T> {
     value: T;
     /** Cut short by a failure — kept, and labelled, rather than thrown away. */
     partial: boolean;
+    /** Which model wrote it, when known. */
+    model?: AnsweredModel;
 }
 
 const isBlank = (value: unknown) => typeof value === "string" && !value.trim();
@@ -19,9 +22,9 @@ const isBlank = (value: unknown) => typeof value === "string" && !value.trim();
 export const useAttempts = <T = string>() => {
     const [state, setState] = useState<{ list: Attempt<T>[]; index: number }>({ list: [], index: 0 });
 
-    const record = useCallback((value: T, partial = false) => {
+    const record = useCallback((value: T, partial = false, model?: AnsweredModel) => {
         if (isBlank(value)) return;
-        setState(prev => ({ list: [...prev.list, { value, partial }], index: prev.list.length }));
+        setState(prev => ({ list: [...prev.list, { value, partial, model }], index: prev.list.length }));
     }, []);
 
     /** Records it only if it isn't one already — e.g. a result already on screen before any run. */
@@ -56,6 +59,7 @@ export const useAttempts = <T = string>() => {
         index: state.index,
         current: shown?.value ?? null,
         currentPartial: shown?.partial ?? false,
+        currentModel: shown?.model ?? null,
         /** The attempt at an index, for acting on a selection before the re-render shows it. */
         at: (index: number) => state.list[index]?.value ?? null,
         record,

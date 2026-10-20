@@ -1,11 +1,31 @@
 import { Pencil } from "lucide-react";
 import { useState } from "react";
+import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
 import { ScreenHeader } from "../components/ScreenParts";
 import { OverrideEditor } from "../drawer/OverrideEditor";
-import { type ActionDefinition, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
+import { type ActionDefinition, type OverrideRow, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
 import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
+
+const CUSTOMISABLE = ["template", "temperature", "maxTokens", "topP", "frequencyPenalty", "presencePenalty"] as const;
+
+const modelName = (ref: string | null | undefined) =>
+    ref
+        ?.split("::")
+        .slice(1)
+        .join("::")
+        .replace(/^local\//, "");
+
+/** "built-in" or "customised", and the model that runs: the action's own, all stories' (seen from a story), or the default. */
+const describeOverride = (override: OverrideRow | null, inherited: OverrideRow | null, defaultModel: string | null) => {
+    const customised = CUSTOMISABLE.some(key => override?.[key] !== null && override?.[key] !== undefined);
+    const own = modelName(override?.modelRef);
+    const fromAllStories = modelName(inherited?.modelRef);
+    const model =
+        own ?? (fromAllStories ? `${fromAllStories} (all stories)` : defaultModel && `${defaultModel} (default)`);
+    return [customised ? "customised" : "built-in", model && `model: ${model}`].filter(Boolean).join(" · ");
+};
 
 /**
  * The advanced drawer (contracts Phase 8): per-action template and parameter
@@ -19,6 +39,9 @@ export const ActionsScreen = () => {
     const storyId = scope === "story" ? (story?.id ?? null) : null;
     const { data: registry } = useActionRegistry();
     const { data: overrides } = useOverrides(storyId);
+    const { data: globalOverrides } = useOverrides(null);
+    const { data: settings } = useAISettingsQuery();
+    const defaultModel = settings?.defaultModelId?.replace(/^local\//, "") ?? null;
     const [editing, setEditing] = useState<ActionDefinition | null>(null);
 
     return (
@@ -59,7 +82,13 @@ export const ActionsScreen = () => {
                                 <div className="min-w-0 flex-1">
                                     <p className="font-medium">{def.label}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {override ? "customised" : "built-in"}
+                                        {describeOverride(
+                                            override,
+                                            storyId
+                                                ? ((globalOverrides ?? []).find(o => o.actionId === def.id) ?? null)
+                                                : null,
+                                            defaultModel
+                                        )}
                                         {def.voiceApplies ? " · uses story voice" : ""}
                                     </p>
                                 </div>

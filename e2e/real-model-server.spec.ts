@@ -10,13 +10,15 @@ test.describe.configure({ mode: "serial" });
  * browser-side mock — classifies failures and narrates progress.
  */
 test.describe("against a real model server", () => {
-    type Mode = "missing-model" | "slow-start" | "stall";
+    type Mode = "missing-model" | "slow-start" | "stall" | "by-model";
     const server = {
         mode: "slow-start" as Mode,
         instance: null as http.Server | null,
         settingsId: "",
         url: "",
-        modelListings: 0
+        modelListings: 0,
+        /** The model the last completion request asked for. */
+        lastModel: ""
     };
 
     const chunk = (content: string) => `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content } }] })}\n\n`;
@@ -38,6 +40,25 @@ test.describe("against a real model server", () => {
             if (server.mode === "missing-model") {
                 res.writeHead(404, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ error: { message: "model 'fake-model' not found" } }));
+                return;
+            }
+            if (server.mode === "by-model") {
+                const body = await new Promise<string>(resolve => {
+                    const parts: Buffer[] = [];
+                    req.on("data", part => parts.push(part));
+                    req.on("end", () => resolve(Buffer.concat(parts).toString()));
+                });
+                server.lastModel = JSON.parse(body).model;
+                res.writeHead(200, { "Content-Type": "text/event-stream" });
+                // The default model is the one that won't keep to prose
+                res.write(
+                    chunk(
+                        server.lastModel === "fake-model"
+                            ? "Original sentence, reworked.\n\nRevisions made: tightened the rhythm."
+                            : `A steadier sentence from ${server.lastModel}.`
+                    )
+                );
+                res.end("data: [DONE]\n\n");
                 return;
             }
             if (server.mode === "slow-start") await pause(3_000);
@@ -182,8 +203,9 @@ test.describe("against a real model server", () => {
     test("a missing model is named, with what to fix", async ({ page }) => {
         server.mode = "missing-model";
         const sheet = await reworkWithRealServer(page, "Real — missing model");
-        await expect(sheet.getByText(/fake-model/)).toBeVisible();
-        await expect(sheet.getByText(/doesn't have this model/)).toBeVisible();
+        await expect(sheet.getByText(/^fake-model on the local server.*doesn't have this model/)).toBeVisible();
+        // The fix is offered where the failure is
+        await expect(sheet.getByRole("button", { name: "Use a different model for Rework" })).toBeVisible();
     });
 
     test("leaving Brainstorm mid-reply keeps what arrived, marked incomplete", async ({ page }) => {
@@ -202,6 +224,100 @@ test.describe("against a real model server", () => {
         await expect(page.getByText("Tell me something")).toBeVisible();
         await expect(page.getByText("The server's own words")).toBeVisible();
         await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
+    });
+
+    test("the sheet names the model, and a model chosen there is tried at once and kept for the action", async ({
+        page
+    }) => {
+        server.mode = "by-model";
+        const sheet = await reworkWithRealServer(page, "Real — change model");
+        const storyId = new URL(page.url()).pathname.split("/")[2];
+        const pick = async (name: string) =>
+            page
+                .getByRole("option", { name: new RegExp(name) })
+                .first()
+                .click();
+        try {
+            await expect(sheet.getByText("Model: fake-model (your default model)")).toBeVisible();
+            await expect(sheet.getByText(/reads like the model's notes/)).toBeVisible();
+
+            // From the warning, straight to the model list; choosing tries again with it
+            await sheet.getByRole("button", { name: "Use a different model for Rework" }).click();
+            await pick("alpha-model");
+            await expect(sheet.getByText("A steadier sentence from alpha-model.")).toBeVisible();
+            await expect(sheet.getByText("Model: alpha-model (chosen for all stories)")).toBeVisible();
+            expect(server.lastModel).toBe("alpha-model");
+            // The first attempt is kept, and still says who wrote it
+            await expect(sheet.getByText("Attempt 2 of 2")).toBeVisible();
+            await sheet.getByRole("button", { name: "Previous attempt" }).click();
+            await expect(sheet.getByText("Model: fake-model (your default model)")).toBeVisible();
+            await expect(sheet.getByText(/Revisions made/)).toBeVisible();
+            await sheet.getByRole("button", { name: "Discard" }).click();
+
+            // Rework uses it from now on, and Settings says so
+            await reworkAll(page);
+            await expect(sheet.getByText("A steadier sentence from alpha-model.")).toBeVisible();
+            await expect(sheet.getByText(/reads like the model's notes/)).toHaveCount(0);
+            await sheet.getByRole("button", { name: "Discard" }).click();
+            await page.goto("/settings/actions");
+            await expect(page.getByRole("button", { name: /^Rework/ })).toContainText("built-in · model: alpha-model");
+
+            // A story with its own model for the action: the change is saved there, not under all stories
+            const own = await page.request.put("/api/actions/overrides", {
+                data: { actionId: "rework", storyId, modelRef: "local::local/zeta-model", temperature: 0.3 }
+            });
+            expect(own.ok()).toBe(true);
+            await page.goto(`/story/${storyId}/write`);
+            await reworkAll(page);
+            await expect(sheet.getByText("Model: zeta-model (chosen for this story)")).toBeVisible();
+            await sheet.getByRole("button", { name: "Change model" }).click();
+            await pick("fake-model");
+            await expect(sheet.getByText("Model: fake-model (chosen for this story)")).toBeVisible();
+            expect(server.lastModel).toBe("fake-model");
+            await sheet.getByRole("button", { name: "Discard" }).click();
+
+            // Refused before it started (no model named): the story's own choice is still the one changed
+            await page.route(
+                "**/api/generate/action",
+                route =>
+                    route.fulfill({
+                        status: 422,
+                        contentType: "application/json",
+                        body: JSON.stringify({
+                            error: "Prompt template and output size exceed the model's context window"
+                        })
+                    }),
+                { times: 1 }
+            );
+            await reworkAll(page);
+            await expect(sheet.getByText(/exceed the model's context window/)).toBeVisible();
+            await sheet.getByRole("button", { name: "Use a different model for Rework" }).click();
+            await expect(sheet.getByText(/Model for Rework in this story/)).toBeVisible();
+            await pick("zeta-model");
+            await expect(sheet.getByText("Model: zeta-model (chosen for this story)")).toBeVisible();
+            expect(server.lastModel).toBe("zeta-model");
+
+            const [story] = await (await page.request.get(`/api/actions/overrides?storyId=${storyId}`)).json();
+            // Only the model changed: the story's other settings for the action stay
+            expect(story).toMatchObject({ modelRef: "local::local/zeta-model", temperature: 0.3 });
+            const [global] = await (await page.request.get("/api/actions/overrides")).json();
+            expect(global).toMatchObject({ actionId: "rework", modelRef: "local::local/alpha-model" });
+            await sheet.getByRole("button", { name: "Discard" }).click();
+
+            // Seen from a story, Settings names the model that actually runs: its own, all stories', or the default
+            await page.goto("/settings/actions");
+            await page.getByRole("button", { name: /^This story: / }).click();
+            await expect(page.getByRole("button", { name: /^Rework/ })).toContainText("model: zeta-model");
+            await page.request.delete(`/api/actions/overrides/rework?storyId=${storyId}`);
+            await page.reload();
+            await page.getByRole("button", { name: /^This story: / }).click();
+            await expect(page.getByRole("button", { name: /^Rework/ })).toContainText(
+                "model: alpha-model (all stories)"
+            );
+            await expect(page.getByRole("button", { name: /^Expand/ })).toContainText("model: fake-model (default)");
+        } finally {
+            await page.request.delete("/api/actions/overrides/rework");
+        }
     });
 
     test("a pause mid-stream is shown while it lasts", async ({ page }) => {

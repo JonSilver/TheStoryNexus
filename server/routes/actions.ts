@@ -44,7 +44,7 @@ router.get("/registry", (_req, res) => {
     res.json(Object.values(BUILTIN_ACTIONS));
 });
 
-// Overrides for a scope: global (no storyId) or a story (global + story rows)
+// Overrides for one scope: global (no storyId) or that story's own rows
 router.get(
     "/overrides",
     asyncHandler(async (req, res) => {
@@ -57,7 +57,7 @@ router.get(
     })
 );
 
-// Upsert one override for (actionId, storyId-scope); template validated at save (§5)
+// Upsert one override for (actionId, storyId-scope), field by field; template validated at save (§5)
 router.put(
     "/overrides",
     asyncHandler(async (req, res) => {
@@ -66,17 +66,8 @@ router.put(
             res.status(400).json({ error: "Invalid override", details: parsed.error.issues });
             return;
         }
-        const {
-            actionId,
-            storyId,
-            template,
-            temperature,
-            maxTokens,
-            topP,
-            frequencyPenalty,
-            presencePenalty,
-            modelRef
-        } = parsed.data;
+        const { actionId, storyId, ...fields } = parsed.data;
+        const { template } = fields;
 
         if (template) {
             const result = validateTemplate(template as PromptMessage[], BUILTIN_ACTIONS[actionId].contextNeeds);
@@ -93,24 +84,20 @@ router.put(
         const scope = storyId
             ? and(eq(table.actionId, actionId), eq(table.storyId, storyId))
             : and(eq(table.actionId, actionId), isNull(table.storyId));
-        const values = {
-            template: template ?? null,
-            temperature: temperature ?? null,
-            maxTokens: maxTokens ?? null,
-            topP: topP ?? null,
-            frequencyPenalty: frequencyPenalty ?? null,
-            presencePenalty: presencePenalty ?? null,
-            modelRef: modelRef ?? null
-        };
+        // A field left out keeps what's stored (e.g. a model chosen from the sheet keeps the template); null clears it
+        const given = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
         // Synchronous transaction makes the check-and-write atomic — the NULL
         // storyId scope can't be enforced by the unique index (SQLite treats
         // NULLs as distinct), so concurrent global saves must serialise here
         const row = db.transaction(tx => {
             const [existing] = tx.select().from(table).where(scope).all().slice(0, 1);
-            if (existing) return tx.update(table).set(values).where(eq(table.id, existing.id)).returning().get();
+            if (existing)
+                return Object.keys(given).length
+                    ? tx.update(table).set(given).where(eq(table.id, existing.id)).returning().get()
+                    : existing;
             return tx
                 .insert(table)
-                .values({ id: crypto.randomUUID(), actionId, storyId, createdAt: new Date(), ...values })
+                .values({ id: crypto.randomUUID(), actionId, storyId, createdAt: new Date(), ...given })
                 .returning()
                 .get();
         });
