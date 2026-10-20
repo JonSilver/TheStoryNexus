@@ -203,7 +203,7 @@ The script automatically bumps the version, pushes to GitHub, and opens the rele
 
 ### Story backup (JSON)
 
-**Story → Export → JSON (backup)** downloads one story with its chapters, story bible, notes, brainstorm chats, per-story AI overrides and images. Restore it from **Story → Switch story → JSON**; it comes back as a new story titled "… (Imported)", restored all-or-nothing.
+**Story → Export → JSON (backup)** downloads one story with its chapters, story bible, notes, brainstorm chats, per-story AI overrides and images. Restore it from **Story → Switch story → JSON**; it comes back as a new story titled "… (Imported)", restored all-or-nothing. To copy a story without the round trip, **Story → Duplicate this story…** makes the same copy in one step and keeps it in the story's series.
 
 ### Series backup (JSON)
 

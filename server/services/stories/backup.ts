@@ -5,8 +5,8 @@
  */
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "../../db/client.js";
-import { readStoryAssets } from "../assets/storage.js";
-import type { SeriesImportRows, StoryImportRows } from "./portable.js";
+import { readStoryAssets, writeStoryAssets } from "../assets/storage.js";
+import { buildStoryImport, type SeriesImportRows, type StoryBackup, type StoryImportRows } from "./portable.js";
 
 export const exportStoryBackup = async (storyId: string) => {
     const [story] = await db.select().from(schema.stories).where(eq(schema.stories.id, storyId));
@@ -76,7 +76,7 @@ const insertStoryRows = (tx: Tx, rows: StoryImportRows) => {
 };
 
 /** All-or-nothing: a half-restored backup is worse than none. */
-export const commitStoryImport = (rows: StoryImportRows) => db.transaction(tx => insertStoryRows(tx, rows));
+const commitStoryImport = (rows: StoryImportRows) => db.transaction(tx => insertStoryRows(tx, rows));
 
 export const commitSeriesImport = (rows: SeriesImportRows) =>
     db.transaction(tx => {
@@ -84,3 +84,32 @@ export const commitSeriesImport = (rows: SeriesImportRows) =>
         if (rows.lorebookEntries.length) tx.insert(schema.lorebookEntries).values(rows.lorebookEntries).run();
         for (const story of rows.stories) insertStoryRows(tx, story.rows);
     });
+
+/**
+ * A story backup made into a new story — a restored file or a duplicate — all
+ * or nothing, then its images; any that can't be written are reported.
+ */
+export const restoreStory = async (
+    backup: StoryBackup,
+    options: { seriesId?: string | null; title?: string; titleSuffix?: string } = {}
+) => {
+    const storyId = crypto.randomUUID();
+    const rows = buildStoryImport(backup, storyId, () => crypto.randomUUID(), new Date(), options);
+    if (options.title) rows.story.title = options.title;
+    commitStoryImport(rows);
+    const assetsFailed = await writeStoryAssets(storyId, backup.assets ?? []);
+    return {
+        success: true,
+        storyId,
+        title: rows.story.title,
+        imported: {
+            chapters: rows.chapters.length,
+            lorebookEntries: rows.lorebookEntries.length,
+            aiChats: rows.aiChats.length,
+            notes: rows.notes.length,
+            actionOverrides: rows.actionOverrides.length,
+            assets: (backup.assets ?? []).length - assetsFailed.length
+        },
+        assetsFailed
+    };
+};

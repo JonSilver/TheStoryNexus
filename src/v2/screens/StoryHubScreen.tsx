@@ -2,6 +2,7 @@ import {
     BookOpen,
     BookOpenText,
     ChevronRight,
+    Copy,
     Download,
     Library,
     ListOrdered,
@@ -9,11 +10,16 @@ import {
     SlidersHorizontal,
     Trash2
 } from "lucide-react";
+import { toast } from "react-toastify";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useSingleSeriesQuery } from "@/features/series/hooks/useSeriesQuery";
-import { useDeleteStoryMutation, useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
-import { useConfirm } from "../components/Dialogs";
+import {
+    useDeleteStoryMutation,
+    useDuplicateStoryMutation,
+    useStoryQuery
+} from "@/features/stories/hooks/useStoriesQuery";
+import { useConfirm, usePrompt } from "../components/Dialogs";
 import { EmptyState } from "../components/ScreenParts";
 import { useNav } from "../routing";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
@@ -35,7 +41,9 @@ export const StoryHubScreen = () => {
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);
     const { data: entries } = useHierarchicalLorebookQuery(currentStoryId ?? undefined);
     const deleteStory = useDeleteStoryMutation();
+    const duplicateStory = useDuplicateStoryMutation();
     const confirm = useConfirm();
+    const prompt = usePrompt();
 
     const wordCount = (chapters ?? []).reduce((sum, c) => sum + (c.wordCount ?? 0), 0);
 
@@ -50,6 +58,27 @@ export const StoryHubScreen = () => {
                 goTo("library");
             }
         });
+    };
+
+    const duplicate = async () => {
+        if (!story) return;
+        const title = await prompt({
+            title: "Duplicate story",
+            label: "Title of the copy",
+            initial: `${story.title} (copy)`,
+            confirmLabel: "Duplicate"
+        });
+        if (!title) return;
+        duplicateStory.mutate(
+            { id: story.id, title },
+            {
+                onSuccess: ({ storyId, assetsFailed }) => {
+                    if (assetsFailed.length > 0)
+                        toast.error(`${assetsFailed.length} image(s) couldn't be copied: ${assetsFailed.join(", ")}`);
+                    goTo("story", { storyId });
+                }
+            }
+        );
     };
 
     if (!currentStoryId)
@@ -123,9 +152,17 @@ export const StoryHubScreen = () => {
 
             <button
                 type="button"
+                onClick={duplicate}
+                disabled={!story || duplicateStory.isPending}
+                className="mt-auto flex w-full items-center gap-3 px-4 py-3 text-left text-sm disabled:opacity-50"
+            >
+                <Copy className="h-4 w-4" /> {duplicateStory.isPending ? "Duplicating…" : "Duplicate this story…"}
+            </button>
+            <button
+                type="button"
                 onClick={removeStory}
                 disabled={deleteStory.isPending}
-                className="mt-auto flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-destructive disabled:opacity-50"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-destructive disabled:opacity-50"
             >
                 <Trash2 className="h-4 w-4" /> Delete this story…
             </button>

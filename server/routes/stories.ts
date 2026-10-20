@@ -3,10 +3,10 @@ import { and, eq } from "drizzle-orm";
 import multer from "multer";
 import { db, schema } from "../db/client.js";
 import { createCrudRouter } from "../lib/crud.js";
-import { deleteStoryAssets, writeStoryAssets } from "../services/assets/storage.js";
+import { deleteStoryAssets } from "../services/assets/storage.js";
 import { generateEpub } from "../services/epubGenerator.js";
-import { commitStoryImport, exportStoryBackup } from "../services/stories/backup.js";
-import { type StoryBackup, buildStoryImport } from "../services/stories/portable.js";
+import { exportStoryBackup, restoreStory } from "../services/stories/backup.js";
+import type { StoryBackup } from "../services/stories/portable.js";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 250 * 1024 * 1024 } });
 
@@ -68,38 +68,40 @@ export default createCrudRouter({
                     return;
                 }
 
-                const backup = storyData as StoryBackup;
-                const newStoryId = crypto.randomUUID();
-                const rows = buildStoryImport(backup, newStoryId, () => crypto.randomUUID(), new Date());
-
-                // All-or-nothing: a half-restored backup is worse than none.
-                // better-sqlite3 transactions are synchronous — .run() each insert.
-                const [error] = await attemptPromise(async () => commitStoryImport(rows));
-
+                // All-or-nothing: a half-restored backup is worse than none
+                const [error, restored] = await attemptPromise(() => restoreStory(storyData as StoryBackup));
                 if (error) {
                     console.error("Error importing story:", error);
                     res.status(500).json({ error: "Failed to import story", details: error.message });
                     return;
                 }
+                res.json(restored);
+            })
+        );
 
-                // Images go after the commit; any that can't be restored are
-                // reported, never silently dropped
-                const assetsFailed = await writeStoryAssets(newStoryId, backup.assets ?? []);
-
-                res.json({
-                    success: true,
-                    storyId: newStoryId,
-                    title: rows.story.title,
-                    imported: {
-                        chapters: rows.chapters.length,
-                        lorebookEntries: rows.lorebookEntries.length,
-                        aiChats: rows.aiChats.length,
-                        notes: rows.notes.length,
-                        actionOverrides: rows.actionOverrides.length,
-                        assets: (backup.assets ?? []).length - assetsFailed.length
-                    },
-                    assetsFailed
-                });
+        // An independent copy, carrying exactly what a backup carries — and, unlike a restore, its series
+        router.post(
+            "/:id/duplicate",
+            asyncHandler(async (req, res) => {
+                const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 500) : "";
+                const backup = await exportStoryBackup(req.params.id);
+                if (!backup) {
+                    res.status(404).json({ error: "Story not found" });
+                    return;
+                }
+                const [error, copy] = await attemptPromise(() =>
+                    restoreStory(backup, {
+                        seriesId: backup.story.seriesId,
+                        titleSuffix: " (copy)",
+                        ...(title && { title })
+                    })
+                );
+                if (error) {
+                    console.error("Error duplicating story:", error);
+                    res.status(500).json({ error: "Couldn't duplicate the story", details: error.message });
+                    return;
+                }
+                res.json(copy);
             })
         );
 
