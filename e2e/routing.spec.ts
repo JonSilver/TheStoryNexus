@@ -100,3 +100,51 @@ test("a chapter the server won't return says so and offers to try again", async 
     await expect(editorLocator(page)).toBeVisible();
     await expect(page).toHaveURL(chapterUrl);
 });
+
+test("every screen about a story names it; tab screens have no back, the screens under them do", async ({ page }) => {
+    const header = page.locator("header");
+    const back = page.getByRole("button", { name: /^Back/ });
+    // No story open yet: the library is the starting point, with nowhere to go back to
+    await page.goto("/library");
+    await expect(header.getByRole("heading", { name: "Library" })).toBeVisible();
+    await expect(back).toHaveCount(0);
+
+    await createStoryAndChapter(page, "Context — Ashford", "One");
+    const storyId = new URL(page.url()).pathname.split("/")[2];
+
+    await expect(page.getByLabel("Chapter", { exact: true })).toBeVisible();
+    await expect(back).toHaveCount(0);
+    await page.getByRole("button", { name: "Brainstorm" }).click();
+    await expect(header.getByRole("heading", { name: "Brainstorm" })).toBeVisible();
+    await expect(header.getByText("Context — Ashford")).toBeVisible();
+    await expect(back).toHaveCount(0);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Story Bible" })).toBeVisible();
+    await expect(back).toHaveCount(0);
+    await page.getByRole("button", { name: "Settings" }).click();
+    await expect(page.getByRole("button", { name: "AI providers & models" })).toBeVisible();
+    await expect(back).toHaveCount(0);
+
+    for (const screen of ["Chapters", "Story Bible", "Notes", "Read"]) {
+        await page.getByRole("button", { name: "Story", exact: true }).click();
+        await page.getByRole("button", { name: screen }).click();
+        await expect(header.getByRole("heading", { name: screen })).toBeVisible();
+        await expect(header.getByText("Context — Ashford")).toBeVisible();
+        await expect(back).toHaveCount(1);
+    }
+
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Switch story" }).click();
+    await expect(back).toHaveCount(1);
+
+    // Opened fresh, with nothing behind it, back still lands on the screen above
+    const fresh = await page.context().newPage();
+    await fresh.goto(`/story/${storyId}/notes`);
+    await fresh.getByRole("button", { name: "Back" }).click();
+    await expect(fresh).toHaveURL(new RegExp(`/story/${storyId}$`));
+    await fresh.close();
+
+    // Per-story AI settings say which story
+    await page.goto("/settings/actions");
+    await expect(page.getByRole("button", { name: "This story: Context — Ashford" })).toBeEnabled();
+});

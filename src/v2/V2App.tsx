@@ -82,7 +82,7 @@ const Embedded = ({ title, children }: { title: string; children: (goTo: (tool: 
 };
 
 const StoryNotFound = () => {
-    const { goTo } = useNav();
+    const { navigate } = useNav();
     return (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
             <p className="text-muted-foreground">That story doesn't exist — it may have been deleted.</p>
@@ -91,7 +91,8 @@ const StoryNotFound = () => {
                 className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
                 onClick={() => {
                     uiState.setCurrentStory(null);
-                    goTo("library");
+                    // Replaces the dead address, so back can't return to it
+                    navigate(pathFor("library", null), { replace: true });
                 }}
             >
                 Open the library

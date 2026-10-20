@@ -1,14 +1,21 @@
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
-/** A screen's top bar: back, title, and its own actions on the right. */
+/**
+ * A screen's top bar: back, title, and its own actions on the right. The
+ * bottom-tab screens (Write, Brainstorm, Story, Settings) have no back; every
+ * screen reached from one does. Screens about a story name it above the title.
+ */
 export const ScreenHeader = ({
     title,
+    story,
     onBack,
     backLabel = "Back",
     children
 }: {
     title: ReactNode;
+    /** The story this screen is about. */
+    story?: string;
     onBack?: () => void;
     backLabel?: string;
     /** Actions, right-aligned. */
@@ -20,7 +27,10 @@ export const ScreenHeader = ({
                 <ArrowLeft className="h-5 w-5" />
             </button>
         )}
-        <h1 className="min-w-0 truncate text-lg font-semibold">{title}</h1>
+        <div className="min-w-0">
+            {story && <p className="truncate text-xs text-muted-foreground">{story}</p>}
+            <h1 className="truncate text-lg font-semibold">{title}</h1>
+        </div>
         {children && <div className="ml-auto flex shrink-0 items-center gap-2">{children}</div>}
     </header>
 );
