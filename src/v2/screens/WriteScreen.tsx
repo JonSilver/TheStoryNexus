@@ -36,7 +36,12 @@ export const WriteScreen = () => {
     const currentChapterId =
         resumeId && orderedChapters.some(c => c.id === resumeId) ? resumeId : (orderedChapters[0]?.id ?? null);
 
-    const { data: chapter, isLoading: chapterLoading } = useChapterQuery(currentChapterId ?? "");
+    const {
+        data: chapter,
+        isLoading: chapterLoading,
+        isError: chapterFailed,
+        refetch: refetchChapter
+    } = useChapterQuery(currentChapterId ?? "");
 
     if (!currentStoryId)
         return (
@@ -66,6 +71,14 @@ export const WriteScreen = () => {
     // The URL names the chapter actually shown: filled in, or a stale/unknown id corrected, without a history entry
     if (route.storyId && route.chapterId !== currentChapterId)
         return <Navigate replace to={pathFor("write", route.storyId, currentChapterId)} />;
+    if (chapterFailed)
+        return (
+            <EmptyState
+                message="Couldn't open this chapter — the server didn't answer. Your work is safe on disk."
+                actionLabel="Try again"
+                onAction={() => void refetchChapter()}
+            />
+        );
     if (!chapter) return <Spinner />;
 
     return (

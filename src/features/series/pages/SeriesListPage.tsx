@@ -29,7 +29,16 @@ const SeriesListPage = ({ onOpenSeries }: { onOpenSeries?: () => void }) => {
     const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        if (file) importSeries.mutate(file, { onSuccess: series => toast.success(`Imported “${series.name}”`) });
+        if (file)
+            importSeries.mutate(file, {
+                onSuccess: ({ imported, assetsFailed }) => {
+                    toast.success(
+                        `Series restored — ${imported.stories} stor${imported.stories === 1 ? "y" : "ies"}, ${imported.lorebookEntries} series bible entr${imported.lorebookEntries === 1 ? "y" : "ies"}`
+                    );
+                    if (assetsFailed.length > 0)
+                        toast.error(`${assetsFailed.length} image(s) couldn't be restored: ${assetsFailed.join(", ")}`);
+                }
+            });
     };
 
     if (isLoading) return <div>Loading series...</div>;
