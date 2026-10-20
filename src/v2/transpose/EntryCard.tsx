@@ -3,6 +3,8 @@ import { RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { AttemptNav } from "../ai/AttemptNav";
 import { GenerationProgress } from "../ai/GenerationProgress";
+import { SheetModelLine } from "../ai/SheetModelLine";
+import { useSheetModel } from "../ai/useSheetModel";
 import type { EntryState, EntryValue } from "./state";
 import { useDraftEdits } from "./useDraftEdits";
 import type { useEntryDrafting } from "./useEntryDrafting";
@@ -47,6 +49,16 @@ export const EntryCard = ({
     const running = drafting.running === entryId;
     const busy = drafting.running !== null || drafting.progress !== null;
     const decided = entry.status !== "pending" && !reopened;
+    const failed = drafting.errors[entryId];
+    const [choosingModel, setChoosingModel] = useState(false);
+    // Choosing another model saves it for this action, then tries this entry again with it
+    const model = useSheetModel({
+        action: { id: "transpose_entry", label: "Transpose: Bible Entry" },
+        storyId: drafting.storyId,
+        generation: drafting.generation,
+        attempts: { currentModel: null },
+        onAgain: () => void drafting.draft(entryId)
+    });
     const { original } = entry;
     const decide = (op: "acceptEntry" | "keepEntry") =>
         drafting.apply.mutate(
@@ -104,7 +116,48 @@ export const EntryCard = ({
                             )}
                         </div>
                     )}
-                    {drafting.errors[entryId] && <p className="text-xs text-destructive">{drafting.errors[entryId]}</p>}
+                    {failed && (
+                        <div className="space-y-2 text-xs">
+                            <p className="text-destructive">{failed}</p>
+                            {drafting.unreadable[entryId] && (
+                                <div className="space-y-1">
+                                    <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-2">
+                                        {drafting.unreadable[entryId]}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => void drafting.takeReply(entryId)}
+                                        className="rounded-md border bg-background px-2 py-1"
+                                    >
+                                        Use it as a draft
+                                    </button>
+                                </div>
+                            )}
+                            {busy ? (
+                                <p className="text-muted-foreground">
+                                    The other entries are still being transposed — Stop that to try this one again now.
+                                </p>
+                            ) : (
+                                model && (
+                                    <SheetModelLine
+                                        model={model}
+                                        choosing={choosingModel}
+                                        onChoosing={setChoosingModel}
+                                        canChange
+                                    />
+                                )
+                            )}
+                            {!busy && !choosingModel && (
+                                <button
+                                    type="button"
+                                    onClick={() => setChoosingModel(true)}
+                                    className="rounded-md border bg-background px-2 py-1"
+                                >
+                                    Use a different model for Transpose: Bible Entry
+                                </button>
+                            )}
+                        </div>
+                    )}
                     {(drafting.unsaved[entryId]?.length ?? 0) > 0 && (
                         <p role="alert" className="text-xs">
                             A draft hasn't been saved yet, and will be lost if you leave this screen.{" "}
@@ -131,7 +184,7 @@ export const EntryCard = ({
                             className="flex items-center gap-1 rounded-md border px-3 py-1.5 disabled:opacity-50"
                         >
                             {drafts.length > 0 && <RotateCcw className="h-3.5 w-3.5" />}
-                            {drafts.length ? "Try again" : "Transpose"}
+                            {drafts.length || failed ? "Try again" : "Transpose"}
                         </button>
                         <button
                             type="button"
