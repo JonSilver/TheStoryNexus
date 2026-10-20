@@ -30,7 +30,8 @@ export const ModelSelector = ({
     onChange,
     noneLabel,
     id,
-    ariaLabel = "Model"
+    ariaLabel = "Model",
+    defaultOpen = false
 }: {
     value: ModelChoice | null;
     onChange: (next: ModelChoice | null) => void;
@@ -38,8 +39,10 @@ export const ModelSelector = ({
     noneLabel?: string;
     id?: string;
     ariaLabel?: string;
+    /** Opens the list straight away — when the writer has just asked to change the model. */
+    defaultOpen?: boolean;
 }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(defaultOpen);
     const { data: settings } = useAISettingsQuery();
     const toggleFavourite = useToggleFavouriteModel();
     const models = settings?.availableModels ?? [];

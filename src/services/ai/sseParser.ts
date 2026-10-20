@@ -1,6 +1,8 @@
+import type { AnsweredModel } from "@/types/actions";
+
 /**
  * Incremental parser for the server's generation SSE stream
- * (event: status | token | error | finish | aborted). Buffers across chunk
+ * (event: model | status | token | error | finish | aborted). Buffers across chunk
  * boundaries, tolerates CRLF, and treats stream end without a terminal
  * frame as an error — truncated output must never pass as success.
  */
@@ -14,6 +16,8 @@ export interface GenerationStatus {
 }
 
 export interface SSEHandlers {
+    /** Which model is answering — sent once, before anything else. */
+    onModel?: (model: AnsweredModel) => void;
     /** Heartbeat while waiting on the provider — which phase, and for how long. */
     onStatus?: (status: GenerationStatus) => void;
     onToken: (text: string) => void;
@@ -28,7 +32,14 @@ export interface SSEParser {
     end: () => void;
 }
 
-export const createSSEParser = ({ onStatus, onToken, onComplete, onAborted, onError }: SSEHandlers): SSEParser => {
+export const createSSEParser = ({
+    onModel,
+    onStatus,
+    onToken,
+    onComplete,
+    onAborted,
+    onError
+}: SSEHandlers): SSEParser => {
     const state = { buffer: "", terminated: false };
 
     const dispatchFrame = (frame: string): void => {
@@ -48,6 +59,9 @@ export const createSSEParser = ({ onStatus, onToken, onComplete, onAborted, onEr
         if (data === null) return;
 
         switch (eventMatch[1]) {
+            case "model":
+                if (data?.provider && data?.modelId) onModel?.(data as AnsweredModel);
+                return;
             case "status":
                 if (data?.phase)
                     onStatus?.({

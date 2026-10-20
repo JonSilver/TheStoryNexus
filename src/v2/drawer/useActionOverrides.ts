@@ -42,3 +42,16 @@ export const useResetOverride = () => {
         await attemptPromise(() => mutation.mutateAsync({ actionId, storyId }));
     };
 };
+
+/** Gives an action a model in one scope, leaving the rest of its override as it is. Resolves true when saved. */
+export const useSetActionModel = () => {
+    const queryClient = useQueryClient();
+    const mutation = useMutation({
+        mutationFn: (payload: Pick<OverridePayload, "actionId" | "storyId" | "modelRef">) =>
+            actionsApi.saveOverride(payload),
+        onSuccess: () => void queryClient.invalidateQueries({ queryKey: actionKeys.overrides }),
+        meta: { failure: "Couldn't change the model" }
+    });
+    return async (payload: Pick<OverridePayload, "actionId" | "storyId" | "modelRef">) =>
+        !(await attemptPromise(() => mutation.mutateAsync(payload)))[0];
+};

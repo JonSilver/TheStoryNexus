@@ -20,6 +20,13 @@ describe("createSSEParser", () => {
         expect(onError).not.toHaveBeenCalled();
     });
 
+    it("reports which model is answering", () => {
+        const onModel = vi.fn();
+        const parser = createSSEParser({ onModel, onToken: vi.fn(), onComplete: vi.fn(), onError: vi.fn() });
+        parser.push('event: model\ndata: {"provider":"local","modelId":"local/m","source":"global"}\n\n');
+        expect(onModel).toHaveBeenCalledWith({ provider: "local", modelId: "local/m", source: "global" });
+    });
+
     it("buffers frames split across chunk boundaries", () => {
         const { tokens, onComplete, parser } = collect();
         parser.push("event: tok");

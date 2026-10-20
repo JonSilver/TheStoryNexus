@@ -22,6 +22,7 @@ import { checkReply, type ReplyAction } from "./replyCheck";
 import { SELECTION_ACTIONS, type SelectionActionId } from "./selectionActions";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 import { useAttempts } from "./useAttempts";
+import { useSheetModel } from "./useSheetModel";
 
 type ActionKind = "selection" | "continue" | "summarise" | "ask";
 
@@ -29,6 +30,8 @@ interface ActiveAction {
     id: ActionId;
     title: string;
     kind: ActionKind;
+    /** The action's name where its model is offered: "Use a different model for Rework". */
+    label: string;
 }
 
 const ACCEPT_LABELS: Record<ActionKind, string> = {
@@ -68,7 +71,8 @@ export const useEditorActions = (chapter: Chapter) => {
             lastRun.current = { actionId, editorContext: editorContext ?? {} };
             void runGeneration({ actionId, storyId: chapter.storyId, chapterId: chapter.id, editorContext }).then(
                 result => {
-                    if (result.outcome !== "superseded") record(result.text, result.outcome !== "complete");
+                    if (result.outcome !== "superseded")
+                        record(result.text, result.outcome !== "complete", result.model);
                 }
             );
         },
@@ -103,7 +107,7 @@ export const useEditorActions = (chapter: Chapter) => {
         (actionId: SelectionActionId) => {
             if (!holdSelection()) return;
             const { label } = SELECTION_ACTIONS.find(action => action.actionId === actionId) ?? { label: actionId };
-            setActive({ id: actionId, title: label, kind: "selection" });
+            setActive({ id: actionId, title: label, kind: "selection", label });
             runAttempt(actionId, {
                 ...baseContext(),
                 selection: savedSelectionText.current,
@@ -117,7 +121,7 @@ export const useEditorActions = (chapter: Chapter) => {
     // what to do, then run the ask action with their instruction
     const onAsk = useCallback(() => {
         if (!holdSelection()) return;
-        setActive({ id: "ask", title: "Ask about this passage", kind: "ask" });
+        setActive({ id: "ask", title: "Ask about this passage", kind: "ask", label: "Ask" });
         setAskPending(true);
     }, [holdSelection]);
 
@@ -166,7 +170,7 @@ export const useEditorActions = (chapter: Chapter) => {
 
     const onSummarise = useCallback(() => {
         clearAttempts();
-        setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise" });
+        setActive({ id: "summarise_chapter", title: "Summarise chapter", kind: "summarise", label: "Summarise" });
         const mine = ++session.current;
         void (async () => {
             // The model must see what the writer sees: force the debounced
@@ -251,9 +255,14 @@ export const useEditorActions = (chapter: Chapter) => {
             ? {
                   concerns: check.concerns,
                   // A new attempt: the full reply stays one tap away
-                  removeNotes: proseOnly === null ? undefined : () => record(proseOnly, attempts.currentPartial)
+                  removeNotes:
+                      proseOnly === null
+                          ? undefined
+                          : () => record(proseOnly, attempts.currentPartial, attempts.currentModel ?? undefined)
               }
             : null;
+
+    const model = useSheetModel({ action: active, storyId: chapter.storyId, generation, attempts, onAgain });
 
     return {
         // The saved selection is positional: the document stays frozen while a
@@ -270,6 +279,7 @@ export const useEditorActions = (chapter: Chapter) => {
             attemptCount: attempts.count,
             attemptPartial: attempts.currentPartial,
             suspect,
+            model,
             onSelectAttempt: attempts.select,
             onAgain: active && !askPending ? onAgain : undefined,
             error: generation.error,

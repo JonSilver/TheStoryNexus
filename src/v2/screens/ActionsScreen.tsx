@@ -2,10 +2,23 @@ import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { ScreenHeader } from "../components/ScreenParts";
 import { OverrideEditor } from "../drawer/OverrideEditor";
-import { type ActionDefinition, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
+import { type ActionDefinition, type OverrideRow, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
 import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
+
+const CUSTOMISABLE = ["template", "temperature", "maxTokens", "topP", "frequencyPenalty", "presencePenalty"] as const;
+
+/** "built-in", "customised", and the action's own model when it has one ("provider::modelId"). */
+const describeOverride = (override: OverrideRow | null) => {
+    const customised = CUSTOMISABLE.some(key => override?.[key] !== null && override?.[key] !== undefined);
+    const model = override?.modelRef
+        ?.split("::")
+        .slice(1)
+        .join("::")
+        .replace(/^local\//, "");
+    return [customised ? "customised" : "built-in", model && `model: ${model}`].filter(Boolean).join(" · ");
+};
 
 /**
  * The advanced drawer (contracts Phase 8): per-action template and parameter
@@ -59,7 +72,7 @@ export const ActionsScreen = () => {
                                 <div className="min-w-0 flex-1">
                                     <p className="font-medium">{def.label}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {override ? "customised" : "built-in"}
+                                        {describeOverride(override)}
                                         {def.voiceApplies ? " · uses story voice" : ""}
                                     </p>
                                 </div>

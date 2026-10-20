@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GenerationStatus } from "@/services/ai/sseParser";
 import { abortGeneration, streamGeneration } from "@/services/api/generation";
-import type { ActionEditorContext, ActionId } from "@/types/actions";
+import type { ActionEditorContext, ActionId, AnsweredModel } from "@/types/actions";
 import { randomUUID } from "@/utils/crypto";
 
 export type { ActionEditorContext, ActionId };
@@ -23,6 +23,8 @@ export interface RunResult {
     text: string;
     outcome: "complete" | "stopped" | "failed" | "superseded";
     error?: string;
+    /** The model that answered, when the server said. */
+    model?: AnsweredModel;
 }
 
 /**
@@ -34,6 +36,7 @@ export const useActionGeneration = () => {
     const [text, setText] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<GenerationStatus | null>(null);
+    const [model, setModel] = useState<AnsweredModel | null>(null);
     const active = useRef<{ requestId: string; controller: AbortController } | null>(null);
 
     const unmounted = useRef(false);
@@ -72,6 +75,7 @@ export const useActionGeneration = () => {
         setText("");
         setError(null);
         setStatus(null);
+        setModel(null);
     }, []);
 
     const run = useCallback(
@@ -84,8 +88,10 @@ export const useActionGeneration = () => {
             setText("");
             setError(null);
             setStatus({ phase: "waiting", elapsedMs: 0 });
+            setModel(null);
 
             const chunks: string[] = [];
+            const answered: { model?: AnsweredModel } = {};
             // Only the request that still owns `active` may touch state —
             // a superseded run's late callbacks must not clobber its successor
             const owns = () => active.current?.requestId === requestId;
@@ -94,6 +100,10 @@ export const useActionGeneration = () => {
                 { requestId, ...request },
                 {
                     signal: controller.signal,
+                    onModel: next => {
+                        answered.model = next;
+                        if (owns()) setModel(next);
+                    },
                     onStatus: next => {
                         if (owns()) setStatus(next);
                     },
@@ -117,20 +127,22 @@ export const useActionGeneration = () => {
             // Left mid-stream (the screen closed): what arrived is still the writer's — callers
             // that persist (Brainstorm) keep it; no state is touched on the unmounted hook
             if (!owns())
-                return unmounted.current && text ? { text, outcome: "stopped" } : { text: "", outcome: "superseded" };
+                return unmounted.current && text
+                    ? { text, outcome: "stopped", model: answered.model }
+                    : { text: "", outcome: "superseded" };
             active.current = null;
             if (ended.end === "failed") {
                 // A failure keeps whatever text arrived first — callers decide how to offer it
                 setPhase("error");
                 setError(ended.error);
-                return { text, outcome: "failed", error: ended.error };
+                return { text, outcome: "failed", error: ended.error, model: answered.model };
             }
             // Stopped mid-stream: what arrived is the writer's to accept or discard
             setPhase("done");
-            return { text, outcome: ended.end === "complete" ? "complete" : "stopped" };
+            return { text, outcome: ended.end === "complete" ? "complete" : "stopped", model: answered.model };
         },
         [abort]
     );
 
-    return { phase, text, error, status: phase === "streaming" ? status : null, run, abort, reset };
+    return { phase, text, error, status: phase === "streaming" ? status : null, model, run, abort, reset };
 };

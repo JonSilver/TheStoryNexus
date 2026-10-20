@@ -97,18 +97,20 @@ type ActionDef = {
 
 **Guidance** (`editorContext.guidance`, ≤5,000 chars): an optional free-text writer instruction accepted by scene_beat, continue, rework, expand and shorten. Appended as a final user message ("Additional instruction from the writer — follow it: …"). Powers refine-with-guidance on takes, ghost suggestions and action sheets.
 
-Overrides table `actionOverrides { id, actionId, storyId | null, template?, temperature?, maxTokens?, topP?, frequencyPenalty?, presencePenalty?, modelRef? }` — `storyId: null` = global. Unset samplers are not sent to the provider (the model server's own tuning applies); knobs outside the OpenAI-compatible surface (top_k, min_p, repeat_penalty, mirostat) are the model server's job — e.g. an Ollama Modelfile. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
+Overrides table `actionOverrides { id, actionId, storyId | null, template?, temperature?, maxTokens?, topP?, frequencyPenalty?, presencePenalty?, modelRef? }` — `storyId: null` = global. Unset samplers are not sent to the provider (the model server's own tuning applies); knobs outside the OpenAI-compatible surface (top_k, min_p, repeat_penalty, mirostat) are the model server's job — e.g. an Ollama Modelfile. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). A save (`PUT /api/actions/overrides`) is field by field: a field left out keeps its stored value, `null` clears it — so the result sheet can change only an action's model. The resolver reports which scope chose the model (`modelScope`); a model changed from the sheet is saved to that scope (a story's own choice would otherwise outrank an all-stories change). Decision 2026-10-20. UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
 
 ## 6. Generation API
 
 ```
 POST /api/generate/action
 { requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory? }, modelRef? }
-→ SSE: event: status {phase, elapsedMs, idleMs?} | token {text} | finish | error {message} | aborted
+→ SSE: event: model {provider, modelId, source} (first) | status {phase, elapsedMs, idleMs?} | token {text} | finish | error {message} | aborted
 POST /api/generate/preview  — same body minus requestId; returns resolved messages + model + prompt token count (the inspector)
 POST /api/generate/abort { requestId }
 POST /api/generate          — raw-messages mode, v1-frontend compatibility only; deleted at cutover
 ```
+
+`model.source` says what chose the model: `request` (the body's `modelRef`), `story` / `global` (that scope's override for the action), or `default` (the app default). The action sheets show it per attempt and offer **Change model** / **Use a different model for <action>** there (decision 2026-10-20: the need for a better model arises at a bad reply, not in Settings).
 
 (Deviation log: a `usage` event is not emitted — nothing consumes it; add if a consumer appears.)
 

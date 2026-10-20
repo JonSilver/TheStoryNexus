@@ -5,6 +5,7 @@ import { BottomSheet } from "../components/BottomSheet";
 import { AttemptNav } from "./AttemptNav";
 import { GenerationProgress } from "./GenerationProgress";
 import { RefineInput } from "./RefineInput";
+import { type SheetModel, SheetModelLine } from "./SheetModelLine";
 import type { GenerationPhase } from "./useActionGeneration";
 
 /**
@@ -22,6 +23,7 @@ export const ActionSheet = ({
     attemptCount = 0,
     attemptPartial = false,
     suspect = null,
+    model = null,
     onSelectAttempt,
     onAgain,
     acceptLabel = "Accept",
@@ -43,6 +45,8 @@ export const ActionSheet = ({
     attemptPartial?: boolean;
     /** The shown reply may be more than prose: why, and (when notes were found) the reply without them. */
     suspect?: { concerns: string[]; removeNotes?: () => void } | null;
+    /** Which model wrote it, and changing the action's model from here. */
+    model?: SheetModel | null;
     onSelectAttempt?: (index: number) => void;
     /** Run the same request again — after a failure or an unusable result. */
     onAgain?: () => void;
@@ -54,6 +58,17 @@ export const ActionSheet = ({
     inputRequest?: { placeholder: string; onSubmit: (value: string) => void } | null;
 }) => {
     const [draft, setDraft] = useState("");
+    const [choosingModel, setChoosingModel] = useState(false);
+    const settled = phase === "done" || phase === "error";
+    const differentModel = model && settled && (
+        <button
+            type="button"
+            onClick={() => setChoosingModel(true)}
+            className="rounded-md border bg-background px-2 py-1 text-xs"
+        >
+            Use a different model for {model.actionLabel}
+        </button>
+    );
 
     const submitDraft = () => {
         if (!draft.trim() || !inputRequest) return;
@@ -126,6 +141,14 @@ export const ActionSheet = ({
                 </>
             }
         >
+            {model && !(phase === "idle" && inputRequest) && (
+                <SheetModelLine
+                    model={model}
+                    choosing={choosingModel}
+                    onChoosing={setChoosingModel}
+                    canChange={settled}
+                />
+            )}
             <div className="min-h-[8rem] whitespace-pre-wrap px-4 pb-3 text-sm leading-relaxed">
                 {phase === "idle" && inputRequest ? (
                     <textarea
@@ -151,13 +174,16 @@ export const ActionSheet = ({
                 ) : (
                     <>
                         {error && (
-                            <p className="mb-2 text-destructive">
-                                {error}
-                                {attemptCount > 0 &&
-                                    (attemptPartial
-                                        ? " What arrived is below."
-                                        : " Your earlier result is still here.")}
-                            </p>
+                            <div className="mb-2 space-y-2 whitespace-normal">
+                                <p className="text-destructive">
+                                    {error}
+                                    {attemptCount > 0 &&
+                                        (attemptPartial
+                                            ? " What arrived is below."
+                                            : " Your earlier result is still here.")}
+                                </p>
+                                {differentModel}
+                            </div>
                         )}
                         {text && suspect && (
                             <div
@@ -165,15 +191,18 @@ export const ActionSheet = ({
                                 className="mb-2 space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs whitespace-normal"
                             >
                                 <p>Check this before you use it: {suspect.concerns.join("; ")}.</p>
-                                {suspect.removeNotes && (
-                                    <button
-                                        type="button"
-                                        onClick={suspect.removeNotes}
-                                        className="rounded-md border bg-background px-2 py-1"
-                                    >
-                                        Remove the model's notes
-                                    </button>
-                                )}
+                                <div className="flex flex-wrap gap-2">
+                                    {suspect.removeNotes && (
+                                        <button
+                                            type="button"
+                                            onClick={suspect.removeNotes}
+                                            className="rounded-md border bg-background px-2 py-1"
+                                        >
+                                            Remove the model's notes
+                                        </button>
+                                    )}
+                                    {!error && differentModel}
+                                </div>
                             </div>
                         )}
                         {text && attemptPartial && (
