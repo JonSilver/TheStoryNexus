@@ -1,8 +1,9 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { useEffect, useRef, useState } from "react";
 import { useTranspositionOpMutation } from "@/features/transpositions/hooks/useTranspositionQuery";
+import type { AnsweredModel } from "@/types/actions";
 import { useActionGeneration } from "../ai/useActionGeneration";
-import { parseEntryProposals } from "../bible/parseProposals";
+import { parseTransposedEntry } from "./parseEntry";
 import type { EntryValue, Transposition } from "./state";
 
 type Draft = Omit<EntryValue, "category">;
@@ -13,7 +14,10 @@ const describeEntry = ({ name, category, description, tags }: EntryValue) =>
         .join("\n");
 
 const UNREADABLE =
-    "the reply couldn't be read as an entry — this model may not suit it (Settings → AI actions → Transpose: Bible Entry).";
+    "The reply wasn't in a form that could be read as an entry, so it's kept below as written — edit it into the entry, or try again.";
+
+// The most a draft's description can be (the server's limit)
+const MAX_DESCRIPTION = 50_000;
 
 // Two entries failing in a row means the model or server is broken, not the entry
 const MAX_CONSECUTIVE_FAILURES = 2;
@@ -30,6 +34,8 @@ export const useEntryDrafting = (transposition: Transposition) => {
     const [running, setRunning] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [unsaved, setUnsaved] = useState<Record<string, Draft[]>>({});
+    /** The model each entry's latest run used, so its card names (and changes) the right one. */
+    const [modelOf, setModelOf] = useState<Record<string, AnsweredModel>>({});
     const [progress, setProgress] = useState<{ current: number; total: number; name: string } | null>(null);
     const [sweepFailure, setSweepFailure] = useState<string | null>(null);
     const stopRequested = useRef(false);
@@ -59,14 +65,22 @@ export const useEntryDrafting = (transposition: Transposition) => {
         });
         setRunning(null);
         if (result.outcome === "superseded") return null;
-        const [value] = parseEntryProposals(result.text);
+        const { model } = result;
+        if (model) setModelOf(current => ({ ...current, [entryId]: model }));
+        const value = parseTransposedEntry(result.text);
         // Stopped part-way: the writer's choice, not a model that can't do the job
         if (result.outcome === "stopped" && !value) return null;
         const error =
             result.outcome === "failed" ? (result.error ?? "failed") : !value && result.text.trim() ? UNREADABLE : null;
         if (error) setErrors(current => ({ ...current, [entryId]: error }));
-        if (!value) return error;
-        const next: Draft = { name: value.name, description: value.description, tags: value.tags };
+        // What the model wrote is kept even when it can't be read as an entry: as a draft, as written
+        const reply = result.text.trim();
+        const next: Draft | null =
+            value ??
+            (reply
+                ? { name: entry.original.name, description: reply.slice(0, MAX_DESCRIPTION), tags: entry.original.tags }
+                : null);
+        if (!next) return error;
         setUnsaved(current => ({ ...current, [entryId]: [...(current[entryId] ?? []), next] }));
         await keep(entryId, next);
         return error;
@@ -98,7 +112,9 @@ export const useEntryDrafting = (transposition: Transposition) => {
     };
 
     return {
+        storyId,
         generation,
+        modelOf,
         running,
         errors,
         unsaved,

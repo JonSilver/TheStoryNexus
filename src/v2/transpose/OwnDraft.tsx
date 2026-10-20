@@ -26,7 +26,6 @@ export const OwnDraft = ({
         <div className="w-full space-y-2">
             <textarea
                 aria-label={label}
-                autoFocus
                 className="min-h-48 w-full resize-y rounded-md border bg-background p-3 text-sm leading-relaxed"
                 value={text}
                 onChange={e => setText(e.target.value)}

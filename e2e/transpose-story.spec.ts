@@ -339,3 +339,44 @@ test("a story with no synopsis can be given one; an edit pressed straight into A
         "Elinor keeps the family breathing."
     );
 });
+
+test("bible entries: a reply out of format is read if it can be, kept as written if not, and can always be tried again", async ({
+    page
+}) => {
+    const replies = [
+        // A lone object, wrapped in chat: read as the entry
+        'Sure! Here you go:\n```json\n{"name": "Mrs Brennan", "description": "Runs the shop.", "tags": ["Ma"]}\n```',
+        // Prose: can't be read as an entry
+        "Whitwell Hall would become a rusting corner shop on the Falls Road, its upstairs rooms let to lodgers.",
+        // Tried again: this time it's fine
+        '[{"name": "Brennan\'s Corner Shop", "description": "On the Falls Road.", "tags": []}]'
+    ];
+    await mockGeneration(page, ({ actionId }) => (actionId === "transpose_entry" ? (replies.shift() ?? "") : ""));
+    const { storyId } = await seedOriginal(page);
+    const started = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "1990s Belfast" }
+    });
+    const { storyId: copyId } = (await started.json()) as { storyId: string };
+    await page.request.post(`/api/transpositions/${copyId}/ops`, { data: { op: "acceptBrief", brief: BRIEF } });
+    await page.request.post(`/api/transpositions/${copyId}/ops`, { data: { op: "acceptSynopsis", synopsis: null } });
+
+    await page.goto(`/story/${copyId}/transpose`);
+    await page.getByRole("button", { name: "Transpose all entries" }).click();
+    const hester = page.getByRole("listitem", { name: "Aunt Hester" });
+    const hall = page.getByRole("listitem", { name: "Whitwell Hall" });
+    await expect(hester.getByLabel("Transposed name")).toHaveValue("Mrs Brennan");
+
+    // What the model sent is kept as a draft, as written, with ways on: edit it, try again, or another model
+    await expect(
+        hall.getByText(/wasn't in a form that could be read as an entry, so it's kept below as written/)
+    ).toBeVisible();
+    await expect(hall.getByLabel("Transposed name")).toHaveValue("Whitwell Hall");
+    await expect(hall.getByLabel("Transposed description")).toHaveValue(/rusting corner shop on the Falls Road/);
+    await expect(hall.getByRole("button", { name: "Use a different model for Transpose: Bible Entry" })).toBeVisible();
+    // Kept, not just shown: it's still there after a reload
+    await page.reload();
+    await expect(hall.getByLabel("Transposed description")).toHaveValue(/rusting corner shop on the Falls Road/);
+    await hall.getByRole("button", { name: "Try again" }).click();
+    await expect(hall.getByLabel("Transposed name")).toHaveValue("Brennan's Corner Shop");
+    await expect(hall.getByRole("button", { name: "Previous draft" })).toBeVisible();
+});
