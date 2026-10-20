@@ -181,6 +181,17 @@ describe("renderActionPrompt", () => {
         expect(messages[1].content).toBe("Make it sing: She left.");
     });
 
+    it("goes on the last system message of a template with several", () => {
+        const custom: PromptMessage[] = [
+            { role: "system", content: "Be a fine editor." },
+            { role: "user", content: "{{selection}}" },
+            { role: "system", content: "Keep it British." }
+        ];
+        const messages = renderActionPrompt(BUILTIN_ACTIONS.rework, custom, context);
+        expect(messages[2].content.endsWith(PROSE_ONLY)).toBe(true);
+        expect(messages[0].content).toBe("Be a fine editor.");
+    });
+
     it("leaves other actions alone", () => {
         const def = BUILTIN_ACTIONS.summarise_chapter;
         expect(renderActionPrompt(def, def.defaultTemplate, {}).some(m => m.content.includes(PROSE_ONLY))).toBe(false);

@@ -251,7 +251,7 @@ export const useEditorActions = (chapter: Chapter) => {
             ? {
                   concerns: check.concerns,
                   // A new attempt: the full reply stays one tap away
-                  removeNotes: proseOnly === null ? undefined : () => record(proseOnly)
+                  removeNotes: proseOnly === null ? undefined : () => record(proseOnly, attempts.currentPartial)
               }
             : null;
 

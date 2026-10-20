@@ -113,3 +113,18 @@ test("a reply of two paragraphs replaces the selection as two paragraphs", async
     await page.reload();
     await expect(editorLocator(page).locator("p")).toHaveText(["First new paragraph.", "Second new paragraph."]);
 });
+
+test("a reworked italic passage stays italic", async ({ page }) => {
+    await scriptGeneration(page, [{ text: "Was this the end of it all?" }]);
+    await createStoryAndChapter(page, "Sheets — italic", "One");
+    await editorLocator(page).click();
+    await page.keyboard.press("Control+i");
+    await page.keyboard.type("Was this the end?");
+    await waitForSaved(page);
+    await reworkAll(page);
+    await page.getByRole("dialog").getByRole("button", { name: "Replace selection" }).click();
+    await expect(editorLocator(page)).toContainText("Was this the end of it all?");
+    await expect(editorLocator(page).locator("p").first().locator("i, em").first()).toHaveText(
+        "Was this the end of it all?"
+    );
+});
