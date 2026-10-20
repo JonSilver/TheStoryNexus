@@ -7,8 +7,8 @@ import { useDraftEdits } from "./useDraftEdits";
 /**
  * One layer of a transposition drafted as text (the brief, the synopsis):
  * every draft is kept on the server, so leaving and coming back loses
- * nothing. A draft the server couldn't take waits here with Save again —
- * generated text is never dropped because a save failed.
+ * nothing. A draft the server couldn't take waits on screen with Save again
+ * (and says it will be lost if the screen closes first).
  */
 export const useDraftLayer = ({
     storyId,

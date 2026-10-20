@@ -107,7 +107,7 @@ export const EntryCard = ({
                     {drafting.errors[entryId] && <p className="text-xs text-destructive">{drafting.errors[entryId]}</p>}
                     {(drafting.unsaved[entryId]?.length ?? 0) > 0 && (
                         <p role="alert" className="text-xs">
-                            A draft hasn't been saved yet.{" "}
+                            A draft hasn't been saved yet, and will be lost if you leave this screen.{" "}
                             <button type="button" className="underline" onClick={() => drafting.saveAgain(entryId)}>
                                 Save again
                             </button>

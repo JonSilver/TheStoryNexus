@@ -218,3 +218,25 @@ test("the bible step follows the copy's bible: deleted entries leave, new ones j
     await expect(page.locator("[aria-current=step]")).toHaveText("Chapters");
     expect((await bible()).find(e => e.name === "Aunt Hester")?.description).toBe("Edited by hand.");
 });
+
+test("a brief too long to leave room for the bible fails loudly, not with an empty bible", async ({ page }) => {
+    const { storyId } = await seedOriginal(page);
+    const started = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "1990s Belfast" }
+    });
+    const { storyId: copyId } = (await started.json()) as { storyId: string };
+    await page.request.post(`/api/transpositions/${copyId}/ops`, {
+        data: { op: "acceptBrief", brief: "The shop on the corner sells everything. ".repeat(2000) }
+    });
+    // A fresh database has no AI settings row until something asks for one
+    await page.request.get("/api/ai/settings");
+    const preview = await page.request.post("/api/generate/preview", {
+        data: {
+            actionId: "transpose_synopsis",
+            storyId: copyId,
+            modelRef: { provider: "local", modelId: "local/any" }
+        }
+    });
+    expect(preview.status()).toBe(422);
+    expect((await preview.json()).error).toMatch(/brief is too long/);
+});

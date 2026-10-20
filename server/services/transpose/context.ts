@@ -85,6 +85,8 @@ export const transpositionContext = async ({
             state.entryOrder.map(id => bibleLine(state.entries[id], current.get(id) ?? null)),
             Math.floor(Math.max(left.budget, 0) * 0.5)
         );
+        // Rewriting without the bible would quietly lose the new setting's canon: say why instead
+        if (!text) throw new Error("The brief is too long to leave room for the story bible — shorten the brief.");
         left.budget -= countTokens(text);
         return text;
     })();

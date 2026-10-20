@@ -66,7 +66,7 @@ export const DraftLayer = ({
             {layer.unsavedCount > 0 && (
                 <p role="alert" className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs">
                     {layer.unsavedCount === 1 ? "A draft hasn't" : `${layer.unsavedCount} drafts haven't`} been saved
-                    yet — it's still here.{" "}
+                    yet — it's still here, but will be lost if you leave this screen.{" "}
                     <button type="button" className="underline" onClick={layer.saveAgain}>
                         Save again
                     </button>

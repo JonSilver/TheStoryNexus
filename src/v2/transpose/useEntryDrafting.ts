@@ -60,6 +60,8 @@ export const useEntryDrafting = (transposition: Transposition) => {
         setRunning(null);
         if (result.outcome === "superseded") return null;
         const [value] = parseEntryProposals(result.text);
+        // Stopped part-way: the writer's choice, not a model that can't do the job
+        if (result.outcome === "stopped" && !value) return null;
         const error =
             result.outcome === "failed" ? (result.error ?? "failed") : !value && result.text.trim() ? UNREADABLE : null;
         if (error) setErrors(current => ({ ...current, [entryId]: error }));
