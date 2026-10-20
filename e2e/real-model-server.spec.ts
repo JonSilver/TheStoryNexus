@@ -147,6 +147,27 @@ test.describe("against a real model server", () => {
         expect(settings.favouriteModels).toEqual([{ provider: "local", modelId: "local/zeta-model" }]);
     });
 
+    test("quick stars on a slow connection all show at once and all stick", async ({ page }) => {
+        await page.goto("/settings/providers");
+        await page.route(/\/api\/ai\/settings\/[^/]+$/, async route => {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            await route.continue();
+        });
+        await page.getByLabel("Default model").click();
+        const group = page.getByRole("group", { name: "Local" });
+        for (const name of ["alpha-model", "fake-model"])
+            await group.getByRole("button", { name: `Favourite ${name}` }).click();
+        // Both starred before either save has answered
+        for (const name of ["alpha-model", "fake-model"])
+            await expect(group.getByRole("button", { name: `Unfavourite ${name}` })).toBeVisible({ timeout: 500 });
+        await expect
+            .poll(async () => (await (await page.request.get("/api/ai/settings")).json()).favouriteModels.length)
+            .toBe(3);
+        await page.reload();
+        await page.getByLabel("Default model").click();
+        await expect(page.getByRole("group", { name: "Favourites" }).getByRole("option")).toHaveCount(3);
+    });
+
     test("a slow start shows the waiting state, then the text", async ({ page }) => {
         server.mode = "slow-start";
         const sheet = await reworkWithRealServer(page, "Real — slow start");

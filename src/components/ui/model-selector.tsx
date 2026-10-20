@@ -78,7 +78,7 @@ export const ModelSelector = ({
                     onPointerDown={e => e.stopPropagation()}
                     onClick={e => {
                         e.stopPropagation();
-                        toggleFavourite.mutate(choiceOf(model));
+                        toggleFavourite(choiceOf(model));
                     }}
                 >
                     <Star className={cn("h-4 w-4", starred ? "fill-current text-amber-500" : "opacity-40")} />
