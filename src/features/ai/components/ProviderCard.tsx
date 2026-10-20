@@ -5,13 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ModelCombobox } from "@/components/ui/model-combobox";
 import {
-    DEFAULT_MODEL_FIELDS,
     PROVIDER_NAMES,
     useRefreshModelsMutation,
     useUpdateAPIKeyMutation,
-    useUpdateDefaultModelMutation,
     useUpdateLocalApiUrlMutation
 } from "@/features/ai/hooks/useAISettingsQuery";
 import type { AIProvider, AISettings } from "@/types/story";
@@ -21,7 +18,7 @@ const reportRefreshed = (provider: AIProvider, { healedDefault }: AISettings & {
         ? toast.info(`The default model was no longer available — switched to ${healedDefault}`)
         : toast.success(`${PROVIDER_NAMES[provider]} models loaded`);
 
-/** One provider's card: how it connects (children), a model refresh, and its default model. */
+/** One provider's card: how it connects (children), and its models. */
 const ProviderSection = ({
     provider,
     title,
@@ -36,7 +33,6 @@ const ProviderSection = ({
     children: ReactNode;
 }) => {
     const refresh = useRefreshModelsMutation();
-    const setDefault = useUpdateDefaultModelMutation();
     const models = settings.availableModels.filter(m => m.provider === provider);
     return (
         <Card>
@@ -57,24 +53,11 @@ const ProviderSection = ({
             </CardHeader>
             <CardContent className="space-y-4">
                 {children}
-                {models.length > 0 && (
-                    <div className="space-y-2">
-                        <Label htmlFor={`${provider}-default`}>Default model</Label>
-                        <ModelCombobox
-                            id={`${provider}-default`}
-                            models={models}
-                            value={settings[DEFAULT_MODEL_FIELDS[provider]] as string | undefined}
-                            onValueChange={modelId =>
-                                setDefault.mutate(
-                                    { provider, modelId },
-                                    { onSuccess: () => modelId && toast.success(`Default model: ${modelId}`) }
-                                )
-                            }
-                            placeholder="Select default model"
-                        />
-                        <p className="text-xs text-muted-foreground">Used by every action that doesn't name its own</p>
-                    </div>
-                )}
+                <p className="text-xs text-muted-foreground">
+                    {models.length
+                        ? `${models.length} model${models.length === 1 ? "" : "s"} available — choose the default and favourites in any model selector.`
+                        : "No models loaded yet."}
+                </p>
             </CardContent>
         </Card>
     );

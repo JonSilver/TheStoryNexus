@@ -113,6 +113,20 @@
             "when": 1792424115012,
             "tag": "0015_exotic_ares",
             "breakpoints": true
+        },
+        {
+            "idx": 16,
+            "version": "6",
+            "when": 1792477949694,
+            "tag": "0016_smart_loki",
+            "breakpoints": true
+        },
+        {
+            "idx": 17,
+            "version": "6",
+            "when": 1792477973841,
+            "tag": "0017_happy_gressill",
+            "breakpoints": true
         }
     ]
 }

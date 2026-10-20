@@ -27,7 +27,12 @@ test.describe("against a real model server", () => {
             if (req.url?.endsWith("/models")) {
                 server.modelListings += 1;
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ object: "list", data: [{ id: "fake-model", object: "model" }] }));
+                res.end(
+                    JSON.stringify({
+                        object: "list",
+                        data: ["fake-model", "alpha-model", "zeta-model"].map(id => ({ id, object: "model" }))
+                    })
+                );
                 return;
             }
             if (server.mode === "missing-model") {
@@ -61,7 +66,7 @@ test.describe("against a real model server", () => {
         try {
             const settings = server.settingsId || (await (await request.get("/api/ai/settings")).json()).id;
             await request.put(`/api/ai/settings/${settings}`, {
-                data: { defaultProvider: null, defaultModelId: null }
+                data: { defaultProvider: null, defaultModelId: null, favouriteModels: [] }
             });
         } finally {
             server.instance?.closeAllConnections();
@@ -104,6 +109,42 @@ test.describe("against a real model server", () => {
         const settings = await (await page.request.get("/api/ai/settings")).json();
         expect(settings.defaultProvider).toBe("local");
         expect(settings.defaultModelId).toMatch(/fake-model/);
+    });
+
+    test("model lists search, and a starred model leads every one of them", async ({ page }) => {
+        await page.goto("/settings/providers");
+        await page.getByLabel("Default model").click();
+        const list = page.getByRole("listbox");
+        // Type to search: only the match is offered
+        await page.getByPlaceholder("Search models…").fill("zeta");
+        await expect(list.getByRole("option")).toHaveCount(1);
+        await page.getByRole("button", { name: "Favourite zeta-model" }).click();
+        await expect(page.getByRole("button", { name: "Unfavourite zeta-model" }).first()).toBeVisible();
+        await page.getByPlaceholder("Search models…").fill("");
+        // Starring didn't choose it
+        await expect(page.getByText(/^Default model: /)).toHaveCount(0);
+        await expect(list.getByRole("option").first()).toContainText("zeta-model");
+        await page.keyboard.press("Escape");
+
+        // The same favourite leads the per-action model list, and choosing from it sticks
+        await page.goto("/settings/actions");
+        await page.getByRole("button", { name: /^Rework/ }).click();
+        await page.getByLabel("Model for this action").click();
+        await expect(page.getByRole("group", { name: "Favourites" }).getByRole("option")).toHaveText([/zeta-model/]);
+        await page
+            .getByRole("group", { name: "Favourites" })
+            .getByRole("option", { name: /zeta-model/ })
+            .click();
+        await expect(page.getByLabel("Model for this action")).toHaveText(/zeta-model/);
+        await page.getByRole("button", { name: "Save override" }).click();
+        await expect(page.getByText("Override saved")).toBeVisible();
+
+        await page.reload();
+        await page.getByRole("button", { name: /^Rework/ }).click();
+        await expect(page.getByLabel("Model for this action")).toHaveText(/zeta-model/);
+        await page.getByRole("button", { name: "Reset to built-in" }).click();
+        const settings = await (await page.request.get("/api/ai/settings")).json();
+        expect(settings.favouriteModels).toEqual([{ provider: "local", modelId: "local/zeta-model" }]);
     });
 
     test("a slow start shows the waiting state, then the text", async ({ page }) => {

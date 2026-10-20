@@ -96,6 +96,12 @@ export interface PromptMessage {
 // AI Provider and Model types
 export type AIProvider = "openai" | "openrouter" | "local" | "gemini";
 
+/** A model as the app names it: ids are only unique within their provider. */
+export interface ModelChoice {
+    provider: AIProvider;
+    modelId: string;
+}
+
 export interface AIModel {
     id: string;
     name: string;
@@ -111,10 +117,8 @@ export interface AISettings extends BaseEntity {
     availableModels: AIModel[];
     lastModelsFetch?: Date;
     localApiUrl?: string;
-    defaultLocalModel?: string;
-    defaultOpenAIModel?: string;
-    defaultOpenRouterModel?: string;
-    defaultGeminiModel?: string;
+    /** Listed first in every model selector. */
+    favouriteModels: ModelChoice[];
     defaultProvider?: AIProvider;
     defaultModelId?: string;
 }

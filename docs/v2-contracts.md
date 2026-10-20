@@ -152,7 +152,7 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 11. Settings & model selection
 
-- `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default columns retired at cutover.
+- `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default models were dropped (migrations 0016–0017; decision 2026-10-20) — they were never read by generation. In their place, `aiSettings.favouriteModels` (`{ provider, modelId }[]`, existing per-provider defaults converted) lists the writer's starred models first in every model selector (`ModelSelector`: search, Favourites group, then models by provider); old backups convert the same way on import.
 - Settings GET returns `hasOpenaiKey`-style booleans — never key material. Keys set via `PUT /api/ai/keys/:provider` (write-only). Keys stripped from full-DB export. (Keys remain plaintext at rest — accepted for trusted-LAN scope.)
 
 ## 12. Schema change summary
