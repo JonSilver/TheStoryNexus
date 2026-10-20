@@ -161,7 +161,7 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 11a. Transposition (#77)
 
-A story is moved to another time, place or background on a **copy**, never the original (decision 2026-10-20). `POST /api/transpositions { sourceStoryId, target }` copies it through the backup path (`restoreStory`), out of its series: the series' entries come with it as story-level entries, since they belong to other stories too. Global entries are shared by every story and aren't transposed.
+A story is moved to another time, place or background on a **copy**, never the original (decision 2026-10-20). `POST /api/transpositions { sourceStoryId, target }` (target up to 100,000 characters; more than a line, or over 300 characters, is a brief the writer brought, and becomes the first brief draft as written, with no model call) copies it through the backup path (`restoreStory`), out of its series: the series' entries come with it as story-level entries, since they belong to other stories too. Global entries are shared by every story and aren't transposed.
 
 The copy's `transpositions` row (one per story) holds the `target`, the accepted `brief`, the `stage` (`brief → synopsis → bible → chapters → done`, forward only) and `state` JSON (`src/v2/transpose/state.ts`, read through `readState` — untrusted in backups). State keeps every draft (`briefAttempts`, `synopsis.attempts`, per-entry `attempts`), so nothing generated is lost, plus each entry's `original` and its decision (`pending` / `accepted` / `kept`).
 

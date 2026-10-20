@@ -6,13 +6,25 @@ import { applyOp, createTransposition, getTransposition } from "../services/tran
 
 const router = express.Router();
 
-const createSchema = z.object({ sourceStoryId: z.string().min(1), target: z.string().trim().min(1).max(2_000) });
+const MAX_TARGET_CHARS = 100_000;
+const createSchema = z.object({
+    sourceStoryId: z.string().min(1),
+    target: z.string().trim().min(1).max(MAX_TARGET_CHARS)
+});
 
 // Start: a copy of the story, set to be transposed (the original is never touched)
 router.post("/", async (req, res) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
-        res.status(400).json({ error: "Say where and when the story should be set" });
+        // Say what's actually wrong: an empty box and an over-long one are different problems
+        const target = typeof req.body?.target === "string" ? req.body.target.trim() : "";
+        res.status(400).json({
+            error: !target
+                ? "Say where and when the story should be set, or paste a brief."
+                : target.length > MAX_TARGET_CHARS
+                  ? `That's ${target.length.toLocaleString()} characters — the most a brief can be is ${MAX_TARGET_CHARS.toLocaleString()}.`
+                  : "Couldn't start: the request was incomplete."
+        });
         return;
     }
     const [error, copy] = await attemptPromise(() =>

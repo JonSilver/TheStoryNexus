@@ -240,3 +240,53 @@ test("a brief too long to leave room for the bible fails loudly, not with an emp
     expect(preview.status()).toBe(422);
     expect((await preview.json()).error).toMatch(/brief is too long/);
 });
+
+test("a brief the writer already has is pasted in whole and becomes the brief — paragraphs intact, no model call", async ({
+    page
+}) => {
+    const calls: string[] = [];
+    await mockGeneration(page, ({ actionId }) => {
+        calls.push(actionId);
+        return "unexpected";
+    });
+    const { storyId } = await seedOriginal(page);
+    // A long, multi-paragraph brief, as written in Brainstorm
+    const section = (n: number) =>
+        `${n}. THE WORLD\n\nWealth is measured in Life Support Charters, indivisible shares that guarantee oxygen quotas and clean water. `.repeat(
+            12
+        );
+    const brief = `PITCH BRIEF: THE ENTROPY OF GRACE\nGenre: Hard Science Fiction\n\n${[1, 2, 3, 4, 5, 6].map(section).join("\n\n")}`;
+    expect(brief.length).toBeGreaterThan(9_000);
+
+    await page.goto(`/story/${storyId}`);
+    await page.getByRole("button", { name: "Transpose to another time or place…" }).click();
+    await page.getByLabel("Where and when should it be set?").click();
+    await page.keyboard.insertText(brief);
+    await page.getByRole("button", { name: "Make a copy and start" }).click();
+
+    await expect(page.getByText("Transpose — original (PITCH BRIEF: THE ENTROPY OF GRACE)")).toBeVisible();
+    await expect(page.getByText(/Moving this copy to the setting in your brief/)).toBeVisible();
+    await expect(page.getByLabel("Draft", { exact: true })).toHaveValue(brief.trim());
+    expect(calls).toHaveLength(0);
+    await page.getByRole("button", { name: "Accept the brief" }).click();
+
+    // The writer can bring their own synopsis too
+    await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");
+    await page.getByRole("button", { name: "Write or paste your own synopsis" }).click();
+    await page.getByLabel("Write or paste your own synopsis").fill("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Keep as a draft" }).click();
+    await expect(page.getByLabel("Draft", { exact: true })).toHaveValue("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Accept the synopsis" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Bible");
+    expect(calls).toHaveLength(0);
+});
+
+test("a transposition refused at the start says what's actually wrong", async ({ page }) => {
+    const { storyId } = await seedOriginal(page);
+    const empty = await page.request.post("/api/transpositions", { data: { sourceStoryId: storyId, target: "  " } });
+    expect((await empty.json()).error).toMatch(/Say where and when the story should be set, or paste a brief/);
+    const huge = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "x".repeat(100_001) }
+    });
+    expect((await huge.json()).error).toMatch(/100,001 characters — the most a brief can be is 100,000/);
+});

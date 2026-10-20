@@ -236,3 +236,19 @@ export type TranspositionOp =
     | { op: "editPieceDraft"; chapterId: string; piece: number; index: number; text: string }
     | { op: "acceptChapter"; chapterId: string; outline: string; rewrites: string[] }
     | { op: "finishChapters" };
+
+/** More than a line saying where and when: a brief the writer already has (from Brainstorm, say). */
+export const isWrittenBrief = (target: string) => target.trim().includes("\n") || target.trim().length > 300;
+
+const TARGET_NAME_CHARS = 60;
+
+/** What to call the target in a title or a sentence: a short one as it is, a brief by its first line. */
+export const targetName = (target: string) => {
+    const line = (
+        target
+            .trim()
+            .split("\n")
+            .find(l => l.trim()) ?? ""
+    ).replace(/^[#*\s]+|[*\s]+$/g, "");
+    return line.length <= TARGET_NAME_CHARS ? line : `${line.slice(0, TARGET_NAME_CHARS).replace(/\s+\S*$/, "")}…`;
+};
