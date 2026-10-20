@@ -1,4 +1,6 @@
+import { ModelSelector } from "@/components/ui/model-selector";
 import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
+import type { AIProvider, ModelChoice } from "@/types/story";
 
 export interface OverrideParams {
     temperature: number;
@@ -23,6 +25,12 @@ const NUMERIC_FIELDS: Array<{
     { key: "presencePenalty", label: "Pres. penalty", min: -2, max: 2, step: 0.1, hint: "encourage new topics" }
 ];
 
+/** An override names its model as "provider::modelId". */
+const fromModelRef = (ref: string | null): ModelChoice | null => {
+    const [provider, ...rest] = ref?.split("::") ?? [];
+    return provider && rest.length ? { provider: provider as AIProvider, modelId: rest.join("::") } : null;
+};
+
 /**
  * Per-action model + sampling parameters. Model and the optional samplers
  * default to "app default"/unset — unset values are simply not sent to the
@@ -38,27 +46,18 @@ export const OverrideParamFields = ({
     onChange: (next: OverrideParams) => void;
 }) => {
     const { data: settings } = useAISettingsQuery();
-    const models = settings?.availableModels ?? [];
 
     return (
         <div className="space-y-3">
-            <label className="block text-sm">
+            <div className="text-sm">
                 <span className="mb-1 block text-muted-foreground">Model for this action</span>
-                <select
-                    className="w-full rounded-md border bg-background px-2 py-1.5"
-                    value={params.modelRef ?? ""}
-                    onChange={e => onChange({ ...params, modelRef: e.target.value || null })}
-                >
-                    <option value="">
-                        App default{settings?.defaultModelId ? ` (${settings.defaultModelId})` : ""}
-                    </option>
-                    {models.map(model => (
-                        <option key={`${model.provider}::${model.id}`} value={`${model.provider}::${model.id}`}>
-                            {model.provider} · {model.name}
-                        </option>
-                    ))}
-                </select>
-            </label>
+                <ModelSelector
+                    ariaLabel="Model for this action"
+                    value={fromModelRef(params.modelRef)}
+                    onChange={next => onChange({ ...params, modelRef: next && `${next.provider}::${next.modelId}` })}
+                    noneLabel={`App default${settings?.defaultModelId ? ` (${settings.defaultModelId})` : ""}`}
+                />
+            </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
                 {NUMERIC_FIELDS.map(({ key, label, min, max, step, hint }) => (

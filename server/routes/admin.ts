@@ -7,6 +7,7 @@ import os from "os";
 import path from "path";
 import { db, rawSqlite, schema } from "../db/client.js";
 import { freshChatRevision } from "../lib/chatUpdate.js";
+import { favouritesFromLegacy } from "../lib/favouriteModels.js";
 
 type ImportedSeries = typeof schema.series.$inferSelect;
 type ImportedStory = typeof schema.stories.$inferSelect;
@@ -233,6 +234,7 @@ router.post("/import", upload.single("file"), async (req, res) => {
                     // Keys are stripped from exports and must not sneak back in via import
                     ({ openaiKey: _o, openrouterKey: _r, geminiKey: _g, ...s }: ImportedAiSetting) => ({
                         ...s,
+                        favouriteModels: favouritesFromLegacy(s),
                         createdAt: new Date(s.createdAt),
                         lastModelsFetch: s.lastModelsFetch ? new Date(s.lastModelsFetch) : undefined
                     })

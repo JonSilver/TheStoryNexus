@@ -5,9 +5,42 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { ModelSelector } from "@/components/ui/model-selector";
 import { KEYED_PROVIDERS, KeyedProviderCard, LocalProviderCard } from "@/features/ai/components/ProviderCard";
-import { useAISettingsQuery } from "@/features/ai/hooks/useAISettingsQuery";
+import { useAISettingsQuery, useUpdateDefaultModelMutation } from "@/features/ai/hooks/useAISettingsQuery";
 import { useDeleteDemoDataMutation } from "@/features/demo/hooks/useDemoData";
+import type { AISettings } from "@/types/story";
+
+/** The model every action uses unless it names its own (Settings → AI actions). */
+const DefaultModelCard = ({ settings }: { settings: AISettings }) => {
+    const setDefault = useUpdateDefaultModelMutation();
+    const value =
+        settings.defaultProvider && settings.defaultModelId
+            ? { provider: settings.defaultProvider, modelId: settings.defaultModelId }
+            : null;
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Default model</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                <ModelSelector
+                    id="default-model"
+                    ariaLabel="Default model"
+                    value={value}
+                    onChange={next =>
+                        next &&
+                        setDefault.mutate(next, { onSuccess: () => toast.success(`Default model: ${next.modelId}`) })
+                    }
+                />
+                <p className="text-xs text-muted-foreground">
+                    Used by every action that doesn't name its own model. Star models to keep them at the top of every
+                    model list.
+                </p>
+            </CardContent>
+        </Card>
+    );
+};
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
@@ -43,6 +76,7 @@ export default function SettingsPage() {
     return (
         <div className="p-4 sm:p-8">
             <div className="mx-auto max-w-2xl space-y-6">
+                <DefaultModelCard settings={settings} />
                 {KEYED_PROVIDERS.map(provider => (
                     <KeyedProviderCard key={provider} provider={provider} settings={settings} />
                 ))}

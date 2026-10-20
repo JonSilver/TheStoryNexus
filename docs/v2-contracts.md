@@ -152,22 +152,23 @@ Model context limits come from provider metadata where available, else a conserv
 
 ## 11. Settings & model selection
 
-- `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default columns retired at cutover.
+- `aiSettings` gains `defaultProvider` + `defaultModelId` (single global default). Auto-selected on first successful key validation + model fetch. If the default vanishes: fall back to first available model, persist, surface a toast. Per-provider default models were dropped (migrations 0016–0017; decision 2026-10-20) — they were never read by generation. In their place, `aiSettings.favouriteModels` (`{ provider, modelId }[]`, existing per-provider defaults converted) lists the writer's starred models first in every model selector (`ModelSelector`: search, Favourites group, then models by provider); old backups convert the same way on import.
 - Settings GET returns `hasOpenaiKey`-style booleans — never key material. Keys set via `PUT /api/ai/keys/:provider` (write-only). Keys stripped from full-DB export. (Keys remain plaintext at rest — accepted for trusted-LAN scope.)
 
 ## 12. Schema change summary
 
-| Table             | Change                                                                                             | When                            |
-| ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                 | Phase 3                         |
-| `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only | 2026-10-19                      |
-| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                | 2026-10-19                      |
-| `stories`         | + `aiInstructions`                                                                                 | Phase 4                         |
-| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                  | Phase 2                         |
-| `actionOverrides` | new                                                                                                | Phase 2 (storage), Phase 8 (UI) |
-| `sceneBeats`      | retired (dropped)                                                                                  | Phase 5                         |
-| `prompts`         | retired in favour of registry + overrides                                                          | Phase 8                         |
-| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format  | Phase 3                         |
+| Table             | Change                                                                                                             | When                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| `chapters`        | + `revision`, `updatedAt`, `summarySourceRevision`                                                                 | Phase 3                         |
+| `chapters`        | + `saveVersion`, `revisionText`, `autoSummaryRevision`; `revision` becomes significant-change only                 | 2026-10-19                      |
+| `aiChats`         | + `revision` (messages writes carry `expectedRevision`; stale → 409 + current chat)                                | 2026-10-19                      |
+| `stories`         | + `aiInstructions`                                                                                                 | Phase 4                         |
+| `aiSettings`      | + `defaultProvider`, `defaultModelId`; key redaction at API layer                                                  | Phase 2                         |
+| `aiSettings`      | + `favouriteModels` (per-provider defaults converted into it); − the four per-provider default columns (0016–0017) | 2026-10-20                      |
+| `actionOverrides` | new                                                                                                                | Phase 2 (storage), Phase 8 (UI) |
+| `sceneBeats`      | retired (dropped)                                                                                                  | Phase 5                         |
+| `prompts`         | retired in favour of registry + overrides                                                                          | Phase 8                         |
+| —                 | destructive v1 reset: v2 ships a fresh-DB migration baseline; sample story re-seeded in v2 format                  | Phase 3                         |
 
 ## Appendix A — editor choice & serialisation (decided 2026-09-05)
 

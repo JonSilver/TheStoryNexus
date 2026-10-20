@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import express from "express";
 import { z } from "zod";
 import { db, schema } from "../db/client.js";
+import { favouriteModelsSchema } from "../lib/favouriteModels.js";
 import {
     type AIModel,
     type AIProviderId,
@@ -88,16 +89,13 @@ router.get(
 
 const settingsUpdateSchema = z
     .object({
-        defaultLocalModel: z.string().nullable().optional(),
-        defaultOpenAIModel: z.string().nullable().optional(),
-        defaultOpenRouterModel: z.string().nullable().optional(),
-        defaultGeminiModel: z.string().nullable().optional(),
+        favouriteModels: favouriteModelsSchema.optional(),
         defaultProvider: z.enum(["openai", "openrouter", "gemini", "local"]).nullable().optional(),
         defaultModelId: z.string().nullable().optional()
     })
     .strip();
 
-// Only default-model selection is writable here; keys go via /keys/:provider,
+// Only the default model and favourites are writable here; keys go via /keys/:provider,
 // the local URL via /local-url, and availableModels via /models/refresh
 router.put(
     "/settings/:id",
