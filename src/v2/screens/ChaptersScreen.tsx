@@ -8,13 +8,13 @@ import {
 } from "@/features/chapters/hooks/useChaptersQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { useConfirm } from "../components/Dialogs";
-import { NoStoryChosen } from "../components/ScreenParts";
+import { NoStoryChosen, ScreenHeader } from "../components/ScreenParts";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 import { ChapterDetailsSheet } from "./ChapterDetailsSheet";
 
 export const ChaptersScreen = () => {
-    const { goTo } = useNav();
+    const { goTo, goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters, isLoading } = useChaptersByStoryQuery(currentStoryId ?? "");
@@ -55,10 +55,7 @@ export const ChaptersScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <header className="border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-                <h1 className="text-lg font-semibold">Chapters</h1>
-                <p className="truncate text-xs text-muted-foreground">{story?.title}</p>
-            </header>
+            <ScreenHeader title="Chapters" story={story?.title} onBack={() => goBack("story")} />
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {isLoading ? (
                     <div className="flex justify-center p-8">

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ScreenHeader } from "../components/ScreenParts";
 import { OverrideEditor } from "../drawer/OverrideEditor";
 import { type ActionDefinition, useActionRegistry, useOverrides } from "../drawer/useActionOverrides";
+import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 
@@ -13,6 +14,7 @@ import { useCurrentStoryId } from "../state/useV2Store";
 export const ActionsScreen = () => {
     const { goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
+    const story = useCurrentStory();
     const [scope, setScope] = useState<"global" | "story">("global");
     const storyId = scope === "story" ? currentStoryId : null;
     const { data: registry } = useActionRegistry();
@@ -27,6 +29,7 @@ export const ActionsScreen = () => {
                 <button
                     type="button"
                     onClick={() => setScope("global")}
+                    aria-pressed={scope === "global"}
                     className={`rounded-md border px-3 py-1.5 ${scope === "global" ? "bg-accent" : ""}`}
                 >
                     All stories
@@ -35,9 +38,10 @@ export const ActionsScreen = () => {
                     type="button"
                     onClick={() => setScope("story")}
                     disabled={!currentStoryId}
-                    className={`rounded-md border px-3 py-1.5 disabled:opacity-50 ${scope === "story" ? "bg-accent" : ""}`}
+                    aria-pressed={scope === "story"}
+                    className={`min-w-0 truncate rounded-md border px-3 py-1.5 disabled:opacity-50 ${scope === "story" ? "bg-accent" : ""}`}
                 >
-                    This story
+                    {story ? `This story: ${story.title}` : "This story (none open)"}
                 </button>
             </div>
 

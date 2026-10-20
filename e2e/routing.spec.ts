@@ -100,3 +100,30 @@ test("a chapter the server won't return says so and offers to try again", async 
     await expect(editorLocator(page)).toBeVisible();
     await expect(page).toHaveURL(chapterUrl);
 });
+
+test("every screen about a story names it; tab screens have no back, the screens under them do", async ({ page }) => {
+    await createStoryAndChapter(page, "Context — Ashford", "One");
+    const header = page.locator("header");
+    const back = page.getByRole("button", { name: /^Back/ });
+
+    await page.getByRole("button", { name: "Brainstorm" }).click();
+    await expect(header.getByRole("heading", { name: "Brainstorm" })).toBeVisible();
+    await expect(header.getByText("Context — Ashford")).toBeVisible();
+    await expect(back).toHaveCount(0);
+
+    for (const screen of ["Chapters", "Story Bible", "Notes"]) {
+        await page.getByRole("button", { name: "Story", exact: true }).click();
+        await page.getByRole("button", { name: screen }).click();
+        await expect(header.getByRole("heading", { name: screen })).toBeVisible();
+        await expect(header.getByText("Context — Ashford")).toBeVisible();
+        await expect(back).toHaveCount(1);
+    }
+
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Switch story" }).click();
+    await expect(back).toHaveCount(1);
+
+    // Per-story AI settings say which story
+    await page.goto("/settings/actions");
+    await expect(page.getByRole("button", { name: "This story: Context — Ashford" })).toBeEnabled();
+});

@@ -1,6 +1,7 @@
 import { useBrainstormByStoryQuery } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { NoStoryChosen } from "../components/ScreenParts";
+import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useRouteParams } from "../routeParams";
 import { pathFor, useNav } from "../routing";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
@@ -21,6 +22,7 @@ export const BrainstormScreen = () => {
     const currentStoryId = useCurrentStoryId();
     const { data: chats } = useBrainstormByStoryQuery(currentStoryId ?? "");
     const generation = useActionGeneration();
+    const storyTitle = useCurrentStory()?.title;
     // The open chat lives in the URL: back/forward and refresh keep it
     const { chatId } = useRouteParams();
     const chat = (chats ?? []).find(c => c.id === chatId) ?? null;
@@ -32,15 +34,16 @@ export const BrainstormScreen = () => {
         return (
             <BrainstormChatList
                 storyId={currentStoryId}
+                storyTitle={storyTitle}
                 chats={chats ?? []}
                 onOpen={id => navigate(`${pathFor("brainstorm", currentStoryId)}/${encodeURIComponent(id)}`)}
-                onBack={() => goBack("story")}
             />
         );
     return (
         <BrainstormChatView
             chat={chat}
             storyId={currentStoryId}
+            storyTitle={storyTitle}
             conversation={conversation}
             generation={generation}
             onBack={() => goBack("brainstorm")}

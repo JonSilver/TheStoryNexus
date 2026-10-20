@@ -90,6 +90,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 - Screens take `goTo`/`goBack` from `useNav()`. `goTo(tool, { storyId?, chapterId? })` pushes a real history entry; unnamed, the story is the URL's else the remembered one, and Write opens the story's remembered chapter. Navigate by naming the target — never by writing the store and then calling `goTo`. Back arrows use `goBack(fallback)` (history-back when React Router's history index says an app screen is behind this one, else the fallback screen — back must never leave the app or go dead).
 - `StoryScope` provides `RouteParamsContext` (story/chapter/chat ids) and shows a plain "story doesn't exist" screen for unknown ids. It records the URL's story and chapter as the remembered ones (`uiState`); `useCurrentStoryId()` returns the URL's story inside a story route.
 - Full pages (AI settings, Series, Guide) render inside `EmbeddedPage`, which supplies the only back control — embedded pages must never add their own navigation.
+- Headers are `ScreenHeader`: the bottom-tab screens (Write, Brainstorm, Story, Settings) have no back control; every screen reached from one does. A screen about a story names it (`story` prop, the line above the title) — as Write does.
 - Production Express serves the app for every non-API path; unknown `/api/*` paths are JSON 404s.
 
 ### Frontend layout

@@ -20,12 +20,14 @@ import type { useChatConversation } from "./useChatConversation";
 export const BrainstormChatView = ({
     chat,
     storyId,
+    storyTitle,
     conversation,
     generation,
     onBack
 }: {
     chat: AIChat;
     storyId: string;
+    storyTitle?: string;
     conversation: ReturnType<typeof useChatConversation>;
     generation: ReturnType<typeof useActionGeneration>;
     onBack: () => void;
@@ -64,7 +66,7 @@ export const BrainstormChatView = ({
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title={chat.title} onBack={onBack} backLabel="Back to chats" />
+            <ScreenHeader title={chat.title} story={storyTitle} onBack={onBack} backLabel="Back to chats" />
             <div ref={scrollerRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                 {messages.map(message => (
                     <ChatBubble

@@ -12,14 +12,14 @@ import { clearPending } from "./chatOps";
 /** A story's brainstorm chats: open one, start one, delete one. */
 export const BrainstormChatList = ({
     storyId,
+    storyTitle,
     chats,
-    onOpen,
-    onBack
+    onOpen
 }: {
     storyId: string;
+    storyTitle?: string;
     chats: AIChat[];
     onOpen: (chatId: string) => void;
-    onBack: () => void;
 }) => {
     const createChat = useCreateBrainstormMutation();
     const deleteChat = useDeleteBrainstormMutation();
@@ -38,7 +38,7 @@ export const BrainstormChatList = ({
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title="Brainstorm" onBack={onBack}>
+            <ScreenHeader title="Brainstorm" story={storyTitle}>
                 <button type="button" onClick={newChat} aria-label="New chat">
                     <Plus className="h-5 w-5" />
                 </button>

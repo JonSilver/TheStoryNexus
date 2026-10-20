@@ -12,6 +12,7 @@ import { useGuardedClose } from "../components/Dialogs";
 import { useConfirm } from "../components/Dialogs";
 import { MarkdownView } from "../components/MarkdownView";
 import { ScreenHeader, NoStoryChosen } from "../components/ScreenParts";
+import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 
@@ -107,6 +108,7 @@ export const NotesScreen = () => {
     const { goTo, goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const { data: notes } = useNotesByStoryQuery(currentStoryId ?? "");
+    const storyTitle = useCurrentStory()?.title;
     const deleteNote = useDeleteNoteMutation();
     const confirm = useConfirm();
     // The id, not a copy: the editor sees the note as it is now, and closes if it's gone
@@ -117,7 +119,7 @@ export const NotesScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title="Notes" onBack={() => goBack("story")}>
+            <ScreenHeader title="Notes" story={storyTitle} onBack={() => goBack("story")}>
                 <button type="button" onClick={() => setEditingId("new")} aria-label="New note">
                     <Plus className="h-5 w-5" />
                 </button>

@@ -65,7 +65,7 @@ export const BibleScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title="Story Bible" onBack={() => goBack("story")}>
+            <ScreenHeader title="Story Bible" story={story?.title} onBack={() => goBack("story")}>
                 <button type="button" onClick={() => setEditingId("new")} aria-label="New entry">
                     <Plus className="h-5 w-5" />
                 </button>

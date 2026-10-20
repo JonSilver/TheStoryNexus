@@ -7,7 +7,7 @@ import { ImportSheet } from "./ImportSheet";
 import { useLibrary } from "./useLibrary";
 
 export const StoriesScreen = () => {
-    const { goTo } = useNav();
+    const { goTo, goBack } = useNav();
     const currentStoryId = useCurrentStoryId();
     const library = useLibrary();
     const [newTitle, setNewTitle] = useState("");
@@ -24,7 +24,7 @@ export const StoriesScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title="Library">
+            <ScreenHeader title="Library" onBack={() => goBack("story")}>
                 <label className="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm">
                     JSON
                     <input
