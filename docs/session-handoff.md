@@ -1,39 +1,39 @@
 # Session handoff
 
-_Last updated 2026-10-20 (second session). Read this first, then CLAUDE.md. Replace it at the end of each session._
+_Last updated 2026-10-20 (third session). Read this first, then CLAUDE.md. Replace it at the end of each session._
 
 ## Where things stand
 
-`main` is at the merge of #109, and the live dev server (watching `/home/jon/dev/TheStoryNexus`) is on it. No migrations this session. Nothing is in flight, and there are no extra worktrees.
+`main` is at the merge of #112, and the live dev server (watching `/home/jon/dev/TheStoryNexus`) is on it. **Migration 0018** (the `transpositions` table) has been applied to the live database. A backup taken just before it is at `data/backups/storynexus-before-0018-20261020-151613.db`. Nothing is in flight, and there are no extra worktrees.
 
-## Merged this session (#108–#109)
+## Merged this session (#108–#113)
 
 - **The model at the point of need (#108).**
-    - The action sheets (Rework, Expand, Shorten, Ask, Summarise) name the model behind each attempt and what chose it.
-    - **Change model**, and **Use a different model for <action>** on the notes warning and on failures, pick a model inside the sheet. It's saved to the scope that chose the current model (the story's own if it has one, else all stories), then tried again as a new attempt.
-    - The server sends a first SSE `model {provider, modelId, source}` event.
-    - Override PUT is field by field: omitted keeps, `null` clears.
-    - Settings → AI actions lists the model each action runs with.
-    - Low-impact review edges are filed as #107.
+    - The action sheets name the model behind each attempt.
+    - **Change model**, and **Use a different model for <action>**, save the action's model to the scope that chose the current one, then try again.
+    - Override PUT is field by field.
+    - Low-impact edges are filed as #107.
 - **Duplicate this story (#109, closes #76).**
-    - The backup path (`exportStoryBackup` → `restoreStory`), keeping the series. Story JSON import shares `restoreStory`.
-    - It waits for in-flight saves and flushes the open chapter first.
+- **Transpose story (#111, #113, #112, closes #77).** A stack of three PRs, each reviewed by two lanes before merge. It works on a copy, out of its series, layer by layer: brief → synopsis → bible → chapters.
+    - The chapters are cut into pieces (`src/v2/transpose/pieces.ts`, shared with the server), drafted outline-then-parts, reviewed beside the original, and rebuilt on the server on accept.
+    - The writer sees a cost estimate before the chapter batch starts.
+    - The design is in contracts §11a.
+    - The full-database import now also restores `actionOverrides`, which it had silently dropped before.
+- **E2E ports** can be overridden with `E2E_API_PORT` / `E2E_WEB_PORT`. Another project's Docker container (`long-range-rfid-locator`) held 3101 today, and the runs used 3111/5283.
 
 ## Next work, in order
 
-1. **#77 Transpose story: waiting on the user.** The one-page plan is `docs/transpose-story-plan.md`, and it ends with three decisions:
-    - series handling;
-    - where drafts live;
-    - three-PR delivery.
-
-    No code until they're agreed. It needs a migration (a `transpositions` table), so build it in a worktree, and offer a backup before the migration reaches the live checkout.
-
-2. **Later: #74 multi-user with login, then #73 encryption at rest.** Build these on the consolidated API layer, with one auth/context provider.
-3. **Model per action beyond the sheets (follow-on to #108):** scene-beat takes, ghost continuations, Brainstorm and extraction could name and change their model the same way. Propose this to the user; it isn't agreed yet.
+1. **Later: #74 multi-user with login, then #73 encryption at rest.** Build these on the consolidated API layer, with one auth/context provider.
+2. **Model per action beyond the sheets (follow-on to #108):** scene-beat takes, ghost continuations, Brainstorm and extraction could name and change their model the same way. This isn't agreed yet; propose it to the user first.
+3. **Transposition, left by decision or for later:**
+    - An accepted chapter that is edited later still counts as accepted, because polishing in Write is normal.
+    - Rewritten parts lose inline formatting.
+    - The chapter batch is client-driven, so the tab must stay open.
+    - Global bible entries aren't transposed.
 4. **Open issues to triage when relevant:**
     - #107: sheet model change edges;
     - #104: stale toolbar selection after accepting a sheet result;
-    - #99: overlapping in-app dialogs;
+    - #99: overlapping dialogs;
     - #87: Brainstorm two-tab edge cases;
     - #85: chapter cache, same-second metadata writes;
     - #66.
@@ -75,9 +75,13 @@ From the second Codex pass. Revisit if the writer meets them:
 
 ## What this session taught
 
-- **A fix offered from a sheet must happen in the sheet.** The obvious "link to Settings" would have thrown away the writer's attempts, because they live only in memory.
-- **A mutation check that passes means the test didn't exercise the path.** Disabling Duplicate's chapter flush failed nothing, because the editor's unmount save had already landed. Slowing the save (a delayed route) made the journey prove the flush. It also exposed a silent wait, now shown as _Duplicating…_.
-- **Both review lanes found real defects again.** In #108, a refused run saved the model to the wrong scope. In #109, an in-flight save could be missing from the copy.
+- **A fix offered from a sheet must happen in the sheet.** A "link to Settings" would have thrown away the writer's attempts, because they live only in memory.
+- **A mutation check that passes means the test doesn't reach the code.** Two cases this session:
+    - Mocked generation never touches the server's context assembly, so server-side prompt logic needs a `/api/generate/preview` assertion.
+    - A flush only proved itself once the save was slowed with a delayed route.
+- **`git checkout` can't revert a mutation in an untracked file.** Back the file up, or commit first, before mutating it.
+- **Stacked PRs:** fix each layer's review findings on that layer's branch, then rebase the next onto it. Merge bottom up, and retarget each PR onto `main` before merging it.
+- **Every review lane found real defects again**, in all five PRs. Reviewers were also wrong at least once: GLM claimed foreign-key cascades never fire, but better-sqlite3 enables `foreign_keys` by default.
 
 ## What the previous session taught (also proposed for CLAUDE.md)
 
