@@ -28,6 +28,7 @@ The UI is a writer-first workspace: the manuscript in front, AI machinery behind
 - **Brainstorm**: a critical development-editor chat that has read your story; replies become notes, bible entries or chapter outlines
 - **Import your manuscript**: .txt, .md, .docx or .epub, single or multi-file, with automatic chapter splitting and clean-up of email/usenet headers and Project Gutenberg boilerplate
 - **AI actions, not prompts**: built-in actions with optional per-action overrides (model, sampler settings, template), globally or per story; per-story voice and framing
+- **Transpose a story**: rewrite a copy of a whole story in another time, place or background — brief, synopsis, bible, then each chapter part by part, every layer reviewed before the next
 - **AI providers**: OpenAI, Google Gemini, OpenRouter, or local models (Ollama, LM Studio)
 - **Local-first**: everything lives in a SQLite database on your own machine
 

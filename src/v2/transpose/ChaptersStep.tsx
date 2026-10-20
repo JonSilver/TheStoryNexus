@@ -1,7 +1,11 @@
+import { attemptPromise } from "@jfdi/attempt";
 import { ChevronDown, ChevronRight, Square } from "lucide-react";
 import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
+import { generateApi } from "@/services/api/client";
+import { useConfirm } from "../components/Dialogs";
 import { ChapterReview } from "./ChapterReview";
+import { describePlan, planDrafting } from "./draftEstimate";
 import type { Transposition } from "./state";
 import { useChapterDrafting } from "./useChapterDrafting";
 
@@ -26,6 +30,38 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
     // The first chapter still to do is open unless the writer opened another
     const open = openId ?? remaining[0]?.id ?? null;
     const { progress } = drafting;
+    const confirm = useConfirm();
+    const [estimating, setEstimating] = useState(false);
+    const [estimateError, setEstimateError] = useState<string | null>(null);
+
+    // What it will cost, before anything is spent: the server prices one call without making it
+    const start = async () => {
+        const plan = planDrafting(chapters, transposition.state);
+        const first = plan.sample ?? (remaining[0] && { chapterId: remaining[0].id, selection: "" });
+        if (!first) return;
+        setEstimating(true);
+        setEstimateError(null);
+        const [error, preview] = await attemptPromise(() =>
+            generateApi.preview({
+                actionId: plan.sample ? "transpose_prose" : "transpose_outline",
+                storyId: transposition.storyId,
+                chapterId: first.chapterId,
+                editorContext: { selection: first.selection, userMessage: "(the chapter's outline)" }
+            })
+        );
+        setEstimating(false);
+        if (error || !preview) {
+            setEstimateError(`Couldn't work out what drafting will cost — ${error?.message ?? "no answer"}`);
+            return;
+        }
+        const model = preview.model ? preview.model.modelId.replace(/^local\//, "") : "the default model";
+        const go = await confirm({
+            title: "Draft the chapters",
+            message: describePlan(plan, { promptTokens: preview.promptTokens, model }),
+            confirmLabel: "Start drafting"
+        });
+        if (go) void drafting.sweep(remaining);
+    };
 
     if (isLoading) return <p className="p-4 text-sm text-muted-foreground">Loading chapters…</p>;
     return (
@@ -56,17 +92,25 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
                     remaining.length > 0 && (
                         <button
                             type="button"
-                            disabled={drafting.apply.isPending}
-                            onClick={() => void drafting.sweep(remaining)}
+                            disabled={drafting.apply.isPending || estimating}
+                            onClick={() => void start()}
                             className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground disabled:opacity-50"
                         >
-                            {remaining.length === chapters.length
-                                ? "Draft all the chapters"
-                                : `Draft the ${remaining.length} remaining chapter${remaining.length === 1 ? "" : "s"}`}
+                            {estimating
+                                ? "Working out what it will cost…"
+                                : remaining.length === chapters.length
+                                  ? "Draft all the chapters"
+                                  : `Draft the ${remaining.length} remaining chapter${remaining.length === 1 ? "" : "s"}`}
                         </button>
                     )
                 )}
                 {drafting.sweepFailure && <p className="text-destructive">{drafting.sweepFailure}</p>}
+                {estimateError && <p className="text-destructive">{estimateError}</p>}
+                {drafting.generation.model && (
+                    <p className="text-xs text-muted-foreground">
+                        Model: {drafting.generation.model.modelId.replace(/^local\//, "")}
+                    </p>
+                )}
             </div>
             <ul className="divide-y border-y">
                 {chapters.map(chapter => (
