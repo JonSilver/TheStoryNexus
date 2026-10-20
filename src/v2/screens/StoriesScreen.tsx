@@ -24,7 +24,8 @@ export const StoriesScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title="Library" onBack={() => goBack("story")}>
+            {/* With no story open, the library is where the writer starts: nothing to go back to */}
+            <ScreenHeader title="Library" onBack={currentStoryId ? () => goBack("story") : undefined}>
                 <label className="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm">
                     JSON
                     <input

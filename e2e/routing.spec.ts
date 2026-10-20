@@ -102,16 +102,21 @@ test("a chapter the server won't return says so and offers to try again", async 
 });
 
 test("every screen about a story names it; tab screens have no back, the screens under them do", async ({ page }) => {
-    await createStoryAndChapter(page, "Context — Ashford", "One");
     const header = page.locator("header");
     const back = page.getByRole("button", { name: /^Back/ });
+    // No story open yet: the library is the starting point, with nowhere to go back to
+    await page.goto("/library");
+    await expect(header.getByRole("heading", { name: "Library" })).toBeVisible();
+    await expect(back).toHaveCount(0);
+
+    await createStoryAndChapter(page, "Context — Ashford", "One");
 
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await expect(header.getByRole("heading", { name: "Brainstorm" })).toBeVisible();
     await expect(header.getByText("Context — Ashford")).toBeVisible();
     await expect(back).toHaveCount(0);
 
-    for (const screen of ["Chapters", "Story Bible", "Notes"]) {
+    for (const screen of ["Chapters", "Story Bible", "Notes", "Read"]) {
         await page.getByRole("button", { name: "Story", exact: true }).click();
         await page.getByRole("button", { name: screen }).click();
         await expect(header.getByRole("heading", { name: screen })).toBeVisible();

@@ -41,7 +41,7 @@ export const ActionsScreen = () => {
                     aria-pressed={scope === "story"}
                     className={`min-w-0 truncate rounded-md border px-3 py-1.5 disabled:opacity-50 ${scope === "story" ? "bg-accent" : ""}`}
                 >
-                    {story ? `This story: ${story.title}` : "This story (none open)"}
+                    {!currentStoryId ? "This story (none open)" : story ? `This story: ${story.title}` : "This story"}
                 </button>
             </div>
 

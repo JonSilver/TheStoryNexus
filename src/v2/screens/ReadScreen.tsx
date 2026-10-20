@@ -19,7 +19,7 @@ export const ReadScreen = () => {
 
     return (
         <div className="flex h-full flex-col">
-            <ScreenHeader title={story?.title} onBack={() => goBack("story")} />
+            <ScreenHeader title="Read" story={story?.title} onBack={() => goBack("story")} />
             <div className="min-h-0 flex-1 overflow-y-auto">
                 <div className="mx-auto max-w-2xl space-y-12 px-4 py-8">
                     {isLoading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}
