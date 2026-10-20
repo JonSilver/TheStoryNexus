@@ -44,7 +44,7 @@ router.get("/registry", (_req, res) => {
     res.json(Object.values(BUILTIN_ACTIONS));
 });
 
-// Overrides for a scope: global (no storyId) or a story (global + story rows)
+// Overrides for one scope: global (no storyId) or that story's own rows
 router.get(
     "/overrides",
     asyncHandler(async (req, res) => {

@@ -274,11 +274,47 @@ test.describe("against a real model server", () => {
             await pick("fake-model");
             await expect(sheet.getByText("Model: fake-model (chosen for this story)")).toBeVisible();
             expect(server.lastModel).toBe("fake-model");
+            await sheet.getByRole("button", { name: "Discard" }).click();
+
+            // Refused before it started (no model named): the story's own choice is still the one changed
+            await page.route(
+                "**/api/generate/action",
+                route =>
+                    route.fulfill({
+                        status: 422,
+                        contentType: "application/json",
+                        body: JSON.stringify({
+                            error: "Prompt template and output size exceed the model's context window"
+                        })
+                    }),
+                { times: 1 }
+            );
+            await reworkAll(page);
+            await expect(sheet.getByText(/exceed the model's context window/)).toBeVisible();
+            await sheet.getByRole("button", { name: "Use a different model for Rework" }).click();
+            await expect(sheet.getByText(/Model for Rework in this story/)).toBeVisible();
+            await pick("zeta-model");
+            await expect(sheet.getByText("Model: zeta-model (chosen for this story)")).toBeVisible();
+            expect(server.lastModel).toBe("zeta-model");
+
             const [story] = await (await page.request.get(`/api/actions/overrides?storyId=${storyId}`)).json();
             // Only the model changed: the story's other settings for the action stay
-            expect(story).toMatchObject({ modelRef: "local::local/fake-model", temperature: 0.3 });
+            expect(story).toMatchObject({ modelRef: "local::local/zeta-model", temperature: 0.3 });
             const [global] = await (await page.request.get("/api/actions/overrides")).json();
             expect(global).toMatchObject({ actionId: "rework", modelRef: "local::local/alpha-model" });
+            await sheet.getByRole("button", { name: "Discard" }).click();
+
+            // Seen from a story, Settings names the model that actually runs: its own, all stories', or the default
+            await page.goto("/settings/actions");
+            await page.getByRole("button", { name: /^This story: / }).click();
+            await expect(page.getByRole("button", { name: /^Rework/ })).toContainText("model: zeta-model");
+            await page.request.delete(`/api/actions/overrides/rework?storyId=${storyId}`);
+            await page.reload();
+            await page.getByRole("button", { name: /^This story: / }).click();
+            await expect(page.getByRole("button", { name: /^Rework/ })).toContainText(
+                "model: alpha-model (all stories)"
+            );
+            await expect(page.getByRole("button", { name: /^Expand/ })).toContainText("model: fake-model (default)");
         } finally {
             await page.request.delete("/api/actions/overrides/rework");
         }

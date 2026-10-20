@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { ActionId, AnsweredModel } from "@/types/actions";
 import type { ModelChoice } from "@/types/story";
-import { useSetActionModel } from "../drawer/useActionOverrides";
+import { useOverrides, useSetActionModel } from "../drawer/useActionOverrides";
 import type { SheetModel } from "./SheetModelLine";
 import type { GenerationPhase } from "./useActionGeneration";
 
@@ -27,7 +27,11 @@ export const useSheetModel = ({
     const { model: running } = generation;
     const shownAttempt = attempts.currentModel;
     const setActionModel = useSetActionModel();
-    const scope: SheetModel["scope"] = (running ?? shownAttempt)?.source === "story" ? "story" : "global";
+    const { data: storyOverrides } = useOverrides(storyId);
+    // A run refused before it began never names its model; a story's own choice still outranks all stories'
+    const storyHasModel = Boolean(storyOverrides?.find(o => o.actionId === action?.id)?.modelRef);
+    const known = running ?? shownAttempt;
+    const scope: SheetModel["scope"] = (known ? known.source === "story" : storyHasModel) ? "story" : "global";
     const actionId = action?.id;
     const choose = useCallback(
         async (next: ModelChoice | null) => {
