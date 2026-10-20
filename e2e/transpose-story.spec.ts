@@ -240,3 +240,102 @@ test("a brief too long to leave room for the bible fails loudly, not with an emp
     expect(preview.status()).toBe(422);
     expect((await preview.json()).error).toMatch(/brief is too long/);
 });
+
+test("a brief the writer already has is pasted in whole and becomes the brief — paragraphs intact, no model call", async ({
+    page
+}) => {
+    const calls: string[] = [];
+    await mockGeneration(page, ({ actionId }) => {
+        calls.push(actionId);
+        return "unexpected";
+    });
+    const { storyId } = await seedOriginal(page);
+    // A long, multi-paragraph brief, as written in Brainstorm
+    const section = (n: number) =>
+        `${n}. THE WORLD\n\nWealth is measured in Life Support Charters, indivisible shares that guarantee oxygen quotas and clean water. `.repeat(
+            12
+        );
+    const brief = `PITCH BRIEF: THE ENTROPY OF GRACE\nGenre: Hard Science Fiction\n\n${[1, 2, 3, 4, 5, 6].map(section).join("\n\n")}`;
+    expect(brief.length).toBeGreaterThan(9_000);
+
+    await page.goto(`/story/${storyId}`);
+    await page.getByRole("button", { name: "Transpose to another time or place…" }).click();
+    await page.getByLabel("Where and when should it be set?").click();
+    await page.keyboard.insertText(brief);
+    await page.getByRole("button", { name: "Make a copy and start" }).click();
+
+    await expect(page.getByText("Transpose — original (PITCH BRIEF: THE ENTROPY OF GRACE)")).toBeVisible();
+    await expect(page.getByText(/Moving this copy to the setting in your brief/)).toBeVisible();
+    await expect(page.getByLabel("Draft", { exact: true })).toHaveValue(brief.trim());
+    expect(calls).toHaveLength(0);
+    // The AI can still draft one, and says so rather than "Try again"
+    await expect(page.getByRole("button", { name: "Draft one with the AI" })).toBeVisible();
+    await page.getByRole("button", { name: "Accept the brief" }).click();
+
+    // The accepted brief stays the writer's to revise
+    await page.getByText("The brief", { exact: true }).click();
+    const accepted = page.getByLabel("The accepted brief");
+    await expect(accepted).toHaveValue(brief.trim());
+    await accepted.fill("PITCH BRIEF: THE ENTROPY OF GRACE\n\nShorter now.");
+    await page.getByRole("button", { name: "Save the brief" }).click();
+    await expect
+        .poll(async () => {
+            const copyId = new URL(page.url()).pathname.split("/")[2];
+            return (await (await page.request.get(`/api/transpositions/${copyId}`)).json()).brief;
+        })
+        .toBe("PITCH BRIEF: THE ENTROPY OF GRACE\n\nShorter now.");
+
+    // The writer can bring their own synopsis too
+    await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");
+    await page.getByRole("button", { name: "Write or paste your own synopsis" }).click();
+    await page.getByLabel("Write or paste your own synopsis").fill("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Keep as a draft" }).click();
+    await expect(page.getByLabel("Draft", { exact: true })).toHaveValue("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Accept the synopsis" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Bible");
+    expect(calls).toHaveLength(0);
+});
+
+test("a transposition refused at the start says what's actually wrong", async ({ page }) => {
+    const { storyId } = await seedOriginal(page);
+    const empty = await page.request.post("/api/transpositions", { data: { sourceStoryId: storyId, target: "  " } });
+    expect((await empty.json()).error).toMatch(/Say where and when the story should be set, or paste a brief/);
+    const huge = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "x".repeat(100_001) }
+    });
+    expect((await huge.json()).error).toMatch(/100,001 characters — the most a brief can be is 100,000/);
+});
+
+test("a story with no synopsis can be given one; an edit pressed straight into Accept raises no false error", async ({
+    page
+}) => {
+    await mockGeneration(page, () => "unexpected");
+    const { storyId } = await seedOriginal(page);
+    await page.request.put(`/api/stories/${storyId}`, { data: { synopsis: "" } });
+    const started = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "1990s Belfast" }
+    });
+    const { storyId: copyId } = (await started.json()) as { storyId: string };
+    await page.request.post(`/api/transpositions/${copyId}/ops`, { data: { op: "addBriefAttempt", text: "A brief." } });
+
+    await page.goto(`/story/${copyId}/transpose`);
+    const draft = page.getByLabel("Draft", { exact: true });
+    await expect(draft).toHaveValue("A brief.");
+    // Edit and accept at once: the accept carries the edit; nothing reports a failed save afterwards
+    await draft.fill("A brief, edited.");
+    await page.getByRole("button", { name: "Accept the brief" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");
+    await page.waitForTimeout(1500);
+    await expect(page.getByText(/That step is finished/)).toHaveCount(0);
+    expect((await (await page.request.get(`/api/transpositions/${copyId}`)).json()).brief).toBe("A brief, edited.");
+
+    await expect(page.getByText(/This story has no synopsis/)).toBeVisible();
+    await page.getByRole("button", { name: "Write or paste your own synopsis" }).click();
+    await page.getByLabel("Write or paste your own synopsis").fill("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Keep as a draft" }).click();
+    await page.getByRole("button", { name: "Accept the synopsis" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Bible");
+    expect((await (await page.request.get(`/api/stories/${copyId}`)).json()).synopsis).toBe(
+        "Elinor keeps the family breathing."
+    );
+});

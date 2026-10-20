@@ -78,7 +78,10 @@ const LABELS = [
     "Go on to the chapters",
     "Draft all the chapters",
     "Accept this chapter",
-    "Finish the transposition"
+    "Finish the transposition",
+    "Write or paste your own brief",
+    "Write or paste your own synopsis",
+    "Save the brief"
 ];
 
 const TOOLS: V2Tool[] = [

@@ -1,9 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import {
     initialState,
+    isWrittenBrief,
     readStage,
     readState,
     syncEntries,
+    targetName,
     type Stage,
     type Transposition,
     type TranspositionState
@@ -64,11 +66,6 @@ export const readTransposition = (q: Tx | typeof db, row: Row): Transposition =>
     };
 };
 
-const TITLE_TARGET_CHARS = 60;
-
-const shortTarget = (target: string) =>
-    target.length <= TITLE_TARGET_CHARS ? target : `${target.slice(0, TITLE_TARGET_CHARS).replace(/\s+\S*$/, "")}…`;
-
 export const createTransposition = async (sourceStoryId: string, target: string) => {
     const backup = await exportStoryBackup(sourceStoryId);
     if (!backup) return null;
@@ -89,7 +86,7 @@ export const createTransposition = async (sourceStoryId: string, target: string)
         { ...backup, lorebookEntries: [...backup.lorebookEntries, ...seriesEntries], transposition: null },
         {
             seriesId: null,
-            title: `${backup.story.title} (${shortTarget(target)})`,
+            title: `${backup.story.title} (${targetName(target)})`,
             also: (tx, rows) =>
                 tx
                     .insert(schema.transpositions)
@@ -99,16 +96,20 @@ export const createTransposition = async (sourceStoryId: string, target: string)
                         sourceStoryId,
                         target,
                         stage: "brief",
-                        state: initialState(
-                            rows.story.synopsis ?? "",
-                            rows.lorebookEntries.map(entry => ({
-                                id: entry.id,
-                                name: entry.name,
-                                category: entry.category,
-                                description: entry.description,
-                                tags: (entry.tags as string[]) ?? []
-                            }))
-                        ),
+                        state: {
+                            ...initialState(
+                                rows.story.synopsis ?? "",
+                                rows.lorebookEntries.map(entry => ({
+                                    id: entry.id,
+                                    name: entry.name,
+                                    category: entry.category,
+                                    description: entry.description,
+                                    tags: (entry.tags as string[]) ?? []
+                                }))
+                            ),
+                            // A brief the writer brought is the first draft, as written — no model call
+                            briefAttempts: isWrittenBrief(target) ? [target.trim()] : []
+                        },
                         createdAt: now,
                         updatedAt: now
                     })
@@ -129,7 +130,8 @@ export const applyOp = (storyId: string, op: TranspositionOp): Outcome =>
         const [row] = tx.select().from(schema.transpositions).where(eq(schema.transpositions.storyId, storyId)).all();
         if (!row) return fail(404, "This story isn't being transposed");
         const current = readTransposition(tx, row);
-        if (current.stage !== OP_STAGE[op.op])
+        const allowed = OP_STAGE[op.op];
+        if (!(Array.isArray(allowed) ? allowed.includes(current.stage) : allowed === current.stage))
             return fail(409, `That step is finished — this transposition is at ${current.stage}`);
         if ("entryId" in op && !(op.entryId in current.state.entries))
             return fail(404, "That entry isn't part of this transposition");

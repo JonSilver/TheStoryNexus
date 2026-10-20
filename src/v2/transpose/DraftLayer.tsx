@@ -14,6 +14,7 @@ export const DraftLayer = ({
     layer,
     explainer,
     draftLabel,
+    againLabel = "Try again",
     acceptLabel,
     onAccept,
     accepting,
@@ -22,6 +23,8 @@ export const DraftLayer = ({
     layer: ReturnType<typeof useDraftLayer>;
     explainer: string;
     draftLabel: string;
+    /** When there are drafts already — e.g. one the writer brought, where "Try again" would mislead. */
+    againLabel?: string;
     acceptLabel: string;
     onAccept: (text: string) => void;
     accepting: boolean;
@@ -90,7 +93,11 @@ export const DraftLayer = ({
                             <button
                                 type="button"
                                 disabled={!shown.trim() || accepting}
-                                onClick={() => onAccept(shown.trim())}
+                                onClick={() => {
+                                    // The accept carries the text: a pending edit save would land after the step closed
+                                    layer.settleEdits();
+                                    onAccept(shown.trim());
+                                }}
                                 className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                             >
                                 {acceptLabel}
@@ -104,7 +111,7 @@ export const DraftLayer = ({
                             }`}
                         >
                             {drafts.length > 0 && <RotateCcw className="h-3.5 w-3.5" />}
-                            {drafts.length ? "Try again" : draftLabel}
+                            {drafts.length ? againLabel : draftLabel}
                         </button>
                         {extra}
                     </>

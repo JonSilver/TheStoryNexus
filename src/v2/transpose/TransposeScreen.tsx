@@ -9,10 +9,16 @@ import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 import { BibleStep } from "./BibleStep";
+import { BriefPanel } from "./BriefPanel";
 import { ChaptersStep } from "./ChaptersStep";
 import { DraftLayer } from "./DraftLayer";
-import { STAGES, type Stage, type Transposition, type TranspositionOp } from "./state";
+import { OwnDraft } from "./OwnDraft";
+import { isWrittenBrief, STAGES, type Stage, targetName, type Transposition, type TranspositionOp } from "./state";
 import { useDraftLayer } from "./useDraftLayer";
+
+/** A short target as it is; a brief the writer brought, by what it is. */
+const settingOf = (target: string) =>
+    isWrittenBrief(target) ? `the setting in your brief (${targetName(target)})` : target;
 
 const STEP_LABELS: Record<Exclude<Stage, "done">, string> = {
     brief: "Brief",
@@ -58,8 +64,16 @@ const BriefStep = ({ transposition }: { transposition: Transposition }) => {
     return (
         <DraftLayer
             layer={layer}
-            explainer={`The brief maps the story onto ${transposition.target}: what each place, institution and custom becomes, and the social pressures that will do the work the originals did. Edit it until it's right — every later step follows it.`}
+            explainer={`The brief maps the story onto ${settingOf(transposition.target)}: what each place, institution and custom becomes, and the social pressures that will do the work the originals did. Draft one, or bring your own; edit it until it's right — every later step follows it.`}
             draftLabel="Draft the brief"
+            againLabel={isWrittenBrief(transposition.target) ? "Draft one with the AI" : undefined}
+            extra={
+                <OwnDraft
+                    label="Write or paste your own brief"
+                    busy={apply.isPending}
+                    onKeep={text => record({ op: "addBriefAttempt", text })}
+                />
+            }
             acceptLabel="Accept the brief"
             accepting={apply.isPending}
             onAccept={brief => apply.mutate({ op: "acceptBrief", brief })}
@@ -86,13 +100,22 @@ const SynopsisStep = ({ transposition }: { transposition: Transposition }) => {
             {transposition.state.synopsis.original ? "Keep the synopsis as it is" : "Go on to the bible"}
         </button>
     );
-    if (!transposition.state.synopsis.original)
+    // No synopsis to transpose: the writer can still write one for the copy, or go on
+    if (!transposition.state.synopsis.original && !transposition.state.synopsis.attempts.length)
         return (
             <section className="space-y-3 px-4 py-4 text-sm">
                 <p className="text-muted-foreground">
-                    This story has no synopsis, so there's nothing to transpose here.
+                    This story has no synopsis, so there's nothing to transpose here — write one for the copy if you
+                    like.
                 </p>
-                {keepIt}
+                <div className="flex flex-wrap gap-2">
+                    {keepIt}
+                    <OwnDraft
+                        label="Write or paste your own synopsis"
+                        busy={apply.isPending}
+                        onKeep={text => record({ op: "addSynopsisAttempt", text })}
+                    />
+                </div>
             </section>
         );
     return (
@@ -103,7 +126,16 @@ const SynopsisStep = ({ transposition }: { transposition: Transposition }) => {
             acceptLabel="Accept the synopsis"
             accepting={apply.isPending}
             onAccept={synopsis => apply.mutate({ op: "acceptSynopsis", synopsis })}
-            extra={keepIt}
+            extra={
+                <>
+                    {keepIt}
+                    <OwnDraft
+                        label="Write or paste your own synopsis"
+                        busy={apply.isPending}
+                        onKeep={text => record({ op: "addSynopsisAttempt", text })}
+                    />
+                </>
+            }
         />
     );
 };
@@ -112,7 +144,7 @@ const DoneStep = ({ transposition }: { transposition: Transposition }) => {
     const { goTo } = useNav();
     return (
         <section className="space-y-3 px-4 py-4 text-sm">
-            <p>Every chapter is transposed. This copy now reads as {transposition.target}.</p>
+            <p>Every chapter is transposed. This copy is now set in {settingOf(transposition.target)}.</p>
             <div className="flex gap-2">
                 <button
                     type="button"
@@ -171,10 +203,11 @@ export const TransposeScreen = () => {
         return (
             <>
                 <p className="px-4 pt-3 text-sm">
-                    Moving this copy to <span className="font-medium">{transposition.target}</span>. The original is
-                    untouched.
+                    Moving this copy to <span className="font-medium">{settingOf(transposition.target)}</span>. The
+                    original is untouched.
                 </p>
                 <Steps stage={transposition.stage} />
+                {transposition.stage !== "brief" && <BriefPanel transposition={transposition} />}
                 <Step key={transposition.stage} transposition={transposition} />
             </>
         );

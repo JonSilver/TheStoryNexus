@@ -23,6 +23,7 @@ const entryValue = z.object({
 export const opSchema = z.discriminatedUnion("op", [
     z.object({ op: z.literal("addBriefAttempt"), text }),
     z.object({ op: z.literal("acceptBrief"), brief: text }),
+    z.object({ op: z.literal("reviseBrief"), brief: text }),
     z.object({ op: z.literal("addSynopsisAttempt"), text }),
     // null: keep the synopsis as it is
     z.object({ op: z.literal("acceptSynopsis"), synopsis: text.nullable() }),
@@ -65,7 +66,7 @@ export const opSchema = z.discriminatedUnion("op", [
 export type TranspositionOp = z.infer<typeof opSchema>;
 
 /** Which stage each op belongs to: anything else is a stale screen acting on a layer already settled. */
-export const OP_STAGE: Record<TranspositionOp["op"], Stage> = {
+export const OP_STAGE: Record<TranspositionOp["op"], Stage | Stage[]> = {
     addBriefAttempt: "brief",
     acceptBrief: "brief",
     addSynopsisAttempt: "synopsis",
@@ -82,7 +83,9 @@ export const OP_STAGE: Record<TranspositionOp["op"], Stage> = {
     addPieceAttempt: "chapters",
     editPieceDraft: "chapters",
     acceptChapter: "chapters",
-    finishChapters: "chapters"
+    finishChapters: "chapters",
+    // The brief, once accepted, stays the writer's to revise: later steps use it as it is now
+    reviseBrief: ["synopsis", "bible", "chapters", "done"]
 };
 
 export type Outcome = { ok: true; transposition: Transposition } | { ok: false; status: number; error: string };
@@ -126,6 +129,7 @@ export const STORY_HANDLERS: Pick<
     Handlers,
     | "addBriefAttempt"
     | "acceptBrief"
+    | "reviseBrief"
     | "addSynopsisAttempt"
     | "acceptSynopsis"
     | "addEntryAttempt"
@@ -138,6 +142,7 @@ export const STORY_HANDLERS: Pick<
 > = {
     addBriefAttempt: (op, state) => ({ state: { ...state, briefAttempts: [...state.briefAttempts, op.text] } }),
     acceptBrief: op => ({ brief: op.brief, stage: "synopsis" }),
+    reviseBrief: op => ({ brief: op.brief }),
     addSynopsisAttempt: (op, state) => ({
         state: { ...state, synopsis: { ...state.synopsis, attempts: [...state.synopsis.attempts, op.text] } }
     }),

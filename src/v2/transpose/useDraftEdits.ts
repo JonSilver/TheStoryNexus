@@ -52,5 +52,12 @@ export const useDraftEdits = <T, K extends string | number = number>(save: (key:
         [commit]
     );
 
-    return { edits, edit };
+    /** Drops edits still waiting to save — when an accept carries the text itself, and the step is about to close. */
+    const settle = () => {
+        timers.current.forEach(timer => clearTimeout(timer));
+        timers.current.clear();
+        latest.current.clear();
+    };
+
+    return { edits, edit, settle };
 };

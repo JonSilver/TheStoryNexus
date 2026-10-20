@@ -63,6 +63,9 @@ export const StoryCopyActions = ({ story }: { story: Story | undefined }) => {
         const target = await prompt({
             title: "Transpose story",
             label: "Where and when should it be set?",
+            multiline: {
+                hint: "Where and when should it be set? A line will do — the AI drafts a brief from it. Or paste a brief you already have, and it becomes the brief, ready to edit."
+            },
             confirmLabel: "Make a copy and start"
         });
         if (!target) return;

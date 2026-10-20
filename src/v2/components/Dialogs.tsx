@@ -13,6 +13,8 @@ interface PromptRequest {
     label: string;
     initial?: string;
     confirmLabel?: string;
+    /** A box for paragraphs (pasted text keeps its line breaks), with a line of help above it. */
+    multiline?: { hint: string };
 }
 
 interface Dialogs {
@@ -79,12 +81,24 @@ export const DialogsProvider = ({ children }: { children: ReactNode }) => {
                                 settle(draft);
                             }}
                         >
-                            <input
-                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                aria-label={open.request.label}
-                                value={draft}
-                                onChange={event => setDraft(event.target.value)}
-                            />
+                            {open.request.multiline ? (
+                                <>
+                                    <p className="mb-2 text-sm text-muted-foreground">{open.request.multiline.hint}</p>
+                                    <textarea
+                                        className="h-48 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm"
+                                        aria-label={open.request.label}
+                                        value={draft}
+                                        onChange={event => setDraft(event.target.value)}
+                                    />
+                                </>
+                            ) : (
+                                <input
+                                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                    aria-label={open.request.label}
+                                    value={draft}
+                                    onChange={event => setDraft(event.target.value)}
+                                />
+                            )}
                             <DialogFooter className="mt-4">
                                 <button
                                     type="button"
