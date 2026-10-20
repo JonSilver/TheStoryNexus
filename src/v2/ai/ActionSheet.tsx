@@ -41,8 +41,8 @@ export const ActionSheet = ({
     attemptCount?: number;
     /** The attempt shown was cut short by a failure. */
     attemptPartial?: boolean;
-    /** The shown reply looks like more than the passage: why, and how to keep just the passage's length. */
-    suspect?: { concerns: string[]; keepPassage?: { paragraphs: number; keep: () => void } } | null;
+    /** The shown reply may be more than prose: why, and (when notes were found) the reply without them. */
+    suspect?: { concerns: string[]; removeNotes?: () => void } | null;
     onSelectAttempt?: (index: number) => void;
     /** Run the same request again — after a failure or an unusable result. */
     onAgain?: () => void;
@@ -164,20 +164,14 @@ export const ActionSheet = ({
                                 role="alert"
                                 className="mb-2 space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs whitespace-normal"
                             >
-                                <p>
-                                    This may be more than your passage — {suspect.concerns.join("; ")}. Check it before
-                                    you use it.
-                                </p>
-                                {suspect.keepPassage && (
+                                <p>Check this before you use it: {suspect.concerns.join("; ")}.</p>
+                                {suspect.removeNotes && (
                                     <button
                                         type="button"
-                                        onClick={suspect.keepPassage.keep}
+                                        onClick={suspect.removeNotes}
                                         className="rounded-md border bg-background px-2 py-1"
                                     >
-                                        Keep only the first{" "}
-                                        {suspect.keepPassage.paragraphs === 1
-                                            ? "paragraph"
-                                            : `${suspect.keepPassage.paragraphs} paragraphs`}
+                                        Remove the model's notes
                                     </button>
                                 )}
                             </div>

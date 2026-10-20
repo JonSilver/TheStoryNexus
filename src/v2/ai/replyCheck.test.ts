@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkReply, firstParagraphs } from "./replyCheck";
+import { checkReply } from "./replyCheck";
 
 const passage =
     '"My own loss is great," said he, "in being obliged to leave so agreeable a party; but I am the more concerned, as I fear my presence is necessary to gain your admittance at Whitwell."';
@@ -8,44 +8,47 @@ const rework =
 
 describe("checkReply", () => {
     it("passes a clean rework, even a little longer than the passage", () => {
-        expect(checkReply("rework", passage, rework).concerns).toEqual([]);
+        expect(checkReply("rework", passage, rework)).toEqual({ concerns: [], proseOnly: null });
     });
 
-    it("flags a rework with a list of revisions after it", () => {
-        const reply = `${rework}\n\nRevisions made:\n\n1. Changed "so agreeable a party".\n2. Replaced "the more concerned".`;
+    it("finds a list of revisions after the rewrite, and offers the rewrite alone", () => {
+        const reply = `${rework}\n\nRevisions made:\n\n1. Changed "so agreeable a party" to "such a delightful gathering".\n2. Replaced "the more concerned" with "even more troubled".\n\nThe rewritten sentence maintains the formal style of the original.`;
         const check = checkReply("rework", passage, reply);
-        expect(check.concerns.length).toBeGreaterThan(0);
-        expect(check.hasExtraParagraphs).toBe(true);
-        expect(firstParagraphs(reply, check.passageParagraphs)).toBe(rework);
+        expect(check.concerns).toContain("part of it reads like the model's notes, not your story");
+        expect(check.proseOnly).toBe(rework);
     });
 
-    it("flags a rework followed by an apology and a lecture", () => {
+    it("finds an apology and lecture after the rewrite, tail and all", () => {
         const reply = `${rework}\n\nI apologize, but I'm unable to proceed with that as I am an English writing assistant.\n\nThank you again for your comprehension.`;
-        const check = checkReply("rework", passage, reply);
-        expect(check.concerns).toContain("it reads like the model talking about its work");
-        expect(firstParagraphs(reply, check.passageParagraphs)).toBe(rework);
+        expect(checkReply("rework", passage, reply).proseOnly).toBe(rework);
     });
 
-    it("flags a shortening that came back longer", () => {
-        expect(checkReply("shorten", passage, `${passage} And more besides.`).concerns).toContain(
-            "it's much longer than your passage"
-        );
+    it("finds a preamble before the rewrite", () => {
+        const reply = `Here is the revised passage:\n\n${rework}`;
+        expect(checkReply("rework", passage, reply).proseOnly).toBe(rework);
     });
 
-    it("lets an expansion grow, but not without bound", () => {
-        expect(checkReply("expand", passage, `${rework} ${rework} ${rework}`).concerns).toEqual([]);
-        expect(checkReply("expand", "Short.", "word ".repeat(400)).concerns).toContain(
-            "it's much longer than your passage"
-        );
+    it("never takes dialogue for notes", () => {
+        const dialogue = '"I\'m sorry," she said. "I cannot help you, and I hope this helps you understand why."';
+        expect(
+            checkReply("ask", dialogue, `${dialogue}\n\n"Let me know when you've decided," he replied.`).concerns
+        ).toEqual([]);
     });
 
-    it("keeps dialogue and the passage's own lists unflagged", () => {
-        const list = "1. Flour\n2. Eggs";
-        expect(checkReply("rework", list, "1. Plain flour\n2. Two eggs").concerns).toEqual([]);
+    it("lets a rework become two paragraphs, and a shortening stay as long", () => {
+        const two = 'He said he must go.\n\n"Whitwell needs me," he added.';
+        expect(checkReply("rework", "He said he must go, for Whitwell needed him.", two).concerns).toEqual([]);
+        expect(checkReply("shorten", passage, passage).concerns).toEqual([]);
     });
 
-    it("judges Ask only by assistant-speak, not length", () => {
-        expect(checkReply("ask", "Short.", "A much longer passage. ".repeat(50)).concerns).toEqual([]);
-        expect(checkReply("ask", "Short.", "Here is the revised passage:\nShort indeed.").concerns.length).toBe(1);
+    it("reports a shortening that grew, without offering to cut it", () => {
+        const check = checkReply("shorten", passage, `${passage} And more besides.`);
+        expect(check.concerns).toEqual(["it's longer than your passage"]);
+        expect(check.proseOnly).toBeNull();
+    });
+
+    it("never limits an expansion or an Ask by length", () => {
+        expect(checkReply("expand", "Short.", "A longer passage. ".repeat(200)).concerns).toEqual([]);
+        expect(checkReply("ask", "Short.", "1. Flour\n2. Eggs").concerns).toEqual([]);
     });
 });

@@ -18,7 +18,7 @@ import type { Chapter } from "@/types/story";
 import { $appendParagraphs, $captureSelection, $textBefore } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { checkReply, firstParagraphs, type ReplyAction } from "./replyCheck";
+import { checkReply, type ReplyAction } from "./replyCheck";
 import { SELECTION_ACTIONS, type SelectionActionId } from "./selectionActions";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 import { useAttempts } from "./useAttempts";
@@ -245,17 +245,13 @@ export const useEditorActions = (chapter: Chapter) => {
     const shownReply = generation.phase === "streaming" ? null : attempts.current;
     const replyAction = active && active.kind !== "summarise" ? (active.id as ReplyAction) : null;
     const check = shownReply && replyAction ? checkReply(replyAction, savedSelectionText.current, shownReply) : null;
+    const proseOnly = check?.proseOnly ?? null;
     const suspect =
-        check && shownReply && check.concerns.length > 0
+        check && check.concerns.length > 0
             ? {
                   concerns: check.concerns,
-                  keepPassage: check.hasExtraParagraphs
-                      ? {
-                            paragraphs: check.passageParagraphs,
-                            // A new attempt: the full reply stays one tap away
-                            keep: () => record(firstParagraphs(shownReply, check.passageParagraphs))
-                        }
-                      : undefined
+                  // A new attempt: the full reply stays one tap away
+                  removeNotes: proseOnly === null ? undefined : () => record(proseOnly)
               }
             : null;
 
