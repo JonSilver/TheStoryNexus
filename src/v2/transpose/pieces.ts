@@ -12,9 +12,9 @@ import { type LexicalNode, parseEditorState } from "../export/blocks.js";
 import { blocksToPlainText } from "../export/toPlainText.js";
 
 // A rewrite comes out about as long as its source: ~1,600 tokens each way fits a 16k window with the brief and bible
-export const PIECE_WORDS = 1200;
+const PIECE_WORDS = 1200;
 
-export type Piece = { kind: "prose"; text: string; words: number } | { kind: "keep"; node: LexicalNode };
+type Piece = { kind: "prose"; text: string; words: number } | { kind: "keep"; node: LexicalNode };
 
 const KEEP = new Set(["horizontalrule", "image"]);
 const MACHINERY = new Set(["scene-beat", "scene-beat-v2", "suggestion-v2"]);

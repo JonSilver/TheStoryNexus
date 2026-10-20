@@ -68,7 +68,17 @@ const LABELS = [
     "Scene Beat",
     "Server URL",
     "Look again",
-    "Derive from my writing"
+    "Derive from my writing",
+    "Duplicate this story…",
+    "Transpose to another time or place…",
+    "Draft the brief",
+    "Accept the brief",
+    "Transpose all entries",
+    "Keep as it was",
+    "Go on to the chapters",
+    "Draft all the chapters",
+    "Accept this chapter",
+    "Finish the transposition"
 ];
 
 const TOOLS: V2Tool[] = [
@@ -84,7 +94,8 @@ const TOOLS: V2Tool[] = [
     "read",
     "providers",
     "serieslist",
-    "guidepage"
+    "guidepage",
+    "transpose"
 ];
 const STORYLESS_ROUTES = new Set(TOOLS.map(tool => pathFor(tool, null)));
 

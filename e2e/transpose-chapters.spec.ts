@@ -20,9 +20,28 @@ const TWO = doc(para("Aunt Hester wrote to London."));
 
 const moved = (passage: string) => passage.replace("Aunt Hester", "Mrs Brennan").replace("Whitwell Hall", "the shop");
 
+/** Drafting starts after the writer has seen what it will cost. */
+const startDrafting = async (page: Page, estimate?: RegExp) => {
+    await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    const dialog = page.getByRole("alertdialog");
+    if (estimate) await expect(dialog).toContainText(estimate);
+    await dialog.getByRole("button", { name: "Start drafting" }).click();
+};
+
 type Generated = { actionId: string; chapterId?: string; editorContext?: Record<string, string> };
 
+test.afterEach(async ({ request }) => {
+    await request.delete("/api/actions/overrides/transpose_outline");
+    const settings = await (await request.get("/api/ai/settings")).json();
+    await request.put(`/api/ai/settings/${settings.id}`, { data: { defaultProvider: null, defaultModelId: null } });
+});
+
 const seedAtChapters = async (page: Page) => {
+    // The estimate names the model that will draft, and prices a call with it
+    const settings = await (await page.request.get("/api/ai/settings")).json();
+    await page.request.put(`/api/ai/settings/${settings.id}`, {
+        data: { defaultProvider: "local", defaultModelId: "local/fake-model" }
+    });
     await createStoryAndChapter(page, "Transpose chapters — original", "One");
     const storyId = new URL(page.url()).pathname.split("/")[2];
     // A bible, so a passage that names none of it ("The rain came.") must still be drafted
@@ -86,9 +105,23 @@ test("chapters: drafted outline then prose, reviewed beside the original, accept
     await page.waitForTimeout(500);
     expect(calls).toHaveLength(0);
 
+    // Seeing the cost and backing out costs nothing either
     await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
+    expect(calls).toHaveLength(0);
+    // Outlines can have a model of their own: the estimate names each
+    await page.request.put("/api/actions/overrides", {
+        data: { actionId: "transpose_outline", storyId: null, modelRef: "local::local/alpha-model" }
+    });
+    await startDrafting(
+        page,
+        /about 5 model calls \(2 outlines, 3 parts\) outlines with alpha-model, parts with fake-model/
+    );
     const two = page.getByRole("listitem", { name: "Two" });
     await expect(two.getByText("Drafted — to review")).toBeVisible();
+    // Nothing left to draft: no button to press that would spend nothing
+    await expect(page.getByText("Everything still to accept is drafted")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Draft all the chapters" })).toHaveCount(0);
     // Outline first, then each part with the outline and the previous part's rewrite for continuity
     expect(calls.map(c => c.actionId)).toEqual([
         "transpose_outline",
@@ -207,7 +240,7 @@ test("chapters: Stop keeps what was drafted; a part cut short is marked and draf
     const { copyId } = await seedAtChapters(page);
 
     await page.goto(`/story/${copyId}/transpose`);
-    await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    await startDrafting(page);
     await expect(page.getByRole("status")).toHaveText(/Chapter 1 of 2: “One” — part 2 of 2/);
     await page.getByRole("button", { name: "Stop" }).click();
     await expect(page.getByRole("button", { name: "Draft all the chapters" })).toBeVisible();
@@ -218,7 +251,7 @@ test("chapters: Stop keeps what was drafted; a part cut short is marked and draf
     mode.cutShort = calls.length + 1;
     const before = calls.length;
     await page.reload();
-    await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    await startDrafting(page);
     await expect(page.getByRole("listitem", { name: "Two" }).getByText("Drafted — to review")).toBeVisible();
     expect(calls.slice(before).map(c => c.actionId)).toEqual([
         "transpose_prose",
@@ -232,7 +265,7 @@ test("chapters: Stop keeps what was drafted; a part cut short is marked and draf
 
     // And again: only the part cut short is drafted
     const again = calls.length;
-    await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    await startDrafting(page);
     await expect(one.getByLabel("Part 2 of One", { exact: true })).toHaveValue("The rain came.");
     expect(calls.slice(again).map(c => c.actionId)).toEqual(["transpose_prose"]);
     await expect(one.getByRole("button", { name: "Accept this chapter" })).toBeEnabled();

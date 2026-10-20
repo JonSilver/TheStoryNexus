@@ -1,7 +1,11 @@
+import { attemptPromise } from "@jfdi/attempt";
 import { ChevronDown, ChevronRight, Square } from "lucide-react";
 import { useState } from "react";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
+import { generateApi } from "@/services/api/client";
+import { useConfirm } from "../components/Dialogs";
 import { ChapterReview } from "./ChapterReview";
+import { type CallSample, describePlan, hasWork, planDrafting } from "./draftEstimate";
 import type { Transposition } from "./state";
 import { useChapterDrafting } from "./useChapterDrafting";
 
@@ -26,6 +30,51 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
     // The first chapter still to do is open unless the writer opened another
     const open = openId ?? remaining[0]?.id ?? null;
     const { progress } = drafting;
+    const plan = planDrafting(chapters, transposition.state);
+    const confirm = useConfirm();
+    const [estimating, setEstimating] = useState(false);
+    const [estimateError, setEstimateError] = useState<string | null>(null);
+
+    // What it will cost, before anything is spent: the server prices one call of each kind without making it
+    const start = async () => {
+        if (!hasWork(plan)) return;
+        setEstimating(true);
+        setEstimateError(null);
+        const sample = async (
+            actionId: "transpose_outline" | "transpose_prose",
+            chapterId: string,
+            selection?: string
+        ): Promise<CallSample> => {
+            const preview = await generateApi.preview({
+                actionId,
+                storyId: transposition.storyId,
+                chapterId,
+                editorContext: selection ? { selection, userMessage: "(the chapter's outline)" } : {}
+            });
+            const model = preview.model ? preview.model.modelId.replace(/^local\//, "") : "the default model";
+            return { promptTokens: preview.promptTokens, model };
+        };
+        const [error, samples] = await attemptPromise(async () => {
+            const [outline, part] = await Promise.all([
+                plan.sampleOutline ? sample("transpose_outline", plan.sampleOutline.chapterId) : undefined,
+                plan.samplePart
+                    ? sample("transpose_prose", plan.samplePart.chapterId, plan.samplePart.selection)
+                    : undefined
+            ]);
+            return { outline, part };
+        });
+        setEstimating(false);
+        if (error || !samples) {
+            setEstimateError(`Couldn't work out what drafting will cost — ${error?.message ?? "no answer"}`);
+            return;
+        }
+        const go = await confirm({
+            title: "Draft the chapters",
+            message: describePlan(plan, samples),
+            confirmLabel: "Start drafting"
+        });
+        if (go) void drafting.sweep(remaining);
+    };
 
     if (isLoading) return <p className="p-4 text-sm text-muted-foreground">Loading chapters…</p>;
     return (
@@ -53,20 +102,31 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
                         </button>
                     </div>
                 ) : (
-                    remaining.length > 0 && (
+                    remaining.length > 0 &&
+                    (hasWork(plan) ? (
                         <button
                             type="button"
-                            disabled={drafting.apply.isPending}
-                            onClick={() => void drafting.sweep(remaining)}
+                            disabled={drafting.apply.isPending || estimating}
+                            onClick={() => void start()}
                             className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground disabled:opacity-50"
                         >
-                            {remaining.length === chapters.length
-                                ? "Draft all the chapters"
-                                : `Draft the ${remaining.length} remaining chapter${remaining.length === 1 ? "" : "s"}`}
+                            {estimating
+                                ? "Working out what it will cost…"
+                                : remaining.length === chapters.length
+                                  ? "Draft all the chapters"
+                                  : `Draft the ${remaining.length} remaining chapter${remaining.length === 1 ? "" : "s"}`}
                         </button>
-                    )
+                    ) : (
+                        <p>Everything still to accept is drafted: review each chapter below, then accept it.</p>
+                    ))
                 )}
                 {drafting.sweepFailure && <p className="text-destructive">{drafting.sweepFailure}</p>}
+                {estimateError && <p className="text-destructive">{estimateError}</p>}
+                {drafting.generation.model && (
+                    <p className="text-xs text-muted-foreground">
+                        Model: {drafting.generation.model.modelId.replace(/^local\//, "")}
+                    </p>
+                )}
             </div>
             <ul className="divide-y border-y">
                 {chapters.map(chapter => (

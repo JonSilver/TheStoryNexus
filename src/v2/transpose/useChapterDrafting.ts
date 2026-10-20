@@ -10,7 +10,7 @@ import { flushChapterSave } from "../editor/useChapterSaver";
 import { piecesOf, prosePieces } from "./pieces";
 import { emptyChapter, lastComplete, type Transposition } from "./state";
 
-export interface ChapterProgress {
+interface ChapterProgress {
     chapter: number;
     chapters: number;
     title: string;

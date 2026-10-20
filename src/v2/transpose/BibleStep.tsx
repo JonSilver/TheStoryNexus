@@ -40,7 +40,9 @@ export const BibleStep = ({ transposition }: { transposition: Transposition }) =
                             onClick={() => void drafting.sweep()}
                             className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground disabled:opacity-50"
                         >
-                            {`Transpose ${undrafted === total ? "all" : `the ${undrafted} remaining`} ${undrafted === 1 ? "entry" : "entries"}`}
+                            {undrafted === total
+                                ? "Transpose all entries"
+                                : `Transpose the ${undrafted} remaining ${undrafted === 1 ? "entry" : "entries"}`}
                         </button>
                     )
                 )}
