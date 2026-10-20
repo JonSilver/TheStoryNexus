@@ -1,7 +1,8 @@
 import { attemptPromise } from "@jfdi/attempt";
 import express from "express";
 import { z } from "zod";
-import { applyOp, createTransposition, getTransposition, opSchema } from "../services/transpose/transpositions.js";
+import { opSchema } from "../services/transpose/ops.js";
+import { applyOp, createTransposition, getTransposition } from "../services/transpose/transpositions.js";
 
 const router = express.Router();
 

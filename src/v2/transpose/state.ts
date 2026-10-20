@@ -23,12 +23,32 @@ export interface EntryState {
     status: "pending" | "accepted" | "kept";
 }
 
+/** A draft of an outline or a piece; one cut short (a failure, a Stop) is incomplete until the writer edits it. */
+export interface ChapterText {
+    text: string;
+    incomplete?: true;
+}
+
+export interface ChapterDraft {
+    outlineAttempts: ChapterText[];
+    /** The chapter's saveVersion the outline was drafted from. */
+    outlineSourceSaveVersion: number | null;
+    /** The chapter's saveVersion its pieces were drafted from: the drafts fit that text and no other. */
+    sourceSaveVersion: number | null;
+    /** Every draft of each prose piece, in order (pieces.ts). */
+    pieces: ChapterText[][];
+    /** Piece drafts from before the chapter changed: they no longer fit, but they're the writer's. */
+    earlier: ChapterText[];
+    status: "pending" | "accepted";
+}
+
 export interface TranspositionState {
     briefAttempts: string[];
     synopsis: { original: string; attempts: string[] };
     entries: Record<string, EntryState>;
     /** The bible's order on screen and in prompts. */
     entryOrder: string[];
+    chapters: Record<string, ChapterDraft>;
 }
 
 export interface Transposition {
@@ -69,6 +89,40 @@ const readEntry = (value: unknown): EntryState => {
     };
 };
 
+export const emptyChapter = (): ChapterDraft => ({
+    outlineAttempts: [],
+    outlineSourceSaveVersion: null,
+    sourceSaveVersion: null,
+    pieces: [],
+    earlier: [],
+    status: "pending"
+});
+
+const readText = (value: unknown): ChapterText | null => {
+    if (typeof value === "string") return { text: value };
+    if (!isRecord(value) || typeof value.text !== "string") return null;
+    return value.incomplete === true ? { text: value.text, incomplete: true } : { text: value.text };
+};
+const texts = (value: unknown): ChapterText[] =>
+    Array.isArray(value) ? value.map(readText).filter((text): text is ChapterText => text !== null) : [];
+const version = (value: unknown): number | null => (Number.isSafeInteger(value) ? (value as number) : null);
+
+const readChapter = (value: unknown): ChapterDraft => {
+    const chapter = isRecord(value) ? value : {};
+    return {
+        outlineAttempts: texts(chapter.outlineAttempts),
+        outlineSourceSaveVersion: version(chapter.outlineSourceSaveVersion),
+        sourceSaveVersion: version(chapter.sourceSaveVersion),
+        pieces: Array.isArray(chapter.pieces) ? chapter.pieces.map(texts) : [],
+        earlier: texts(chapter.earlier),
+        status: chapter.status === "accepted" ? "accepted" : "pending"
+    };
+};
+
+/** The newest draft that's whole, if any. */
+export const lastComplete = (drafts: ChapterText[]): ChapterText | undefined =>
+    [...drafts].reverse().find(draft => !draft.incomplete);
+
 export const readState = (value: unknown): TranspositionState => {
     const state = isRecord(value) ? value : {};
     const synopsis = isRecord(state.synopsis) ? state.synopsis : {};
@@ -80,7 +134,13 @@ export const readState = (value: unknown): TranspositionState => {
         synopsis: { original: str(synopsis.original), attempts: strings(synopsis.attempts) },
         entries,
         // Only entries that exist, each once; any missing from the order go last
-        entryOrder: [...new Set([...strings(state.entryOrder), ...Object.keys(entries)])].filter(id => id in entries)
+        entryOrder: [...new Set([...strings(state.entryOrder), ...Object.keys(entries)])].filter(id => id in entries),
+        chapters: Object.fromEntries(
+            Object.entries(isRecord(state.chapters) ? state.chapters : {}).map(([id, chapter]) => [
+                id,
+                readChapter(chapter)
+            ])
+        )
     };
 };
 
@@ -123,23 +183,30 @@ export const initialState = (synopsis: string, entries: Array<{ id: string } & E
     entries: Object.fromEntries(
         entries.map(({ id, ...original }) => [id, { original, attempts: [], status: "pending" as const }])
     ),
-    entryOrder: entries.map(entry => entry.id)
+    entryOrder: entries.map(entry => entry.id),
+    chapters: {}
 });
 
-/** The state with its entry and chapter ids moved to a restored copy's (backups, duplicates). */
-export const remapState = (state: TranspositionState, entryIds: Map<string, string>): TranspositionState => {
-    const entries = Object.fromEntries(
-        Object.entries(state.entries).flatMap(([id, entry]) => {
-            const next = entryIds.get(id);
-            return next ? [[next, entry]] : [];
+const rekeyed = <T>(record: Record<string, T>, ids: Map<string, string>): Record<string, T> =>
+    Object.fromEntries(
+        Object.entries(record).flatMap(([id, value]) => {
+            const next = ids.get(id);
+            return next ? [[next, value]] : [];
         })
     );
-    return {
-        ...state,
-        entries,
-        entryOrder: state.entryOrder.map(id => entryIds.get(id)).filter((id): id is string => Boolean(id))
-    };
-};
+
+/** The state with its entry and chapter ids moved to a restored copy's (backups, duplicates). */
+export const remapState = (
+    state: TranspositionState,
+    entryIds: Map<string, string>,
+    chapterIds: Map<string, string>
+): TranspositionState => ({
+    ...state,
+    entries: rekeyed(state.entries, entryIds),
+    entryOrder: state.entryOrder.map(id => entryIds.get(id)).filter((id): id is string => Boolean(id)),
+    // Restored chapters keep their saveVersion, so drafts made from them still fit
+    chapters: rekeyed(state.chapters, chapterIds)
+});
 
 /** One change to a transposition, applied by the server to what it has stored. */
 export type TranspositionOp =
@@ -153,4 +220,19 @@ export type TranspositionOp =
     | { op: "finishBible" }
     | { op: "editBriefDraft"; index: number; text: string }
     | { op: "editSynopsisDraft"; index: number; text: string }
-    | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> };
+    | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> }
+    | { op: "addOutlineAttempt"; chapterId: string; sourceSaveVersion: number; text: string; incomplete?: true }
+    | {
+          op: "addPieceAttempt";
+          chapterId: string;
+          /** The chapter version the piece was drafted from, and how many pieces it has. */
+          sourceSaveVersion: number;
+          pieceCount: number;
+          index: number;
+          text: string;
+          incomplete?: true;
+      }
+    | { op: "editOutlineDraft"; chapterId: string; index: number; text: string }
+    | { op: "editPieceDraft"; chapterId: string; piece: number; index: number; text: string }
+    | { op: "acceptChapter"; chapterId: string; outline: string; rewrites: string[] }
+    | { op: "finishChapters" };

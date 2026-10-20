@@ -88,6 +88,10 @@ export const buildStoryImport = (
     const entryIds = new Map(
         entries.flatMap(({ entry, id }) => (typeof entry.id === "string" ? [[entry.id, id]] : []))
     );
+    const chapters = (backup.chapters ?? []).map(chapter => ({ chapter, id: newId() }));
+    const chapterIds = new Map(
+        chapters.flatMap(({ chapter, id }) => (typeof chapter.id === "string" ? [[chapter.id, id]] : []))
+    );
     const transposition =
         backup.transposition && typeof backup.transposition.target === "string" ? backup.transposition : null;
 
@@ -103,14 +107,16 @@ export const buildStoryImport = (
             seriesId: options.seriesId ?? null,
             createdAt: now
         },
-        chapters: (backup.chapters ?? []).map((chapter, index) => ({
-            id: newId(),
+        chapters: chapters.map(({ chapter, id }, index) => ({
+            id,
             storyId: newStoryId,
             title: str(chapter.title, `Chapter ${index + 1}`),
             summary: optStr(chapter.summary),
             order: num(chapter.order, index),
             content: rewriteAssetUrls(str(chapter.content), oldStoryId, newStoryId),
             revision: optCount(chapter.revision) ?? 0,
+            // Kept so a transposition's drafts, made from this version, still fit it
+            saveVersion: optCount(chapter.saveVersion) ?? 0,
             // A summary can't be fresher than the prose it summarises — or exist without text
             summarySourceRevision: (() => {
                 const source = optCount(chapter.summarySourceRevision);
@@ -183,7 +189,7 @@ export const buildStoryImport = (
             target: str(transposition.target),
             brief: optStr(transposition.brief),
             stage: readStage(transposition.stage),
-            state: remapState(readState(transposition.state), entryIds),
+            state: remapState(readState(transposition.state), entryIds, chapterIds),
             createdAt: toDate(transposition.createdAt, now),
             updatedAt: toDate(transposition.updatedAt, now)
         }

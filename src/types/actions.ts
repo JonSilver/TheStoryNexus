@@ -16,7 +16,9 @@ export type ActionId =
     | "derive_voice"
     | "transpose_brief"
     | "transpose_synopsis"
-    | "transpose_entry";
+    | "transpose_entry"
+    | "transpose_outline"
+    | "transpose_prose";
 
 export interface ActionDefinition {
     id: ActionId;

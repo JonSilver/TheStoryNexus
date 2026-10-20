@@ -9,6 +9,7 @@ import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 import { BibleStep } from "./BibleStep";
+import { ChaptersStep } from "./ChaptersStep";
 import { DraftLayer } from "./DraftLayer";
 import { STAGES, type Stage, type Transposition, type TranspositionOp } from "./state";
 import { useDraftLayer } from "./useDraftLayer";
@@ -107,18 +108,33 @@ const SynopsisStep = ({ transposition }: { transposition: Transposition }) => {
     );
 };
 
-const ChaptersStep = () => (
-    <section className="px-4 py-4 text-sm text-muted-foreground">
-        The brief, synopsis and bible are settled. The chapters come next.
-    </section>
-);
+const DoneStep = ({ transposition }: { transposition: Transposition }) => {
+    const { goTo } = useNav();
+    return (
+        <section className="space-y-3 px-4 py-4 text-sm">
+            <p>Every chapter is transposed. This copy now reads as {transposition.target}.</p>
+            <div className="flex gap-2">
+                <button
+                    type="button"
+                    onClick={() => goTo("read")}
+                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
+                >
+                    Read it
+                </button>
+                <button type="button" onClick={() => goTo("write")} className="rounded-md border px-4 py-2">
+                    Open it in Write
+                </button>
+            </div>
+        </section>
+    );
+};
 
 const STEPS: Record<Stage, (props: { transposition: Transposition }) => React.ReactNode> = {
     brief: BriefStep,
     synopsis: SynopsisStep,
     bible: BibleStep,
     chapters: ChaptersStep,
-    done: ChaptersStep
+    done: DoneStep
 };
 
 /**

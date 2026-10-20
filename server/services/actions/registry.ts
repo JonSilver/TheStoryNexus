@@ -24,7 +24,9 @@ export const CONTEXT_KEYS = [
     "transposition_brief",
     "story_synopsis",
     "story_bible",
-    "story_summaries"
+    "story_summaries",
+    "chapter_summary",
+    "transposed_summaries"
 ] as const;
 
 export type ContextKey = (typeof CONTEXT_KEYS)[number];
@@ -45,7 +47,9 @@ export const ACTION_IDS = [
     "derive_voice",
     "transpose_brief",
     "transpose_synopsis",
-    "transpose_entry"
+    "transpose_entry",
+    "transpose_outline",
+    "transpose_prose"
 ] as const;
 
 export type ActionId = (typeof ACTION_IDS)[number];
@@ -380,5 +384,59 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
         ],
         defaultParams: { temperature: 0.5, maxTokens: 2048 }
+    },
+    transpose_outline: {
+        id: "transpose_outline",
+        label: "Transpose: Chapter Outline",
+        voiceApplies: false,
+        contextNeeds: ["transposition_brief", "story_bible", "transposed_summaries", "chapter_summary", "guidance"],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    "You transpose one chapter of a novel to its new setting, as an outline: what happens in it, in order, with the new names, places and period, following the transposition brief and the bible. Keep every event, its cause and its emotional beat; change only what the setting changes. Stay continuous with the chapters already transposed. Write running text without bullet points, under 400 words.\nTransposition brief:\n{{transposition_brief}}"
+            },
+            {
+                role: "user",
+                content:
+                    "The story bible, original → transposed:\n{{story_bible}}\n\nThe chapters before this one, transposed:\n{{transposed_summaries}}\n\nThis chapter as it was:\n{{chapter_summary}}"
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ],
+        defaultParams: { temperature: 0.6, maxTokens: 2048 }
+    },
+    transpose_prose: {
+        id: "transpose_prose",
+        label: "Transpose: Chapter Prose",
+        voiceApplies: true,
+        insertsProse: true,
+        contextNeeds: [
+            "transposition_brief",
+            "story_bible",
+            "user_message",
+            "recent_prose",
+            "selection",
+            "pov",
+            "story_language",
+            "guidance"
+        ],
+        defaultTemplate: [
+            {
+                role: "system",
+                content:
+                    "You rewrite a passage of a novel into the story's new setting, following the transposition brief and the bible. Keep every event, beat and exchange, the point of view, the tense, the paragraphing and the length (within a tenth); change names, places, period detail, idiom and the register of dialogue as the brief says. Add nothing that isn't there and drop nothing that is. Use {{story_language}} spelling and grammar. Where the story voice and the brief disagree about setting, period or dialect, the brief wins.\nTransposition brief:\n{{transposition_brief}}\nThe bible, original → transposed:\n{{story_bible}}"
+            },
+            { role: "user", content: "This chapter, transposed, in outline:\n{{user_message}}" },
+            {
+                role: "assistant",
+                content: "/* Continuity: the end of the passage before, already rewritten */\n{{recent_prose}}"
+            },
+            {
+                role: "user",
+                content: "Rewrite this passage of the original, in {{pov}}:\n{{selection}}"
+            },
+            { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
+        ],
+        defaultParams: { temperature: 0.8, maxTokens: 8192 }
     }
 };

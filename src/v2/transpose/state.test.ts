@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialState, pendingEntries, readStage, readState, remapState, syncEntries } from "./state";
+import { emptyChapter, initialState, pendingEntries, readStage, readState, remapState, syncEntries } from "./state";
 
 const hester = { name: "Aunt Hester", category: "character", description: "Formidable.", tags: ["Hetty"] };
 
@@ -19,7 +19,8 @@ describe("transposition state", () => {
             briefAttempts: [],
             synopsis: { original: "", attempts: [] },
             entries: {},
-            entryOrder: []
+            entryOrder: [],
+            chapters: {}
         });
         const state = readState({
             briefAttempts: ["one", 2],
@@ -40,7 +41,20 @@ describe("transposition state", () => {
             { id: "old1", ...hester },
             { id: "old2", ...hester, name: "Gone" }
         ]);
-        const moved = remapState(state, new Map([["old1", "new1"]]));
+        const moved = remapState(
+            {
+                ...state,
+                chapters: { c1: { ...emptyChapter(), outlineAttempts: [{ text: "o" }], sourceSaveVersion: 3 } }
+            },
+            new Map([["old1", "new1"]]),
+            new Map([["c1", "c9"]])
+        );
+        expect(Object.keys(moved.chapters)).toEqual(["c9"]);
+        // Older rows stored drafts as bare strings
+        expect(
+            readState({ chapters: { c: { outlineAttempts: ["old", { text: "cut", incomplete: true }] } } }).chapters.c
+                .outlineAttempts
+        ).toEqual([{ text: "old" }, { text: "cut", incomplete: true }]);
         expect(Object.keys(moved.entries)).toEqual(["new1"]);
         expect(moved.entryOrder).toEqual(["new1"]);
         expect(moved.entries.new1.original.name).toBe("Aunt Hester");

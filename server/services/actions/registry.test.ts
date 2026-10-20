@@ -8,6 +8,6 @@ describe("prose actions", () => {
             .filter(def => def.insertsProse)
             .map(def => def.id)
             .sort();
-        expect(flagged).toEqual(["ask", "continue", "expand", "rework", "scene_beat", "shorten"]);
+        expect(flagged).toEqual(["ask", "continue", "expand", "rework", "scene_beat", "shorten", "transpose_prose"]);
     });
 });
