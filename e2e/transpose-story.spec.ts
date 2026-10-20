@@ -340,7 +340,7 @@ test("a story with no synopsis can be given one; an edit pressed straight into A
     );
 });
 
-test("bible entries: a reply out of format is read if it can be, shown and usable if not, and can always be tried again", async ({
+test("bible entries: a reply out of format is read if it can be, kept as written if not, and can always be tried again", async ({
     page
 }) => {
     const replies = [
@@ -366,13 +366,16 @@ test("bible entries: a reply out of format is read if it can be, shown and usabl
     const hall = page.getByRole("listitem", { name: "Whitwell Hall" });
     await expect(hester.getByLabel("Transposed name")).toHaveValue("Mrs Brennan");
 
-    // What the model sent is shown, with ways on: use it, try again, or another model
-    await expect(hall.getByText(/wasn't in a form that could be read as an entry/)).toBeVisible();
-    await expect(hall.getByText(/rusting corner shop on the Falls Road/)).toBeVisible();
-    await expect(hall.getByRole("button", { name: "Use a different model for Transpose: Bible Entry" })).toBeVisible();
-    await hall.getByRole("button", { name: "Use it as a draft" }).click();
+    // What the model sent is kept as a draft, as written, with ways on: edit it, try again, or another model
+    await expect(
+        hall.getByText(/wasn't in a form that could be read as an entry, so it's kept below as written/)
+    ).toBeVisible();
     await expect(hall.getByLabel("Transposed name")).toHaveValue("Whitwell Hall");
-    await expect(hall.getByLabel("Transposed description")).toHaveValue(/rusting corner shop/);
+    await expect(hall.getByLabel("Transposed description")).toHaveValue(/rusting corner shop on the Falls Road/);
+    await expect(hall.getByRole("button", { name: "Use a different model for Transpose: Bible Entry" })).toBeVisible();
+    // Kept, not just shown: it's still there after a reload
+    await page.reload();
+    await expect(hall.getByLabel("Transposed description")).toHaveValue(/rusting corner shop on the Falls Road/);
     await hall.getByRole("button", { name: "Try again" }).click();
     await expect(hall.getByLabel("Transposed name")).toHaveValue("Brennan's Corner Shop");
     await expect(hall.getByRole("button", { name: "Previous draft" })).toBeVisible();

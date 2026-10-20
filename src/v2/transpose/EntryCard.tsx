@@ -56,7 +56,7 @@ export const EntryCard = ({
         action: { id: "transpose_entry", label: "Transpose: Bible Entry" },
         storyId: drafting.storyId,
         generation: drafting.generation,
-        attempts: { currentModel: null },
+        attempts: { currentModel: drafting.modelOf[entryId] ?? null },
         onAgain: () => void drafting.draft(entryId)
     });
     const { original } = entry;
@@ -119,20 +119,6 @@ export const EntryCard = ({
                     {failed && (
                         <div className="space-y-2 text-xs">
                             <p className="text-destructive">{failed}</p>
-                            {drafting.unreadable[entryId] && (
-                                <div className="space-y-1">
-                                    <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-2">
-                                        {drafting.unreadable[entryId]}
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => void drafting.takeReply(entryId)}
-                                        className="rounded-md border bg-background px-2 py-1"
-                                    >
-                                        Use it as a draft
-                                    </button>
-                                </div>
-                            )}
                             {busy ? (
                                 <p className="text-muted-foreground">
                                     The other entries are still being transposed — Stop that to try this one again now.
@@ -183,7 +169,7 @@ export const EntryCard = ({
                             onClick={() => void drafting.draft(entryId)}
                             className="flex items-center gap-1 rounded-md border px-3 py-1.5 disabled:opacity-50"
                         >
-                            {drafts.length > 0 && <RotateCcw className="h-3.5 w-3.5" />}
+                            {(drafts.length > 0 || failed) && <RotateCcw className="h-3.5 w-3.5" />}
                             {drafts.length || failed ? "Try again" : "Transpose"}
                         </button>
                         <button

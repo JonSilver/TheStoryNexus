@@ -1,6 +1,7 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { useEffect, useRef, useState } from "react";
 import { useTranspositionOpMutation } from "@/features/transpositions/hooks/useTranspositionQuery";
+import type { AnsweredModel } from "@/types/actions";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { parseTransposedEntry } from "./parseEntry";
 import type { EntryValue, Transposition } from "./state";
@@ -12,7 +13,11 @@ const describeEntry = ({ name, category, description, tags }: EntryValue) =>
         .filter(Boolean)
         .join("\n");
 
-const UNREADABLE = "The reply wasn't in a form that could be read as an entry. What the model sent is below.";
+const UNREADABLE =
+    "The reply wasn't in a form that could be read as an entry, so it's kept below as written — edit it into the entry, or try again.";
+
+// The most a draft's description can be (the server's limit)
+const MAX_DESCRIPTION = 50_000;
 
 // Two entries failing in a row means the model or server is broken, not the entry
 const MAX_CONSECUTIVE_FAILURES = 2;
@@ -29,8 +34,8 @@ export const useEntryDrafting = (transposition: Transposition) => {
     const [running, setRunning] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [unsaved, setUnsaved] = useState<Record<string, Draft[]>>({});
-    /** Replies that couldn't be read as an entry: still the writer's to use. */
-    const [unreadable, setUnreadable] = useState<Record<string, string>>({});
+    /** The model each entry's latest run used, so its card names (and changes) the right one. */
+    const [modelOf, setModelOf] = useState<Record<string, AnsweredModel>>({});
     const [progress, setProgress] = useState<{ current: number; total: number; name: string } | null>(null);
     const [sweepFailure, setSweepFailure] = useState<string | null>(null);
     const stopRequested = useRef(false);
@@ -53,7 +58,6 @@ export const useEntryDrafting = (transposition: Transposition) => {
         if (!entry) return null;
         setRunning(entryId);
         setErrors(({ [entryId]: _cleared, ...rest }) => rest);
-        setUnreadable(({ [entryId]: _cleared, ...rest }) => rest);
         const result = await generation.run({
             actionId: "transpose_entry",
             storyId,
@@ -61,15 +65,22 @@ export const useEntryDrafting = (transposition: Transposition) => {
         });
         setRunning(null);
         if (result.outcome === "superseded") return null;
+        const { model } = result;
+        if (model) setModelOf(current => ({ ...current, [entryId]: model }));
         const value = parseTransposedEntry(result.text);
         // Stopped part-way: the writer's choice, not a model that can't do the job
         if (result.outcome === "stopped" && !value) return null;
         const error =
             result.outcome === "failed" ? (result.error ?? "failed") : !value && result.text.trim() ? UNREADABLE : null;
         if (error) setErrors(current => ({ ...current, [entryId]: error }));
-        if (!value && result.text.trim()) setUnreadable(current => ({ ...current, [entryId]: result.text.trim() }));
-        if (!value) return error;
-        const next: Draft = value;
+        // What the model wrote is kept even when it can't be read as an entry: as a draft, as written
+        const reply = result.text.trim();
+        const next: Draft | null =
+            value ??
+            (reply
+                ? { name: entry.original.name, description: reply.slice(0, MAX_DESCRIPTION), tags: entry.original.tags }
+                : null);
+        if (!next) return error;
         setUnsaved(current => ({ ...current, [entryId]: [...(current[entryId] ?? []), next] }));
         await keep(entryId, next);
         return error;
@@ -100,23 +111,10 @@ export const useEntryDrafting = (transposition: Transposition) => {
         generation.abort();
     };
 
-    /** What the model sent, as a draft to edit: the entry's name, and the reply as its description. */
-    const takeReply = async (entryId: string) => {
-        const reply = unreadable[entryId];
-        const entry = state.entries[entryId];
-        if (!reply || !entry) return;
-        const next: Draft = { name: entry.original.name, description: reply, tags: entry.original.tags };
-        setUnsaved(current => ({ ...current, [entryId]: [...(current[entryId] ?? []), next] }));
-        setUnreadable(({ [entryId]: _used, ...rest }) => rest);
-        setErrors(({ [entryId]: _cleared, ...rest }) => rest);
-        await keep(entryId, next);
-    };
-
     return {
         storyId,
         generation,
-        unreadable,
-        takeReply,
+        modelOf,
         running,
         errors,
         unsaved,
