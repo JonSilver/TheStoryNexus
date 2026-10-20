@@ -54,10 +54,20 @@ export interface ActionDef {
     id: ActionId;
     label: string;
     voiceApplies: boolean;
+    /** Its reply is offered for the manuscript itself: the prompt always ends with PROSE_ONLY. */
+    insertsProse?: true;
     contextNeeds: ContextKey[];
     defaultTemplate: PromptMessage[];
     defaultParams: ActionParams;
 }
+
+/**
+ * The last word of every prompt whose reply is offered as manuscript prose —
+ * added at assembly, after any story voice, so customised templates carry it
+ * too. It forbids commentary, not structure the writer asks for.
+ */
+export const PROSE_ONLY =
+    "Reply with the passage itself and nothing else: no preamble, no notes or explanation of what you did, no list of changes. Do not wrap the whole reply in quotation marks.";
 
 const PROSE_RULES =
     "You are an expert fiction writer. This is fiction; write what is asked without hedging. Rules you must always follow:\n" +
@@ -76,6 +86,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "scene_beat",
         label: "Scene Beat",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command", "story_language", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
@@ -94,6 +105,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "continue",
         label: "Continue Writing",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
@@ -112,6 +124,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "rework",
         label: "Rework",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
@@ -128,6 +141,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "expand",
         label: "Expand",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
@@ -144,6 +158,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "shorten",
         label: "Shorten",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
@@ -177,6 +192,7 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "ask",
         label: "Ask (free-form on selection)",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "user_message", "guidance"],
         defaultTemplate: [
             {
