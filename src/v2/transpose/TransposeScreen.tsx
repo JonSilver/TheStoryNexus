@@ -9,6 +9,7 @@ import { useCurrentStory } from "../hooks/useCurrentStory";
 import { useNav } from "../routing";
 import { useCurrentStoryId } from "../state/useV2Store";
 import { BibleStep } from "./BibleStep";
+import { BriefPanel } from "./BriefPanel";
 import { ChaptersStep } from "./ChaptersStep";
 import { DraftLayer } from "./DraftLayer";
 import { OwnDraft } from "./OwnDraft";
@@ -65,6 +66,7 @@ const BriefStep = ({ transposition }: { transposition: Transposition }) => {
             layer={layer}
             explainer={`The brief maps the story onto ${settingOf(transposition.target)}: what each place, institution and custom becomes, and the social pressures that will do the work the originals did. Draft one, or bring your own; edit it until it's right — every later step follows it.`}
             draftLabel="Draft the brief"
+            againLabel={isWrittenBrief(transposition.target) ? "Draft one with the AI" : undefined}
             extra={
                 <OwnDraft
                     label="Write or paste your own brief"
@@ -205,6 +207,7 @@ export const TransposeScreen = () => {
                     original is untouched.
                 </p>
                 <Steps stage={transposition.stage} />
+                {transposition.stage !== "brief" && <BriefPanel transposition={transposition} />}
                 <Step key={transposition.stage} transposition={transposition} />
             </>
         );

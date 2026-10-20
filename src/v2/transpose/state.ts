@@ -212,6 +212,7 @@ export const remapState = (
 export type TranspositionOp =
     | { op: "addBriefAttempt"; text: string }
     | { op: "acceptBrief"; brief: string }
+    | { op: "reviseBrief"; brief: string }
     | { op: "addSynopsisAttempt"; text: string }
     | { op: "acceptSynopsis"; synopsis: string | null }
     | { op: "addEntryAttempt"; entryId: string; value: Omit<EntryValue, "category"> }
@@ -250,5 +251,6 @@ export const targetName = (target: string) => {
             .split("\n")
             .find(l => l.trim()) ?? ""
     ).replace(/^[#*\s]+|[*\s]+$/g, "");
+    if (!line) return "transposed";
     return line.length <= TARGET_NAME_CHARS ? line : `${line.slice(0, TARGET_NAME_CHARS).replace(/\s+\S*$/, "")}…`;
 };

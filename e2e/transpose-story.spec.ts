@@ -268,7 +268,22 @@ test("a brief the writer already has is pasted in whole and becomes the brief â€
     await expect(page.getByText(/Moving this copy to the setting in your brief/)).toBeVisible();
     await expect(page.getByLabel("Draft", { exact: true })).toHaveValue(brief.trim());
     expect(calls).toHaveLength(0);
+    // The AI can still draft one, and says so rather than "Try again"
+    await expect(page.getByRole("button", { name: "Draft one with the AI" })).toBeVisible();
     await page.getByRole("button", { name: "Accept the brief" }).click();
+
+    // The accepted brief stays the writer's to revise
+    await page.getByText("The brief", { exact: true }).click();
+    const accepted = page.getByLabel("The accepted brief");
+    await expect(accepted).toHaveValue(brief.trim());
+    await accepted.fill("PITCH BRIEF: THE ENTROPY OF GRACE\n\nShorter now.");
+    await page.getByRole("button", { name: "Save the brief" }).click();
+    await expect
+        .poll(async () => {
+            const copyId = new URL(page.url()).pathname.split("/")[2];
+            return (await (await page.request.get(`/api/transpositions/${copyId}`)).json()).brief;
+        })
+        .toBe("PITCH BRIEF: THE ENTROPY OF GRACE\n\nShorter now.");
 
     // The writer can bring their own synopsis too
     await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");

@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
             error: !target
                 ? "Say where and when the story should be set, or paste a brief."
                 : target.length > MAX_TARGET_CHARS
-                  ? `That's ${target.length.toLocaleString()} characters — the most a brief can be is ${MAX_TARGET_CHARS.toLocaleString()}.`
+                  ? `That's ${target.length.toLocaleString("en-GB")} characters — the most a brief can be is ${MAX_TARGET_CHARS.toLocaleString("en-GB")}.`
                   : "Couldn't start: the request was incomplete."
         });
         return;
