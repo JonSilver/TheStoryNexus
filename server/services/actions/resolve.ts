@@ -1,5 +1,12 @@
 import type { PromptMessage } from "../ai/providers.js";
-import { type ActionDef, type ActionId, type ActionParams, BUILTIN_ACTIONS, type ContextKey } from "./registry.js";
+import {
+    type ActionDef,
+    type ActionId,
+    type ActionParams,
+    BUILTIN_ACTIONS,
+    type ContextKey,
+    PROSE_ONLY
+} from "./registry.js";
 
 /**
  * Template validation, override precedence (story → global → built-in),
@@ -139,3 +146,24 @@ export const renderTemplate = (
             return { ...message, content: hollow ? "" : withVoice };
         })
         .filter(message => message.content.length > 0);
+
+/**
+ * An action's prompt as sent: the template rendered, the story voice for
+ * actions it applies to, and — for actions whose reply is offered as
+ * manuscript prose — PROSE_ONLY as the very last system instruction,
+ * whatever template (built-in or customised) is in use.
+ */
+export const renderActionPrompt = (
+    def: ActionDef,
+    template: PromptMessage[],
+    context: Partial<Record<ContextKey, string>>,
+    voice?: string
+): PromptMessage[] => {
+    const messages = renderTemplate(template, context, def.voiceApplies ? voice : undefined);
+    if (!def.insertsProse) return messages;
+    const systemAt = messages.findIndex(message => message.role === "system");
+    if (systemAt < 0) return [{ role: "system", content: PROSE_ONLY }, ...messages];
+    return messages.map((message, index) =>
+        index === systemAt ? { ...message, content: `${message.content}\n\n${PROSE_ONLY}` } : message
+    );
+};

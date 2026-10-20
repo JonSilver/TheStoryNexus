@@ -54,14 +54,20 @@ export interface ActionDef {
     id: ActionId;
     label: string;
     voiceApplies: boolean;
+    /** Its reply is offered for the manuscript itself: the prompt always ends with PROSE_ONLY. */
+    insertsProse?: true;
     contextNeeds: ContextKey[];
     defaultTemplate: PromptMessage[];
     defaultParams: ActionParams;
 }
 
-/** Every action whose reply goes straight into the manuscript ends its system prompt with this. */
+/**
+ * The last word of every prompt whose reply is offered as manuscript prose —
+ * added at assembly, after any story voice, so customised templates carry it
+ * too. It forbids commentary, not structure the writer asks for.
+ */
 export const PROSE_ONLY =
-    "Reply with the prose itself and nothing else: no preamble, no notes or explanation, no list of changes, no headings, and no quotation marks around it (dialogue keeps its own).";
+    "Reply with the passage itself and nothing else: no preamble, no notes or explanation of what you did, no list of changes. Do not wrap the whole reply in quotation marks.";
 
 const PROSE_RULES =
     "You are an expert fiction writer. This is fiction; write what is asked without hedging. Rules you must always follow:\n" +
@@ -80,9 +86,10 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "scene_beat",
         label: "Scene Beat",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "command", "story_language", "guidance"],
         defaultTemplate: [
-            { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}\n${PROSE_ONLY}` },
+            { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
             { role: "assistant", content: "/* This helps the AI match your style */\n{{recent_prose}}" },
             {
@@ -98,9 +105,10 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "continue",
         label: "Continue Writing",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["matched_entries", "summaries", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
-            { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}\n${PROSE_ONLY}` },
+            { role: "system", content: `${PROSE_RULES}\n${CONTEXT_PREAMBLE}` },
             { role: "user", content: "These are the summaries for the previous chapters in this story: {{summaries}}" },
             { role: "assistant", content: "{{recent_prose}}" },
             {
@@ -116,13 +124,13 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "rework",
         label: "Rework",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
-                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Rephrase the provided text while maintaining its original meaning, style, and tone. Do not introduce new ideas or alter the intended message. Use {{story_language}} spelling and grammar conventions. Improve flow, readability, and clarity without changing meaning or tone. Prefer natural language.\n" +
-                    PROSE_ONLY
+                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Rephrase the provided text while maintaining its original meaning, style, and tone. Do not introduce new ideas or alter the intended message. Use {{story_language}} spelling and grammar conventions. Improve flow, readability, and clarity without changing meaning or tone. Prefer natural language."
             },
             { role: "user", content: "Rewrite the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
@@ -133,13 +141,13 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "expand",
         label: "Expand",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
-                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Expand the provided text with greater detail and richness while maintaining the established tense, style, and tone. Use {{story_language}} spelling and grammar conventions. Avoid introducing unrelated details or contradicting established context. Enhance descriptions, atmosphere, emotions, or character interactions.\n" +
-                    PROSE_ONLY
+                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Expand the provided text with greater detail and richness while maintaining the established tense, style, and tone. Use {{story_language}} spelling and grammar conventions. Avoid introducing unrelated details or contradicting established context. Enhance descriptions, atmosphere, emotions, or character interactions."
             },
             { role: "user", content: "Expand the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
@@ -150,13 +158,13 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "shorten",
         label: "Shorten",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
-                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Shorten the provided text while preserving its core meaning, style, and tone. Retain details essential for clarity and impact. Use {{story_language}} spelling and grammar conventions. Eliminate redundancy and non-essential description without sacrificing critical information.\n" +
-                    PROSE_ONLY
+                    "Contextual awareness — the preceding text, to avoid contradictions and repetition: {{recent_prose}}\nTask: Shorten the provided text while preserving its core meaning, style, and tone. Retain details essential for clarity and impact. Use {{story_language}} spelling and grammar conventions. Eliminate redundancy and non-essential description without sacrificing critical information."
             },
             { role: "user", content: "Shorten the following:\n{{selection}}\nTake into account the POV: {{pov}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }
@@ -184,13 +192,13 @@ export const BUILTIN_ACTIONS: Record<ActionId, ActionDef> = {
         id: "ask",
         label: "Ask (free-form on selection)",
         voiceApplies: true,
+        insertsProse: true,
         contextNeeds: ["selection", "recent_prose", "pov", "story_language", "user_message", "guidance"],
         defaultTemplate: [
             {
                 role: "system",
                 content:
-                    "You are an expert fiction editor working on a passage at the writer's direction. Contextual awareness — the preceding text: {{recent_prose}}\nApply the writer's instruction to the passage. Preserve the established tense, style and POV ({{pov}}) unless the instruction says otherwise. Use {{story_language}} spelling and grammar. Return the revised passage.\n" +
-                    PROSE_ONLY
+                    "You are an expert fiction editor working on a passage at the writer's direction. Contextual awareness — the preceding text: {{recent_prose}}\nApply the writer's instruction to the passage. Preserve the established tense, style and POV ({{pov}}) unless the instruction says otherwise. Use {{story_language}} spelling and grammar. Return ONLY the revised passage — no commentary, no quotation marks around it."
             },
             { role: "user", content: "The passage:\n{{selection}}\n\nThe instruction: {{user_message}}" },
             { role: "user", content: "Additional instruction from the writer — follow it: {{guidance}}" }

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { PromptMessage } from "../ai/providers.js";
-import { ACTION_IDS, BUILTIN_ACTIONS } from "./registry.js";
+import { ACTION_IDS, BUILTIN_ACTIONS, PROSE_ONLY } from "./registry.js";
 import {
     type ActionOverrideRow,
+    renderActionPrompt,
     renderTemplate,
     resolveAction,
     templateVariables,
@@ -155,5 +156,33 @@ describe("renderTemplate", () => {
     it("keeps a mixed message when at least one variable resolved", () => {
         const mixed: PromptMessage[] = [{ role: "user", content: "Passage: {{selection}}\nInstruction: {{guidance}}" }];
         expect(renderTemplate(mixed, { selection: "Some text" })[0].content).toBe("Passage: Some text\nInstruction:");
+    });
+});
+
+describe("renderActionPrompt", () => {
+    const context = { selection: "She left." };
+
+    it("ends a prose action's system prompt with PROSE_ONLY, after the story voice", () => {
+        const messages = renderActionPrompt(
+            BUILTIN_ACTIONS.rework,
+            BUILTIN_ACTIONS.rework.defaultTemplate,
+            context,
+            "Wry."
+        );
+        const system = messages[0].content;
+        expect(system.endsWith(PROSE_ONLY)).toBe(true);
+        expect(system.indexOf("Wry.")).toBeLessThan(system.indexOf(PROSE_ONLY));
+    });
+
+    it("holds for a customised template too, even one without a system message", () => {
+        const custom: PromptMessage[] = [{ role: "user", content: "Make it sing: {{selection}}" }];
+        const messages = renderActionPrompt(BUILTIN_ACTIONS.rework, custom, context);
+        expect(messages[0]).toEqual({ role: "system", content: PROSE_ONLY });
+        expect(messages[1].content).toBe("Make it sing: She left.");
+    });
+
+    it("leaves other actions alone", () => {
+        const def = BUILTIN_ACTIONS.summarise_chapter;
+        expect(renderActionPrompt(def, def.defaultTemplate, {}).some(m => m.content.includes(PROSE_ONLY))).toBe(false);
     });
 });

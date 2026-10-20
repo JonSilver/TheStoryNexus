@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db, schema } from "../db/client.js";
 import { assembleContext } from "../services/actions/context.js";
 import { ACTION_IDS } from "../services/actions/registry.js";
-import { type ActionOverrideRow, renderTemplate, resolveAction } from "../services/actions/resolve.js";
+import { type ActionOverrideRow, renderActionPrompt, resolveAction } from "../services/actions/resolve.js";
 import { runGeneration } from "../services/ai/generationRun.js";
 import {
     type AIProviderId,
@@ -257,11 +257,7 @@ router.post("/action", async (req, res) => {
         return;
     }
 
-    const messages = renderTemplate(
-        resolved.template,
-        assembled.context,
-        resolved.def.voiceApplies ? assembled.voice : undefined
-    );
+    const messages = renderActionPrompt(resolved.def, resolved.template, assembled.context, assembled.voice);
     const promptTokens = countTokens(messages.map(m => m.content).join("\n"));
     if (promptTokens + maxTokens > contextLimit) {
         cleanup();
@@ -346,11 +342,7 @@ router.post("/preview", async (req, res) => {
         return;
     }
 
-    const messages = renderTemplate(
-        resolved.template,
-        assembled.context,
-        resolved.def.voiceApplies ? assembled.voice : undefined
-    );
+    const messages = renderActionPrompt(resolved.def, resolved.template, assembled.context, assembled.voice);
     const promptTokens = countTokens(messages.map(m => m.content).join("\n"));
     if (promptTokens + maxTokens > contextLimit) {
         res.status(422).json({ error: "Assembled prompt exceeds the model's context window" });
