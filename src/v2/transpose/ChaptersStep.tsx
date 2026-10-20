@@ -5,7 +5,7 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { generateApi } from "@/services/api/client";
 import { useConfirm } from "../components/Dialogs";
 import { ChapterReview } from "./ChapterReview";
-import { describePlan, planDrafting } from "./draftEstimate";
+import { type CallSample, describePlan, hasWork, planDrafting } from "./draftEstimate";
 import type { Transposition } from "./state";
 import { useChapterDrafting } from "./useChapterDrafting";
 
@@ -30,34 +30,47 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
     // The first chapter still to do is open unless the writer opened another
     const open = openId ?? remaining[0]?.id ?? null;
     const { progress } = drafting;
+    const plan = planDrafting(chapters, transposition.state);
     const confirm = useConfirm();
     const [estimating, setEstimating] = useState(false);
     const [estimateError, setEstimateError] = useState<string | null>(null);
 
-    // What it will cost, before anything is spent: the server prices one call without making it
+    // What it will cost, before anything is spent: the server prices one call of each kind without making it
     const start = async () => {
-        const plan = planDrafting(chapters, transposition.state);
-        const first = plan.sample ?? (remaining[0] && { chapterId: remaining[0].id, selection: "" });
-        if (!first) return;
+        if (!hasWork(plan)) return;
         setEstimating(true);
         setEstimateError(null);
-        const [error, preview] = await attemptPromise(() =>
-            generateApi.preview({
-                actionId: plan.sample ? "transpose_prose" : "transpose_outline",
+        const sample = async (
+            actionId: "transpose_outline" | "transpose_prose",
+            chapterId: string,
+            selection?: string
+        ): Promise<CallSample> => {
+            const preview = await generateApi.preview({
+                actionId,
                 storyId: transposition.storyId,
-                chapterId: first.chapterId,
-                editorContext: { selection: first.selection, userMessage: "(the chapter's outline)" }
-            })
-        );
+                chapterId,
+                editorContext: selection ? { selection, userMessage: "(the chapter's outline)" } : {}
+            });
+            const model = preview.model ? preview.model.modelId.replace(/^local\//, "") : "the default model";
+            return { promptTokens: preview.promptTokens, model };
+        };
+        const [error, samples] = await attemptPromise(async () => {
+            const [outline, part] = await Promise.all([
+                plan.sampleOutline ? sample("transpose_outline", plan.sampleOutline.chapterId) : undefined,
+                plan.samplePart
+                    ? sample("transpose_prose", plan.samplePart.chapterId, plan.samplePart.selection)
+                    : undefined
+            ]);
+            return { outline, part };
+        });
         setEstimating(false);
-        if (error || !preview) {
+        if (error || !samples) {
             setEstimateError(`Couldn't work out what drafting will cost — ${error?.message ?? "no answer"}`);
             return;
         }
-        const model = preview.model ? preview.model.modelId.replace(/^local\//, "") : "the default model";
         const go = await confirm({
             title: "Draft the chapters",
-            message: describePlan(plan, { promptTokens: preview.promptTokens, model }),
+            message: describePlan(plan, samples),
             confirmLabel: "Start drafting"
         });
         if (go) void drafting.sweep(remaining);
@@ -89,7 +102,8 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
                         </button>
                     </div>
                 ) : (
-                    remaining.length > 0 && (
+                    remaining.length > 0 &&
+                    (hasWork(plan) ? (
                         <button
                             type="button"
                             disabled={drafting.apply.isPending || estimating}
@@ -102,7 +116,9 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
                                   ? "Draft all the chapters"
                                   : `Draft the ${remaining.length} remaining chapter${remaining.length === 1 ? "" : "s"}`}
                         </button>
-                    )
+                    ) : (
+                        <p>Everything still to accept is drafted: review each chapter below, then accept it.</p>
+                    ))
                 )}
                 {drafting.sweepFailure && <p className="text-destructive">{drafting.sweepFailure}</p>}
                 {estimateError && <p className="text-destructive">{estimateError}</p>}

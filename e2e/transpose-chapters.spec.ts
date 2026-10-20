@@ -31,6 +31,7 @@ const startDrafting = async (page: Page, estimate?: RegExp) => {
 type Generated = { actionId: string; chapterId?: string; editorContext?: Record<string, string> };
 
 test.afterEach(async ({ request }) => {
+    await request.delete("/api/actions/overrides/transpose_outline");
     const settings = await (await request.get("/api/ai/settings")).json();
     await request.put(`/api/ai/settings/${settings.id}`, { data: { defaultProvider: null, defaultModelId: null } });
 });
@@ -108,9 +109,19 @@ test("chapters: drafted outline then prose, reviewed beside the original, accept
     await page.getByRole("button", { name: "Draft all the chapters" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
     expect(calls).toHaveLength(0);
-    await startDrafting(page, /about 5 model calls \(2 outlines, 3 parts\) with fake-model/);
+    // Outlines can have a model of their own: the estimate names each
+    await page.request.put("/api/actions/overrides", {
+        data: { actionId: "transpose_outline", storyId: null, modelRef: "local::local/alpha-model" }
+    });
+    await startDrafting(
+        page,
+        /about 5 model calls \(2 outlines, 3 parts\) outlines with alpha-model, parts with fake-model/
+    );
     const two = page.getByRole("listitem", { name: "Two" });
     await expect(two.getByText("Drafted — to review")).toBeVisible();
+    // Nothing left to draft: no button to press that would spend nothing
+    await expect(page.getByText("Everything still to accept is drafted")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Draft all the chapters" })).toHaveCount(0);
     // Outline first, then each part with the outline and the previous part's rewrite for continuity
     expect(calls.map(c => c.actionId)).toEqual([
         "transpose_outline",
