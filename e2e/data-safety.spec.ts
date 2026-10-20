@@ -151,6 +151,7 @@ test("series backup round-trip restores the series bible and its stories", async
 
     await page.locator("#import-series").setInputFiles(backupPath);
     await expect(page.getByText("Backup Saga (Imported)")).toBeVisible();
+    await expect(page.getByText(/^Series restored — 1 story/)).toBeVisible();
 
     // The restored series appears in the library with its story, which inherits the series bible
     await page.getByRole("button", { name: "Story", exact: true }).click();

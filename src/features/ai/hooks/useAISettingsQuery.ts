@@ -36,19 +36,16 @@ const useSettingsWrite = <TVariables>(
     });
 };
 
-/** Saving a key also loads that provider's models with it. */
+/** Saving a key also loads that provider's models (the server does both, once). */
 export const useUpdateAPIKeyMutation = () =>
-    useSettingsWrite(async ({ provider, key }: { provider: AIProvider; key: string }) => {
-        await aiApi.setKey(provider, key);
-        return aiApi.refreshModels(provider);
-    }, "Couldn't save the key");
+    useSettingsWrite(
+        ({ provider, key }: { provider: AIProvider; key: string }) => aiApi.setKey(provider, key),
+        "Couldn't use that key"
+    );
 
-/** Saving the URL tests the connection by loading the server's models. */
+/** Saving the URL tests the connection by loading the server's models (the server does both, once). */
 export const useUpdateLocalApiUrlMutation = () =>
-    useSettingsWrite(async (url: string) => {
-        await aiApi.setLocalUrl(url);
-        return aiApi.refreshModels("local");
-    }, "Couldn't reach that local model server");
+    useSettingsWrite((url: string) => aiApi.setLocalUrl(url), "Couldn't reach that local model server");
 
 export const useRefreshModelsMutation = () =>
     useSettingsWrite((provider: AIProvider) => aiApi.refreshModels(provider), "Couldn't load the models");

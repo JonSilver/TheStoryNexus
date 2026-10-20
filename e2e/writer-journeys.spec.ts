@@ -241,6 +241,17 @@ test("series: join from story details, grouped in Stories, bible inherits", asyn
     await page.getByText("The Dashwood Saga", { exact: true }).click();
     await expect(page.getByRole("heading", { name: "Library" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "The Dashwood Saga" })).toBeVisible();
+
+    // Deleting the series takes its bible entries with it — the member story's bible says so at once
+    await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("button", { name: "Series", exact: true }).click();
+    await page.getByRole("button", { name: "Delete The Dashwood Saga" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByText("The Dashwood Saga", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Story Bible" }).click();
+    await expect(page.getByRole("heading", { name: "Story Bible" })).toBeVisible();
+    await expect(page.getByText("The Dashwood family seat in Sussex.")).toHaveCount(0);
 });
 
 test("bible entries: manual create and edit, no AI required", async ({ page }) => {
@@ -274,6 +285,10 @@ test("chapter details: POV, outline and summary are editable and stick", async (
     await page.getByLabel("Chapter POV type").selectOption("First Person");
     await page.getByLabel("Outline").fill("Elinor learns the truth.");
     await page.getByLabel("Summary", { exact: true }).fill("A hand-written summary.");
+    // Closing with unsaved edits asks first; keeping them loses nothing
+    await page.keyboard.press("Escape");
+    await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByLabel("Outline")).toHaveValue("Elinor learns the truth.");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await page.reload();

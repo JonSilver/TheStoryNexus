@@ -56,7 +56,7 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
     return (
         <BottomSheet
             title="Chapter details"
-            onClose={onClose}
+            onClose={close}
             bodyClassName="space-y-2 px-4 pb-4 text-sm"
             footer={
                 <>

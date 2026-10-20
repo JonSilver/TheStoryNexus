@@ -85,3 +85,18 @@ test("an unknown story in the URL says so and offers the library", async ({ page
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByPlaceholder("New story title")).toBeVisible();
 });
+
+test("a chapter the server won't return says so and offers to try again", async ({ page }) => {
+    await createStoryAndChapter(page, "Routing — chapter load failure", "One");
+    const chapterUrl = page.url();
+    const chapterApi = /\/api\/chapters\/[^/]+$/;
+    await page.route(chapterApi, route =>
+        route.request().method() === "GET" ? route.fulfill({ status: 503, body: "" }) : route.continue()
+    );
+    await page.reload();
+    await expect(page.getByText(/Couldn't open this chapter/)).toBeVisible({ timeout: 15_000 });
+    await page.unroute(chapterApi);
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(editorLocator(page)).toBeVisible();
+    await expect(page).toHaveURL(chapterUrl);
+});

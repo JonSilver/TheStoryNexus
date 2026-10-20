@@ -21,7 +21,8 @@ export const ContextInspector = ({
     chapterId?: string;
     buildEditorContext: () => ActionEditorContext;
 }) => {
-    const preview = useMutation({ mutationFn: generateApi.preview });
+    // A failure is shown in the sheet itself
+    const preview = useMutation({ mutationFn: generateApi.preview, meta: { failure: false } });
     const [open, setOpen] = useState(false);
     const show = () => {
         setOpen(true);

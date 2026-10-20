@@ -74,3 +74,18 @@ test("text typed into one AI sheet never appears in the next", async ({ page }) 
     await page.getByRole("button", { name: "Ask about selection" }).click();
     await expect(page.getByPlaceholder(/What should happen to this passage/)).toHaveValue("");
 });
+
+test("what gets sent: a preview that fails says so once, in the sheet", async ({ page }) => {
+    await createStoryAndChapter(page, "Sheets — preview failure", "One");
+    await typeInEditor(page, "Setup paragraph.");
+    await page.getByRole("button", { name: "Insert scene beat" }).click();
+    await page.getByPlaceholder("Describe what happens in this beat…").fill("A storm hits the harbour");
+    await page.route("**/api/generate/preview", route =>
+        route.fulfill({ status: 500, contentType: "application/json", body: '{"error":"Context assembly failed"}' })
+    );
+    await page.getByRole("button", { name: "What will be sent to the AI?" }).click();
+    await expect(
+        page.getByRole("dialog", { name: "What gets sent" }).getByText("Context assembly failed")
+    ).toBeVisible();
+    await expect(page.getByText(/Context assembly failed/)).toHaveCount(1);
+});

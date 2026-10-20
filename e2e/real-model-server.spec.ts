@@ -11,7 +11,13 @@ test.describe.configure({ mode: "serial" });
  */
 test.describe("against a real model server", () => {
     type Mode = "missing-model" | "slow-start" | "stall";
-    const server = { mode: "slow-start" as Mode, instance: null as http.Server | null, settingsId: "", url: "" };
+    const server = {
+        mode: "slow-start" as Mode,
+        instance: null as http.Server | null,
+        settingsId: "",
+        url: "",
+        modelListings: 0
+    };
 
     const chunk = (content: string) => `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content } }] })}\n\n`;
     const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -19,6 +25,7 @@ test.describe("against a real model server", () => {
     test.beforeAll(async ({ request }) => {
         const instance = http.createServer(async (req, res) => {
             if (req.url?.endsWith("/models")) {
+                server.modelListings += 1;
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ object: "list", data: [{ id: "fake-model", object: "model" }] }));
                 return;
@@ -83,8 +90,11 @@ test.describe("against a real model server", () => {
         await expect(save).toBeDisabled();
 
         await field.fill(server.url);
+        server.modelListings = 0;
         await save.click();
         await expect(page.getByText("Local models loaded")).toBeVisible();
+        // One save, one look at the server's models — not a second fetch whose failure would misreport the save
+        expect(server.modelListings).toBe(1);
         await page.getByLabel("Default model").click();
         await page.getByRole("option", { name: "fake-model" }).click();
         await expect(page.getByText(/^Default model: .*fake-model/)).toBeVisible();

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { seriesApi } from "@/services/api/client";
-import { seriesKeys, storiesKeys } from "@/services/api/queryKeys";
+import { lorebookKeys, seriesKeys, storiesKeys } from "@/services/api/queryKeys";
 import type { Series } from "@/types/story";
 
 export const useSeriesQuery = () => useQuery({ queryKey: seriesKeys.list, queryFn: seriesApi.getAll });
@@ -19,10 +19,12 @@ const useSeriesWrite = <TVariables, TResult>(
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
-        // Stories carry their series membership, so they refresh with it
+        // Stories carry their series membership, and member stories inherit the
+        // series' bible entries (deleted with it), so both refresh with it
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: seriesKeys.all });
             void queryClient.invalidateQueries({ queryKey: storiesKeys.all });
+            void queryClient.invalidateQueries({ queryKey: lorebookKeys.all });
         },
         meta: { failure }
     });

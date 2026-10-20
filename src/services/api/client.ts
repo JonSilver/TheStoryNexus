@@ -30,7 +30,12 @@ export const seriesApi = {
     update: (id: string, data: Partial<Omit<Series, "id" | "createdAt">>) =>
         fetchJSON<Series>(`/series/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/series/${id}`, { method: "DELETE" }),
-    importSeries: (file: File) => uploadFile<Series>("/series/import", file)
+    importSeries: (file: File) =>
+        uploadFile<{
+            seriesId: string;
+            imported: { stories: number; lorebookEntries: number };
+            assetsFailed: string[];
+        }>("/series/import", file)
 };
 
 // Chapters API
