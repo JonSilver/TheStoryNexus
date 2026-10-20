@@ -31,7 +31,7 @@ export const useDraftLayer = ({
     const generation = useActionGeneration();
     const [unsaved, setUnsaved] = useState<string[]>([]);
     const [chosen, setChosen] = useState<number | null>(null);
-    const { edits, edit } = useDraftEdits<string>((at, text) =>
+    const { edits, edit, settle } = useDraftEdits<string>((at, text) =>
         at < saved.length ? saveEdit(at, text) : Promise.resolve(false)
     );
     const drafts = [...saved, ...unsaved];
@@ -69,6 +69,7 @@ export const useDraftLayer = ({
         /** The draft on show, with the writer's edits. */
         shown: index >= 0 ? (edits[index] ?? drafts[index]) : null,
         edit: (text: string) => edit(index, text),
+        settleEdits: settle,
         unsavedCount: unsaved.length,
         saveAgain: () => unsaved.forEach(text => void keep(text)),
         run,

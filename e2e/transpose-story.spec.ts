@@ -290,3 +290,37 @@ test("a transposition refused at the start says what's actually wrong", async ({
     });
     expect((await huge.json()).error).toMatch(/100,001 characters — the most a brief can be is 100,000/);
 });
+
+test("a story with no synopsis can be given one; an edit pressed straight into Accept raises no false error", async ({
+    page
+}) => {
+    await mockGeneration(page, () => "unexpected");
+    const { storyId } = await seedOriginal(page);
+    await page.request.put(`/api/stories/${storyId}`, { data: { synopsis: "" } });
+    const started = await page.request.post("/api/transpositions", {
+        data: { sourceStoryId: storyId, target: "1990s Belfast" }
+    });
+    const { storyId: copyId } = (await started.json()) as { storyId: string };
+    await page.request.post(`/api/transpositions/${copyId}/ops`, { data: { op: "addBriefAttempt", text: "A brief." } });
+
+    await page.goto(`/story/${copyId}/transpose`);
+    const draft = page.getByLabel("Draft", { exact: true });
+    await expect(draft).toHaveValue("A brief.");
+    // Edit and accept at once: the accept carries the edit; nothing reports a failed save afterwards
+    await draft.fill("A brief, edited.");
+    await page.getByRole("button", { name: "Accept the brief" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Synopsis");
+    await page.waitForTimeout(1500);
+    await expect(page.getByText(/That step is finished/)).toHaveCount(0);
+    expect((await (await page.request.get(`/api/transpositions/${copyId}`)).json()).brief).toBe("A brief, edited.");
+
+    await expect(page.getByText(/This story has no synopsis/)).toBeVisible();
+    await page.getByRole("button", { name: "Write or paste your own synopsis" }).click();
+    await page.getByLabel("Write or paste your own synopsis").fill("Elinor keeps the family breathing.");
+    await page.getByRole("button", { name: "Keep as a draft" }).click();
+    await page.getByRole("button", { name: "Accept the synopsis" }).click();
+    await expect(page.locator("[aria-current=step]")).toHaveText("Bible");
+    expect((await (await page.request.get(`/api/stories/${copyId}`)).json()).synopsis).toBe(
+        "Elinor keeps the family breathing."
+    );
+});

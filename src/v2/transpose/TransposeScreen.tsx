@@ -98,13 +98,22 @@ const SynopsisStep = ({ transposition }: { transposition: Transposition }) => {
             {transposition.state.synopsis.original ? "Keep the synopsis as it is" : "Go on to the bible"}
         </button>
     );
-    if (!transposition.state.synopsis.original)
+    // No synopsis to transpose: the writer can still write one for the copy, or go on
+    if (!transposition.state.synopsis.original && !transposition.state.synopsis.attempts.length)
         return (
             <section className="space-y-3 px-4 py-4 text-sm">
                 <p className="text-muted-foreground">
-                    This story has no synopsis, so there's nothing to transpose here.
+                    This story has no synopsis, so there's nothing to transpose here — write one for the copy if you
+                    like.
                 </p>
-                {keepIt}
+                <div className="flex flex-wrap gap-2">
+                    {keepIt}
+                    <OwnDraft
+                        label="Write or paste your own synopsis"
+                        busy={apply.isPending}
+                        onKeep={text => record({ op: "addSynopsisAttempt", text })}
+                    />
+                </div>
             </section>
         );
     return (

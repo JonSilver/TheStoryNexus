@@ -90,7 +90,11 @@ export const DraftLayer = ({
                             <button
                                 type="button"
                                 disabled={!shown.trim() || accepting}
-                                onClick={() => onAccept(shown.trim())}
+                                onClick={() => {
+                                    // The accept carries the text: a pending edit save would land after the step closed
+                                    layer.settleEdits();
+                                    onAccept(shown.trim());
+                                }}
                                 className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                             >
                                 {acceptLabel}
