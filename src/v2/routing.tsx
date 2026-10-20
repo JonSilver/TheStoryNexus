@@ -23,7 +23,8 @@ export type V2Tool =
     | "read"
     | "providers"
     | "serieslist"
-    | "guidepage";
+    | "guidepage"
+    | "transpose";
 
 const STORY_SCOPED: Partial<Record<V2Tool, string>> = {
     story: "",
@@ -31,7 +32,8 @@ const STORY_SCOPED: Partial<Record<V2Tool, string>> = {
     bible: "/bible",
     notes: "/notes",
     read: "/read",
-    brainstorm: "/brainstorm"
+    brainstorm: "/brainstorm",
+    transpose: "/transpose"
 };
 
 const APP_SCOPED: Partial<Record<V2Tool, string>> = {

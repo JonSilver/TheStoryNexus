@@ -11,8 +11,9 @@ import path from "path";
  * server involved, fully deterministic.
  */
 
-const E2E_API_PORT = 3101;
-const E2E_WEB_PORT = 5273;
+// Overridable for when something else on the machine holds the defaults
+const E2E_API_PORT = Number(process.env.E2E_API_PORT) || 3101;
+const E2E_WEB_PORT = Number(process.env.E2E_WEB_PORT) || 5273;
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "storynexus-e2e-"));
 
 export default defineConfig({

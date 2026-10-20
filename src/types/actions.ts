@@ -13,7 +13,10 @@ export type ActionId =
     | "ask"
     | "check_continuity"
     | "merge_entries"
-    | "derive_voice";
+    | "derive_voice"
+    | "transpose_brief"
+    | "transpose_synopsis"
+    | "transpose_entry";
 
 export interface ActionDefinition {
     id: ActionId;

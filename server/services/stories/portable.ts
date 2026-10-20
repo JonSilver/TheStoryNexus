@@ -7,6 +7,7 @@
  * so the round trip is unit-testable.
  */
 import type { InferInsertModel } from "drizzle-orm";
+import { readStage, readState, remapState } from "../../../src/v2/transpose/state.js";
 import type { schema } from "../../db/client.js";
 
 export interface PortableAsset {
@@ -25,6 +26,8 @@ export interface StoryBackup {
     aiChats?: Row[];
     notes?: Row[];
     actionOverrides?: Row[];
+    /** A transposition in progress on this story (#77): its drafts are work too. */
+    transposition?: Row | null;
     assets?: PortableAsset[];
 }
 
@@ -35,6 +38,7 @@ export interface StoryImportRows {
     aiChats: InferInsertModel<typeof schema.aiChats>[];
     notes: InferInsertModel<typeof schema.notes>[];
     actionOverrides: InferInsertModel<typeof schema.actionOverrides>[];
+    transposition: InferInsertModel<typeof schema.transpositions> | null;
 }
 
 const str = (value: unknown, fallback = ""): string => (typeof value === "string" ? value : fallback);
@@ -77,6 +81,15 @@ export const buildStoryImport = (
 ): StoryImportRows => {
     const oldStoryId = backup.story.id;
     const story = backup.story;
+    // Entries kept, with their new ids — a transposition's drafts are keyed by them
+    const entries = (backup.lorebookEntries ?? [])
+        .filter(entry => typeof entry.name === "string" && entry.name.trim())
+        .map(entry => ({ entry, id: newId() }));
+    const entryIds = new Map(
+        entries.flatMap(({ entry, id }) => (typeof entry.id === "string" ? [[entry.id, id]] : []))
+    );
+    const transposition =
+        backup.transposition && typeof backup.transposition.target === "string" ? backup.transposition : null;
 
     return {
         story: {
@@ -117,20 +130,18 @@ export const buildStoryImport = (
         })),
         // Inherited (series/global) entries are never in a story backup; anything
         // present comes back as this story's own
-        lorebookEntries: (backup.lorebookEntries ?? [])
-            .filter(entry => typeof entry.name === "string" && entry.name.trim())
-            .map(entry => ({
-                id: newId(),
-                level: "story",
-                scopeId: newStoryId,
-                name: str(entry.name),
-                description: str(entry.description),
-                category: LOREBOOK_CATEGORIES.has(str(entry.category)) ? str(entry.category) : "note",
-                tags: strings(entry.tags),
-                metadata: entry.metadata ?? null,
-                isDisabled: entry.isDisabled === true,
-                createdAt: now
-            })),
+        lorebookEntries: entries.map(({ entry, id }) => ({
+            id,
+            level: "story",
+            scopeId: newStoryId,
+            name: str(entry.name),
+            description: str(entry.description),
+            category: LOREBOOK_CATEGORIES.has(str(entry.category)) ? str(entry.category) : "note",
+            tags: strings(entry.tags),
+            metadata: entry.metadata ?? null,
+            isDisabled: entry.isDisabled === true,
+            createdAt: now
+        })),
         aiChats: (backup.aiChats ?? []).map(chat => ({
             id: newId(),
             storyId: newStoryId,
@@ -163,7 +174,19 @@ export const buildStoryImport = (
                 presencePenalty: optNum(override.presencePenalty),
                 modelRef: optStr(override.modelRef),
                 createdAt: toDate(override.createdAt, now)
-            }))
+            })),
+        transposition: transposition && {
+            id: newId(),
+            storyId: newStoryId,
+            // The original may not exist where this is restored: the link is only for showing where it came from
+            sourceStoryId: null,
+            target: str(transposition.target),
+            brief: optStr(transposition.brief),
+            stage: readStage(transposition.stage),
+            state: remapState(readState(transposition.state), entryIds),
+            createdAt: toDate(transposition.createdAt, now),
+            updatedAt: toDate(transposition.updatedAt, now)
+        }
     };
 };
 
