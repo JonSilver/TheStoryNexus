@@ -110,10 +110,19 @@ test("every screen about a story names it; tab screens have no back, the screens
     await expect(back).toHaveCount(0);
 
     await createStoryAndChapter(page, "Context — Ashford", "One");
+    const storyId = new URL(page.url()).pathname.split("/")[2];
 
+    await expect(page.getByLabel("Chapter", { exact: true })).toBeVisible();
+    await expect(back).toHaveCount(0);
     await page.getByRole("button", { name: "Brainstorm" }).click();
     await expect(header.getByRole("heading", { name: "Brainstorm" })).toBeVisible();
     await expect(header.getByText("Context — Ashford")).toBeVisible();
+    await expect(back).toHaveCount(0);
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Story Bible" })).toBeVisible();
+    await expect(back).toHaveCount(0);
+    await page.getByRole("button", { name: "Settings" }).click();
+    await expect(page.getByRole("button", { name: "AI providers & models" })).toBeVisible();
     await expect(back).toHaveCount(0);
 
     for (const screen of ["Chapters", "Story Bible", "Notes", "Read"]) {
@@ -127,6 +136,13 @@ test("every screen about a story names it; tab screens have no back, the screens
     await page.getByRole("button", { name: "Story", exact: true }).click();
     await page.getByRole("button", { name: "Switch story" }).click();
     await expect(back).toHaveCount(1);
+
+    // Opened fresh, with nothing behind it, back still lands on the screen above
+    const fresh = await page.context().newPage();
+    await fresh.goto(`/story/${storyId}/notes`);
+    await fresh.getByRole("button", { name: "Back" }).click();
+    await expect(fresh).toHaveURL(new RegExp(`/story/${storyId}$`));
+    await fresh.close();
 
     // Per-story AI settings say which story
     await page.goto("/settings/actions");

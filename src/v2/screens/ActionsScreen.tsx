@@ -16,7 +16,7 @@ export const ActionsScreen = () => {
     const currentStoryId = useCurrentStoryId();
     const story = useCurrentStory();
     const [scope, setScope] = useState<"global" | "story">("global");
-    const storyId = scope === "story" ? currentStoryId : null;
+    const storyId = scope === "story" ? (story?.id ?? null) : null;
     const { data: registry } = useActionRegistry();
     const { data: overrides } = useOverrides(storyId);
     const [editing, setEditing] = useState<ActionDefinition | null>(null);
@@ -37,9 +37,10 @@ export const ActionsScreen = () => {
                 <button
                     type="button"
                     onClick={() => setScope("story")}
-                    disabled={!currentStoryId}
+                    // Only a story that exists can have overrides of its own
+                    disabled={!story}
                     aria-pressed={scope === "story"}
-                    className={`min-w-0 truncate rounded-md border px-3 py-1.5 disabled:opacity-50 ${scope === "story" ? "bg-accent" : ""}`}
+                    className={`min-w-0 rounded-md border px-3 py-1.5 text-left disabled:opacity-50 ${scope === "story" ? "bg-accent" : ""}`}
                 >
                     {!currentStoryId ? "This story (none open)" : story ? `This story: ${story.title}` : "This story"}
                 </button>
