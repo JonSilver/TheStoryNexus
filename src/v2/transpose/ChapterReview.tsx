@@ -4,7 +4,7 @@ import type { Chapter } from "@/types/story";
 import { useNav } from "../routing";
 import { DraftSlot } from "./DraftSlot";
 import { machineryIn, piecesOf } from "./pieces";
-import { type ChapterDraft, emptyChapter } from "./state";
+import { type ChapterDraft, type ChapterText, emptyChapter } from "./state";
 import type { useChapterDrafting } from "./useChapterDrafting";
 import { useDraftEdits } from "./useDraftEdits";
 
@@ -38,21 +38,32 @@ export const ChapterReview = ({
         );
         return !error;
     });
-    const shown = (slot: string, drafts: string[]) => {
+    const shown = (slot: string, drafts: ChapterText[]) => {
         const index = Math.min(chosen[slot] ?? drafts.length - 1, drafts.length - 1);
-        return { index, text: index >= 0 ? (edits[`${slot}:${index}`] ?? drafts[index]) : null };
+        const edited = edits[`${slot}:${index}`];
+        const draftText = index >= 0 ? drafts[index] : undefined;
+        return {
+            index,
+            text: edited ?? draftText?.text ?? null,
+            // An edit makes it the writer's, whole
+            incomplete: edited === undefined && Boolean(draftText?.incomplete)
+        };
     };
 
     const pieces = piecesOf(chapter.content);
     const proseCount = pieces.filter(piece => piece.kind === "prose").length;
+    const version = chapter.saveVersion ?? 0;
     const stale =
-        draft.pieces.length > 0 &&
-        (draft.sourceSaveVersion !== (chapter.saveVersion ?? 0) || draft.pieces.length !== proseCount);
+        (draft.pieces.length > 0 && (draft.sourceSaveVersion !== version || draft.pieces.length !== proseCount)) ||
+        (draft.outlineAttempts.length > 0 && draft.outlineSourceSaveVersion !== version);
     const piecesNow = stale ? [] : draft.pieces;
     const outline = shown("outline", draft.outlineAttempts);
     const rewrites = Array.from({ length: proseCount }, (_, i) => shown(`piece:${i}`, piecesNow[i] ?? []));
-    const complete = outline.text !== null && rewrites.every(rewrite => rewrite.text !== null);
+    // Every part present, not empty, and not left cut short
+    const complete = [outline, ...rewrites].every(slot => slot.text?.trim() && !slot.incomplete);
     const machinery = machineryIn(chapter.content);
+    // Parts are drafted against the outline the writer has chosen (and edited), once it's whole
+    const chosenOutline = outline.text?.trim() && !outline.incomplete && !stale ? outline.text : undefined;
     const busy = drafting.busy || drafting.apply.isPending;
 
     if (draft.status === "accepted")
@@ -71,8 +82,7 @@ export const ChapterReview = ({
             {drafting.errors[chapter.id] && <p className="text-destructive">{drafting.errors[chapter.id]}</p>}
             {stale && (
                 <p role="alert" className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs">
-                    This chapter has changed since its prose was drafted. Draft it again to transpose the text as it is
-                    now.
+                    This chapter has changed since it was drafted. Draft it again to transpose the text as it is now.
                 </p>
             )}
             {machinery > 0 && (
@@ -85,7 +95,8 @@ export const ChapterReview = ({
                 <p className="mb-1 font-medium">Outline in the new setting</p>
                 <DraftSlot
                     label={`Outline of ${chapter.title}`}
-                    drafts={draft.outlineAttempts}
+                    count={draft.outlineAttempts.length}
+                    incomplete={outline.incomplete}
                     index={outline.index}
                     shown={outline.text}
                     onSelect={index => setChosen(current => ({ ...current, outline: index }))}
@@ -111,17 +122,32 @@ export const ChapterReview = ({
                         </div>
                         <DraftSlot
                             label={`Part ${index + 1} of ${chapter.title}`}
-                            drafts={piecesNow[index] ?? []}
+                            count={piecesNow[index]?.length ?? 0}
+                            incomplete={rewrite.incomplete}
                             index={rewrite.index}
                             shown={rewrite.text}
                             onSelect={at => setChosen(current => ({ ...current, [`piece:${index}`]: at }))}
                             onChange={text => edit(`piece:${index}:${rewrite.index}`, text)}
-                            onTryAgain={() => void drafting.draftOne(chapter, { piece: index })}
+                            onTryAgain={() => void drafting.draftOne(chapter, { piece: index }, chosenOutline)}
                             busy={busy || draft.outlineAttempts.length === 0}
                         />
                     </div>
                 );
             })}
+            {draft.earlier.length > 0 && (
+                <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground">
+                        Drafts from before the chapter changed ({draft.earlier.length})
+                    </summary>
+                    <ul className="mt-2 space-y-2">
+                        {draft.earlier.map((earlier, i) => (
+                            <li key={i} className="whitespace-pre-wrap rounded-md border p-2">
+                                {earlier.text}
+                            </li>
+                        ))}
+                    </ul>
+                </details>
+            )}
             <p className="text-xs text-muted-foreground">
                 Rewritten parts come back as plain paragraphs: bold and italics inside them aren't kept.
             </p>
@@ -145,7 +171,7 @@ export const ChapterReview = ({
                     <button
                         type="button"
                         disabled={busy}
-                        onClick={() => void drafting.draftOne(chapter)}
+                        onClick={() => void drafting.draftOne(chapter, undefined, stale ? undefined : chosenOutline)}
                         className="rounded-md border px-3 py-2 disabled:opacity-50"
                     >
                         {complete || stale ? "Draft it again" : "Draft what's missing"}

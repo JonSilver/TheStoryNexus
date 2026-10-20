@@ -31,6 +31,26 @@ const childrenOf = (content: string): LexicalNode[] => {
     return Array.isArray(state?.root?.children) ? state.root.children : [];
 };
 
+/** A paragraph too long for one piece, cut between sentences (it comes back as several paragraphs). */
+const withinLimit = (text: string, maxWords: number): string[] => {
+    if (wordsIn(text) <= maxWords) return [text];
+    const sentences = text.match(/[^.!?…]+(?:[.!?…]+["'”’)\]]*\s*|$)/g) ?? [text];
+    const parts: string[] = [];
+    const part = { text: "", words: 0 };
+    for (const sentence of sentences) {
+        const words = wordsIn(sentence);
+        if (part.words && part.words + words > maxWords) {
+            parts.push(part.text.trim());
+            part.text = "";
+            part.words = 0;
+        }
+        part.text += sentence;
+        part.words += words;
+    }
+    if (part.text.trim()) parts.push(part.text.trim());
+    return parts;
+};
+
 export const piecesOf = (content: string, maxWords = PIECE_WORDS): Piece[] => {
     const pieces: Piece[] = [];
     const run = { texts: [] as string[], words: 0 };
@@ -49,10 +69,12 @@ export const piecesOf = (content: string, maxWords = PIECE_WORDS): Piece[] => {
         }
         const text = textOf(node).trim();
         if (!text) continue;
-        const words = wordsIn(text);
-        if (run.words && run.words + words > maxWords) flush();
-        run.texts.push(text);
-        run.words += words;
+        for (const part of withinLimit(text, maxWords)) {
+            const words = wordsIn(part);
+            if (run.words && run.words + words > maxWords) flush();
+            run.texts.push(part);
+            run.words += words;
+        }
     }
     flush();
     return pieces;

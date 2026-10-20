@@ -34,7 +34,13 @@ export const opSchema = z.discriminatedUnion("op", [
     z.object({ op: z.literal("editBriefDraft"), index, text }),
     z.object({ op: z.literal("editSynopsisDraft"), index, text }),
     z.object({ op: z.literal("editEntryDraft"), entryId: z.string().min(1), index, value: entryValue }),
-    z.object({ op: z.literal("addOutlineAttempt"), chapterId, text }),
+    z.object({
+        op: z.literal("addOutlineAttempt"),
+        chapterId,
+        sourceSaveVersion: index,
+        text,
+        incomplete: z.literal(true).optional()
+    }),
     z.object({ op: z.literal("editOutlineDraft"), chapterId, index, text }),
     z.object({
         op: z.literal("addPieceAttempt"),
@@ -42,14 +48,16 @@ export const opSchema = z.discriminatedUnion("op", [
         sourceSaveVersion: index,
         pieceCount: z.number().int().min(1).max(1000),
         index,
-        text
+        text,
+        incomplete: z.literal(true).optional()
     }),
     z.object({ op: z.literal("editPieceDraft"), chapterId, piece: index, index, text }),
     z.object({
         op: z.literal("acceptChapter"),
         chapterId,
         outline: text,
-        rewrites: z.array(z.string().max(200_000)).max(1000)
+        // An empty part would delete that prose from the chapter
+        rewrites: z.array(text).max(1000)
     }),
     z.object({ op: z.literal("finishChapters") })
 ]);

@@ -23,12 +23,22 @@ export interface EntryState {
     status: "pending" | "accepted" | "kept";
 }
 
+/** A draft of an outline or a piece; one cut short (a failure, a Stop) is incomplete until the writer edits it. */
+export interface ChapterText {
+    text: string;
+    incomplete?: true;
+}
+
 export interface ChapterDraft {
-    outlineAttempts: string[];
+    outlineAttempts: ChapterText[];
+    /** The chapter's saveVersion the outline was drafted from. */
+    outlineSourceSaveVersion: number | null;
     /** The chapter's saveVersion its pieces were drafted from: the drafts fit that text and no other. */
     sourceSaveVersion: number | null;
     /** Every draft of each prose piece, in order (pieces.ts). */
-    pieces: string[][];
+    pieces: ChapterText[][];
+    /** Piece drafts from before the chapter changed: they no longer fit, but they're the writer's. */
+    earlier: ChapterText[];
     status: "pending" | "accepted";
 }
 
@@ -81,22 +91,37 @@ const readEntry = (value: unknown): EntryState => {
 
 export const emptyChapter = (): ChapterDraft => ({
     outlineAttempts: [],
+    outlineSourceSaveVersion: null,
     sourceSaveVersion: null,
     pieces: [],
+    earlier: [],
     status: "pending"
 });
+
+const readText = (value: unknown): ChapterText | null => {
+    if (typeof value === "string") return { text: value };
+    if (!isRecord(value) || typeof value.text !== "string") return null;
+    return value.incomplete === true ? { text: value.text, incomplete: true } : { text: value.text };
+};
+const texts = (value: unknown): ChapterText[] =>
+    Array.isArray(value) ? value.map(readText).filter((text): text is ChapterText => text !== null) : [];
+const version = (value: unknown): number | null => (Number.isSafeInteger(value) ? (value as number) : null);
 
 const readChapter = (value: unknown): ChapterDraft => {
     const chapter = isRecord(value) ? value : {};
     return {
-        outlineAttempts: strings(chapter.outlineAttempts),
-        sourceSaveVersion: Number.isSafeInteger(chapter.sourceSaveVersion)
-            ? (chapter.sourceSaveVersion as number)
-            : null,
-        pieces: Array.isArray(chapter.pieces) ? chapter.pieces.map(strings) : [],
+        outlineAttempts: texts(chapter.outlineAttempts),
+        outlineSourceSaveVersion: version(chapter.outlineSourceSaveVersion),
+        sourceSaveVersion: version(chapter.sourceSaveVersion),
+        pieces: Array.isArray(chapter.pieces) ? chapter.pieces.map(texts) : [],
+        earlier: texts(chapter.earlier),
         status: chapter.status === "accepted" ? "accepted" : "pending"
     };
 };
+
+/** The newest draft that's whole, if any. */
+export const lastComplete = (drafts: ChapterText[]): ChapterText | undefined =>
+    [...drafts].reverse().find(draft => !draft.incomplete);
 
 export const readState = (value: unknown): TranspositionState => {
     const state = isRecord(value) ? value : {};
@@ -196,7 +221,7 @@ export type TranspositionOp =
     | { op: "editBriefDraft"; index: number; text: string }
     | { op: "editSynopsisDraft"; index: number; text: string }
     | { op: "editEntryDraft"; entryId: string; index: number; value: Omit<EntryValue, "category"> }
-    | { op: "addOutlineAttempt"; chapterId: string; text: string }
+    | { op: "addOutlineAttempt"; chapterId: string; sourceSaveVersion: number; text: string; incomplete?: true }
     | {
           op: "addPieceAttempt";
           chapterId: string;
@@ -205,6 +230,7 @@ export type TranspositionOp =
           pieceCount: number;
           index: number;
           text: string;
+          incomplete?: true;
       }
     | { op: "editOutlineDraft"; chapterId: string; index: number; text: string }
     | { op: "editPieceDraft"; chapterId: string; piece: number; index: number; text: string }

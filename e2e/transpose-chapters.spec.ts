@@ -25,6 +25,17 @@ type Generated = { actionId: string; chapterId?: string; editorContext?: Record<
 const seedAtChapters = async (page: Page) => {
     await createStoryAndChapter(page, "Transpose chapters — original", "One");
     const storyId = new URL(page.url()).pathname.split("/")[2];
+    // A bible, so a passage that names none of it ("The rain came.") must still be drafted
+    await page.request.post("/api/lorebook", {
+        data: {
+            level: "story",
+            scopeId: storyId,
+            name: "Aunt Hester",
+            description: "Formidable.",
+            category: "character",
+            tags: []
+        }
+    });
     const [first] = (await (await page.request.get(`/api/chapters/story/${storyId}`)).json()) as Array<{
         id: string;
         saveVersion: number;
@@ -42,6 +53,8 @@ const seedAtChapters = async (page: Page) => {
     const op = (data: object) => page.request.post(`/api/transpositions/${copyId}/ops`, { data });
     await op({ op: "acceptBrief", brief: "Belfast, 1994." });
     await op({ op: "acceptSynopsis", synopsis: null });
+    const { state } = await (await page.request.get(`/api/transpositions/${copyId}`)).json();
+    for (const entryId of state.entryOrder as string[]) await op({ op: "keepEntry", entryId });
     await op({ op: "finishBible" });
     return { storyId, copyId };
 };
@@ -95,6 +108,9 @@ test("chapters: drafted outline then prose, reviewed beside the original, accept
     await expect(one.getByText("Aunt Hester ruled Whitwell Hall.")).toBeVisible();
     await expect(one.getByLabel("Part 1 of One", { exact: true })).toHaveValue("Mrs Brennan ruled the shop.");
     await expect(one.getByText("— scene break —")).toBeVisible();
+    // An emptied part can't be accepted: it would delete that prose
+    await one.getByLabel("Part 2 of One", { exact: true }).fill("");
+    await expect(one.getByRole("button", { name: "Accept this chapter" })).toBeDisabled();
     await one.getByLabel("Part 2 of One", { exact: true }).fill("The rain came, as it does on the Falls Road.");
     await one.getByRole("button", { name: "Accept this chapter" }).click();
     // Accepted, and on to the next chapter to review
@@ -114,12 +130,33 @@ test("chapters: drafted outline then prose, reviewed beside the original, accept
         }
     });
     await page.reload();
-    await expect(two.getByText(/changed since its prose was drafted/)).toBeVisible();
+    await expect(two.getByText(/changed since it was drafted/)).toBeVisible();
     await expect(two.getByRole("button", { name: "Accept this chapter" })).toBeDisabled();
     await two.getByRole("button", { name: "Draft it again" }).click();
     await expect(two.getByLabel("Part 1 of Two", { exact: true })).toHaveValue("Mrs Brennan wrote to London, twice.");
+    // The drafts made from the old text are kept, set aside
+    await expect(two.getByText("Drafts from before the chapter changed (1)")).toBeVisible();
     await two.getByRole("button", { name: "Accept this chapter" }).click();
     await expect(two.getByText("Accepted", { exact: true })).toBeVisible();
+
+    // The bible sent with a passage is the entries it names; one that names none still goes ahead
+    await page.request.get("/api/ai/settings");
+    const sent = async (selection: string) => {
+        const preview = await page.request.post("/api/generate/preview", {
+            data: {
+                actionId: "transpose_prose",
+                storyId: copyId,
+                chapterId: copyTwo.id,
+                editorContext: { selection, userMessage: "Outline." },
+                modelRef: { provider: "local", modelId: "local/any" }
+            }
+        });
+        expect(preview.ok()).toBe(true);
+        const { messages } = (await preview.json()) as { messages: Array<{ content: string }> };
+        return messages.map(m => m.content).join("\n");
+    };
+    expect(await sent("The rain came.")).toContain("none of the bible's entries appear in this passage");
+    expect(await sent("Aunt Hester wrote.")).toContain("Aunt Hester [character]: Formidable. (unchanged)");
 
     await page.getByRole("button", { name: "Finish the transposition" }).click();
     await expect(page.getByText(/Every chapter is transposed/)).toBeVisible();
@@ -146,20 +183,25 @@ test("chapters: drafted outline then prose, reviewed beside the original, accept
     expect(originalChapters.find(c => c.order === 1)?.content).toBe(TWO);
 });
 
-test("chapters: Stop keeps what was drafted, and drafting again carries on from there", async ({ page }) => {
+test("chapters: Stop keeps what was drafted; a part cut short is marked and drafted again; carrying on drafts only what's missing", async ({
+    page
+}) => {
     const calls: Generated[] = [];
-    const hold = { next: false };
+    const mode = { hang: 3, cutShort: 0 };
     await page.route("**/api/generate/action", async route => {
         const request = route.request().postDataJSON() as Generated;
         calls.push(request);
-        // The third request (part 2 of chapter one) never answers: the writer stops it
-        if (calls.length === 3 && !hold.next) return;
+        // One request never answers: the writer stops it
+        if (calls.length === mode.hang) return;
         const reply =
             request.actionId === "transpose_outline" ? "Outline." : moved(request.editorContext?.selection ?? "");
+        const cut = calls.length === mode.cutShort;
         await route.fulfill({
             status: 200,
             contentType: "text/event-stream",
-            body: `event: token\ndata: ${JSON.stringify({ text: reply })}\n\nevent: finish\ndata: {}\n\n`
+            body: cut
+                ? `event: token\ndata: ${JSON.stringify({ text: "The rain" })}\n\nevent: error\ndata: {"message":"the model server dropped the connection."}\n\n`
+                : `event: token\ndata: ${JSON.stringify({ text: reply })}\n\nevent: finish\ndata: {}\n\n`
         });
     });
     const { copyId } = await seedAtChapters(page);
@@ -172,8 +214,8 @@ test("chapters: Stop keeps what was drafted, and drafting again carries on from 
     const one = page.getByRole("listitem", { name: "One" });
     await expect(one.getByLabel("Part 1 of One", { exact: true })).toHaveValue("Mrs Brennan ruled the shop.");
 
-    // Carrying on drafts only what's missing: part 2 of One, then Two
-    hold.next = true;
+    // Carrying on: part 2 of One is cut short this time; Two is drafted regardless
+    mode.cutShort = calls.length + 1;
     const before = calls.length;
     await page.reload();
     await page.getByRole("button", { name: "Draft all the chapters" }).click();
@@ -183,4 +225,15 @@ test("chapters: Stop keeps what was drafted, and drafting again carries on from 
         "transpose_outline",
         "transpose_prose"
     ]);
+    // One is still to do, so it's the chapter open for review
+    await expect(one.getByLabel("Part 2 of One", { exact: true })).toHaveValue("The rain");
+    await expect(one.getByText(/Incomplete — cut short/)).toBeVisible();
+    await expect(one.getByRole("button", { name: "Accept this chapter" })).toBeDisabled();
+
+    // And again: only the part cut short is drafted
+    const again = calls.length;
+    await page.getByRole("button", { name: "Draft all the chapters" }).click();
+    await expect(one.getByLabel("Part 2 of One", { exact: true })).toHaveValue("The rain came.");
+    expect(calls.slice(again).map(c => c.actionId)).toEqual(["transpose_prose"]);
+    await expect(one.getByRole("button", { name: "Accept this chapter" })).toBeEnabled();
 });

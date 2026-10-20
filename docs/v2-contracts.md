@@ -192,7 +192,14 @@ Each chapter is drafted outline first (`transpose_outline`: the brief, the bible
 - `recent_prose` is the tail of the previous part's rewrite;
 - `story_bible` is narrowed to the entries the piece names by their original names.
 
-Drafts are stored per piece against the chapter's `saveVersion` (`addPieceAttempt`). A chapter edited after drafting starts its pieces afresh, and the review says it changed. `acceptChapter` rebuilds the chapter on the server from the pieces it computes itself, with each rewrite as plain paragraphs (inline formatting isn't kept) and kept nodes untouched. It saves through `resolveChapterUpdate`, so revision and saveVersion move as usual, and sets the outline as a fresh summary. It is refused (409) when the chapter isn't the version drafted from. `finishChapters` requires every chapter accepted.
+Drafts are stored per piece, and the outline per chapter, against the chapter's `saveVersion`.
+
+- A chapter edited after drafting starts afresh, and the review says it changed. The old piece drafts are kept aside (`earlier`) and shown.
+- A paragraph over the size limit is cut between sentences.
+- A draft cut short (a failure, or Stop) is kept marked `incomplete`. It doesn't count as drafted, and Accept refuses it until it's redrafted or edited (an edit makes it whole).
+- Accept refuses empty parts.
+- A passage that names no bible entries gets none.
+- A chapter or bible crowded out of the budget fails loudly rather than being sent as empty. `acceptChapter` rebuilds the chapter on the server from the pieces it computes itself, with each rewrite as plain paragraphs (inline formatting isn't kept) and kept nodes untouched. It saves through `resolveChapterUpdate`, so revision and saveVersion move as usual, and sets the outline as a fresh summary. It is refused (409) when the chapter isn't the version drafted from. `finishChapters` requires every chapter accepted.
 
 The batch ("Draft the remaining chapters") is client-driven: sequential, Stop keeps everything, two failing chapters in a row stop it, and running it again drafts only what's missing. Nothing runs without a press.
 

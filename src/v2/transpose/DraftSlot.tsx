@@ -4,7 +4,8 @@ import { AttemptNav } from "../ai/AttemptNav";
 /** One part of a chapter's transposition: its drafts, the one on show editable, and Try again for just this part. */
 export const DraftSlot = ({
     label,
-    drafts,
+    count,
+    incomplete,
     index,
     shown,
     onSelect,
@@ -14,7 +15,9 @@ export const DraftSlot = ({
     minHeight = "min-h-40"
 }: {
     label: string;
-    drafts: string[];
+    count: number;
+    /** The draft on show was cut short. */
+    incomplete: boolean;
     index: number;
     shown: string | null;
     onSelect: (index: number) => void;
@@ -24,6 +27,11 @@ export const DraftSlot = ({
     minHeight?: string;
 }) => (
     <div className="space-y-1">
+        {incomplete && (
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+                Incomplete — cut short before the end. Try again, or finish it yourself.
+            </p>
+        )}
         {shown === null ? (
             <p className="rounded-md border border-dashed p-2 text-xs text-muted-foreground">Not drafted yet.</p>
         ) : (
@@ -35,11 +43,11 @@ export const DraftSlot = ({
             />
         )}
         <div className="flex items-center gap-2">
-            {drafts.length > 1 && (
+            {count > 1 && (
                 <AttemptNav
                     label="Draft"
                     index={index}
-                    count={drafts.length}
+                    count={count}
                     onSelect={onSelect}
                     className="flex items-center gap-2 text-xs"
                 />
@@ -48,10 +56,10 @@ export const DraftSlot = ({
                 type="button"
                 disabled={busy}
                 onClick={onTryAgain}
-                aria-label={`${drafts.length ? "Try again" : "Draft"}: ${label}`}
+                aria-label={`${count ? "Try again" : "Draft"}: ${label}`}
                 className="ml-auto flex items-center gap-1 rounded-md border px-2 py-1 text-xs disabled:opacity-50"
             >
-                <RotateCcw className="h-3 w-3" /> {drafts.length ? "Try again" : "Draft"}
+                <RotateCcw className="h-3 w-3" /> {count ? "Try again" : "Draft"}
             </button>
         </div>
     </div>

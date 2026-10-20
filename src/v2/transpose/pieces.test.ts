@@ -26,6 +26,11 @@ describe("chapter pieces", () => {
         expect(prosePieces(pieces).map(p => p.text)).toEqual(["a b c\n\nd e f", "g h"]);
     });
 
+    it("cuts a paragraph too long for one piece between its sentences", () => {
+        const pieces = prosePieces(piecesOf(doc(para("One two three. Four five six. Seven eight.")), 4));
+        expect(pieces.map(p => p.text)).toEqual(["One two three.", "Four five six.", "Seven eight."]);
+    });
+
     it("rebuilds the chapter with each piece's rewrite, keeping images and breaks where they were", () => {
         const pieces = piecesOf(doc(para("Old one."), hr, image, para("Old two.")));
         const rebuilt = JSON.parse(rebuildChapter(pieces, ["New one.\n\nNew one, again.\nA line.", "New two."]));

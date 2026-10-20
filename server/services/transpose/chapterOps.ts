@@ -1,6 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import { piecesOf, prosePieces, rebuildChapter, wordCountOf } from "../../../src/v2/transpose/pieces.js";
-import { type ChapterDraft, emptyChapter, type TranspositionState } from "../../../src/v2/transpose/state.js";
+import {
+    type ChapterDraft,
+    type ChapterText,
+    emptyChapter,
+    type TranspositionState
+} from "../../../src/v2/transpose/state.js";
 import { schema } from "../../db/client.js";
 import { resolveChapterUpdate } from "../../lib/chapterUpdate.js";
 import type { Tx } from "../stories/backup.js";
@@ -71,6 +76,9 @@ const writeChapter = (
     return null;
 };
 
+const textOf = (op: { text: string; incomplete?: true }): ChapterText =>
+    op.incomplete ? { text: op.text, incomplete: true } : { text: op.text };
+
 export const CHAPTER_HANDLERS: Pick<
     Handlers,
     "addOutlineAttempt" | "editOutlineDraft" | "addPieceAttempt" | "editPieceDraft" | "acceptChapter" | "finishChapters"
@@ -78,7 +86,8 @@ export const CHAPTER_HANDLERS: Pick<
     addOutlineAttempt: (op, state) => ({
         state: withChapter(state, op.chapterId, chapter => ({
             ...chapter,
-            outlineAttempts: [...chapter.outlineAttempts, op.text]
+            outlineSourceSaveVersion: op.sourceSaveVersion,
+            outlineAttempts: [...chapter.outlineAttempts, textOf(op)]
         }))
     }),
     editOutlineDraft: (op, state) =>
@@ -86,7 +95,8 @@ export const CHAPTER_HANDLERS: Pick<
             ? {
                   state: withChapter(state, op.chapterId, chapter => ({
                       ...chapter,
-                      outlineAttempts: replaced(chapter.outlineAttempts, op.index, op.text)
+                      // An edited draft is the writer's: complete, whatever the model managed
+                      outlineAttempts: replaced(chapter.outlineAttempts, op.index, { text: op.text })
                   }))
               }
             : fail(404, "That draft doesn't exist"),
@@ -94,14 +104,15 @@ export const CHAPTER_HANDLERS: Pick<
         const draft = state.chapters[op.chapterId] ?? emptyChapter();
         if (draft.status === "accepted") return fail(409, "This chapter has already been accepted");
         if (op.index >= op.pieceCount) return fail(400, "No such part of the chapter");
-        // Drafts fit the text they were made from: a changed chapter starts its pieces afresh
+        // Drafts fit the text they were made from: a changed chapter starts its pieces afresh, keeping the old ones aside
         const fresh = draft.sourceSaveVersion !== op.sourceSaveVersion || draft.pieces.length !== op.pieceCount;
-        const pieces = fresh ? Array.from({ length: op.pieceCount }, (): string[] => []) : draft.pieces;
+        const pieces = fresh ? Array.from({ length: op.pieceCount }, (): ChapterText[] => []) : draft.pieces;
         return {
             state: withChapter(state, op.chapterId, chapter => ({
                 ...chapter,
                 sourceSaveVersion: op.sourceSaveVersion,
-                pieces: replaced(pieces, op.index, [...pieces[op.index], op.text])
+                pieces: replaced(pieces, op.index, [...pieces[op.index], textOf(op)]),
+                earlier: fresh ? [...chapter.earlier, ...chapter.pieces.flat()] : chapter.earlier
             }))
         };
     },
@@ -111,7 +122,7 @@ export const CHAPTER_HANDLERS: Pick<
             ? {
                   state: withChapter(state, op.chapterId, chapter => ({
                       ...chapter,
-                      pieces: replaced(chapter.pieces, op.piece, replaced(drafts, op.index, op.text))
+                      pieces: replaced(chapter.pieces, op.piece, replaced(drafts, op.index, { text: op.text }))
                   }))
               }
             : fail(404, "That draft doesn't exist");

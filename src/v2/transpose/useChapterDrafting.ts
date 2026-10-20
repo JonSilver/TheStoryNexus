@@ -8,7 +8,7 @@ import type { Chapter } from "@/types/story";
 import { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { piecesOf, prosePieces } from "./pieces";
-import { emptyChapter, type Transposition } from "./state";
+import { emptyChapter, lastComplete, type Transposition } from "./state";
 
 export interface ChapterProgress {
     chapter: number;
@@ -73,7 +73,8 @@ export const useChapterDrafting = (transposition: Transposition) => {
                 : !text && !ended
                   ? "the model sent no text."
                   : null;
-        return { text, error, ended };
+        // Cut short (a failure, or the writer's Stop): kept, but not a whole draft
+        return { text, error, ended, incomplete: result.outcome !== "complete" };
     };
 
     /** Records a draft; returns the transposition as it now stands, or null when it couldn't be kept. */
@@ -89,7 +90,9 @@ export const useChapterDrafting = (transposition: Transposition) => {
     const draft = async (
         chapter: Pick<Chapter, "id" | "title">,
         position: { chapter: number; chapters: number },
-        only?: { outline: true; guidance?: string } | { piece: number; guidance?: string }
+        only?: { outline: true; guidance?: string } | { piece: number; guidance?: string },
+        /** The outline the writer has on screen, when they pressed for one chapter. */
+        chosenOutline?: string
     ): Promise<string | null> => {
         const fail = (error: string) => {
             setErrors(current => ({ ...current, [chapter.id]: error }));
@@ -109,7 +112,9 @@ export const useChapterDrafting = (transposition: Transposition) => {
         const show = (piece: number | null) =>
             setProgress({ ...position, title: chapter.title, piece, pieces: pieces.length });
 
-        const needsOutline = only ? "outline" in only : !draftOf().outlineAttempts.length;
+        const outlineFits = () =>
+            draftOf().outlineSourceSaveVersion === sourceSaveVersion && lastComplete(draftOf().outlineAttempts);
+        const needsOutline = only ? "outline" in only : !chosenOutline && !outlineFits();
         if (needsOutline) {
             show(null);
             const guidance = only && "outline" in only ? only.guidance : undefined;
@@ -120,25 +125,33 @@ export const useChapterDrafting = (transposition: Transposition) => {
                 editorContext: guidance ? { guidance } : {}
             });
             const saved = outcome.text
-                ? await record({ op: "addOutlineAttempt", chapterId: chapter.id, text: outcome.text })
+                ? await record({
+                      op: "addOutlineAttempt",
+                      chapterId: chapter.id,
+                      sourceSaveVersion,
+                      text: outcome.text,
+                      ...(outcome.incomplete && { incomplete: true as const })
+                  })
                 : null;
             if (saved) current.state = saved.state;
             if (outcome.ended) return null;
             if (outcome.error) return fail(`The outline: ${outcome.error}`);
             if (!saved) return fail("The outline couldn't be saved — try again.");
+            if (outcome.incomplete) return fail("The outline was cut short — try it again.");
         }
         if (only && "outline" in only) return null;
 
-        const outline = last(draftOf().outlineAttempts) ?? "";
+        const outline = chosenOutline ?? lastComplete(draftOf().outlineAttempts)?.text ?? "";
         const fitsSource = (draft: ReturnType<typeof draftOf>) =>
             draft.sourceSaveVersion === sourceSaveVersion && draft.pieces.length === pieces.length;
         const todo = only
             ? ["piece" in only ? only.piece : -1].filter(i => i >= 0 && i < pieces.length)
-            : pieces.map((_, i) => i).filter(i => !fitsSource(draftOf()) || !draftOf().pieces[i]?.length);
+            : pieces.map((_, i) => i).filter(i => !fitsSource(draftOf()) || !lastComplete(draftOf().pieces[i] ?? []));
         for (const index of todo) {
             if (stopRequested.current) break;
             show(index);
-            const previous = index > 0 && fitsSource(draftOf()) ? last(draftOf().pieces[index - 1] ?? []) : undefined;
+            const previous =
+                index > 0 && fitsSource(draftOf()) ? last(draftOf().pieces[index - 1] ?? [])?.text : undefined;
             const outcome = await generate({
                 actionId: "transpose_prose",
                 storyId,
@@ -158,7 +171,8 @@ export const useChapterDrafting = (transposition: Transposition) => {
                       sourceSaveVersion,
                       pieceCount: pieces.length,
                       index,
-                      text: outcome.text
+                      text: outcome.text,
+                      ...(outcome.incomplete && { incomplete: true as const })
                   })
                 : null;
             if (saved) current.state = saved.state;
@@ -167,6 +181,7 @@ export const useChapterDrafting = (transposition: Transposition) => {
             if (outcome.error)
                 return fail(`${where}: ${outcome.error}${outcome.text ? " What arrived is kept, incomplete." : ""}`);
             if (!saved) return fail(`${where} couldn't be saved — try again.`);
+            if (outcome.incomplete) return fail(`${where} was cut short — what arrived is kept, marked incomplete.`);
         }
         return null;
     };
@@ -203,8 +218,9 @@ export const useChapterDrafting = (transposition: Transposition) => {
         /** One chapter (or one part of it) on its own. */
         draftOne: (
             chapter: Pick<Chapter, "id" | "title">,
-            only?: { outline: true; guidance?: string } | { piece: number; guidance?: string }
-        ) => run(() => draft(chapter, { chapter: 1, chapters: 1 }, only)),
+            only?: { outline: true; guidance?: string } | { piece: number; guidance?: string },
+            chosenOutline?: string
+        ) => run(() => draft(chapter, { chapter: 1, chapters: 1 }, only, chosenOutline)),
         stop: () => {
             stopRequested.current = true;
             generation.abort();

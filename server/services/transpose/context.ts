@@ -1,7 +1,7 @@
 import { inArray, eq } from "drizzle-orm";
 import { countTokens } from "gpt-tokenizer";
 import { piecesOf, prosePieces } from "../../../src/v2/transpose/pieces.js";
-import type { EntryState, EntryValue } from "../../../src/v2/transpose/state.js";
+import { type EntryState, type EntryValue, lastComplete } from "../../../src/v2/transpose/state.js";
 import { db, schema } from "../../db/client.js";
 import type { ContextKey } from "../actions/registry.js";
 import { matchEntries } from "../lorebook/matching.js";
@@ -106,12 +106,12 @@ export const transpositionContext = async ({
                   ).map(match => match.entry.id)
               )
             : null;
-        const text = linesWithin(
-            state.entryOrder
-                .filter(id => !mentioned || mentioned.has(id))
-                .map(id => bibleLine(state.entries[id], current.get(id) ?? null)),
-            Math.floor(Math.max(left.budget, 0) * 0.5)
-        );
+        const lines = state.entryOrder
+            .filter(id => !mentioned || mentioned.has(id))
+            .map(id => bibleLine(state.entries[id], current.get(id) ?? null));
+        // A passage that names no entries needs none
+        if (!lines.length) return "(none of the bible's entries appear in this passage)";
+        const text = linesWithin(lines, Math.floor(Math.max(left.budget, 0) * 0.5));
         // Rewriting without the bible would quietly lose the new setting's canon: say why instead
         if (!text) throw new Error("The brief is too long to leave room for the story bible — shorten the brief.");
         left.budget -= countTokens(text);
@@ -129,15 +129,18 @@ export const transpositionContext = async ({
         : null;
 
     const chapter = chapterId ? chapters.find(c => c.id === chapterId) : undefined;
-    const chapterSummary =
-        needs.has("chapter_summary") && chapter
-            ? chapter.summary?.trim() ||
-              // No summary to work from: the chapter itself, its opening as much as fits
-              linesWithin(
-                  prosePieces(piecesOf(chapter.content)).flatMap(piece => piece.text.split("\n\n")),
-                  Math.floor(Math.max(left.budget, 0) * CHAPTER_TEXT_SHARE)
-              )
-            : null;
+    const chapterSummary = (() => {
+        if (!needs.has("chapter_summary") || !chapter) return null;
+        if (chapter.summary?.trim()) return chapter.summary.trim();
+        // No summary to work from: the chapter itself, its opening as much as fits
+        const paragraphs = prosePieces(piecesOf(chapter.content)).flatMap(piece => piece.text.split("\n\n"));
+        const share = Math.floor(Math.max(left.budget, 0) * CHAPTER_TEXT_SHARE);
+        const fitted = linesWithin(paragraphs, share) || (paragraphs[0] ?? "").slice(0, share * 3);
+        // Told "empty" about a chapter with prose, the model would invent one: say why instead
+        if (paragraphs.length && !fitted)
+            throw new Error("The brief and bible leave no room for this chapter — shorten the brief.");
+        return fitted;
+    })();
     if (chapterSummary) left.budget -= countTokens(chapterSummary);
 
     // The chapters before this one, as transposed so far: continuity in the new setting
@@ -152,7 +155,7 @@ export const transpositionContext = async ({
                           const outline =
                               draft?.status === "accepted"
                                   ? c.summary
-                                  : draft?.outlineAttempts[draft.outlineAttempts.length - 1];
+                                  : draft && lastComplete(draft.outlineAttempts)?.text;
                           return outline ? `Chapter ${c.order + 1}: ${outline}` : null;
                       })
                       .filter((line): line is string => line !== null),
