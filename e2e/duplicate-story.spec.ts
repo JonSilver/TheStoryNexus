@@ -80,3 +80,38 @@ test("duplicate a story: the copy has its bible, notes, images and series; editi
     await page.goto(`/story/${storyId}/bible`);
     await expect(page.getByText("Aunt Hester")).toBeVisible();
 });
+
+test("a duplicate holds what the writer just did: the last keystrokes and a details save still on its way", async ({
+    page
+}) => {
+    await createStoryAndChapter(page, "Duplicate — fresh", "One");
+    const storyId = new URL(page.url()).pathname.split("/")[2];
+    // A slow chapter save, still on its way when the writer duplicates
+    await page.route("**/api/chapters/*", async route => {
+        if (route.request().method() === "PUT") await new Promise(resolve => setTimeout(resolve, 4_000));
+        await route.continue();
+    });
+    await typeInEditor(page, "Typed just now.");
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+
+    await page.route(`**/api/stories/${storyId}`, async route => {
+        if (route.request().method() === "PUT") await new Promise(resolve => setTimeout(resolve, 1_500));
+        await route.continue();
+    });
+    await page.getByText("Details, series & voice").click();
+    await page.getByLabel("Synopsis").fill("A late synopsis.");
+    await page.getByRole("button", { name: "Save", exact: true }).first().click();
+    const duplicate = page.getByRole("button", { name: "Duplicate this story…" });
+    await expect(duplicate).toBeDisabled();
+    await expect(duplicate).toBeEnabled({ timeout: 5_000 });
+    await duplicate.click();
+    await page.getByRole("button", { name: "Duplicate", exact: true }).click();
+    // Waiting for the chapter save is shown, not a dead button
+    await expect(page.getByRole("button", { name: "Duplicating…" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Duplicate — fresh (copy)" })).toBeVisible({ timeout: 10_000 });
+    const copyId = new URL(page.url()).pathname.split("/")[2];
+    const copy = await (await page.request.get(`/api/stories/${copyId}`)).json();
+    expect(copy.synopsis).toBe("A late synopsis.");
+    await page.goto(`/story/${copyId}/write`);
+    await expect(editorLocator(page)).toContainText("Typed just now.");
+});

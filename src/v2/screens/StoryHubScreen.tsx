@@ -1,3 +1,4 @@
+import { useIsMutating } from "@tanstack/react-query";
 import {
     BookOpen,
     BookOpenText,
@@ -10,6 +11,7 @@ import {
     SlidersHorizontal,
     Trash2
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQuery";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
@@ -21,6 +23,7 @@ import {
 } from "@/features/stories/hooks/useStoriesQuery";
 import { useConfirm, usePrompt } from "../components/Dialogs";
 import { EmptyState } from "../components/ScreenParts";
+import { flushChapterSave } from "../editor/useChapterSaver";
 import { useNav } from "../routing";
 import { uiState, useCurrentStoryId } from "../state/useV2Store";
 import { ExportButtons } from "./ExportButtons";
@@ -35,7 +38,7 @@ import { StoryVoiceEditor } from "./StoryVoiceEditor";
 export const StoryHubScreen = () => {
     const { goTo } = useNav();
     const currentStoryId = useCurrentStoryId();
-    const { setCurrentStory } = uiState;
+    const { setCurrentStory, lastChapterFor } = uiState;
     const { data: story } = useStoryQuery(currentStoryId ?? "");
     const { data: chapters } = useChaptersByStoryQuery(currentStoryId ?? "");
     const { data: series } = useSingleSeriesQuery(story?.seriesId ?? undefined);
@@ -44,6 +47,9 @@ export const StoryHubScreen = () => {
     const duplicateStory = useDuplicateStoryMutation();
     const confirm = useConfirm();
     const prompt = usePrompt();
+    const saving = useIsMutating();
+    const [flushing, setFlushing] = useState(false);
+    const duplicating = flushing || duplicateStory.isPending;
 
     const wordCount = (chapters ?? []).reduce((sum, c) => sum + (c.wordCount ?? 0), 0);
 
@@ -69,6 +75,11 @@ export const StoryHubScreen = () => {
             confirmLabel: "Duplicate"
         });
         if (!title) return;
+        // The copy must hold the last keystrokes, not race the debounce
+        const openChapter = lastChapterFor(story.id);
+        setFlushing(true);
+        if (openChapter) await flushChapterSave(openChapter);
+        setFlushing(false);
         duplicateStory.mutate(
             { id: story.id, title },
             {
@@ -153,10 +164,11 @@ export const StoryHubScreen = () => {
             <button
                 type="button"
                 onClick={duplicate}
-                disabled={!story || duplicateStory.isPending}
+                // A save still on its way (details, series, voice) would be missing from the copy
+                disabled={!story || duplicating || saving > 0}
                 className="mt-auto flex w-full items-center gap-3 px-4 py-3 text-left text-sm disabled:opacity-50"
             >
-                <Copy className="h-4 w-4" /> {duplicateStory.isPending ? "Duplicating…" : "Duplicate this story…"}
+                <Copy className="h-4 w-4" /> {duplicating ? "Duplicating…" : "Duplicate this story…"}
             </button>
             <button
                 type="button"

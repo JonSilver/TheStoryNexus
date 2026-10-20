@@ -83,7 +83,7 @@ export default createCrudRouter({
         router.post(
             "/:id/duplicate",
             asyncHandler(async (req, res) => {
-                const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 500) : "";
+                const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
                 const backup = await exportStoryBackup(req.params.id);
                 if (!backup) {
                     res.status(404).json({ error: "Story not found" });
