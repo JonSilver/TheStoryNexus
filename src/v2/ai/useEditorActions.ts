@@ -15,9 +15,10 @@ import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQ
 import { chaptersApi } from "@/services/api/client";
 import { chaptersKeys } from "@/services/api/queryKeys";
 import type { Chapter } from "@/types/story";
-import { $appendParagraphs, $captureSelection, $textBefore } from "../editor/lexicalText";
+import { $appendParagraphs, $captureSelection, $replaceSelectionWithProse, $textBefore } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
+import { checkReply, type ReplyAction } from "./replyCheck";
 import { SELECTION_ACTIONS, type SelectionActionId } from "./selectionActions";
 import { type ActionId, useActionGeneration } from "./useActionGeneration";
 import { useAttempts } from "./useAttempts";
@@ -225,7 +226,7 @@ export const useEditorActions = (chapter: Chapter) => {
                     const saved = savedSelection.current;
                     if (saved) $setSelection(saved.clone());
                     const selection = $getSelection();
-                    if ($isRangeSelection(selection)) selection.insertText(text);
+                    if ($isRangeSelection(selection)) $replaceSelectionWithProse(selection, text);
                 },
                 { tag: HISTORY_PUSH_TAG }
             );
@@ -239,6 +240,20 @@ export const useEditorActions = (chapter: Chapter) => {
         () => ({ onContinue, onSummarise, onSelectionAction, onAsk }),
         [onContinue, onSummarise, onSelectionAction, onAsk]
     );
+
+    // A replacement that looks like more than the passage is called out, never trimmed silently
+    const shownReply = generation.phase === "streaming" ? null : attempts.current;
+    const replyAction = active && active.kind !== "summarise" ? (active.id as ReplyAction) : null;
+    const check = shownReply && replyAction ? checkReply(replyAction, savedSelectionText.current, shownReply) : null;
+    const proseOnly = check?.proseOnly ?? null;
+    const suspect =
+        check && check.concerns.length > 0
+            ? {
+                  concerns: check.concerns,
+                  // A new attempt: the full reply stays one tap away
+                  removeNotes: proseOnly === null ? undefined : () => record(proseOnly, attempts.currentPartial)
+              }
+            : null;
 
     return {
         // The saved selection is positional: the document stays frozen while a
@@ -254,6 +269,7 @@ export const useEditorActions = (chapter: Chapter) => {
             attemptIndex: attempts.index,
             attemptCount: attempts.count,
             attemptPartial: attempts.currentPartial,
+            suspect,
             onSelectAttempt: attempts.select,
             onAgain: active && !askPending ? onAgain : undefined,
             error: generation.error,

@@ -52,7 +52,7 @@ describe("resolveAction precedence", () => {
     it("returns built-in defaults with no overrides", () => {
         const resolved = resolveAction("rework", "story-1", []);
         expect(resolved.template).toBe(BUILTIN_ACTIONS.rework.defaultTemplate);
-        expect(resolved.params.temperature).toBe(1.0);
+        expect(resolved.params.temperature).toBe(BUILTIN_ACTIONS.rework.defaultParams.temperature);
         expect(resolved.modelRef).toBeUndefined();
     });
 
@@ -111,7 +111,7 @@ describe("resolveAction precedence", () => {
 
     it("ignores other stories' overrides", () => {
         const resolved = resolveAction("rework", "story-1", [override({ storyId: "story-2", temperature: 0.1 })]);
-        expect(resolved.params.temperature).toBe(1.0);
+        expect(resolved.params.temperature).toBe(BUILTIN_ACTIONS.rework.defaultParams.temperature);
     });
 });
 
@@ -179,6 +179,17 @@ describe("renderActionPrompt", () => {
         const messages = renderActionPrompt(BUILTIN_ACTIONS.rework, custom, context);
         expect(messages[0]).toEqual({ role: "system", content: PROSE_ONLY });
         expect(messages[1].content).toBe("Make it sing: She left.");
+    });
+
+    it("goes on the last system message of a template with several", () => {
+        const custom: PromptMessage[] = [
+            { role: "system", content: "Be a fine editor." },
+            { role: "user", content: "{{selection}}" },
+            { role: "system", content: "Keep it British." }
+        ];
+        const messages = renderActionPrompt(BUILTIN_ACTIONS.rework, custom, context);
+        expect(messages[2].content.endsWith(PROSE_ONLY)).toBe(true);
+        expect(messages[0].content).toBe("Be a fine editor.");
     });
 
     it("leaves other actions alone", () => {

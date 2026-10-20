@@ -21,6 +21,7 @@ export const ActionSheet = ({
     attemptIndex = 0,
     attemptCount = 0,
     attemptPartial = false,
+    suspect = null,
     onSelectAttempt,
     onAgain,
     acceptLabel = "Accept",
@@ -40,6 +41,8 @@ export const ActionSheet = ({
     attemptCount?: number;
     /** The attempt shown was cut short by a failure. */
     attemptPartial?: boolean;
+    /** The shown reply may be more than prose: why, and (when notes were found) the reply without them. */
+    suspect?: { concerns: string[]; removeNotes?: () => void } | null;
     onSelectAttempt?: (index: number) => void;
     /** Run the same request again — after a failure or an unusable result. */
     onAgain?: () => void;
@@ -155,6 +158,23 @@ export const ActionSheet = ({
                                         ? " What arrived is below."
                                         : " Your earlier result is still here.")}
                             </p>
+                        )}
+                        {text && suspect && (
+                            <div
+                                role="alert"
+                                className="mb-2 space-y-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs whitespace-normal"
+                            >
+                                <p>Check this before you use it: {suspect.concerns.join("; ")}.</p>
+                                {suspect.removeNotes && (
+                                    <button
+                                        type="button"
+                                        onClick={suspect.removeNotes}
+                                        className="rounded-md border bg-background px-2 py-1"
+                                    >
+                                        Remove the model's notes
+                                    </button>
+                                )}
+                            </div>
                         )}
                         {text && attemptPartial && (
                             <p className="mb-1 text-xs text-muted-foreground">Incomplete — cut short before the end.</p>

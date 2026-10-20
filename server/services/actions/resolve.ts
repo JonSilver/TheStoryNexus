@@ -161,7 +161,8 @@ export const renderActionPrompt = (
 ): PromptMessage[] => {
     const messages = renderTemplate(template, context, def.voiceApplies ? voice : undefined);
     if (!def.insertsProse) return messages;
-    const systemAt = messages.findIndex(message => message.role === "system");
+    // The last system message: a customised template's later instructions mustn't follow it
+    const systemAt = messages.map(message => message.role).lastIndexOf("system");
     if (systemAt < 0) return [{ role: "system", content: PROSE_ONLY }, ...messages];
     return messages.map((message, index) =>
         index === systemAt ? { ...message, content: `${message.content}\n\n${PROSE_ONLY}` } : message
