@@ -111,6 +111,9 @@ const describeTarget = (settings: Settings, provider: AIProviderId, modelId: str
     return `${model} on the local server at ${host}`;
 };
 
+/** What chose the model: the request itself, the story's override, the all-stories override, or the app default. */
+type ModelSource = "request" | "story" | "global" | "default";
+
 /**
  * Shared streaming tail: abort registry entry + close handler must already
  * exist. The runner narrates phases (status events), enforces per-phase
@@ -131,7 +134,8 @@ const streamToClient = async (
         frequencyPenalty?: number;
         presencePenalty?: number;
     },
-    modelSourceHint?: string
+    modelSourceHint: string | undefined,
+    modelSource: ModelSource
 ) => {
     res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -140,6 +144,8 @@ const streamToClient = async (
         "X-Accel-Buffering": "no"
     });
     res.flushHeaders();
+    // First, which model is answering and what chose it — the writer can change it where they see it
+    sendEvent(res, "model", { provider: request.provider, modelId: request.modelId, source: modelSource });
 
     await runGeneration({
         open: signal => openCompletionStream({ ...request, signal }, settings),
@@ -280,7 +286,8 @@ router.post("/action", async (req, res) => {
             presencePenalty: resolved.params.presencePenalty,
             maxTokens
         },
-        modelSourceHint
+        modelSourceHint,
+        modelRef ? "request" : (overrideModel && resolved.modelScope) || "default"
     );
 });
 

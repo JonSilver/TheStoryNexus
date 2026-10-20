@@ -51,6 +51,8 @@ export interface ResolvedAction {
     template: PromptMessage[];
     params: ActionParams;
     modelRef?: string;
+    /** Which override chose the model: the story's own, or the all-stories one. */
+    modelScope?: "story" | "global";
 }
 
 const isValidOverrideTemplate = (template: unknown, def: ActionDef): template is PromptMessage[] =>
@@ -89,6 +91,9 @@ export const resolveAction = (
             .map(o => o[key])
             .find(value => value !== null && value !== undefined && valid(value as NonNullable<ActionOverrideRow[K]>));
 
+    const modelChoice = chain.find(
+        o => typeof o.modelRef === "string" && /^(openai|openrouter|gemini|local)::.+$/.test(o.modelRef)
+    );
     const inRange = (min: number, max: number) => (value: number) =>
         Number.isFinite(value) && value >= min && value <= max;
     return {
@@ -105,11 +110,10 @@ export const resolveAction = (
             presencePenalty:
                 (pick("presencePenalty", inRange(-2, 2)) as number | undefined) ?? def.defaultParams.presencePenalty
         },
-        modelRef:
-            (pick(
-                "modelRef",
-                value => typeof value === "string" && /^(openai|openrouter|gemini|local)::.+$/.test(value)
-            ) as string | undefined) ?? undefined
+        ...(modelChoice && {
+            modelRef: modelChoice.modelRef as string,
+            modelScope: modelChoice.storyId === null ? "global" : "story"
+        })
     };
 };
 

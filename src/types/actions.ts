@@ -1,4 +1,4 @@
-import type { PromptMessage } from "./story";
+import type { AIProvider, PromptMessage } from "./story";
 
 export type ActionId =
     | "continue"
@@ -65,4 +65,12 @@ export interface ActionEditorContext {
     userMessage?: string;
     chatHistory?: string;
     guidance?: string;
+}
+
+/** The model that answered a generation, and what chose it (the server's `model` event). */
+export interface AnsweredModel {
+    provider: AIProvider;
+    modelId: string;
+    /** "story" / "global": that scope's override for the action; "default": the app default. */
+    source: "request" | "story" | "global" | "default";
 }

@@ -1,5 +1,6 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { createSSEParser, type GenerationStatus } from "@/services/ai/sseParser";
+import type { AnsweredModel } from "@/types/actions";
 import { openStream, request } from "./request";
 import { describeStreamFailure } from "./requestFailure";
 
@@ -15,19 +16,21 @@ export type StreamEnd =
 
 interface StreamHandlers {
     signal: AbortSignal;
+    onModel?: (model: AnsweredModel) => void;
     onStatus?: (status: GenerationStatus) => void;
     onToken: (token: string) => void;
 }
 
 export const streamGeneration = async (
     body: object,
-    { signal, onStatus, onToken }: StreamHandlers
+    { signal, onModel, onStatus, onToken }: StreamHandlers
 ): Promise<StreamEnd> => {
     const opened = await openStream("/generate/action", body, signal);
     if (!opened.ok) return opened.aborted ? { end: "stopped" } : { end: "failed", error: opened.error };
 
     const seen = { complete: false, aborted: false, error: null as string | null };
     const parser = createSSEParser({
+        onModel,
         onStatus,
         onToken,
         onComplete: () => {
