@@ -51,6 +51,16 @@ export const useImportStoryMutation = () => {
     });
 };
 
+/** A copy of a story with everything a backup carries, in the same series. */
+export const useDuplicateStoryMutation = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: storiesApi.duplicate,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: storiesKeys.all }),
+        meta: { failure: "Couldn't duplicate the story" }
+    });
+};
+
 export const useDeleteStoryMutation = () => {
     const queryClient = useQueryClient();
     return useMutation({

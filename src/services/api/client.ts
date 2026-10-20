@@ -19,7 +19,9 @@ export const storiesApi = {
     create: (data: Omit<Story, "createdAt">) => fetchJSON<Story>("/stories", { method: "POST", json: data }),
     update: (id: string, data: Partial<Story>) => fetchJSON<Story>(`/stories/${id}`, { method: "PUT", json: data }),
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/stories/${id}`, { method: "DELETE" }),
-    importStory: (file: File) => uploadFile<StoryImportResult>("/stories/import", file)
+    importStory: (file: File) => uploadFile<StoryImportResult>("/stories/import", file),
+    duplicate: ({ id, title }: { id: string; title: string }) =>
+        fetchJSON<StoryImportResult>(`/stories/${id}/duplicate`, { method: "POST", json: { title } })
 };
 
 // Series API
