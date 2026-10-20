@@ -56,3 +56,18 @@ export const $appendParagraphs = (text: string): void => {
     $getRoot().append(...paragraphs);
     paragraphs[paragraphs.length - 1]?.selectEnd();
 };
+
+/**
+ * Replaces the selection with prose: blank lines start new paragraphs (as
+ * pressing Enter would), single newlines stay line breaks.
+ */
+export const $replaceSelectionWithProse = (selection: RangeSelection, text: string): void => {
+    const blocks = text
+        .split(/\n\s*\n/)
+        .map(block => block.trim())
+        .filter(Boolean);
+    blocks.forEach((block, index) => {
+        if (index > 0) selection.insertParagraph();
+        selection.insertRawText(block);
+    });
+};

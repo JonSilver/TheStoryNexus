@@ -51,4 +51,15 @@ describe("checkReply", () => {
         expect(checkReply("expand", "Short.", "A longer passage. ".repeat(200)).concerns).toEqual([]);
         expect(checkReply("ask", "Short.", "1. Flour\n2. Eggs").concerns).toEqual([]);
     });
+
+    it("sees through Markdown dressing and code fences", () => {
+        expect(checkReply("rework", passage, `**Here is the revised passage:**\n\n${rework}`).proseOnly).toBe(rework);
+        expect(checkReply("rework", passage, `${rework}\n\n### Revisions made:\n\n- tightened`).proseOnly).toBe(rework);
+        expect(checkReply("rework", passage, "```\n" + rework + "\n```").proseOnly).toBe(rework);
+    });
+
+    it("never takes narration about rewriting or revising for notes", () => {
+        const story = "She rewrote the letter twice.\n\nThe revised plan pleased nobody, and he changed his mind.";
+        expect(checkReply("expand", "She wrote.", story).concerns).toEqual([]);
+    });
 });

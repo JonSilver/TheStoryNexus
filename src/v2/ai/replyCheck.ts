@@ -11,6 +11,8 @@ export type ReplyAction = "rework" | "expand" | "shorten" | "ask";
 // Blank lines separate paragraphs, as when prose is inserted (lexicalText)
 const blocksOf = (text: string) =>
     text
+        // A code fence is wrapping, not prose: it stands as a block of its own
+        .replace(/^\s*```\w*\s*$/gm, "\n\n$&\n\n")
         .split(/\n\s*\n/)
         .map(block => block.trim())
         .filter(Boolean);
@@ -18,32 +20,36 @@ const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
 // Dialogue and quoted phrases are the story's, never the model's notes
 const outsideQuotes = (text: string) => text.replace(/“[^”]*”|"[^"]*"|‘[^’]*’/g, " ");
 
+// Only what an assistant writes about its own output — never narration ("she rewrote the letter")
 const TASK_TALK = new RegExp(
     [
-        "\\brevis(?:ed|ion|ions)\\b",
-        "\\brewr(?:ite|itten|iting|ote)\\b",
-        "\\brephras(?:e|ed|ing)\\b",
-        "\\breworded\\b",
-        "\\bthe original (?:text|passage|sentence|paragraph|version)\\b",
-        "\\b(?:changes|improvements|adjustments) (?:I )?(?:made|were made)\\b",
+        "\\b(?:revisions?|changes|edits|improvements|adjustments) (?:made|I made|were made|include)\\b",
+        "\\b(?:the|this|your|my) (?:revised|rewritten|reworked|rephrased|edited|original) (?:text|passage|sentence|paragraph|version)\\b",
+        "\\bthe (?:rewrite|revision|rewritten (?:text|passage|sentence)) (?:maintains|keeps|preserves|retains)\\b",
         "\\bas an AI\\b",
         "\\blanguage model\\b",
         "\\bwriting assistant\\b",
-        "\\bI(?:'m| am) (?:unable|not able) to\\b",
-        "\\bI (?:cannot|can't|won't) (?:proceed|comply|help|assist|provide|rewrite)\\b",
+        "\\bI(?:'m|’m| am) (?:unable|not able) to (?:proceed|help|comply|assist|provide|rewrite)\\b",
+        "\\bI (?:cannot|can't|can’t|won't|won’t) (?:proceed|comply|help|assist|provide|rewrite)\\b",
         "\\b(?:happy|glad) to help\\b",
         "\\bhope this helps\\b",
-        "\\blet me know\\b",
+        "\\blet me know if\\b",
         "\\b(?:British|American) (?:English )?(?:spellings?|conventions)\\b"
     ].join("|"),
     "i"
 );
+// A change note quotes the old and new wording: Changed "x" to "y"
+const CHANGE_NOTE =
+    /\b(?:changed|replaced|modified|swapped|altered)\b[^\n]*["“‘][^"”’\n]+["”’][^\n]*\b(?:to|with|for)\b/i;
+// Markdown dressing that hides a heading ("**Here is…:**", "### Revisions:")
+const undress = (text: string) => text.replace(/^\s*#+\s*/gm, "").replace(/\*\*|__/g, "");
 const HEADING =
-    /^\s*(?:(?:revisions?|changes|edits|notes?|explanation)(?: made)?|here(?: is|'s) (?:the|your|a)\b[^\n]*)\s*:\s*$/im;
+    /^\s*(?:(?:revisions?|changes|edits|notes?|explanation)(?: made)?|here(?: is|'s|’s) (?:the|your|a)\b[^\n]*)\s*:\s*$/im;
+const FENCE = /^\s*```\w*\s*$/;
 
 const isNote = (block: string) => {
-    const unquoted = outsideQuotes(block);
-    return HEADING.test(unquoted) || TASK_TALK.test(unquoted);
+    const plain = undress(block);
+    return FENCE.test(plain) || HEADING.test(plain) || CHANGE_NOTE.test(plain) || TASK_TALK.test(outsideQuotes(plain));
 };
 
 // "Longer, but not significantly": how much a reply may outgrow its passage

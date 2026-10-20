@@ -15,7 +15,7 @@ import { useUpdateChapterMutation } from "@/features/chapters/hooks/useChaptersQ
 import { chaptersApi } from "@/services/api/client";
 import { chaptersKeys } from "@/services/api/queryKeys";
 import type { Chapter } from "@/types/story";
-import { $appendParagraphs, $captureSelection, $textBefore } from "../editor/lexicalText";
+import { $appendParagraphs, $captureSelection, $replaceSelectionWithProse, $textBefore } from "../editor/lexicalText";
 import { $createGhostSuggestionNode } from "../editor/nodes/GhostSuggestionNode";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import { checkReply, type ReplyAction } from "./replyCheck";
@@ -226,7 +226,7 @@ export const useEditorActions = (chapter: Chapter) => {
                     const saved = savedSelection.current;
                     if (saved) $setSelection(saved.clone());
                     const selection = $getSelection();
-                    if ($isRangeSelection(selection)) selection.insertText(text);
+                    if ($isRangeSelection(selection)) $replaceSelectionWithProse(selection, text);
                 },
                 { tag: HISTORY_PUSH_TAG }
             );
