@@ -55,6 +55,14 @@ From the second Codex pass. Revisit if the writer meets them:
 
 ## How we work here (practical)
 
+- **"Live" means both servers answer, checked, before saying so.** The writer uses the frontend, not the API. After pulling into `/home/jon/dev/TheStoryNexus`, check:
+    - the page: `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/`;
+    - the API through it: `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/api/transpositions/none`.
+
+    Both must return 200 before anything is reported as live. On 2026-10-20 several changes were called "live" after checking only port 3001, while Vite on 5173 had died unseen.
+
+    If Vite is down, restart it detached so it doesn't depend on a terminal: `cd /home/jon/dev/TheStoryNexus && setsid nohup npm run dev:client > data/vite-dev.log 2>&1 < /dev/null &`. The backend runs separately (`tsx watch server/index.ts`, port 3001). The writer has no shell on this VM, so getting both servers running is the session's job.
+
 - **Reviews (SOP 3, before merge, never after).** Run two lanes against a detached worktree:
     - **Unprimed Codex:** `codex exec -s danger-full-access -C <worktree> -o <out.md> - < brief.txt`, run in the background. Codex's read-only sandbox fails on this VM (bwrap loopback error).
     - **Primed GLM:** `cd <worktree> && glm-code -p "$(cat brief)"`, run in the background.
