@@ -23,6 +23,10 @@ export default defineConfig({
     retries: 0,
     timeout: 60_000,
     use: {
+        // Google Chrome, sandboxed, never Playwright's bundled Chromium: bundled
+        // builds trail Chrome's security fixes and run with --no-sandbox.
+        channel: "chrome",
+        launchOptions: { chromiumSandbox: true },
         baseURL: `http://localhost:${E2E_WEB_PORT}`,
         trace: "retain-on-failure"
     },
