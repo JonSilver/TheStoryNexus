@@ -2,6 +2,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import express from "express";
 import multer from "multer";
 import fs from "node:fs/promises";
+import type { Request } from "../lib/http.js";
 import {
     MAX_ASSET_BYTES,
     assetContentType,
@@ -30,8 +31,7 @@ const uploadRejection = (code: string) => Object.assign(new Error(code), { code 
 const failureFor = (error: Error) => uploadFailures[(error as { code?: string }).code ?? ""];
 
 const asyncHandler =
-    (fn: (req: express.Request, res: express.Response) => Promise<void>) =>
-    async (req: express.Request, res: express.Response) => {
+    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
         const [error] = await attemptPromise(() => fn(req, res));
         if (error) {
             console.error("Asset error:", error);
@@ -47,7 +47,12 @@ const upload = multer({
     },
     storage: multer.diskStorage({
         destination: (req, _file, cb) => {
-            attemptPromise(() => ensureStoryDir(req.params.storyId)).then(([error, dir]) => {
+            const { storyId } = req.params;
+            if (typeof storyId !== "string") {
+                cb(uploadRejection(INVALID_STORY_ID), "");
+                return;
+            }
+            attemptPromise(() => ensureStoryDir(storyId)).then(([error, dir]) => {
                 if (error) cb(error, "");
                 else if (dir) cb(null, dir);
                 else cb(uploadRejection(INVALID_STORY_ID), "");
@@ -61,7 +66,7 @@ const upload = multer({
     })
 });
 
-const receiveUpload = (req: express.Request, res: express.Response) =>
+const receiveUpload = (req: Request, res: express.Response) =>
     new Promise<void>((resolve, reject) => {
         upload.single("file")(req, res, (error?: unknown) => (error ? reject(error) : resolve()));
     });

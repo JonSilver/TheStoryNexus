@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import express from "express";
 import { z } from "zod";
 import { db, schema } from "../db/client.js";
+import type { Request } from "../lib/http.js";
 import { ACTION_IDS, BUILTIN_ACTIONS } from "../services/actions/registry.js";
 import { validateTemplate } from "../services/actions/resolve.js";
 import type { PromptMessage } from "../services/ai/providers.js";
@@ -10,8 +11,7 @@ import type { PromptMessage } from "../services/ai/providers.js";
 const router = express.Router();
 
 const asyncHandler =
-    (fn: (req: express.Request, res: express.Response) => Promise<void>) =>
-    async (req: express.Request, res: express.Response) => {
+    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
         const [error] = await attemptPromise(() => fn(req, res));
         if (error) {
             console.error("Actions error:", error);
