@@ -44,6 +44,8 @@ const LABELS = [
     "Scan for updates",
     "Check continuity",
     "Merge duplicates",
+    "Leave out of AI context",
+    "Left out of AI",
     "Merge with AI",
     "Save merged entry",
     "Replace selection",

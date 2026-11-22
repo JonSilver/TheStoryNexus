@@ -13,7 +13,7 @@ import { useChaptersByStoryQuery } from "@/features/chapters/hooks/useChaptersQu
 import { useDeleteLorebookMutation, useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { useStoryQuery } from "@/features/stories/hooks/useStoriesQuery";
 import { LOREBOOK_CATEGORIES, type LorebookEntry } from "@/types/story";
-import { EntryEditor } from "../bible/EntryEditor";
+import { EntryEditor, LeftOutOfAiBadge } from "../bible/EntryEditor";
 import { type BibleFlowMode, ExtractSheet } from "../bible/ExtractSheet";
 import { MergeSheet } from "../bible/MergeSheet";
 import { entryMatches } from "../bible/duplicates";
@@ -135,6 +135,7 @@ export const BibleScreen = () => {
                                                     ({entry.level})
                                                 </span>
                                             )}
+                                            <LeftOutOfAiBadge entry={entry} />
                                         </p>
                                         <p className="text-sm text-muted-foreground">{entry.description}</p>
                                         {Array.isArray(entry.tags) && entry.tags.length > 0 && (

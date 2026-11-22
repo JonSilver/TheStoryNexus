@@ -50,19 +50,21 @@ const errorText = (body: unknown, status: number): string => {
     return `Request failed (${status})`;
 };
 
+const noAnswer = (error: Error): Extract<ApiResult<never>, { ok: false }> => {
+    const aborted = error.name === "AbortError";
+    return {
+        ok: false,
+        status: 0,
+        error: aborted ? "Stopped" : describeRequestFailure(error),
+        body: undefined,
+        aborted
+    };
+};
+
 /** Never throws: every outcome — success, HTTP error, no answer, abort — is a value. */
 export const request = async <T>(path: string, options: RequestOptions = {}): Promise<ApiResult<T>> => {
     const response = await send(path, options).catch((error: Error) => error);
-    if (response instanceof Error) {
-        const aborted = response.name === "AbortError";
-        return {
-            ok: false,
-            status: 0,
-            error: aborted ? "Stopped" : describeRequestFailure(response),
-            body: undefined,
-            aborted
-        };
-    }
+    if (response instanceof Error) return noAnswer(response);
     const body = await readBody(response);
     return response.ok
         ? { ok: true, status: response.status, data: body as T }
@@ -79,19 +81,22 @@ export const openStream = async (
     signal?: AbortSignal
 ): Promise<{ ok: true; response: Response } | Extract<ApiResult<never>, { ok: false }>> => {
     const response = await send(path, { method: "POST", json, signal }).catch((error: Error) => error);
-    if (response instanceof Error) {
-        const aborted = response.name === "AbortError";
-        return {
-            ok: false,
-            status: 0,
-            error: aborted ? "Stopped" : describeRequestFailure(response),
-            body: undefined,
-            aborted
-        };
-    }
+    if (response instanceof Error) return noAnswer(response);
     if (response.ok && response.body) return { ok: true, response };
     const body = await readBody(response);
     return { ok: false, status: response.status, error: errorText(body, response.status), body, aborted: false };
+};
+
+/** A file to download (EPUB, backup): the body as a Blob; failures are the same values `request` returns. */
+export const requestBlob = async (path: string): Promise<ApiResult<Blob>> => {
+    const response = await send(path, {}).catch((error: Error) => error);
+    if (response instanceof Error) return noAnswer(response);
+    if (!response.ok) {
+        const body = await readBody(response);
+        return { ok: false, status: response.status, error: errorText(body, response.status), body, aborted: false };
+    }
+    const blob = await response.blob().catch((error: Error) => error);
+    return blob instanceof Error ? noAnswer(blob) : { ok: true, status: response.status, data: blob };
 };
 
 /** For query hooks: the data, or a thrown Error carrying the status. */
