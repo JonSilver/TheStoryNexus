@@ -69,7 +69,7 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 
 **Backend**: Express v5, better-sqlite3 + Drizzle ORM, Zod validation, Multer uploads. ALL AI provider access is server-side (`server/services/ai/providers.ts`): OpenAI, Gemini, OpenRouter, Local (Ollama/LM Studio OpenAI-compatible). Keys never reach the client.
 
-**Frontend**: React 18, Vite, React Router v7, TanStack Query v5, Lexical (lean purpose-built composition in `src/v2/editor/` — NOT the playground), Tailwind + Shadcn UI, react-toastify.
+**Frontend**: React 19, Vite, React Router v7, TanStack Query v5, Lexical (lean purpose-built composition in `src/v2/editor/` — NOT the playground), Tailwind + Shadcn UI, react-toastify.
 
 ### Routing
 
@@ -96,8 +96,8 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 
 ### Frontend layout
 
-- `src/v2/` — the app. `V2App.tsx` shell; `screens/` (Write, Chapters, Stories, Bible, Brainstorm, Notes, Actions, More, Import, Export); `editor/` (Lexical composition, nodes, plugins, saver, auto-summarise); `ai/` (streamAction SSE client, useActionGeneration, ActionSheet, editor actions, ContextInspector); `bible/` (extraction flows, name nudges); `export/` (document JSON → blocks → md/html/txt renderers + undecided-draft detection); `drawer/` (action override editor); `state/useV2Store.ts` (localStorage UI state).
-- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Legacy v1 feature components are gone; the survivors outside hooks are the pages the shell embeds (AI settings, series list, guide).
+- `src/v2/` — the app. `V2App.tsx` shell; `screens/` (Write, Chapters, Stories, Story hub, Bible, Brainstorm, Notes, Read, Actions, App settings, plus the import sheet and export buttons); `editor/` (Lexical composition, nodes, plugins, saver, auto-summarise); `ai/` (streamAction SSE client, useActionGeneration, ActionSheet, editor actions, ContextInspector); `bible/` (extraction flows, name nudges); `export/` (document JSON → blocks → md/html/txt renderers + undecided-draft detection); `drawer/` (action override editor); `state/useV2Store.ts` (localStorage UI state).
+- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Outside hooks, `src/features/` holds only the pages the shell embeds (AI settings, series list, guide) and `ChapterReader` (used by the Read screen).
 - `src/services/api/` — `request.ts` (the one fetch), `client.ts` (per-domain endpoints), `generation.ts` (SSE), `queryKeys.ts` (every cache key).
 
 ### Server layout
