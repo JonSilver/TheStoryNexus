@@ -87,12 +87,12 @@ export const ChaptersStep = ({ transposition }: { transposition: Transposition }
                 </p>
                 {progress ? (
                     <div className="flex items-center gap-2">
-                        <p role="status" className="flex-1">
+                        <output className="flex-1">
                             Chapter {progress.chapter} of {progress.chapters}: “{progress.title}” —{" "}
                             {progress.piece === null
                                 ? "the outline"
                                 : `part ${progress.piece + 1} of ${progress.pieces}`}
-                        </p>
+                        </output>
                         <button
                             type="button"
                             onClick={drafting.stop}

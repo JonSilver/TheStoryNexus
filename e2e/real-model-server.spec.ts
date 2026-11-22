@@ -1,107 +1,15 @@
-import { expect, type Page, test } from "@playwright/test";
-import http from "node:http";
-import type { AddressInfo } from "node:net";
-import { createStoryAndChapter, reworkAll, typeInEditor, waitForSaved } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { useFakeModelServer } from "./fakeModelServer";
+import { reworkAll } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
 /**
- * A real OpenAI-compatible model server, so the app's own backend — not a
- * browser-side mock — classifies failures and narrates progress.
+ * Choosing models against a real model server: settings, model lists and
+ * favourites, and the action sheet's model, with the backend resolving it.
  */
 test.describe("against a real model server", () => {
-    type Mode = "missing-model" | "slow-start" | "stall" | "by-model";
-    const server = {
-        mode: "slow-start" as Mode,
-        instance: null as http.Server | null,
-        settingsId: "",
-        url: "",
-        modelListings: 0,
-        /** The model the last completion request asked for. */
-        lastModel: ""
-    };
-
-    const chunk = (content: string) => `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content } }] })}\n\n`;
-    const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-    test.beforeAll(async ({ request }) => {
-        const instance = http.createServer(async (req, res) => {
-            if (req.url?.endsWith("/models")) {
-                server.modelListings += 1;
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(
-                    JSON.stringify({
-                        object: "list",
-                        data: ["fake-model", "alpha-model", "zeta-model"].map(id => ({ id, object: "model" }))
-                    })
-                );
-                return;
-            }
-            if (server.mode === "missing-model") {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: { message: "model 'fake-model' not found" } }));
-                return;
-            }
-            if (server.mode === "by-model") {
-                const body = await new Promise<string>(resolve => {
-                    const parts: Buffer[] = [];
-                    req.on("data", part => parts.push(part));
-                    req.on("end", () => resolve(Buffer.concat(parts).toString()));
-                });
-                server.lastModel = JSON.parse(body).model;
-                res.writeHead(200, { "Content-Type": "text/event-stream" });
-                // The default model is the one that won't keep to prose
-                res.write(
-                    chunk(
-                        server.lastModel === "fake-model"
-                            ? "Original sentence, reworked.\n\nRevisions made: tightened the rhythm."
-                            : `A steadier sentence from ${server.lastModel}.`
-                    )
-                );
-                res.end("data: [DONE]\n\n");
-                return;
-            }
-            if (server.mode === "slow-start") await pause(3_000);
-            res.writeHead(200, { "Content-Type": "text/event-stream" });
-            res.write(chunk("The server's own words"));
-            if (server.mode === "stall") await pause(12_500);
-            res.write(chunk(", finished."));
-            res.end("data: [DONE]\n\n");
-        });
-        server.instance = instance;
-        await new Promise<void>(resolve => instance.listen(0, "127.0.0.1", resolve));
-        const { port } = instance.address() as AddressInfo;
-        server.url = `http://127.0.0.1:${port}/v1`;
-        const local = await request.put("/api/ai/local-url", { data: { url: server.url } });
-        expect(local.ok()).toBe(true);
-        const settings = await (await request.get("/api/ai/settings")).json();
-        server.settingsId = settings.id;
-        const chosen = await request.put(`/api/ai/settings/${settings.id}`, {
-            data: { defaultProvider: "local", defaultModelId: "local/fake-model" }
-        });
-        expect(chosen.ok()).toBe(true);
-    });
-
-    // Runs even when setup or a test failed: later spec files must not inherit a dead model server
-    test.afterAll(async ({ request }) => {
-        try {
-            const settings = server.settingsId || (await (await request.get("/api/ai/settings")).json()).id;
-            await request.put(`/api/ai/settings/${settings}`, {
-                data: { defaultProvider: null, defaultModelId: null, favouriteModels: [] }
-            });
-        } finally {
-            server.instance?.closeAllConnections();
-            await new Promise(resolve => (server.instance ? server.instance.close(resolve) : resolve(undefined)));
-        }
-    });
-
-    const reworkWithRealServer = async (page: Page, title: string) => {
-        await createStoryAndChapter(page, title, "One");
-        await typeInEditor(page, "Original sentence.");
-        await waitForSaved(page);
-        await reworkAll(page);
-        return page.getByRole("dialog");
-    };
+    const { server, reworkWithRealServer } = useFakeModelServer();
 
     test("settings: the server URL saves and tests, its model becomes the default, and both stick", async ({
         page
@@ -191,39 +99,6 @@ test.describe("against a real model server", () => {
         await page.reload();
         await page.getByLabel("Default model").click();
         await expect(page.getByRole("group", { name: "Favourites" }).getByRole("option")).toHaveCount(3);
-    });
-
-    test("a slow start shows the waiting state, then the text", async ({ page }) => {
-        server.mode = "slow-start";
-        const sheet = await reworkWithRealServer(page, "Real — slow start");
-        await expect(sheet.getByText(/Waiting for the model server to respond/)).toBeVisible();
-        await expect(sheet.getByText("The server's own words, finished.")).toBeVisible();
-    });
-
-    test("a missing model is named, with what to fix", async ({ page }) => {
-        server.mode = "missing-model";
-        const sheet = await reworkWithRealServer(page, "Real — missing model");
-        await expect(sheet.getByText(/^fake-model on the local server.*doesn't have this model/)).toBeVisible();
-        // The fix is offered where the failure is
-        await expect(sheet.getByRole("button", { name: "Use a different model for Rework" })).toBeVisible();
-    });
-
-    test("leaving Brainstorm mid-reply keeps what arrived, marked incomplete", async ({ page }) => {
-        test.setTimeout(60_000);
-        server.mode = "stall";
-        await createStoryAndChapter(page, "Real — left mid-reply", "One");
-        await page.getByRole("button", { name: "Brainstorm" }).click();
-        await page.getByRole("button", { name: "New chat" }).click();
-        await page.getByPlaceholder("Bounce an idea around…").fill("Tell me something");
-        await page.getByRole("button", { name: "Send" }).click();
-        await expect(page.getByText("The server's own words")).toBeVisible({ timeout: 15_000 });
-
-        await page.getByRole("button", { name: "Write" }).click();
-        await page.getByRole("button", { name: "Brainstorm" }).click();
-        await page.getByText("Chat 1", { exact: true }).click();
-        await expect(page.getByText("Tell me something")).toBeVisible();
-        await expect(page.getByText("The server's own words")).toBeVisible();
-        await expect(page.getByText(/Incomplete — cut short/)).toBeVisible();
     });
 
     test("the sheet names the model, and a model chosen there is tried at once and kept for the action", async ({
@@ -318,13 +193,5 @@ test.describe("against a real model server", () => {
         } finally {
             await page.request.delete("/api/actions/overrides/rework");
         }
-    });
-
-    test("a pause mid-stream is shown while it lasts", async ({ page }) => {
-        test.setTimeout(60_000);
-        server.mode = "stall";
-        const sheet = await reworkWithRealServer(page, "Real — stall");
-        await expect(sheet.getByText(/No new text for/)).toBeVisible({ timeout: 15_000 });
-        await expect(sheet.getByText("The server's own words, finished.")).toBeVisible({ timeout: 15_000 });
     });
 });
