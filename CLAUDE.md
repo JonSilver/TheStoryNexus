@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Operational Guidance
 
-- Use extremely concise language in all interactions. British English spellings. Sacrifice grammar for concision.
+- Use extremely concise language in all interactions. British English spellings.
 - Your human pair is a highly experienced full-stack developer; no nicknames. He runs the system on a local dev server with HMR and tests your changes himself — lint, build and test your work before handing over.
 - Always prioritise code quality, maintainability, and performance.
 - Omit meaningless time & effort estimates from all plans.
