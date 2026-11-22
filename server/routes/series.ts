@@ -140,13 +140,14 @@ seriesRouter.post(
     "/import",
     upload.single("file"),
     asyncHandler(async (req, res) => {
-        if (!req.file) {
+        const { file } = req;
+        if (!file) {
             res.status(400).json({ error: "No file uploaded" });
             return;
         }
 
         const [parseError, seriesData] = await attemptPromise(() =>
-            Promise.resolve(JSON.parse(req.file!.buffer.toString("utf-8")))
+            Promise.resolve(JSON.parse(file.buffer.toString("utf-8")))
         );
         if (parseError) {
             res.status(400).json({ error: "Invalid JSON file", details: parseError.message });
