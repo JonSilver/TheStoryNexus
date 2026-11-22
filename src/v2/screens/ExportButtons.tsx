@@ -3,7 +3,8 @@ import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { inRunningOrder } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi, storiesApi } from "@/services/api/client";
-import { downloadText } from "@/utils/download";
+import type { Chapter } from "@/types/story";
+import { downloadBlob } from "@/utils/download";
 import { useConfirm } from "../components/Dialogs";
 import { flushChapterSave } from "../editor/useChapterSaver";
 import {
@@ -16,15 +17,9 @@ import {
 } from "../export";
 import { uiState } from "../state/useV2Store";
 
-type ExportFormat = "md" | "txt" | "html";
+type TextFormat = "md" | "txt" | "html";
 
-const FORMATS: Array<{ format: ExportFormat; label: string }> = [
-    { format: "md", label: "Markdown" },
-    { format: "txt", label: "Text" },
-    { format: "html", label: "HTML" }
-];
-
-const RENDERERS: Record<ExportFormat, (chapters: Array<{ title: string; content: string }>) => string> = {
+const RENDERERS: Record<TextFormat, (chapters: Array<{ title: string; content: string }>) => string> = {
     md: chapters =>
         chapters.map(c => `# ${c.title}\n\n${blocksToMarkdown(parseSerialisedDocument(c.content))}`).join("\n\n"),
     txt: chapters =>
@@ -35,41 +30,88 @@ const RENDERERS: Record<ExportFormat, (chapters: Array<{ title: string; content:
             .join("\n")
 };
 
-const MIME: Record<ExportFormat, string> = { md: "text/markdown", txt: "text/plain", html: "text/html" };
+const MIME: Record<TextFormat, string> = { md: "text/markdown", txt: "text/plain", html: "text/html" };
 
-/** Whole-story export through the v2 converters (headings actually work). */
+const textFile =
+    (format: TextFormat) =>
+    async (_storyId: string, chapters: Chapter[]): Promise<Blob> =>
+        new Blob([RENDERERS[format](chapters)], { type: `${MIME[format]};charset=utf-8` });
+
+interface ExportTarget {
+    label: string;
+    extension: string;
+    hint?: string;
+    /** Server-built files stay real links (open in new tab, copy address); a click still goes through `exportAs`. */
+    href?: (storyId: string) => string;
+    /** Leaves scene-beat takes and ghost suggestions out, so undecided drafts need a warning first. */
+    omitsDrafts: boolean;
+    file: (storyId: string, chapters: Chapter[]) => Promise<Blob>;
+}
+
+const TARGETS: ExportTarget[] = [
+    { label: "Markdown", extension: "md", omitsDrafts: true, file: textFile("md") },
+    { label: "Text", extension: "txt", omitsDrafts: true, file: textFile("txt") },
+    { label: "HTML", extension: "html", omitsDrafts: true, file: textFile("html") },
+    {
+        label: "EPUB",
+        extension: "epub",
+        omitsDrafts: true,
+        href: id => `/api/stories/${id}/epub`,
+        file: storiesApi.epub
+    },
+    {
+        label: "JSON (backup)",
+        extension: "story.json",
+        hint: "Full story data: chapters, bible, notes, chats, AI overrides — re-importable",
+        omitsDrafts: false,
+        href: id => `/api/stories/${id}/export`,
+        file: storiesApi.backup
+    }
+];
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** Whole-story export: every format carries the last keystrokes, and warns before leaving drafts out. */
 export const ExportButtons = ({ storyId }: { storyId: string }) => {
     const { lastChapterFor } = uiState;
     const confirm = useConfirm();
     // Undecided takes and ghost suggestions are visible on screen but omitted
-    // from every export — the writer must choose, not discover the hole later
-    const confirmUndecided = async (chapters: Array<{ content: string }>): Promise<boolean> => {
-        const undecided = chapters.reduce((sum, c) => sum + countUndecided(c.content), 0);
-        return (
-            undecided === 0 ||
-            confirm({
-                message: `${undecided} unaccepted AI draft${undecided === 1 ? "" : "s"} (scene-beat takes or pending suggestions) won't be included. Export anyway?`,
-                confirmLabel: "Export anyway"
-            })
-        );
+    // from the book — the writer must choose, not discover the hole later
+    const confirmUndecided = async (chapters: Chapter[]): Promise<boolean> => {
+        const counts = chapters.map(c => ({ title: c.title, undecided: countUndecided(c.content) }));
+        const undecided = counts.reduce((sum, c) => sum + (c.undecided ?? 0), 0);
+        const unreadable = counts.filter(c => c.undecided === null).map(c => `“${c.title}”`);
+        if (undecided === 0 && unreadable.length === 0) return true;
+        const message = [
+            undecided > 0 &&
+                `${plural(undecided, "unaccepted AI draft")} (scene-beat takes or pending suggestions) won't be included.`,
+            unreadable.length > 0 &&
+                `Couldn't check ${unreadable.join(", ")} for unaccepted AI drafts — any there won't be included.`,
+            "Export anyway?"
+        ]
+            .filter(Boolean)
+            .join(" ");
+        return confirm({ message, confirmLabel: "Export anyway" });
     };
 
-    const exportAs = async (format: ExportFormat) => {
+    const exportAs = async (target: ExportTarget) => {
         const [error, result] = await attemptPromise(async () => {
-            // The book must contain the last keystrokes, not race the debounce
+            // The file must contain the last keystrokes, not race the debounce
             const openChapter = lastChapterFor(storyId);
             if (openChapter) await flushChapterSave(openChapter);
-            const [story, chapters] = await Promise.all([storiesApi.getById(storyId), chaptersApi.getByStory(storyId)]);
-            const ordered = inRunningOrder(chapters);
-            if (!(await confirmUndecided(ordered))) return null;
-            return { story, body: RENDERERS[format](ordered) };
+            const [story, chapters] = await Promise.all([
+                storiesApi.getById(storyId),
+                target.omitsDrafts ? chaptersApi.getByStory(storyId).then(inRunningOrder) : []
+            ]);
+            if (target.omitsDrafts && !(await confirmUndecided(chapters))) return null;
+            return { story, blob: await target.file(storyId, chapters) };
         });
         if (error) {
-            toast.error("Export failed — a chapter may not be v2 format");
+            toast.error(`${target.label} export failed: ${error.message}`);
             return;
         }
         if (!result) return;
-        downloadText(result.story.title, format, result.body, MIME[format]);
+        downloadBlob(result.story.title, target.extension, result.blob);
     };
 
     return (
@@ -78,27 +120,32 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
                 <Download className="h-4 w-4 text-muted-foreground" /> Export story
             </h2>
             <div className="flex flex-wrap gap-2">
-                {FORMATS.map(({ format, label }) => (
-                    <button
-                        key={format}
-                        type="button"
-                        onClick={() => void exportAs(format)}
-                        className="rounded-md border px-3 py-1.5 text-sm"
-                    >
-                        {label}
-                    </button>
-                ))}
-                <a href={`/api/stories/${storyId}/epub`} download className="rounded-md border px-3 py-1.5 text-sm">
-                    EPUB
-                </a>
-                <a
-                    href={`/api/stories/${storyId}/export`}
-                    download
-                    title="Full story data: chapters, bible, notes, chats, AI overrides — re-importable"
-                    className="rounded-md border px-3 py-1.5 text-sm"
-                >
-                    JSON (backup)
-                </a>
+                {TARGETS.map(target =>
+                    target.href ? (
+                        <a
+                            key={target.label}
+                            href={target.href(storyId)}
+                            title={target.hint}
+                            onClick={event => {
+                                event.preventDefault();
+                                void exportAs(target);
+                            }}
+                            className="rounded-md border px-3 py-1.5 text-sm"
+                        >
+                            {target.label}
+                        </a>
+                    ) : (
+                        <button
+                            key={target.label}
+                            type="button"
+                            title={target.hint}
+                            onClick={() => void exportAs(target)}
+                            className="rounded-md border px-3 py-1.5 text-sm"
+                        >
+                            {target.label}
+                        </button>
+                    )
+                )}
             </div>
         </section>
     );

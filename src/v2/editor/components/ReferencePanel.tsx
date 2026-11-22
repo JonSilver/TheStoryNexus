@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { ideaNote, useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { LeftOutOfAiBadge } from "../../bible/EntryEditor";
 import { entryMatches } from "../../bible/duplicates";
 
 /**
@@ -62,6 +63,7 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
                             <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                 <span className="font-medium">{entry.name}</span>{" "}
                                 <span className="text-xs text-muted-foreground">({entry.category})</span>
+                                <LeftOutOfAiBadge entry={entry} />
                             </summary>
                             <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{entry.description}</p>
                             {Array.isArray(entry.tags) && entry.tags.length > 0 && (

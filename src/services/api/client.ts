@@ -2,7 +2,7 @@ import type { ActionDefinition, ActionId, OverridePayload, OverrideRow } from "@
 import type { AIChat, AISettings, Chapter, LorebookEntry, Note, PromptMessage, Series, Story } from "@/types/story";
 import type { ActionEditorContext } from "@/v2/ai/useActionGeneration";
 import type { Transposition, TranspositionOp } from "@/v2/transpose/state";
-import { fetchJSON, request, uploadFile } from "./request";
+import { fetchJSON, orThrow, request, requestBlob, uploadFile } from "./request";
 
 export interface StoryImportResult {
     success: boolean;
@@ -22,7 +22,9 @@ export const storiesApi = {
     delete: (id: string) => fetchJSON<{ success: boolean }>(`/stories/${id}`, { method: "DELETE" }),
     importStory: (file: File) => uploadFile<StoryImportResult>("/stories/import", file),
     duplicate: ({ id, title }: { id: string; title: string }) =>
-        fetchJSON<StoryImportResult>(`/stories/${id}/duplicate`, { method: "POST", json: { title } })
+        fetchJSON<StoryImportResult>(`/stories/${id}/duplicate`, { method: "POST", json: { title } }),
+    epub: async (id: string) => orThrow(await requestBlob(`/stories/${id}/epub`)),
+    backup: async (id: string) => orThrow(await requestBlob(`/stories/${id}/export`))
 };
 
 // Series API

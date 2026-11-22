@@ -12,6 +12,7 @@ Each entry has a **name** and any number of **aliases** (nicknames, titles, othe
 - **Case is ignored.** "MIRIAM" and "Miriam" are the same person. Accents count: "Renée" doesn't match "Renee" — add the other spelling as an alias.
 - **Possessives count.** "Miriam's coat" matches _Miriam_.
 - **Multi-word aliases match as phrases.**
+- **Switched-off entries never match.** Tick **Leave out of AI context** in an entry's editor and it stays in your bible — marked _Left out of AI_ — but is never added to a prompt, however often its name comes up. Untick it to bring it back.
 
 When more entries match than the model can take, they're ranked — story before series before global, then by how often they appear — and the rest are left out, the same way every time.
 
