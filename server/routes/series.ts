@@ -1,9 +1,10 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { and, eq } from "drizzle-orm";
-import { type Request, type Response, Router } from "express";
+import { type Response, Router } from "express";
 import multer from "multer";
 import { db } from "../db/client.js";
 import { lorebookEntries, series, stories } from "../db/schema.js";
+import type { Request } from "../lib/http.js";
 import { writeStoryAssets } from "../services/assets/storage.js";
 import { commitSeriesImport, exportSeriesBackup } from "../services/stories/backup.js";
 import { type SeriesBackup, buildSeriesImport } from "../services/stories/portable.js";

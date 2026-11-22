@@ -12,6 +12,7 @@ import multer from "multer";
 import { z } from "zod";
 import { countWords } from "../../src/utils/textUtils.js";
 import { db, schema } from "../db/client.js";
+import type { Request } from "../lib/http.js";
 import {
     MAX_MANUSCRIPT_BYTES,
     ingestStatusOf,
@@ -63,15 +64,14 @@ export const declaredSizeFailure = (
     return null;
 };
 
-const receiveUpload = (req: express.Request, res: express.Response) =>
+const receiveUpload = (req: Request, res: express.Response) =>
     new Promise<void>((resolve, reject) => {
         upload.array("files", MAX_UPLOAD_FILES)(req, res, (error?: unknown) => (error ? reject(error) : resolve()));
     });
 
 /** User-facing failures answer with their own status; everything else is a genuine 500. */
 const asyncHandler =
-    (fn: (req: express.Request, res: express.Response) => Promise<void>) =>
-    async (req: express.Request, res: express.Response) => {
+    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
         const [error] = await attemptPromise(() => fn(req, res));
         if (!error) return;
         const status = ingestStatusOf(error);

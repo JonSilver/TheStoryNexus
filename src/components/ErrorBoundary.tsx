@@ -5,13 +5,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/utils/logger";
 
+const toError = (error: unknown) => (error instanceof Error ? error : new Error(String(error)));
+
 const DefaultErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
     <div className="flex items-center justify-center min-h-[400px] p-4">
         <Alert variant="destructive" className="max-w-2xl">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Something went wrong</AlertTitle>
             <AlertDescription className="mt-2">
-                <p className="mb-4">{error.message}</p>
+                <p className="mb-4">{toError(error).message}</p>
                 <div className="flex gap-2">
                     <Button onClick={resetErrorBoundary} variant="outline" size="sm">
                         Try again
@@ -33,15 +35,17 @@ interface ErrorBoundaryProps {
 }
 
 export const ErrorBoundary = ({ children, fallback, onError, resetKeys }: ErrorBoundaryProps) => {
-    const handleError = (error: Error, info: { componentStack: string }) => {
+    const handleError = (error: unknown, info: { componentStack: string }) => {
         logger.error("Error caught by boundary:", error, info);
-        onError?.(error, info);
+        onError?.(toError(error), info);
     };
 
     return (
         <ReactErrorBoundary
             FallbackComponent={
-                fallback ? ({ error, resetErrorBoundary }) => fallback(error, resetErrorBoundary) : DefaultErrorFallback
+                fallback
+                    ? ({ error, resetErrorBoundary }) => fallback(toError(error), resetErrorBoundary)
+                    : DefaultErrorFallback
             }
             onError={handleError}
             resetKeys={resetKeys}
