@@ -81,9 +81,9 @@ export const BrainstormChatView = ({
                     />
                 ))}
                 {streamingElsewhere && (
-                    <p className="text-sm text-muted-foreground" role="status">
+                    <output className="block text-sm text-muted-foreground">
                         A reply is still being written in another chat — you can send here once it's done.
-                    </p>
+                    </output>
                 )}
                 {streamingHere && (
                     <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">

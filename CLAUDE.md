@@ -103,7 +103,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 ### Server layout
 
 - `server/routes/` — stories, chapters, series, lorebook, notes, brainstorm, ai (settings/keys/models), actions (override CRUD), generate (SSE generation + preview + abort), ingest (manuscript import), assets, transpositions, admin (export/import/backup/demo).
-- `server/services/actions/` — the action registry (`registry.ts`: built-in actions + templates), context assembly (`context.ts`: token-budgeted), override resolution (`resolve.ts`: story → global → built-in, invalid values fall through).
+- `server/services/actions/` — the action registry (`registry.ts`: built-in actions + templates; transposition's in `transposeActions.ts`), context assembly (`context.ts`: token-budgeted), override resolution (`resolve.ts`: story → global → built-in, invalid values fall through).
 - `server/services/ingest/` — txt/md/docx/epub parsing, chapter splitting, Lexical conversion (streaming zip-bomb guards).
 - `server/db/` — Drizzle schema, migrations, demo-story seeding.
 
@@ -126,7 +126,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 ### Testing
 
 - Unit: Vitest, colocated `*.test.ts`. Server logic (registry/resolve/context/ingest/providers) and pure client modules (export, nameNudges, parseProposals, crypto).
-- E2E: `e2e/*.spec.ts` + `e2e/helpers.ts`. Hermetic per run (temp SQLite, own ports, `mockGeneration` intercepts `/api/generate/action` with SSE fixtures). `e2e/real-model-server.spec.ts` instead points the real backend at a fake OpenAI-compatible server, so server-side progress and error classification are exercised end to end. Journeys assert writer-visible outcomes. Add a journey when adding any user-facing flow.
+- E2E: `e2e/*.spec.ts` + `e2e/helpers.ts`. Hermetic per run (temp SQLite, own ports, `mockGeneration` intercepts `/api/generate/action` with SSE fixtures). `e2e/real-model-server*.spec.ts` instead point the real backend at a fake OpenAI-compatible server (`e2e/fakeModelServer.ts`), so server-side progress and error classification are exercised end to end. Journeys assert writer-visible outcomes. Add a journey when adding any user-facing flow.
 - Never edit a checkout while its gate runs — Vite reloads the app under the tests and the result means nothing; stop the gate first. One E2E run at a time across all checkouts (ports 3101/5273; `E2E_API_PORT` / `E2E_WEB_PORT` override them when something else on the machine holds them).
 - A mutation check disables only the behaviour under test (e.g. `false &&`), and the unrelated journeys must still pass — reverting files to an older commit crashes the app and "proves" everything.
 - A negative assertion (`toHaveCount(0)`, `not.toContainText`) needs a positive anchor first (the screen is showing), or it passes before the page renders. Claims about keys are tested with real keystrokes, not `.fill()`.

@@ -21,9 +21,9 @@ export const BibleStep = ({ transposition }: { transposition: Transposition }) =
                 </p>
                 {drafting.progress ? (
                     <div className="flex items-center gap-2">
-                        <p role="status" className="flex-1">
+                        <output className="flex-1">
                             Entry {drafting.progress.current} of {drafting.progress.total}: “{drafting.progress.name}”
-                        </p>
+                        </output>
                         <button
                             type="button"
                             onClick={drafting.stop}

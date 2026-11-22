@@ -34,18 +34,14 @@ export const GenerationProgress = ({
     if (status.phase === "streaming") {
         if ((status.idleMs ?? 0) < STALL_NOTICE_MS) return null;
         return (
-            <span role="status" aria-live="polite" className={`block text-xs text-muted-foreground ${className}`}>
+            <output aria-live="polite" className={`block text-xs text-muted-foreground ${className}`}>
                 No new text for {elapsed(status.idleMs ?? 0)} — the model may have stalled. {stopNote}
-            </span>
+            </output>
         );
     }
     const slow = status.elapsedMs >= 20_000;
     return (
-        <span
-            role="status"
-            aria-live="polite"
-            className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}
-        >
+        <output aria-live="polite" className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             <span>
                 {PHASE_LABEL[status.phase]}… {elapsed(status.elapsedMs)}
@@ -55,6 +51,6 @@ export const GenerationProgress = ({
                     </span>
                 )}
             </span>
-        </span>
+        </output>
     );
 };
