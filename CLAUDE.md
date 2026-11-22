@@ -139,7 +139,7 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 - Server state lives in TanStack Query only — no parallel module caches. Keys come from `queryKeys.ts`. Mutations declare `meta: { failure: "Couldn't …" }` and the mutation cache reports it once (`QueryProvider`); callers never toast a single mutation's failure, and own success messages (only where the outcome isn't already visible). Batch/partial-outcome callers opt out with `failure: false` and report one tally.
 - `localStorage` only through `@/utils/storage` (never throws; writes report refusal).
 - Comments extremely sparingly — only for constraints the code can't show.
-- Code volume is not a success metric. Prefer battle-hardened existing dependencies over new ones.
+- Code volume is not a success metric. Prefer battle-hardened, well-tested, well-maintained libraries over everything else — hand-rolled code and unproven packages included.
 - `crypto.randomUUID` is unavailable in insecure contexts (LAN http) — ALWAYS use `randomUUID` from `@/utils/crypto` for client-side ids.
 - better-sqlite3 transactions are synchronous — never async callbacks inside `db.transaction`.
 - Run `npm run knip` after significant refactors and remove genuinely dead code.
