@@ -76,6 +76,7 @@ export const useSceneBeatGeneration = (nodeKey: NodeKey) => {
                 abortGeneration(requestId);
             };
             cancelRef.current = cancel;
+            setProgress(null);
             const owns = () => cancelRef.current === cancel;
 
             // The beat's own POV wins over the chapter default — the picker
