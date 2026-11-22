@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useHierarchicalLorebookQuery } from "@/features/lorebook/hooks/useLorebookQuery";
 import { ideaNote, useCreateNoteMutation } from "@/features/notes/hooks/useNotesQuery";
+import { LeftOutOfAiBadge } from "../../bible/EntryEditor";
 import { entryMatches } from "../../bible/duplicates";
 
 /**
@@ -31,15 +32,14 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
     };
 
     return (
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- tap-outside dismiss; the keyboard path is the Close button
         <div
             className="fixed inset-0 z-40 flex flex-col justify-end bg-black/20 md:absolute md:inset-y-0 md:right-0 md:left-auto md:w-80 md:bg-transparent"
-            onClick={onClose}
+            onClick={e => e.target === e.currentTarget && onClose()}
         >
-            <div
-                role="complementary"
+            <aside
                 aria-label="Reference"
                 className="flex max-h-[70dvh] flex-col rounded-t-2xl border-t bg-background pb-[env(safe-area-inset-bottom)] md:h-full md:max-h-none md:rounded-none md:border-l md:border-t-0 md:shadow-lg"
-                onClick={e => e.stopPropagation()}
             >
                 <header className="flex items-center gap-2 border-b px-3 py-2">
                     <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -49,6 +49,7 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
                         aria-label="Search the bible"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
+                        // oxlint-disable-next-line jsx-a11y/no-autofocus -- opening the panel is a request to look something up
                         autoFocus
                     />
                     <button type="button" onClick={onClose} aria-label="Close reference panel">
@@ -62,6 +63,7 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
                             <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                 <span className="font-medium">{entry.name}</span>{" "}
                                 <span className="text-xs text-muted-foreground">({entry.category})</span>
+                                <LeftOutOfAiBadge entry={entry} />
                             </summary>
                             <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{entry.description}</p>
                             {Array.isArray(entry.tags) && entry.tags.length > 0 && (
@@ -96,7 +98,7 @@ export const ReferencePanel = ({ storyId, onClose }: { storyId: string; onClose:
                         </button>
                     </div>
                 </footer>
-            </div>
+            </aside>
         </div>
     );
 };

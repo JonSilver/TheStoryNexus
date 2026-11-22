@@ -25,18 +25,23 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100
 // A copy of the .db file alone is NOT a snapshot in WAL mode — recent writing
 // can live entirely in the -wal file. The online backup API produces a
 // single consistent database file safe to copy while the app runs.
+const removeBackupDir = (dir: string) =>
+    fs.rm(dir, { recursive: true, force: true }, error => {
+        if (error) console.error(`Couldn't remove backup temp dir ${dir}:`, error);
+    });
+
 router.get("/backup", async (_, res) => {
-    const backupPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "nexus-backup-")), "storynexus-backup.db");
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "nexus-backup-"));
+    const backupPath = path.join(backupDir, "storynexus-backup.db");
     const [error] = await attemptPromise(() => rawSqlite.backup(backupPath));
     if (error) {
+        removeBackupDir(backupDir);
         console.error("Backup failed:", error);
         res.status(500).json({ error: "Backup failed" });
         return;
     }
     const stamp = new Date().toISOString().slice(0, 10);
-    res.download(backupPath, `storynexus-backup-${stamp}.db`, () => {
-        fs.rm(path.dirname(backupPath), { recursive: true, force: true }, () => undefined);
-    });
+    res.download(backupPath, `storynexus-backup-${stamp}.db`, () => removeBackupDir(backupDir));
 });
 
 router.get("/export", async (_, res) => {

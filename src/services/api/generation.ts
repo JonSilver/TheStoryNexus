@@ -55,6 +55,11 @@ export const streamGeneration = async (
                 return;
             }
             parser.push(decoder.decode(value, { stream: true }));
+            // A garbled frame ends the run: closing the stream stops the server paying for the rest
+            if (seen.error) {
+                await reader.cancel();
+                return;
+            }
         }
     });
     if ((readError as Error)?.name === "AbortError" || seen.aborted) return { end: "stopped" };

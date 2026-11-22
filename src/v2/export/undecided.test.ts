@@ -20,9 +20,14 @@ describe("countUndecided", () => {
         expect(countUndecided(doc([{ type: "scene-beat-v2", status: "done", generatedText: "old draft" }]))).toBe(1);
     });
 
-    it("returns zero for clean documents and garbage input", () => {
+    it("returns zero for clean and empty documents", () => {
         expect(countUndecided(doc([{ type: "paragraph", children: [] }]))).toBe(0);
-        expect(countUndecided("not json")).toBe(0);
         expect(countUndecided("")).toBe(0);
+    });
+
+    it("returns null for a chapter it can't read, never a reassuring zero", () => {
+        expect(countUndecided("not json")).toBeNull();
+        expect(countUndecided("null")).toBeNull();
+        expect(countUndecided(JSON.stringify({ notRoot: {} }))).toBeNull();
     });
 });

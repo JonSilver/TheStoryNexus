@@ -66,10 +66,7 @@ export const reworkAll = async (page: Page) => {
 };
 
 export type ScriptedReply =
-    | { text: string }
-    | { error: string; partial?: string }
-    | { hold: true }
-    | { unreachable: true };
+    { text: string } | { error: string; partial?: string } | { hold: true } | { unreachable: true };
 
 const frame = (event: string, data: object) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 

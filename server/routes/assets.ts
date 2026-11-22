@@ -2,7 +2,7 @@ import { attemptPromise } from "@jfdi/attempt";
 import express from "express";
 import multer from "multer";
 import fs from "node:fs/promises";
-import type { Request } from "../lib/http.js";
+import { type Request, makeAsyncHandler } from "../lib/http.js";
 import {
     MAX_ASSET_BYTES,
     assetContentType,
@@ -30,14 +30,7 @@ const uploadRejection = (code: string) => Object.assign(new Error(code), { code 
 
 const failureFor = (error: Error) => uploadFailures[(error as { code?: string }).code ?? ""];
 
-const asyncHandler =
-    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
-        const [error] = await attemptPromise(() => fn(req, res));
-        if (error) {
-            console.error("Asset error:", error);
-            res.status(500).json({ error: error.message || "Server error" });
-        }
-    };
+const asyncHandler = makeAsyncHandler({ label: "Asset error" });
 
 const upload = multer({
     limits: { fileSize: MAX_ASSET_BYTES, files: 1 },

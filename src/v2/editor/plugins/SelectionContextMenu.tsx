@@ -125,13 +125,18 @@ export const SelectionContextMenu = ({ actions }: { actions: ToolbarActions }) =
     ];
 
     return (
-        <div className="fixed inset-0 z-50" onClick={() => setMenu(null)} onContextMenu={e => e.preventDefault()}>
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer dismiss for a pointer-opened menu; keyboard users act on selections through the toolbar
+        <div
+            className="fixed inset-0 z-50"
+            onClick={e => e.target === e.currentTarget && setMenu(null)}
+            onContextMenu={e => e.preventDefault()}
+        >
             <div
                 role="menu"
+                tabIndex={-1}
                 aria-label="Selection actions"
                 className="absolute w-[200px] overflow-hidden rounded-lg border bg-background shadow-lg"
                 style={{ left: menu.x, top: menu.y }}
-                onClick={e => e.stopPropagation()}
             >
                 {entries.map((entry, index) =>
                     "divider" in entry ? (

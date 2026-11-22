@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { parseContinuityIssues, parseEntryProposals, parseUpdateProposals } from "./parseProposals";
+import {
+    entryKey,
+    issueKey,
+    updateKey,
+    newItems,
+    parseContinuityIssues,
+    parseEntryProposals,
+    parseUpdateProposals
+} from "./parseProposals";
 
 describe("parseEntryProposals", () => {
     it("parses a clean JSON array", () => {
@@ -61,5 +69,44 @@ describe("parseContinuityIssues", () => {
     it("returns empty for clean chapters", () => {
         expect(parseContinuityIssues("[]")).toEqual([]);
         expect(parseContinuityIssues("No issues found.")).toEqual([]);
+    });
+});
+
+describe("newItems", () => {
+    it("treats a rerun's reworded, retagged entry as the same entry", () => {
+        const listed = [
+            { name: "Colonel Brandon", category: "character" as const, description: "A soldier.", tags: ["a", "b"] }
+        ];
+        const rerun = [
+            {
+                name: "colonel  brandon",
+                category: "character" as const,
+                description: "A retired soldier.",
+                tags: ["b", "a"]
+            },
+            { name: "Marianne", category: "character" as const, description: "A sister.", tags: [] },
+            { name: "MARIANNE", category: "character" as const, description: "Romantic.", tags: [] }
+        ];
+        expect(newItems(listed, rerun, entryKey).map(p => p.description)).toEqual(["A sister."]);
+    });
+
+    it("keeps distinct continuity issues for one entry but drops a repeated one", () => {
+        const listed = [{ name: "Elinor", issue: "Eyes are blue, later brown", evidence: "ch1" }];
+        const rerun = [
+            { name: "elinor", issue: "Eyes are  blue, later brown", evidence: "ch3" },
+            { name: "Elinor", issue: "Age changes from 19 to 21", evidence: "ch2" }
+        ];
+        expect(newItems(listed, rerun, issueKey).map(i => i.issue)).toEqual(["Age changes from 19 to 21"]);
+    });
+
+    it("keeps a rerun's different update for a listed entry but drops the same one", () => {
+        const listed = [{ name: "Elinor", updatedDescription: "Now married.", reason: "ch4" }];
+        const rerun = [
+            { name: "ELINOR", updatedDescription: "Now  married.", reason: "ch5" },
+            { name: "Elinor", updatedDescription: "Married to Edward; lives at Delaford.", reason: "ch5" }
+        ];
+        expect(newItems(listed, rerun, updateKey).map(u => u.updatedDescription)).toEqual([
+            "Married to Edward; lives at Delaford."
+        ]);
     });
 });

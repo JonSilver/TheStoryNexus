@@ -1,10 +1,11 @@
+import { attempt } from "@jfdi/attempt";
 import type { AnsweredModel } from "@/types/actions";
 
 /**
  * Incremental parser for the server's generation SSE stream
  * (event: model | status | token | error | finish | aborted). Buffers across chunk
  * boundaries, tolerates CRLF, and treats stream end without a terminal
- * frame as an error — truncated output must never pass as success.
+ * frame, or an unreadable frame, as an error — truncated output must never pass as success.
  */
 export type GenerationPhase = "waiting" | "thinking" | "streaming";
 
@@ -48,15 +49,12 @@ export const createSSEParser = ({
         const dataMatch = frame.match(/^data: (.+?)\r?$/m);
         if (!eventMatch) return;
 
-        const data = (() => {
-            if (!dataMatch) return {};
-            try {
-                return JSON.parse(dataMatch[1]);
-            } catch {
-                return null;
-            }
-        })();
-        if (data === null) return;
+        const [parseError, data] = dataMatch ? attempt(() => JSON.parse(dataMatch[1])) : [null, {}];
+        if (parseError) {
+            state.terminated = true;
+            onError(new Error("Part of the response arrived garbled and couldn't be read."));
+            return;
+        }
 
         switch (eventMatch[1]) {
             case "model":

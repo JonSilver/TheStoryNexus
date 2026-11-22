@@ -5,6 +5,12 @@ import { randomUUID } from "@/utils/crypto";
 import { BottomSheet } from "../components/BottomSheet";
 import { useGuardedClose } from "../components/Dialogs";
 
+/** Marks an entry the writer has left out of AI context, wherever entries are listed. */
+export const LeftOutOfAiBadge = ({ entry }: { entry: LorebookEntry }) =>
+    entry.isDisabled ? (
+        <span className="ml-2 rounded border px-1 text-xs font-normal text-muted-foreground">Left out of AI</span>
+    ) : null;
+
 /**
  * Manual entry create/edit — extraction must never be the only door into
  * the bible. Level is chosen at creation (story / series when the story is
@@ -28,12 +34,14 @@ export const EntryEditor = ({
     const [level, setLevel] = useState<string>(entry?.level ?? "story");
     const [description, setDescription] = useState(entry?.description ?? "");
     const [tags, setTags] = useState((Array.isArray(entry?.tags) ? entry.tags : []).join(", "));
+    const [leftOut, setLeftOut] = useState(entry?.isDisabled === true);
     const dirty =
         name !== (entry?.name ?? "") ||
         category !== (entry?.category ?? "character") ||
         level !== (entry?.level ?? "story") ||
         description !== (entry?.description ?? "") ||
-        tags !== (Array.isArray(entry?.tags) ? entry.tags : []).join(", ");
+        tags !== (Array.isArray(entry?.tags) ? entry.tags : []).join(", ") ||
+        leftOut !== (entry?.isDisabled === true);
     const close = useGuardedClose(dirty, onClose);
 
     const save = () => {
@@ -44,7 +52,8 @@ export const EntryEditor = ({
             tags: tags
                 .split(",")
                 .map(t => t.trim())
-                .filter(Boolean)
+                .filter(Boolean),
+            isDisabled: leftOut
         };
         if (!payload.name) return;
         const done = { onSuccess: onClose };
@@ -55,7 +64,6 @@ export const EntryEditor = ({
                     id: randomUUID(),
                     level: level as LorebookEntry["level"],
                     scopeId: level === "story" ? storyId : level === "series" ? (seriesId ?? undefined) : undefined,
-                    isDisabled: false,
                     ...payload
                 },
                 done
@@ -130,6 +138,20 @@ export const EntryEditor = ({
                 value={tags}
                 onChange={e => setTags(e.target.value)}
             />
+            <label className="flex items-start gap-2 py-1">
+                <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={leftOut}
+                    onChange={e => setLeftOut(e.target.checked)}
+                />
+                <span>
+                    Leave out of AI context
+                    <span className="block text-xs text-muted-foreground">
+                        Stays in the bible, but is never added to what AI actions are sent, even when its name comes up.
+                    </span>
+                </span>
+            </label>
         </BottomSheet>
     );
 };

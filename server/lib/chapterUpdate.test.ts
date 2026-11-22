@@ -26,6 +26,16 @@ describe("resolveChapterUpdate", () => {
         });
     });
 
+    it("a stale-version save of the document already stored is a lost reply's retry, not a conflict", () => {
+        const stored = doc(prose(200));
+        expect(
+            resolveChapterUpdate(current(stored), { content: stored, wordCount: 200, expectedSaveVersion: 4 }, now)
+        ).toEqual({ outcome: "unchanged" });
+        expect(
+            resolveChapterUpdate(current(stored), { content: stored, title: "New", expectedSaveVersion: 4 }, now)
+        ).toEqual({ outcome: "conflict" });
+    });
+
     it("a content save with no expectedSaveVersion conflicts — no silent last-write-wins, no retry loop", () => {
         expect(resolveChapterUpdate(current(), { content: doc("x") }, now).outcome).toBe("conflict");
         expect(resolveChapterUpdate(current(), { content: doc("x"), expectedRevision: 2 }, now).outcome).toBe(

@@ -81,6 +81,7 @@ export const transpositionContext = async ({
             .select()
             .from(schema.lorebookEntries)
             .where(inArray(schema.lorebookEntries.id, state.entryOrder));
+        const leftOut = new Set(rows.filter(entry => entry.isDisabled).map(entry => entry.id));
         const current = new Map(
             rows.map(entry => [
                 entry.id,
@@ -107,7 +108,7 @@ export const transpositionContext = async ({
               )
             : null;
         const lines = state.entryOrder
-            .filter(id => !mentioned || mentioned.has(id))
+            .filter(id => !leftOut.has(id) && (!mentioned || mentioned.has(id)))
             .map(id => bibleLine(state.entries[id], current.get(id) ?? null));
         // A passage that names no entries needs none
         if (!lines.length) return "(none of the bible's entries appear in this passage)";

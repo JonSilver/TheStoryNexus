@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { useActionGeneration } from "../ai/useActionGeneration";
 import { flushChapterSave } from "../editor/useChapterSaver";
-import { type EntryProposal, parseEntryProposals, readsAsJsonArray } from "./parseProposals";
+import { type EntryProposal, entryKey, newItems, parseEntryProposals, readsAsJsonArray } from "./parseProposals";
 
 export interface SweepProgress {
     current: number;
@@ -61,7 +61,6 @@ export const useStorySweep = (
     /** `onFound` receives each chapter's new finds as they arrive, so nothing waits on the whole book. */
     const run = async (onFound: (found: EntryProposal[]) => void): Promise<SweepResult> => {
         stopRequested.current = false;
-        const seen = new Set<string>();
         const gathered: EntryProposal[] = [];
         const failures: SweepResult["failures"] = [];
         const streak = { failed: 0 };
@@ -90,12 +89,7 @@ export const useStorySweep = (
                 streak.failed += 1;
             } else streak.failed = 0;
             // Whatever arrived is parsed — a reply can be complete before its stream fails
-            const found = parseEntryProposals(result.text).filter(proposal => {
-                const key = proposal.name.toLowerCase();
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
+            const found = newItems(gathered, parseEntryProposals(result.text), entryKey);
             gathered.push(...found);
             if (found.length) onFound(found);
             setProgress(current => (current ? { ...current, found: gathered.length } : current));

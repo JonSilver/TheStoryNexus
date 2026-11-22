@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { toast } from "react-toastify";
 import { applyChatToCaches } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { brainstormApi } from "@/services/api/client";
@@ -30,6 +30,12 @@ const putMessages = async (chat: AIChat, messages: ChatMessage[]): Promise<Write
     return { outcome: "failed" };
 };
 
+/** Keeps the newest server copy seen per chat; an older copy never replaces a newer one. */
+const know = (newest: Map<string, AIChat>, seen: AIChat) => {
+    const known = newest.get(seen.id);
+    if (!known || (known.revision ?? 0) <= (seen.revision ?? 0)) newest.set(seen.id, seen);
+};
+
 // A conflict means another device wrote first: re-apply onto theirs and try again, a few times
 const MAX_ATTEMPTS = 3;
 
@@ -43,11 +49,10 @@ export const useChatSync = (chat: AIChat | null) => {
     const queryClient = useQueryClient();
     // The newest server copy seen, per chat — a write must build on it, not on a render's snapshot
     const newest = useRef(new Map<string, AIChat>());
-    const know = (seen: AIChat) => {
-        const known = newest.current.get(seen.id);
-        if (!known || (known.revision ?? 0) <= (seen.revision ?? 0)) newest.current.set(seen.id, seen);
-    };
-    if (chat) know(chat);
+    // Layout, not passive: recorded as the render commits, before a write queued from it reads `newest`
+    useLayoutEffect(() => {
+        if (chat) know(newest.current, chat);
+    }, [chat]);
     const queue = useRef<Promise<unknown>>(Promise.resolve());
     // Re-renders when this device's pending changes change — here, or in another tab
     useSyncExternalStore(subscribePending, pendingVersion);
@@ -80,7 +85,7 @@ export const useChatSync = (chat: AIChat | null) => {
                 }
                 if (result.outcome === "failed") return false;
                 if (result.chat) {
-                    know(result.chat);
+                    know(newest.current, result.chat);
                     applyChatToCaches(queryClient, result.chat);
                 }
                 if (result.outcome === "ok") return true;

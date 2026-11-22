@@ -75,10 +75,16 @@ export const resolveChapterUpdate = (
     // No version (a tab still running an older build): treat as a conflict, so
     // the client locks and offers the draft for download instead of retrying
     // a rejected save forever while the writer keeps typing
-    if (typeof expectedSaveVersion !== "number" || expectedSaveVersion !== current.saveVersion)
-        return { outcome: "conflict" };
-
+    if (typeof expectedSaveVersion !== "number") return { outcome: "conflict" };
     const { content, ...others } = updates as Record<string, unknown> & { content: string };
+    if (expectedSaveVersion !== current.saveVersion) {
+        // A retry of a save that landed but whose reply was lost: nothing to resolve
+        const { wordCount: _wordCount, ...meta } = others;
+        return sameDocument(current.content, content) && Object.keys(meta).length === 0
+            ? { outcome: "unchanged" }
+            : { outcome: "conflict" };
+    }
+
     if (sameDocument(current.content, content)) {
         const { wordCount: _wordCount, ...meta } = others;
         return Object.keys(meta).length === 0

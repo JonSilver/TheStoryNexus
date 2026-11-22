@@ -173,6 +173,8 @@ export const parseEditorState = (state: EditorStateJson): Block[] => {
 };
 
 export const parseSerialisedDocument = (json: string): Block[] => {
+    // A chapter nobody has typed in yet is stored as "": an empty chapter, not a broken one
+    if (!json.trim()) return [];
     const [error, state] = attempt<EditorStateJson>(() => JSON.parse(json));
     if (error) throw new Error(`Invalid document JSON: ${(error as Error).message}`);
     return parseEditorState(state);

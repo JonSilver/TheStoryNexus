@@ -32,6 +32,8 @@ interface ActiveAction {
     kind: ActionKind;
     /** The action's name where its model is offered: "Use a different model for Rework". */
     label: string;
+    /** The passage a selection action works on, for judging the reply against it. */
+    selectionText?: string;
 }
 
 const ACCEPT_LABELS: Record<ActionKind, string> = {
@@ -90,24 +92,27 @@ export const useEditorActions = (chapter: Chapter) => {
         [chapter.povCharacter, chapter.povType]
     );
 
-    /** Holds the writer's selection for the sheet to act on later; false (and says so) when there's none. */
-    const holdSelection = useCallback(() => {
-        const captured = editor.getEditorState().read($captureSelection);
-        if (!captured) {
-            toast.info("Select some text first");
-            return false;
-        }
-        savedSelection.current = captured.selection;
-        savedSelectionText.current = captured.text;
-        clearAttempts();
-        return true;
-    }, [editor, clearAttempts]);
+    /** Holds the writer's selection and opens the sheet on it; false (and says so) when there's none. */
+    const holdSelection = useCallback(
+        (action: ActiveAction) => {
+            const captured = editor.getEditorState().read($captureSelection);
+            if (!captured) {
+                toast.info("Select some text first");
+                return false;
+            }
+            savedSelection.current = captured.selection;
+            savedSelectionText.current = captured.text;
+            clearAttempts();
+            setActive({ ...action, selectionText: captured.text });
+            return true;
+        },
+        [editor, clearAttempts]
+    );
 
     const onSelectionAction = useCallback(
         (actionId: SelectionActionId) => {
-            if (!holdSelection()) return;
             const { label } = SELECTION_ACTIONS.find(action => action.actionId === actionId) ?? { label: actionId };
-            setActive({ id: actionId, title: label, kind: "selection", label });
+            if (!holdSelection({ id: actionId, title: label, kind: "selection", label })) return;
             runAttempt(actionId, {
                 ...baseContext(),
                 selection: savedSelectionText.current,
@@ -120,8 +125,7 @@ export const useEditorActions = (chapter: Chapter) => {
     // Free-form instruction on a selection: capture first, ask the writer
     // what to do, then run the ask action with their instruction
     const onAsk = useCallback(() => {
-        if (!holdSelection()) return;
-        setActive({ id: "ask", title: "Ask about this passage", kind: "ask", label: "Ask" });
+        if (!holdSelection({ id: "ask", title: "Ask about this passage", kind: "ask", label: "Ask" })) return;
         setAskPending(true);
     }, [holdSelection]);
 
@@ -248,7 +252,7 @@ export const useEditorActions = (chapter: Chapter) => {
     // A replacement that looks like more than the passage is called out, never trimmed silently
     const shownReply = generation.phase === "streaming" ? null : attempts.current;
     const replyAction = active && active.kind !== "summarise" ? (active.id as ReplyAction) : null;
-    const check = shownReply && replyAction ? checkReply(replyAction, savedSelectionText.current, shownReply) : null;
+    const check = shownReply && replyAction ? checkReply(replyAction, active?.selectionText ?? "", shownReply) : null;
     const proseOnly = check?.proseOnly ?? null;
     const suspect =
         check && check.concerns.length > 0

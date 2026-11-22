@@ -7,6 +7,17 @@ import { useGuardedClose } from "../components/Dialogs";
 
 const POV_TYPES = ["", "First Person", "Third Person Limited", "Third Person Omniscient"] as const;
 
+const fieldsOf = (chapter: Chapter) => ({
+    title: chapter.title,
+    povType: chapter.povType ?? "",
+    povCharacter: chapter.povCharacter ?? "",
+    outline: chapter.outline?.content ?? "",
+    summary: chapter.summary ?? "",
+    summaryLocked: chapter.summaryLocked ?? false
+});
+
+type Fields = ReturnType<typeof fieldsOf>;
+
 /**
  * Chapter metadata that steers the AI but had no editing surface: POV
  * (the default for Continue and scene beats without their own), outline,
@@ -18,39 +29,35 @@ export const ChapterDetailsSheet = ({ chapter, onClose }: { chapter: Chapter; on
     const updateChapter = useUpdateChapterMutation();
     const { data: entries } = useHierarchicalLorebookQuery(chapter.storyId);
     const characters = (entries ?? []).filter(e => e.category === "character");
-    const [title, setTitle] = useState(chapter.title);
-    const [povType, setPovType] = useState(chapter.povType ?? "");
-    const [povCharacter, setPovCharacter] = useState(chapter.povCharacter ?? "");
-    const [outline, setOutline] = useState(chapter.outline?.content ?? "");
-    const [summary, setSummary] = useState(chapter.summary ?? "");
-    const [locked, setLocked] = useState(chapter.summaryLocked ?? false);
-    const dirty =
-        title !== chapter.title ||
-        povType !== (chapter.povType ?? "") ||
-        povCharacter !== (chapter.povCharacter ?? "") ||
-        outline !== (chapter.outline?.content ?? "") ||
-        summary !== (chapter.summary ?? "") ||
-        locked !== (chapter.summaryLocked ?? false);
+    // Save sends only what the writer changed since opening — a summary or
+    // title that lands meanwhile (background summary, another device) survives
+    const [opened] = useState(() => fieldsOf(chapter));
+    const [title, setTitle] = useState(opened.title);
+    const [povType, setPovType] = useState(opened.povType);
+    const [povCharacter, setPovCharacter] = useState(opened.povCharacter);
+    const [outline, setOutline] = useState(opened.outline);
+    const [summary, setSummary] = useState(opened.summary);
+    const [locked, setLocked] = useState(opened.summaryLocked);
+    const form: Fields = { title, povType, povCharacter, outline, summary, summaryLocked: locked };
+    const edited = (key: keyof Fields) => form[key] !== opened[key];
+    const dirty = (Object.keys(form) as (keyof Fields)[]).some(edited);
     const close = useGuardedClose(dirty, onClose);
 
     const save = () => {
-        const summaryEdited = summary !== (chapter.summary ?? "");
-        updateChapter.mutate(
-            {
-                id: chapter.id,
-                data: {
-                    title: title.trim() || chapter.title,
-                    povType: (povType || null) as Chapter["povType"],
-                    povCharacter: povCharacter || null,
-                    outline: outline.trim() ? { content: outline, lastUpdated: new Date() } : null,
-                    summary,
-                    summaryLocked: locked && summary.trim().length > 0,
-                    // Hand-edited summaries are authoritative for the current text
-                    ...(summaryEdited ? { summarySourceRevision: chapter.revision ?? 0 } : {})
-                } as Partial<Chapter>
-            },
-            { onSuccess: onClose }
-        );
+        const summaryEdited = edited("summary");
+        const data = {
+            ...(edited("title") && title.trim() ? { title: title.trim() } : {}),
+            ...(edited("povType") ? { povType: (povType || null) as Chapter["povType"] } : {}),
+            ...(edited("povCharacter") ? { povCharacter: povCharacter || null } : {}),
+            ...(edited("outline")
+                ? { outline: outline.trim() ? { content: outline, lastUpdated: new Date() } : null }
+                : {}),
+            // Hand-edited summaries are authoritative for the current text
+            ...(summaryEdited ? { summary, summarySourceRevision: chapter.revision ?? 0 } : {}),
+            ...(summaryEdited || edited("summaryLocked") ? { summaryLocked: locked && summary.trim().length > 0 } : {})
+        } as Partial<Chapter>;
+        if (Object.keys(data).length === 0) onClose();
+        else updateChapter.mutate({ id: chapter.id, data }, { onSuccess: onClose });
     };
 
     return (
