@@ -10,7 +10,6 @@ import {
     COMMAND_PRIORITY_CRITICAL,
     FORMAT_TEXT_COMMAND,
     REDO_COMMAND,
-    SELECTION_CHANGE_COMMAND,
     UNDO_COMMAND
 } from "lexical";
 import { BookOpenText, Bold, Italic, Redo2, Sparkles, Undo2 } from "lucide-react";
@@ -61,7 +60,9 @@ export const ToolbarPlugin = ({
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) return;
         setHasSelection(!selection.isCollapsed());
-        setFormats({ bold: selection.hasFormat("bold"), italic: selection.hasFormat("italic") });
+        const bold = selection.hasFormat("bold");
+        const italic = selection.hasFormat("italic");
+        setFormats(prev => (prev.bold === bold && prev.italic === italic ? prev : { bold, italic }));
         const anchorNode = selection.anchor.getNode();
         const element = anchorNode.getKey() === "root" ? anchorNode : anchorNode.getTopLevelElementOrThrow();
         setBlock($isHeadingNode(element) ? (element.getTag() as BlockValue) : "paragraph");
@@ -70,14 +71,9 @@ export const ToolbarPlugin = ({
     useEffect(
         () =>
             mergeRegister(
-                editor.registerCommand(
-                    SELECTION_CHANGE_COMMAND,
-                    () => {
-                        readSelection();
-                        return false;
-                    },
-                    COMMAND_PRIORITY_CRITICAL
-                ),
+                // Every update, not just selection changes: a format toggled at a
+                // collapsed caret or a block type change moves no DOM selection
+                editor.registerUpdateListener(({ editorState }) => editorState.read(readSelection)),
                 editor.registerCommand(
                     CAN_UNDO_COMMAND,
                     payload => {
