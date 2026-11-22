@@ -1,8 +1,9 @@
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { $getRoot, type EditorState } from "lexical";
 import { throttle } from "lodash";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { countWords } from "@/utils/textUtils";
+import { useEvent } from "../../hooks/useEvent";
 
 const THROTTLE_MS = 300;
 
@@ -26,20 +27,19 @@ export const ChapterPersistencePlugin = ({
 }) => {
     // The throttle is created once: rebuilding it on each new handler flushed it and
     // fired the next leading edge at once, so it never throttled at all
-    const latest = useRef(onDocument);
-    latest.current = onDocument;
+    const report = useEvent(onDocument);
     const handleChange = useMemo(
         () =>
             throttle(
                 (editorState: EditorState) => {
                     const doc = editorState.toJSON();
                     const text = editorState.read(() => $getRoot().getTextContent());
-                    latest.current(JSON.stringify(doc), doc, countWords(text), text);
+                    report(JSON.stringify(doc), doc, countWords(text), text);
                 },
                 THROTTLE_MS,
                 { leading: true, trailing: true }
             ),
-        []
+        [report]
     );
 
     useEffect(() => () => handleChange.flush(), [handleChange]);

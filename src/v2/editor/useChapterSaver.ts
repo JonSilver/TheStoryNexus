@@ -2,8 +2,10 @@ import { attempt } from "@jfdi/attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { isEqual } from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { applyChapterToCaches } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi } from "@/services/api/client";
+import { chaptersKeys } from "@/services/api/queryKeys";
 import type { Chapter } from "@/types/story";
 import { useEvent } from "../hooks/useEvent";
 
@@ -45,6 +47,10 @@ const putChapterContent = async (
 
 const DEBOUNCE_MS = 1000;
 const RETRY_MS = 5000;
+// Once the editor has closed, the exit save gets a bounded number of tries:
+// a reopening editor waits on it, and nothing on screen shows it retrying
+const DETACHED_ATTEMPTS = 3;
+const DETACHED_RETRY_MS = 2000;
 
 // In-flight saves by chapter, across saver instances. A remounting editor
 // must wait for the previous instance's exit save to settle, or it
@@ -75,6 +81,18 @@ export const flushChapterSave = async (chapterId: string): Promise<void> => {
     await whenSavesSettle(chapterId);
 };
 
+// Exit saves that failed after their editor closed, by chapter. The writer's
+// text lives here until the chapter is reopened: the editor opens on it and
+// its saver sends it again (against the version it was based on, so a newer
+// copy elsewhere still raises the conflict banner rather than being overwritten).
+const strandedDrafts = new Map<string, { payload: SavePayload; saveVersion: number }>();
+
+/** Unsaved content a closed editor left behind for this chapter, if any. */
+export const strandedContent = (chapterId: string): string | undefined =>
+    strandedDrafts.get(chapterId)?.payload.content;
+
+const exitToastId = (chapterId: string) => `exit-save-${chapterId}`;
+
 /**
  * Single-flight, coalescing, revision-aware chapter saver (contracts §9).
  * One save in flight per chapter; newer content replaces queued content;
@@ -96,51 +114,115 @@ export const useChapterSaver = (
         lastSavedDocument: parseDocument(initialContent),
         conflicted: false,
         debounceTimer: 0 as ReturnType<typeof setTimeout> | 0,
-        retryTimer: 0 as ReturnType<typeof setTimeout> | 0
+        retryTimer: 0 as ReturnType<typeof setTimeout> | 0,
+        detached: false,
+        detachedFailures: 0,
+        settleExit: null as (() => void) | null
     });
 
+    // After the editor closes, the whole remaining exit save — retries included —
+    // is one tracked unit, so a reopening editor waits for all of it
+    const trackExit = useCallback(() => {
+        const s = internals.current;
+        if (s.settleExit || (!s.inFlight && !s.pending)) return;
+        const settled = new Promise<void>(resolve => {
+            s.settleExit = resolve;
+        });
+        inFlightSaves.set(chapterId, settled);
+        void settled.finally(() => {
+            if (inFlightSaves.get(chapterId) === settled) inFlightSaves.delete(chapterId);
+        });
+    }, [chapterId]);
+
+    const finishExit = useCallback(() => {
+        const s = internals.current;
+        s.settleExit?.();
+        s.settleExit = null;
+    }, []);
+
+    const strand = useCallback(
+        (payload: SavePayload, saveVersion: number, conflict: boolean) => {
+            strandedDrafts.set(chapterId, { payload, saveVersion });
+            const title = queryClient.getQueryData<Chapter>(chaptersKeys.detail(chapterId))?.title ?? "this chapter";
+            toast.error(
+                conflict
+                    ? `Your last edits to “${title}” weren't saved: it was changed elsewhere. Open it again to see your version and download it.`
+                    : `Your last edits to “${title}” couldn't be saved. They're kept on this page — open the chapter again to save them. Reloading the page loses them.`,
+                { toastId: exitToastId(chapterId), autoClose: false }
+            );
+        },
+        [chapterId, queryClient]
+    );
+
     const drain = useCallback(
-        async (exiting = false): Promise<void> => {
+        async function drain(exiting = false): Promise<void> {
             const s = internals.current;
-            if (s.inFlight || s.conflicted || !s.pending) return;
+            if (s.inFlight) return;
+            if (s.conflicted || !s.pending) {
+                if (s.detached) finishExit();
+                return;
+            }
             const payload = s.pending;
             s.pending = null;
             s.inFlight = true;
             setStatus("saving");
 
             const request = putChapterContent(chapterId, payload, s.saveVersion, exiting);
-            const tracked = request.then(
-                () => undefined,
-                () => undefined
-            );
-            inFlightSaves.set(chapterId, tracked);
-            void tracked.finally(() => {
-                if (inFlightSaves.get(chapterId) === tracked) inFlightSaves.delete(chapterId);
-            });
+            // A detached saver's exit chain is already tracked as a whole
+            if (!s.detached) {
+                const tracked = request.then(
+                    () => undefined,
+                    () => undefined
+                );
+                inFlightSaves.set(chapterId, tracked);
+                void tracked.finally(() => {
+                    if (inFlightSaves.get(chapterId) === tracked) inFlightSaves.delete(chapterId);
+                });
+            }
             const result = await request;
             s.inFlight = false;
 
             if (result.outcome === "ok") {
                 s.saveVersion = result.chapter.saveVersion ?? s.saveVersion;
                 s.lastSavedDocument = payload.doc;
+                s.detachedFailures = 0;
+                strandedDrafts.delete(chapterId);
+                toast.dismiss(exitToastId(chapterId));
                 applyChapterToCaches(queryClient, result.chapter);
                 notifySaved(result.chapter);
                 if (s.pending) void drain();
+                else if (s.detached) finishExit();
                 else setStatus("saved");
                 return;
             }
             if (result.outcome === "conflict") {
                 s.conflicted = true;
-                setStatus("conflict");
+                // The reopened editor's banner now holds this draft (Download my version)
+                strandedDrafts.delete(chapterId);
+                if (s.detached) {
+                    strand(s.pending ?? payload, s.saveVersion, true);
+                    finishExit();
+                } else setStatus("conflict");
                 return;
             }
             // Failed: put the payload back (unless newer content arrived) and retry
             s.pending = s.pending ?? payload;
-            setStatus("failed");
             clearTimeout(s.retryTimer);
-            s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
+            if (!s.detached) {
+                setStatus("failed");
+                s.retryTimer = setTimeout(() => void drain(), RETRY_MS);
+                return;
+            }
+            s.detachedFailures += 1;
+            if (s.detachedFailures < DETACHED_ATTEMPTS) {
+                s.retryTimer = setTimeout(() => void drain(), DETACHED_RETRY_MS);
+                return;
+            }
+            strand(s.pending, s.saveVersion, false);
+            s.pending = null;
+            finishExit();
         },
-        [chapterId, queryClient, notifySaved]
+        [chapterId, queryClient, notifySaved, finishExit, strand]
     );
 
     // Compared as documents, not strings: serialisation order is not identity
@@ -153,9 +235,16 @@ export const useChapterSaver = (
             if (s.conflicted || (!s.inFlight && !s.pending && isEqual(doc, s.lastSavedDocument))) return;
             s.pending = { content, doc, wordCount };
             clearTimeout(s.debounceTimer);
+            // The editor's last change can arrive after it closed (its plugins clean up
+            // after the saver): no debounce then — save now, as part of the exit save
+            if (s.detached) {
+                void drain();
+                trackExit();
+                return;
+            }
             s.debounceTimer = setTimeout(() => void drain(), DEBOUNCE_MS);
         },
-        [drain]
+        [drain, trackExit]
     );
 
     const flush = useCallback(
@@ -189,11 +278,23 @@ export const useChapterSaver = (
             window.removeEventListener("pagehide", flushExiting);
             document.removeEventListener("visibilitychange", flushWhenHidden);
             if (flushers.get(chapterId) !== undefined) flushers.delete(chapterId);
-            flush();
+            s.detached = true;
             clearTimeout(s.debounceTimer);
             clearTimeout(s.retryTimer);
+            if (s.pending) void drain();
+            trackExit();
         };
-    }, [flush, chapterId]);
+    }, [flush, drain, trackExit, chapterId]);
+
+    // A draft a closed editor couldn't save: this editor opened on it, so send it now
+    useEffect(() => {
+        const draft = strandedDrafts.get(chapterId);
+        if (!draft) return;
+        const s = internals.current;
+        s.saveVersion = draft.saveVersion;
+        s.pending = draft.payload;
+        void drain();
+    }, [chapterId, drain]);
 
     return { status, scheduleSave, flush };
 };

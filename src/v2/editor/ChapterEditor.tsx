@@ -8,7 +8,7 @@ import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode } from "@lexical/rich-text";
-import { Component, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { Component, type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Chapter } from "@/types/story";
 import { downloadText } from "@/utils/download";
 import { ActionSheet } from "../ai/ActionSheet";
@@ -27,7 +27,7 @@ import { SelectionContextMenu } from "./plugins/SelectionContextMenu";
 import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { useAutoSummarise } from "./useAutoSummarise";
-import { hasInFlightSave, useChapterSaver, whenSavesSettle } from "./useChapterSaver";
+import { hasInFlightSave, strandedContent, useChapterSaver, whenSavesSettle } from "./useChapterSaver";
 import { useNameNudges } from "./useNameNudges";
 import { useScrollMemory } from "./useScrollMemory";
 
@@ -87,7 +87,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
         const markdown = blocksToMarkdown(parseSerialisedDocument(serialised));
         downloadText(`${chapter.title}-my-version`, "md", markdown, "text/markdown");
     };
-    const scroll = useScrollMemory(chapter.id);
+    const { restore: restoreScroll, onScroll } = useScrollMemory(chapter.id);
     const actions = useEditorActions(chapter);
     // The one place editability is decided. A conflicted editor must not keep accepting words it
     // will never save; a selection sheet freezes the document under its saved selection
@@ -102,15 +102,11 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
         [chapter.storyId, chapter.id]
     );
 
-    const { noteText } = nudges;
-    const onDocument = useCallback(
-        (serialised: string, doc: unknown, words: number, text: string) => {
-            scheduleSave(serialised, doc, words);
-            noteActivity();
-            noteText(text);
-        },
-        [scheduleSave, noteActivity, noteText]
-    );
+    const onDocument = (serialised: string, doc: unknown, words: number, text: string) => {
+        scheduleSave(serialised, doc, words);
+        noteActivity();
+        nudges.noteText(text);
+    };
 
     return (
         <ChapterContextProvider value={identity}>
@@ -137,7 +133,7 @@ const EditorSurface = ({ chapter, onOpenBible }: { chapter: Chapter; onOpenBible
                     />
                 )}
                 {status === "conflict" && <ConflictBanner onDownload={downloadDraft} />}
-                <div ref={scroll.restore} className="min-h-0 flex-1 overflow-y-auto" onScroll={scroll.onScroll}>
+                <div ref={restoreScroll} className="min-h-0 flex-1 overflow-y-auto" onScroll={onScroll}>
                     <RichTextPlugin
                         contentEditable={
                             <ContentEditable
@@ -168,13 +164,11 @@ export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOp
     const [settling, setSettling] = useState(() => hasInFlightSave(chapter.id));
     useEffect(() => {
         if (!settling) return undefined;
-        const live = { current: true };
+        const unmounted = new AbortController();
         void whenSavesSettle(chapter.id).then(() => {
-            if (live.current) setSettling(false);
+            if (!unmounted.signal.aborted) setSettling(false);
         });
-        return () => {
-            live.current = false;
-        };
+        return () => unmounted.abort();
     }, [settling, chapter.id]);
 
     if (settling)
@@ -195,7 +189,8 @@ export const ChapterEditor = ({ chapter, onOpenBible }: { chapter: Chapter; onOp
                         ImageNode,
                         GhostSuggestionNode
                     ],
-                    editorState: chapter.content || undefined,
+                    // Edits a closed editor couldn't save win over the server copy; its saver sends them again
+                    editorState: strandedContent(chapter.id) ?? (chapter.content || undefined),
                     onError: error => {
                         throw error;
                     }
