@@ -124,7 +124,7 @@ export const useChapterSaver = (
     // is one tracked unit, so a reopening editor waits for all of it
     const trackExit = useCallback(() => {
         const s = internals.current;
-        if (s.settleExit || (!s.inFlight && !s.pending)) return;
+        if (s.settleExit || s.conflicted || (!s.inFlight && !s.pending)) return;
         const settled = new Promise<void>(resolve => {
             s.settleExit = resolve;
         });
@@ -199,6 +199,7 @@ export const useChapterSaver = (
                 s.conflicted = true;
                 // The reopened editor's banner now holds this draft (Download my version)
                 strandedDrafts.delete(chapterId);
+                toast.dismiss(exitToastId(chapterId));
                 if (s.detached) {
                     strand(s.pending ?? payload, s.saveVersion, true);
                     finishExit();
@@ -259,6 +260,8 @@ export const useChapterSaver = (
     // Flush on every mobile-real exit path; clean timers on unmount
     useEffect(() => {
         const s = internals.current;
+        // A re-run effect (hot reload) is a live editor again
+        s.detached = false;
         flushers.set(chapterId, () => flush());
         const flushExiting = () => flush(true);
         const flushWhenHidden = () => {
@@ -281,10 +284,16 @@ export const useChapterSaver = (
             s.detached = true;
             clearTimeout(s.debounceTimer);
             clearTimeout(s.retryTimer);
+            // Left with the conflict banner up: the words typed since can never save here,
+            // so keep them as the version to reopen on (its banner offers the download)
+            if (s.conflicted && s.pending) {
+                strand(s.pending, s.saveVersion, true);
+                s.pending = null;
+            }
             if (s.pending) void drain();
             trackExit();
         };
-    }, [flush, drain, trackExit, chapterId]);
+    }, [flush, drain, trackExit, strand, chapterId]);
 
     // A draft a closed editor couldn't save: this editor opened on it, so send it now
     useEffect(() => {

@@ -4,7 +4,8 @@ export const downloadBlob = (name: string, extension: string, blob: Blob) => {
     link.href = URL.createObjectURL(blob);
     link.download = `${name.replace(/[^\w-]+/g, "-")}.${extension}`;
     link.click();
-    URL.revokeObjectURL(link.href);
+    // Some browsers read the blob after click() returns: revoking at once can cut a large file short
+    setTimeout(() => URL.revokeObjectURL(link.href), 30_000);
 };
 
 export const downloadText = (name: string, extension: string, text: string, mime: string) =>

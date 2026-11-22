@@ -5,6 +5,7 @@ import {
     type EntryProposal,
     type UpdateProposal,
     entryKey,
+    updateKey,
     issueKey,
     newItems,
     parseContinuityIssues,
@@ -63,7 +64,7 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
 
     const addUpdates = (parsed: UpdateProposal[]) => {
         const before = latest.current.updates?.length ?? 0;
-        const updates = addUnique(latest.current.updates, parsed, entryKey);
+        const updates = addUnique(latest.current.updates, parsed, updateKey);
         commit({ ...latest.current, updates });
         return updates.length - before;
     };

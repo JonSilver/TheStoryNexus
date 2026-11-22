@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     entryKey,
     issueKey,
+    updateKey,
     newItems,
     parseContinuityIssues,
     parseEntryProposals,
@@ -96,5 +97,16 @@ describe("newItems", () => {
             { name: "Elinor", issue: "Age changes from 19 to 21", evidence: "ch2" }
         ];
         expect(newItems(listed, rerun, issueKey).map(i => i.issue)).toEqual(["Age changes from 19 to 21"]);
+    });
+
+    it("keeps a rerun's different update for a listed entry but drops the same one", () => {
+        const listed = [{ name: "Elinor", updatedDescription: "Now married.", reason: "ch4" }];
+        const rerun = [
+            { name: "ELINOR", updatedDescription: "Now  married.", reason: "ch5" },
+            { name: "Elinor", updatedDescription: "Married to Edward; lives at Delaford.", reason: "ch5" }
+        ];
+        expect(newItems(listed, rerun, updateKey).map(u => u.updatedDescription)).toEqual([
+            "Married to Edward; lives at Delaford."
+        ]);
     });
 });

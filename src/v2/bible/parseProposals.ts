@@ -45,16 +45,12 @@ export const parseEntryProposals = (text: string): EntryProposal[] =>
                 typeof (item as Record<string, unknown>).name === "string" &&
                 typeof (item as Record<string, unknown>).description === "string"
         )
-        .map(
-            (item): EntryProposal => ({
-                name: (item.name as string).trim(),
-                category: CATEGORIES.has(item.category as string)
-                    ? (item.category as EntryProposal["category"])
-                    : "note",
-                description: (item.description as string).trim(),
-                tags: Array.isArray(item.tags) ? (item.tags as unknown[]).filter(t => typeof t === "string") : []
-            })
-        )
+        .map((item): EntryProposal => ({
+            name: (item.name as string).trim(),
+            category: CATEGORIES.has(item.category as string) ? (item.category as EntryProposal["category"]) : "note",
+            description: (item.description as string).trim(),
+            tags: Array.isArray(item.tags) ? (item.tags as unknown[]).filter(t => typeof t === "string") : []
+        }))
         .filter(item => item.name.length > 0 && item.description.length > 0);
 
 export const parseUpdateProposals = (text: string): UpdateProposal[] =>
@@ -102,6 +98,9 @@ export const entryKey = ({ name }: { name: string }) => fold(name);
 
 /** Same entry and same problem; one entry can have several distinct issues. */
 export const issueKey = (issue: ContinuityIssue) => `${entryKey(issue)}\n${fold(issue.issue)}`;
+
+/** Same entry and same proposed text; a rerun's different suggestion for the entry is new. */
+export const updateKey = (update: UpdateProposal) => `${entryKey(update)}\n${fold(update.updatedDescription)}`;
 
 /** Items in `parsed` not already in `current` by `keyOf`, first occurrence kept within `parsed` too. */
 export const newItems = <T>(current: readonly T[], parsed: readonly T[], keyOf: (item: NoInfer<T>) => string): T[] => {

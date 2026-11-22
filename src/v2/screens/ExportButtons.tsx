@@ -1,12 +1,13 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { Download } from "lucide-react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { inRunningOrder } from "@/features/chapters/hooks/useChaptersQuery";
 import { chaptersApi, storiesApi } from "@/services/api/client";
 import type { Chapter } from "@/types/story";
 import { downloadBlob } from "@/utils/download";
 import { useConfirm } from "../components/Dialogs";
-import { flushChapterSave } from "../editor/useChapterSaver";
+import { flushChapterSave, strandedContent } from "../editor/useChapterSaver";
 import {
     blocksToHtml,
     blocksToMarkdown,
@@ -75,14 +76,17 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export const ExportButtons = ({ storyId }: { storyId: string }) => {
     const { lastChapterFor } = uiState;
     const confirm = useConfirm();
-    // Undecided takes and ghost suggestions are visible on screen but omitted
-    // from the book — the writer must choose, not discover the hole later
-    const confirmUndecided = async (chapters: Chapter[]): Promise<boolean> => {
-        const counts = chapters.map(c => ({ title: c.title, undecided: countUndecided(c.content) }));
+    // Anything visible on screen but missing from the file — undecided takes and
+    // ghosts, edits a closed chapter couldn't save — is the writer's to choose, not discover
+    const confirmGaps = async (chapters: Chapter[], omitsDrafts: boolean): Promise<boolean> => {
+        const counts = omitsDrafts ? chapters.map(c => ({ title: c.title, undecided: countUndecided(c.content) })) : [];
         const undecided = counts.reduce((sum, c) => sum + (c.undecided ?? 0), 0);
         const unreadable = counts.filter(c => c.undecided === null).map(c => `“${c.title}”`);
-        if (undecided === 0 && unreadable.length === 0) return true;
+        const unsaved = chapters.filter(c => strandedContent(c.id) !== undefined).map(c => `“${c.title}”`);
+        if (undecided === 0 && unreadable.length === 0 && unsaved.length === 0) return true;
         const message = [
+            unsaved.length > 0 &&
+                `Your last edits to ${unsaved.join(", ")} haven't been saved, so they won't be included — open the chapter to save them first.`,
             undecided > 0 &&
                 `${plural(undecided, "unaccepted AI draft")} (scene-beat takes or pending suggestions) won't be included.`,
             unreadable.length > 0 &&
@@ -94,18 +98,22 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
         return confirm({ message, confirmLabel: "Export anyway" });
     };
 
+    const [busy, setBusy] = useState<string | null>(null);
     const exportAs = async (target: ExportTarget) => {
+        if (busy) return;
+        setBusy(target.label);
         const [error, result] = await attemptPromise(async () => {
             // The file must contain the last keystrokes, not race the debounce
             const openChapter = lastChapterFor(storyId);
             if (openChapter) await flushChapterSave(openChapter);
             const [story, chapters] = await Promise.all([
                 storiesApi.getById(storyId),
-                target.omitsDrafts ? chaptersApi.getByStory(storyId).then(inRunningOrder) : []
+                chaptersApi.getByStory(storyId).then(inRunningOrder)
             ]);
-            if (target.omitsDrafts && !(await confirmUndecided(chapters))) return null;
+            if (!(await confirmGaps(chapters, target.omitsDrafts))) return null;
             return { story, blob: await target.file(storyId, chapters) };
         });
+        setBusy(null);
         if (error) {
             toast.error(`${target.label} export failed: ${error.message}`);
             return;
@@ -126,23 +134,27 @@ export const ExportButtons = ({ storyId }: { storyId: string }) => {
                             key={target.label}
                             href={target.href(storyId)}
                             title={target.hint}
+                            aria-disabled={busy !== null}
                             onClick={event => {
+                                // Open-in-new-tab and friends keep the browser's own download
+                                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
                                 event.preventDefault();
                                 void exportAs(target);
                             }}
-                            className="rounded-md border px-3 py-1.5 text-sm"
+                            className="rounded-md border px-3 py-1.5 text-sm aria-disabled:opacity-50"
                         >
-                            {target.label}
+                            {busy === target.label ? "Preparing…" : target.label}
                         </a>
                     ) : (
                         <button
                             key={target.label}
                             type="button"
                             title={target.hint}
+                            disabled={busy !== null}
                             onClick={() => void exportAs(target)}
-                            className="rounded-md border px-3 py-1.5 text-sm"
+                            className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
                         >
-                            {target.label}
+                            {busy === target.label ? "Preparing…" : target.label}
                         </button>
                     )
                 )}

@@ -18,6 +18,7 @@ describe("parseSerialisedDocument", () => {
 
     it("throws a clear error for malformed JSON", () => {
         expect(() => parseSerialisedDocument("{ not json")).toThrow(/^Invalid document JSON: /);
+        expect(parseSerialisedDocument("")).toEqual([]);
     });
 
     it("throws a clear error for a document without a root", () => {

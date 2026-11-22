@@ -124,3 +124,24 @@ test("a bible entry left out of AI context stays out of what gets sent, until it
 
     expect(await sentToAi()).toContain(description);
 });
+
+test("a story with a chapter nobody has typed in yet still exports", async ({ page }) => {
+    await createStoryAndChapter(page, "Export — empty chapter", "One");
+    await typeInEditor(page, "The only words so far.");
+    await waitForSaved(page);
+    // Added, opened, never typed in
+    await page.getByRole("button", { name: "Story", exact: true }).click();
+    await page.getByRole("button", { name: "Chapters" }).click();
+    await page.getByPlaceholder("New chapter title (optional)").fill("Two");
+    await page.getByRole("button", { name: "Add" }).click();
+    await expect(editorLocator(page)).toBeVisible();
+
+    await openExport(page);
+    for (const label of ["Markdown", "EPUB"]) {
+        const downloadPromise = page.waitForEvent("download");
+        await page.getByRole(label === "EPUB" ? "link" : "button", { name: label }).click();
+        const download = await downloadPromise;
+        if (label === "Markdown")
+            expect((await downloadedText(download)).toString("utf-8")).toContain("The only words so far.");
+    }
+});
