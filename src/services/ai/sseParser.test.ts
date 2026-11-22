@@ -87,6 +87,17 @@ describe("createSSEParser", () => {
         expect(onComplete).not.toHaveBeenCalled();
     });
 
+    it("treats a malformed frame as a stream error rather than dropping its text", () => {
+        const { tokens, onComplete, onError, parser } = collect();
+        parser.push('event: token\ndata: {"text":"Hello"}\n\nevent: token\ndata: {"text":" wor\n\n');
+        parser.push('event: token\ndata: {"text":"ld"}\n\nevent: finish\ndata: {}\n\n');
+        parser.end();
+        expect(tokens).toEqual(["Hello"]);
+        expect(onError).toHaveBeenCalledOnce();
+        expect(onError.mock.calls[0][0].message).toMatch(/garbled/);
+        expect(onComplete).not.toHaveBeenCalled();
+    });
+
     it("ignores frames after termination", () => {
         const { tokens, onComplete, parser } = collect();
         parser.push('event: finish\ndata: {}\n\nevent: token\ndata: {"text":"late"}\n\n');

@@ -4,7 +4,7 @@ import express from "express";
 import { z } from "zod";
 import { db, schema } from "../db/client.js";
 import { favouriteModelsSchema } from "../lib/favouriteModels.js";
-import type { Request } from "../lib/http.js";
+import { asyncHandler } from "../lib/http.js";
 import {
     type AIModel,
     type AIProviderId,
@@ -16,15 +16,6 @@ import {
 const router = express.Router();
 
 type AISettingsRow = typeof schema.aiSettings.$inferSelect;
-
-const asyncHandler =
-    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
-        const [error] = await attemptPromise(() => fn(req, res));
-        if (error) {
-            console.error("Error:", error);
-            res.status(500).json({ error: error.message || "Server error" });
-        }
-    };
 
 // Keys never leave the server: settings responses carry hasXxxKey booleans instead
 export const redactSettings = (settings: AISettingsRow) => {
