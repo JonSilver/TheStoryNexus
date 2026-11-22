@@ -7,7 +7,7 @@ Nothing here is needed to write a novel. It's for changing how the machinery beh
 **Settings → AI actions (advanced overrides)** lists every action the app runs, each marked **built-in** or **customised**, the model it runs with (its own, the all-stories choice when you look at one story, or your default), and whether it follows your story voice. Choose a scope — **All stories**, or **This story** (labelled with the story you have open; it beats the global one) — then tap an action:
 
 - **Model for this action** — e.g. a small fast model for summaries and your best model for prose. Leave it unset to use your default model. You can also change it from a result sheet, where you see what the model wrote.
-- **Temperature**, **Top-p**, **Freq. penalty**, **Pres. penalty**, **Max tokens** — blank means the model's own default.
+- **Temperature**, **Top-p**, **Freq. penalty**, **Pres. penalty**, **Max tokens** — a blank **Top-p** or penalty means the model's own default; a blank **Temperature** or **Max tokens** falls back to the built-in value.
 - **The template** — role-tagged messages (system, user, assistant) you can edit, add to or remove.
 
 **Save override** stores it; **Reset to built-in** discards yours.
@@ -56,17 +56,17 @@ Every failure offers **Try again** in place, and text that arrived before a fail
 
 **Story → Export** downloads the story in the format you tap:
 
-| Format            | Notes                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Markdown**      | Headings, lists, emphasis and dividers                                                                                 |
-| **Text**          | Plain prose                                                                                                            |
-| **HTML**          | Standalone markup                                                                                                      |
-| **EPUB**          | A real e-book: cover page, table of contents, images embedded                                                          |
-| **JSON (backup)** | Everything about this story — chapters, bible, notes, brainstorm chats, per-story AI overrides and images — restorable |
+| Format            | Notes                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Markdown**      | Headings, lists, emphasis and dividers                                                                                                                                      |
+| **Text**          | Plain prose                                                                                                                                                                 |
+| **HTML**          | Standalone markup                                                                                                                                                           |
+| **EPUB**          | A real e-book: cover page, table of contents, images embedded                                                                                                               |
+| **JSON (backup)** | This story's chapters, its own bible entries, notes, brainstorm chats, per-story AI overrides and images — restorable. Series and all-stories bible entries aren't included |
 
-Scene beats and pending suggestions are left out of the book formats; if any have unaccepted takes, the app warns you first.
+Scene beats and pending suggestions are left out of the book formats. **Markdown**, **Text** and **HTML** warn you first if any have unaccepted takes; **EPUB** doesn't.
 
-- **Restore a story:** **Story → Switch story → JSON**, pick the file. It comes back as a new story titled "… (Imported)", restored completely or not at all.
+- **Restore a story:** **Story → Switch story → JSON**, pick the file. It comes back as a new story titled "… (Imported)", restored completely or not at all, and outside any series — put it back under **Story → Details, series & voice**. To keep a series story with its series bible, back up the whole series instead.
 - **Series:** **Settings → Series** — each series has a download button for a backup of the series bible and every story in it; **Import Series** restores one.
 - **Everything:** **Settings → Backup → Download backup** is a consistent snapshot of the whole database, safe to take while you write. Images live separately under `data/assets/` on the server — back that folder up too.
 
@@ -83,7 +83,7 @@ Generation runs on the **server**, so the **Server URL** under **AI providers & 
 
     ```yaml
     services:
-        app:
+        storynexus:
             extra_hosts:
                 - "host.docker.internal:host-gateway"
     ```
@@ -95,7 +95,7 @@ Saving the URL tests it and fetches the models; if that fails, the error says wh
 
 ## Writing from other devices
 
-Open the app's address from any browser on your network — `http://YOUR-SERVER-IP:3000` for the Docker or production server (find the IP with `hostname -I` on Linux/Mac or `ipconfig` on Windows). Every screen has its own address, so a chapter you bookmark on your laptop opens on your phone too.
+Open the app's address from any browser on your network — `http://YOUR-SERVER-IP:3000` for the Docker or production server (find the IP with `hostname -I` on Linux, `ipconfig getifaddr en0` on a Mac or `ipconfig` on Windows). Every screen has its own address, so a chapter you bookmark on your laptop opens on your phone too.
 
 > [!WARNING]
 > There's no login. Anyone who can reach that address can read and edit everything. Keep it to a trusted home network; don't expose it to the internet.

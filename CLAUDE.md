@@ -57,7 +57,7 @@ npm run db:migrate   # Apply migrations
 
 The dev server applies migrations on start, against the real database. Never rename, regenerate or squash a migration once a running dev server could have applied it — add a new one. Branch work that changes the schema belongs in a worktree, not the checkout the dev server watches.
 
-Production serves the built client from `dist/` on a single port. Docker: `docker-compose up --build` (port 3000).
+Production serves the built client from `dist/client/` on a single port. Docker: `docker-compose up -d` pulls and runs the published image (port 3000, `APP_PORT` to change); `docker-compose -f docker-compose.dev.yml up --build` builds from source.
 
 ## Binding Documents
 
@@ -76,7 +76,7 @@ Production serves the built client from `dist/` on a single port. Docker: `docke
 The URL is the source of truth for where the writer is (`src/v2/routing.tsx`, #81). `main.tsx` hands every path to `V2App`, which owns the routes:
 
 ```
-/                                   — resume: last story's Write screen (localStorage remembers only this)
+/                                   — resume: last story's Write screen, at its last chapter (from localStorage)
 /write, /story, /brainstorm         — no story in the URL: redirect to the remembered story's address, else empty states
 /story/:storyId                     — Story hub
 /story/:storyId/write/:chapterId?   — Write (URL chapter wins; missing/unknown → corrected in place)
@@ -97,19 +97,19 @@ legacy: /v2, /stories, /stories/:id/read, /series/*, /?tool=… redirect; anythi
 ### Frontend layout
 
 - `src/v2/` — the app. `V2App.tsx` shell; `screens/` (Write, Chapters, Stories, Story hub, Bible, Brainstorm, Notes, Read, Actions, App settings, plus the import sheet and export buttons); `editor/` (Lexical composition, nodes, plugins, saver, auto-summarise); `ai/` (streamAction SSE client, useActionGeneration, ActionSheet, editor actions, ContextInspector); `bible/` (extraction flows, name nudges); `export/` (document JSON → blocks → md/html/txt renderers + undecided-draft detection); `drawer/` (action override editor); `state/useV2Store.ts` (localStorage UI state).
-- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings). Outside hooks, `src/features/` holds only the pages the shell embeds (AI settings, series list, guide) and `ChapterReader` (used by the Read screen).
+- `src/features/*/hooks/` — TanStack Query hooks per domain (stories, chapters, lorebook, notes, brainstorm, series, ai settings, transpositions, ingest, demo). Outside hooks, `src/features/` holds only the pages the shell embeds (AI settings, series list, guide) and `ChapterReader` (used by the Read screen).
 - `src/services/api/` — `request.ts` (the one fetch), `client.ts` (per-domain endpoints), `generation.ts` (SSE), `queryKeys.ts` (every cache key).
 
 ### Server layout
 
-- `server/routes/` — stories, chapters, series, lorebook, notes, brainstorm, ai (settings/keys/models), actions (override CRUD), generate (SSE generation + preview + abort), ingest (manuscript import), assets, admin (export/import/backup/demo).
+- `server/routes/` — stories, chapters, series, lorebook, notes, brainstorm, ai (settings/keys/models), actions (override CRUD), generate (SSE generation + preview + abort), ingest (manuscript import), assets, transpositions, admin (export/import/backup/demo).
 - `server/services/actions/` — the action registry (`registry.ts`: built-in actions + templates), context assembly (`context.ts`: token-budgeted), override resolution (`resolve.ts`: story → global → built-in, invalid values fall through).
 - `server/services/ingest/` — txt/md/docx/epub parsing, chapter splitting, Lexical conversion (streaming zip-bomb guards).
 - `server/db/` — Drizzle schema, migrations, demo-story seeding.
 
 ### Key mechanisms (details in docs/v2-contracts.md)
 
-- **Actions, not prompts**: built-in actions (scene_beat, continue, rework, expand, shorten, ask, summarise_chapter, brainstorm, extract_entries, propose_updates, check_continuity) with per-action overrides (model, samplers, template) stored in `actionOverrides`. Per-story voice (`stories.aiInstructions`) appended to prose actions.
+- **Actions, not prompts**: built-in actions (scene_beat, continue, rework, expand, shorten, ask, summarise_chapter, brainstorm, extract_entries, propose_updates, merge_entries, check_continuity, derive_voice, and transpose_brief/synopsis/entry/outline/prose) with per-action overrides (model, samplers, template) stored in `actionOverrides`. Per-story voice (`stories.aiInstructions`) appended to prose actions.
 - **Generation**: client posts `{requestId, actionId, storyId, chapterId, editorContext}` → server assembles context (lorebook matching, summaries, budgeting) → SSE `model/status/token/finish/error/aborted` (`model` first: which model answers and what chose it — the action sheets name it and change it in place). A provider-agnostic runner (`generationRun.ts`) narrates phases (waiting / thinking / streaming) with per-phase timeouts and writer-readable errors naming model and server; no hidden SDK retries. Zero-content streams are errors. `/api/generate/preview` returns the resolved prompt (the "What gets sent" inspector).
 - **Scene beats** live IN the document (`scene-beat-v2` NodeState): multi-take model — no generation is ever lost; streaming goes to a durable `streaming` field (history-merge tagged) and commits as a take. Orphaned streams recover as takes on mount.
 - **Try again, never lose an attempt**: action sheets (rework/expand/shorten/ask/summarise) keep every result as an attempt (`useAttempts`, ‹ n of m ›; accept uses the one shown); ghost Continue keeps runtime attempts and a failed ghost stays with Try again; brainstorm Regenerate keeps earlier replies as `versions` on the message; failures everywhere offer Try again in place and keep earlier results.

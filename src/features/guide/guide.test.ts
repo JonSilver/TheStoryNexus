@@ -63,7 +63,7 @@ const LABELS = [
     "Model for this action",
     "Summarise chapter",
     "Add to bible",
-    "Refresh Models",
+    "Save & test",
     "Save summary",
     "Scene Beat",
     "Server URL",

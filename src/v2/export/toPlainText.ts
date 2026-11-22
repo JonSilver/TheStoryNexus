@@ -1,6 +1,6 @@
 /**
- * Intermediate blocks -> prose plain text (v2 contracts §3): the AI-context feed and the
- * PDF layout base. Markup, images, horizontal rules and scene beats contribute nothing;
+ * Intermediate blocks -> prose plain text (v2 contracts §3): the Text export and the
+ * AI-context feed. Markup, images, horizontal rules and scene beats contribute nothing;
  * list structure survives as indentation rather than markers.
  */
 import { type Block, type BlockRenderers, type Inline, type ListBlock, renderWith } from "./blocks.js";
