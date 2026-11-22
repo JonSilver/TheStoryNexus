@@ -3,6 +3,8 @@ import { toast } from "react-toastify";
 import { useBrainstormChatQuery } from "@/features/brainstorm/hooks/useBrainstormQuery";
 import { pathFor, useNav } from "../routing";
 
+const CHECK_FAILED_TOAST = "missing-chat-check-failed";
+
 /**
  * A link to a chat this story's list doesn't show: ask the server (a chat
  * created a moment ago may not be listed yet). Gone — say so and put the URL
@@ -17,7 +19,10 @@ export const useCorrectMissingChat = (chatId: string | null | undefined, unliste
             if ((error as { status?: number }).status === 404) {
                 toast.info("That chat no longer exists");
                 navigate(pathFor("brainstorm", storyId), { replace: true });
-            } else toast.error("Couldn't check that chat — the server didn't answer. Showing this story's chats.");
+            } else
+                toast.error("Couldn't check that chat — the server didn't answer. Showing this story's chats.", {
+                    toastId: CHECK_FAILED_TOAST
+                });
             return;
         }
         if (found && found.storyId !== storyId)

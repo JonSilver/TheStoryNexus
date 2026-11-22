@@ -12,7 +12,7 @@ import multer from "multer";
 import { z } from "zod";
 import { countWords } from "../../src/utils/textUtils.js";
 import { db, schema } from "../db/client.js";
-import type { Request } from "../lib/http.js";
+import { type Request, makeAsyncHandler } from "../lib/http.js";
 import {
     MAX_MANUSCRIPT_BYTES,
     ingestStatusOf,
@@ -70,14 +70,7 @@ const receiveUpload = (req: Request, res: express.Response) =>
     });
 
 /** User-facing failures answer with their own status; everything else is a genuine 500. */
-const asyncHandler =
-    (fn: (req: Request, res: express.Response) => Promise<void>) => async (req: Request, res: express.Response) => {
-        const [error] = await attemptPromise(() => fn(req, res));
-        if (!error) return;
-        const status = ingestStatusOf(error);
-        if (!status) console.error("Ingest error:", error);
-        res.status(status ?? 500).json({ error: error.message || "Server error" });
-    };
+const asyncHandler = makeAsyncHandler({ label: "Ingest error", statusOf: ingestStatusOf });
 
 // Compressed uploads (docx/epub) can expand far beyond the 20 MB file cap
 const MAX_EXPANDED_CHARS = 8_000_000;

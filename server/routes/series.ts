@@ -1,10 +1,10 @@
 import { attemptPromise } from "@jfdi/attempt";
 import { and, eq } from "drizzle-orm";
-import { type Response, Router } from "express";
+import { Router } from "express";
 import multer from "multer";
 import { db } from "../db/client.js";
 import { lorebookEntries, series, stories } from "../db/schema.js";
-import type { Request } from "../lib/http.js";
+import { asyncHandler } from "../lib/http.js";
 import { writeStoryAssets } from "../services/assets/storage.js";
 import { commitSeriesImport, exportSeriesBackup } from "../services/stories/backup.js";
 import { type SeriesBackup, buildSeriesImport } from "../services/stories/portable.js";
@@ -12,14 +12,6 @@ import { type SeriesBackup, buildSeriesImport } from "../services/stories/portab
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 const seriesRouter = Router();
-
-const asyncHandler = (fn: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response) => {
-    const [error] = await attemptPromise(() => fn(req, res));
-    if (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: error.message || "Server error" });
-    }
-};
 
 // GET /series - List all series
 seriesRouter.get(

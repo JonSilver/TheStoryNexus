@@ -4,6 +4,9 @@ import {
     type ContinuityIssue,
     type EntryProposal,
     type UpdateProposal,
+    entryKey,
+    issueKey,
+    newItems,
     parseContinuityIssues,
     parseEntryProposals,
     parseUpdateProposals
@@ -18,10 +21,10 @@ interface Results {
 
 const EMPTY: Results = { proposals: null, updates: null, issues: null, ticked: new Set() };
 
-const addUnique = <T>(current: T[] | null, parsed: T[]): T[] => {
-    const seen = new Set((current ?? []).map(item => JSON.stringify(item)));
-    return [...(current ?? []), ...parsed.filter(item => !seen.has(JSON.stringify(item)))];
-};
+const addUnique = <T>(current: T[] | null, parsed: T[], keyOf: (item: NoInfer<T>) => string): T[] => [
+    ...(current ?? []),
+    ...newItems(current ?? [], parsed, keyOf)
+];
 
 /**
  * Review-list state for the bible flows. Results accumulate: running again
@@ -39,20 +42,13 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
     };
 
     const addProposals = (parsed: EntryProposal[]) => {
-        const inBible = new Set(entries.map(e => e.name.toLowerCase()));
+        const inBible = new Set(entries.map(entryKey));
         const current = latest.current.proposals ?? [];
-        // De-duplicated against the list AND within this reply
-        const listed = new Set(current.map(p => p.name.toLowerCase()));
-        const fresh = parsed.filter(p => {
-            const key = p.name.toLowerCase();
-            if (listed.has(key)) return false;
-            listed.add(key);
-            return true;
-        });
+        const fresh = newItems(current, parsed, entryKey);
         // New finds start ticked unless the bible already has them
         const ticked = new Set(latest.current.ticked);
         fresh.forEach((p, i) => {
-            if (!inBible.has(p.name.toLowerCase())) ticked.add(current.length + i);
+            if (!inBible.has(entryKey(p))) ticked.add(current.length + i);
         });
         commit({ ...latest.current, proposals: [...current, ...fresh], ticked });
         return fresh.length;
@@ -60,14 +56,14 @@ export const useFlowResults = (entries: LorebookEntry[]) => {
 
     const addIssues = (parsed: ContinuityIssue[]) => {
         const before = latest.current.issues?.length ?? 0;
-        const issues = addUnique(latest.current.issues, parsed);
+        const issues = addUnique(latest.current.issues, parsed, issueKey);
         commit({ ...latest.current, issues });
         return issues.length - before;
     };
 
     const addUpdates = (parsed: UpdateProposal[]) => {
         const before = latest.current.updates?.length ?? 0;
-        const updates = addUnique(latest.current.updates, parsed);
+        const updates = addUnique(latest.current.updates, parsed, entryKey);
         commit({ ...latest.current, updates });
         return updates.length - before;
     };

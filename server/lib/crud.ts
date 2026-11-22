@@ -1,10 +1,9 @@
-import { attemptPromise } from "@jfdi/attempt";
 import type { Table } from "drizzle-orm";
 import { eq, type InferSelectModel } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { type Response, Router } from "express";
 import { db } from "../db/client.js";
-import type { Request } from "./http.js";
+import { type Request, asyncHandler } from "./http.js";
 
 type TableWithId = Table & { id: SQLiteColumn };
 
@@ -27,14 +26,6 @@ type RouteHelpers<TTable extends TableWithId, TRow, TTransformed = TRow> = {
     asyncHandler: (fn: (req: Request, res: Response) => Promise<void>) => (req: Request, res: Response) => void;
     applyTransform: (data: TRow) => TTransformed;
     table: TTable;
-};
-
-const asyncHandler = (fn: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response) => {
-    const [error] = await attemptPromise(() => fn(req, res));
-    if (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: error.message || "Server error" });
-    }
 };
 
 export const createCrudRouter = <
