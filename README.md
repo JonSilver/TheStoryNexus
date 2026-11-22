@@ -110,7 +110,7 @@ Pull and run the latest published image from [Docker Hub](https://hub.docker.com
 docker-compose up -d
 ```
 
-Supports linux/amd64, linux/arm64, and linux/arm/v7 architectures.
+Published for linux/amd64 only.
 
 Access on `http://localhost:3000` or from any device on your network using your machine's IP address.
 
@@ -122,8 +122,8 @@ Database persists in `./data/storynexus.db` (mounted volume).
 # docker-compose.yml
 services:
     storynexus:
-        image: jonsilver/storynexus:0.6.0 # Pin to specific version
-        # or: jonsilver/storynexus:0.6      # Auto-update patches
+        image: jonsilver/storynexus:2.0.0 # Pin to specific version
+        # or: jonsilver/storynexus:2.0      # Auto-update patches
         # or: jonsilver/storynexus:latest   # Latest release
 ```
 
@@ -137,16 +137,17 @@ docker-compose -f docker-compose.dev.yml up --build
 
 ## Release Process
 
-New releases are published via GitHub Releases, which automatically builds and pushes multi-architecture Docker images to Docker Hub.
+New releases are published via GitHub Releases, which automatically builds and pushes the Docker image to Docker Hub.
 
 **Creating a release**:
 
 **Using the PowerShell script (Windows)**:
 
 ```powershell
-.\release.ps1 patch   # 0.6.0 → 0.6.1
-.\release.ps1 minor   # 0.6.0 → 0.7.0
-.\release.ps1 major   # 0.6.0 → 1.0.0
+.\release.ps1 patch   # 2.0.0 → 2.0.1
+.\release.ps1 minor   # 2.0.0 → 2.1.0
+.\release.ps1 major   # 2.0.0 → 3.0.0
+.\release.ps1 none    # release the current version without bumping
 ```
 
 The script automatically bumps the version, pushes to GitHub, and opens the release page in your browser.
@@ -159,11 +160,10 @@ The script automatically bumps the version, pushes to GitHub, and opens the rele
 
 **Result** - Workflow automatically builds and pushes Docker images with tags:
 
-- `jonsilver/storynexus:0.7.0` (specific version)
-- `jonsilver/storynexus:0.7` (minor version)
-- `jonsilver/storynexus:0` (major version)
+- `jonsilver/storynexus:2.1.0` (specific version)
+- `jonsilver/storynexus:2.1` (minor version)
+- `jonsilver/storynexus:2` (major version)
 - `jonsilver/storynexus:latest`
-- `jonsilver/storynexus:sha-abc1234` (commit hash)
 
 **Note**: Docker images are only built on releases, not on every commit to main.
 

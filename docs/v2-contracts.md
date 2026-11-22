@@ -26,30 +26,30 @@ Invariants:
 
 ## 2. Scene beat lifecycle
 
-Node state (fully serialised in-document): `{ beatId, command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done', generatedText, collapsed }`. Takes live in `takes[]`/`activeTake`; `incompleteTakes[]` marks takes cut short by a failure (kept, labelled).
+Node state (fully serialised in-document; shape in Appendix A): `{ command, povCharacter?, povType?, status: 'idle' | 'generating' | 'done' | 'accepted', takes[], activeTake, incompleteTakes[], streaming, generatedText (legacy), collapsed }`. No serialised id — the node's identity is its Lexical key. `incompleteTakes[]` marks takes cut short by a failure (kept, labelled).
 
-- **Streaming**: tokens accumulate in component state during generation (NOT written to the document per token — avoids undo-history pollution and save churn); committed to `generatedText` + `status: 'done'` in one transaction at completion or abort.
-- **Accept**: one transaction — insert `generatedText` as ordinary paragraph blocks after the node, set node `generatedText: ''`, `status: 'idle'`, `collapsed: true`. One undo step reverts the whole accept.
-- **Reject**: clear `generatedText`, `status: 'idle'`. No trace retained.
-- **Copy/paste**: node state travels with the copy; `beatId` is regenerated on paste (state is self-contained, so duplicates are harmless). Cross-story paste is legal.
+- **Streaming**: tokens are written per token to the node's `streaming` field (durable mid-stream), tagged `[HISTORY_MERGE_TAG, SKIP_SCROLL_INTO_VIEW_TAG]`; completion or abort commits `streaming` as a new take with `status: 'done'`.
+- **Accept**: one transaction tagged `HISTORY_PUSH_TAG` — insert the ACTIVE take as ordinary paragraph blocks after the node, set `status: 'accepted'`, `collapsed: true`; takes are kept. **Accept & tidy** removes the beat in the same transaction. One undo step reverts either.
+- **Delete a take**: removes that take only; the beat returns to `status: 'idle'` when none remain. No other rejection exists — no generation is lost unless the writer deletes it.
+- **Copy/paste**: node state travels with the copy (state is self-contained, so duplicates are harmless). Cross-story paste is legal.
 - **Delete while generating**: client aborts that request via its `requestId`; no orphaned anything (no table).
-- **Persistence mid-generation**: a save during generation stores the node as it last was committed (streaming text is not persisted until completion).
+- **Persistence mid-generation**: a save during generation stores the streamed text so far in `streaming`; a serialised `generating` is read back as `done`, and orphaned streamed text is recovered as a take on mount (Appendix A).
 - **Export/word count**: scene-beat nodes emit nothing in any export target and count zero words, in every status.
 
 ## 3. Export mapping
 
-One canonical converter: document JSON → intermediate block list → per-target renderers (Markdown, HTML, EPUB XHTML, PDF, AI plain text). Snapshot fixtures required for every block/mark type per target. Rules:
+One canonical converter: document JSON → intermediate block list → per-target renderers (Markdown, HTML, plain text, EPUB XHTML (server-side), AI plain text). There is no PDF export (removed at cutover). Snapshot fixtures required for every block/mark type per target. Rules:
 
 - Headings → `#`×level / `<h{level}>`; lists → `-` / `1.` / `<ul>/<ol>`; HR → `---` / `<hr>`; marks → `**` `*` `<u>` / tags.
-- Images: EPUB embeds the asset; Markdown/HTML reference the relative asset path; PDF embeds; AI plain text omits. (Deviation log: browser Markdown/HTML downloads do not yet bundle assets into a zip — references only; EPUB is the with-images export.) Image `src` values are restricted to `/api/assets/` at the parser, so no exporter can be steered at other URLs.
+- Images: EPUB embeds the asset; Markdown/HTML reference the relative asset path; plain text and AI plain text omit. (Deviation log: browser Markdown/HTML downloads do not yet bundle assets into a zip — references only; EPUB is the with-images export.) Image `src` values are restricted to `/api/assets/` at the parser, so no exporter can be steered at other URLs.
 - Scene beats: omitted everywhere.
 - All HTML/EPUB output is escaped (v1's EPUB interpolates raw text — must not survive).
 
 ## 4. Asset model (images)
 
-- `POST /api/stories/:storyId/assets` — multer to disk at `{dataDir}/assets/{storyId}/{uuid}.{ext}`; 10 MB/file cap; images only.
+- `POST /api/assets/:storyId` — multer to disk at `{dataDir}/assets/{storyId}/{uuid}.{ext}`; 10 MB/file cap; images only.
 - Documents store the served relative URL (`/api/assets/{storyId}/{file}`).
-- Deleting a story deletes its asset directory. An orphan sweep (assets unreferenced by any chapter) runs on demand from settings, not automatically.
+- `DELETE /api/assets/:storyId` deletes a story's asset directory; deleting a story deletes it too. There is no orphan sweep: assets no longer referenced by any chapter stay on disk.
 
 ## 5. Action registry
 
@@ -67,7 +67,14 @@ type ActionId =
     | "extract_entries"
     | "propose_updates"
     | "ask"
-    | "check_continuity";
+    | "check_continuity"
+    | "merge_entries"
+    | "derive_voice"
+    | "transpose_brief"
+    | "transpose_synopsis"
+    | "transpose_entry"
+    | "transpose_outline"
+    | "transpose_prose";
 // Deviation log: split_chapters was dropped — ingestion splits chapters
 // rule-based server-side with a human review step; no AI action needed.
 // Writing-process additions (2026-09): `ask` (free-form instruction over a
@@ -79,7 +86,7 @@ type ActionDef = {
     id: ActionId;
     label: string;
     voiceApplies: boolean; // §8 — true only for prose actions
-    contextNeeds: ContextKey[]; // e.g. 'selection', 'recentProse', 'matchedEntries', 'summaries', 'command'
+    contextNeeds: ContextKey[]; // e.g. 'selection', 'recent_prose', 'matched_entries', 'summaries', 'command'
     defaultTemplate: PromptMessage[]; // {{variable}} slots drawn from contextNeeds — unknown variables are validation errors
     defaultParams: {
         temperature: number;
@@ -91,11 +98,11 @@ type ActionDef = {
 };
 ```
 
-`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm, ask. `false`: summarise_chapter, extract_entries, propose_updates, check_continuity.
+`voiceApplies: true`: continue, rework, expand, shorten, scene_beat, brainstorm, ask, transpose_prose. `false`: summarise_chapter, extract_entries, propose_updates, check_continuity, merge_entries, derive_voice, transpose_brief, transpose_synopsis, transpose_entry, transpose_outline.
 
-`insertsProse: true` (scene_beat, continue, rework, expand, shorten, ask — replies offered for the manuscript itself): at assembly (`renderActionPrompt`), after the story voice, `PROSE_ONLY` is appended as the last system instruction — reply with the passage alone, no preamble, notes or list of changes, not wrapped in quotation marks. It applies to built-in and customised templates alike (a template without a system message gets one), and shows in "What gets sent". Decision 2026-10-20, after a rework offered its replacement with a numbered "Revisions made" list attached. Because models can ignore it, the selection sheets also check the reply (`replyCheck.ts`): paragraphs that, outside quotation marks, talk about the task (revisions, rewriting, the original, the assistant) or are commentary headings are notes — leading ones a preamble, and from the first note after the prose the rest. Notes raise a warning with **Remove the model's notes** (a new attempt, never a silent trim). Length is only reported: rework beyond 1.5×+15 words, shorten longer than the passage. Rework/expand/shorten default to temperature 0.7.
+`insertsProse: true` (scene_beat, continue, rework, expand, shorten, ask, transpose_prose — replies offered for the manuscript itself): at assembly (`renderActionPrompt`), after the story voice, `PROSE_ONLY` is appended as the last system instruction — reply with the passage alone, no preamble, notes or list of changes, not wrapped in quotation marks. It applies to built-in and customised templates alike (a template without a system message gets one), and shows in "What gets sent". Decision 2026-10-20, after a rework offered its replacement with a numbered "Revisions made" list attached. Because models can ignore it, the selection sheets also check the reply (`replyCheck.ts`): paragraphs that, outside quotation marks, talk about the task (revisions, rewriting, the original, the assistant) or are commentary headings are notes — leading ones a preamble, and from the first note after the prose the rest. Notes raise a warning with **Remove the model's notes** (a new attempt, never a silent trim). Length is only reported: rework beyond 1.5×+15 words, shorten longer than the passage. Rework/expand/shorten default to temperature 0.7.
 
-**Guidance** (`editorContext.guidance`, ≤5,000 chars): an optional free-text writer instruction accepted by scene_beat, continue, rework, expand and shorten. Appended as a final user message ("Additional instruction from the writer — follow it: …"). Powers refine-with-guidance on takes, ghost suggestions and action sheets.
+**Guidance** (`editorContext.guidance`, ≤5,000 chars): an optional free-text writer instruction accepted by scene*beat, continue, rework, expand, shorten, ask, extract_entries and the five transpose*\* actions. Appended as a final user message ("Additional instruction from the writer — follow it: …"). Powers refine-with-guidance on takes, ghost suggestions and action sheets.
 
 Overrides table `actionOverrides { id, actionId, storyId | null, template?, temperature?, maxTokens?, topP?, frequencyPenalty?, presencePenalty?, modelRef? }` — `storyId: null` = global. Unset samplers are not sent to the provider (the model server's own tuning applies); knobs outside the OpenAI-compatible surface (top_k, min_p, repeat_penalty, mirostat) are the model server's job — e.g. an Ollama Modelfile. Precedence: story override → global override → built-in. Sampling params are REAL columns (v1's integer `temperature` bug must not recur). Overrides are validated at save AND at execution (fall back to built-in on invalid). A save (`PUT /api/actions/overrides`) is field by field: a field left out keeps its stored value, `null` clears it — so the result sheet can change only an action's model. The resolver reports which scope chose the model (`modelScope`); a model changed from the sheet is saved to that scope (a story's own choice would otherwise outrank an all-stories change). Decision 2026-10-20. UI for overrides arrives Phase 8; the storage and resolution exist from Phase 2.
 
@@ -103,18 +110,17 @@ Overrides table `actionOverrides { id, actionId, storyId | null, template?, temp
 
 ```
 POST /api/generate/action
-{ requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory? }, modelRef? }
+{ requestId, actionId, storyId, chapterId?, editorContext: { selection?, recentProse?, command?, povCharacter?, povType?, userMessage?, chatHistory?, guidance? }, modelRef? }
 → SSE: event: model {provider, modelId, source} (first) | status {phase, elapsedMs, idleMs?} | token {text} | finish | error {message} | aborted
 POST /api/generate/preview  — same body minus requestId; returns resolved messages + model + prompt token count (the inspector)
 POST /api/generate/abort { requestId }
-POST /api/generate          — raw-messages mode, v1-frontend compatibility only; deleted at cutover
 ```
 
 `model.source` says what chose the model: `request` (the body's `modelRef`), `story` / `global` (that scope's override for the action), or `default` (the app default). The action sheets show it per attempt and offer **Change model** / **Use a different model for <action>** there (decision 2026-10-20: the need for a better model arises at a bad reply, not in Settings).
 
 (Deviation log: a `usage` event is not emitted — nothing consumes it; add if a consumer appears.)
 
-- Server owns: template resolution (registry + overrides), voice injection, summary retrieval (fresh only, §9), lorebook matching over supplied text + stored chapter content (§7), token budgeting (§10), provider fan-out, model fallback.
+- Server owns: template resolution (registry + overrides), voice injection, summary retrieval (stale ones marked, §9), lorebook matching over supplied text + stored chapter content (§7), token budgeting (§10), provider fan-out, model fallback.
 - Client owns: editor-derived text (selection, recent prose tail, scene-beat command) — the server never parses editor JSON for generation.
 - One `AbortController` per `requestId`; client socket close aborts upstream; concurrent generations are independent.
 - SSE parsing (client) must buffer across chunk boundaries — v1's split-on-newline-per-chunk parser is banned.
@@ -124,8 +130,8 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
 
 ## 7. Lorebook matching
 
-- Alias set per entry = name + tags. Matching is case-insensitive, Unicode-normalised (NFKC casefold), on **word boundaries**; multi-word aliases match as phrases; trailing possessive `'s` tolerated.
-- Disabled entries excluded. Collisions (same alias, multiple levels): story beats series beats global; equal level → all match.
+- Alias set per entry = name + tags. Matching is case-insensitive, Unicode-normalised (NFKC, then lower-cased — accents are significant), on **word boundaries**; multi-word aliases match as phrases; trailing possessive `'s` tolerated.
+- Disabled entries excluded. Collisions (same alias, multiple levels): all match; story ranks above series above global.
 - Ranking: level specificity, then occurrence count. Deterministic truncation by rank under the token budget.
 - Implemented server-side as a pure module with tests; the same module serves editor highlighting via an endpoint if needed.
 
@@ -139,18 +145,19 @@ POST /api/generate          — raw-messages mode, v1-frontend compatibility onl
     - `saveVersion` — optimistic concurrency. ++ whenever a content save's document differs from the stored one, compared **structurally** (parsed JSON, key order irrelevant — never by serialised string). A save of an identical document writes nothing.
     - `revision` — **significant** prose change only: words inserted plus deleted along the word-level edit path (order-aware, so a moved paragraph counts; case/punctuation-insensitive; scene beats and ghosts excluded) since the last revision reach max(50, 5% of the chapter). Small edits accumulate against the pinned base (`revisionText` — never sent to the client; carried in backups so a restore doesn't forget accumulated edits) until they cross it.
 - Chapter content PUT must carry `expectedSaveVersion` (absent or mismatched → 409 + current row — a tab running an older build locks and offers its draft rather than retrying forever); client reloads and informs. One in-flight save per chapter, trailing coalesce; flush on chapter switch, tool switch, unmount, `pagehide`, `visibilitychange: hidden`. Save state (saving/saved/failed+retry) visible in the editor chrome. The client skips a save whose document equals the last saved one (structural comparison).
-- Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled "Out of date" in Chapter details; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission).
+- Summary is **fresh** iff `summarySourceRevision === revision`. Stale summaries: labelled "Out of date" in Chapter details; included in generation context with a `[may be outdated]` marker rather than dropped (continuity beats omission). A writer-locked summary is never marked — it is the writer's own account.
 - **Auto-summarise** — every generation costs the writer money. The client asks only after THIS device saved a significant change (its save returned a new `revision`) and 90s of editor idle followed; opening or reading never asks, including when another device's edits arrive. The **server** decides (`POST /api/chapters/:id/background-summary`, atomic): stale, not writer-locked, ≥150 words, this revision never attempted on any device (`autoSummaryRevision`), and fewer than 6 background summaries app-wide in the rolling hour — otherwise nothing is spent. A failure is reported once (persistent toast) and not retried until a further significant change. The result PUT carries `backgroundSummary.expectedSourceRevision` and lands only if the summary is still the one it set out to replace and unlocked (409 otherwise — the writer's summary wins); a failed save of a generated summary is reported.
 
 ## 10. Token budgeting
 
-Per request: `budget = modelContextLimit − maxTokens − resolvedTemplateSize`. Fill order (drop from the bottom when over budget):
+Per request: `budget = modelContextLimit − maxTokens − (resolvedTemplateSize + voiceSize) − 256` (safety margin), with `maxTokens` capped at half the context window; a budget ≤ 0 is refused (422). Fill order (drop from the bottom when over budget):
 
 1. System + voice + action template (fixed)
 2. Selection / scene-beat command / user message (fixed)
-3. Recent prose, tail-first, up to 60% of remainder
-4. Matched entries by rank
-5. Prior-chapter summaries, nearest-first
+3. Transposition context, chapter content (head and tail kept), story samples and chat history (tail-first), for the actions that need them
+4. Recent prose, tail-first, up to 60% of remainder
+5. Matched entries by rank
+6. Prior-chapter summaries, nearest-first
 
 Model context limits come from provider metadata where available, else a conservative per-provider default table — never v1's hard-coded 4096.
 
@@ -248,6 +255,7 @@ TipTap's genuine advantages — cross-app HTML clipboard fidelity, prosemirror-m
     "status": "idle|generating|done|accepted",
     "takes": ["…"],
     "activeTake": 0,
+    "incompleteTakes": [0],
     "streaming": "…",
     "generatedText": "…",
     "collapsed": false,

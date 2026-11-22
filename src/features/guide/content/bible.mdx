@@ -9,10 +9,9 @@ The story bible is what the app knows about your world — characters, locations
 Each entry has a **name** and any number of **aliases** (nicknames, titles, other spellings). Before an AI action runs, the server scans the text involved — the chapter, your scene beat, your selection, the brainstorm conversation — for those names and aliases, and adds whatever matches to the prompt.
 
 - **Word boundaries only.** _Ash_ matches "Ash turned away", not "ashtray".
-- **Case and accents are normalised.** "MIRIAM" and "Miriam" are the same person.
+- **Case is ignored.** "MIRIAM" and "Miriam" are the same person. Accents count: "Renée" doesn't match "Renee" — add the other spelling as an alias.
 - **Possessives count.** "Miriam's coat" matches _Miriam_.
 - **Multi-word aliases match as phrases.**
-- **Disabled entries are skipped.**
 
 When more entries match than the model can take, they're ranked — story before series before global, then by how often they appear — and the rest are left out, the same way every time.
 

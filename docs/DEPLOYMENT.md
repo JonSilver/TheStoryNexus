@@ -38,8 +38,10 @@ Built files:
 
 ### Using Docker Compose
 
+`docker-compose.yml` pulls the published image (`jonsilver/storynexus:latest`); it does not build from your checkout.
+
 ```bash
-# Build and start
+# Pull and start
 docker-compose up -d
 
 # View logs
@@ -50,6 +52,10 @@ docker-compose down
 ```
 
 Application will be available at: http://localhost:3000
+
+To build from source instead: `docker-compose -f docker-compose.dev.yml up --build`.
+
+Compose reads these from the environment or a `.env` file (see `.env.production.example`): `APP_PORT` (default 3000; sets the container's `PORT` too), `DATA_PATH` (host data directory, default `./data`), `PUID`/`PGID` (user the container runs as, default 1000), `DOCKER_IMAGE` and `IMAGE_TAG`.
 
 ### Using Docker Directly
 
@@ -69,7 +75,7 @@ docker run -d \
 
 SQLite database is stored in `./data/storynexus.db` (mounted as volume).
 
-To backup, use the in-app backup (More → Backup → Download backup, or `GET /api/admin/backup`) — it produces a single consistent snapshot via SQLite's online backup API.
+To backup, use the in-app backup (Settings → Backup → Download backup, or `GET /api/admin/backup`) — it produces a single consistent snapshot via SQLite's online backup API.
 
 **Do NOT** copy `storynexus.db` alone while the app is running: the database runs in WAL mode, so recent writing can live entirely in `storynexus.db-wal` and a bare file copy silently omits it. If you must copy files, stop the app first and copy `storynexus.db`, `storynexus.db-wal` and `storynexus.db-shm` together.
 
@@ -77,20 +83,23 @@ Images are stored separately under `data/assets/` — include that directory in 
 
 ## Migration from Tauri App
 
-1. Open the old Tauri app
-2. Navigate to AI Settings
-3. Click "Export Database" under Database Migration
-4. Save the JSON file
-5. Open the new web app at http://localhost:3000
-6. Navigate to AI Settings
-7. Click "Import Database" under Database Migration
-8. Upload the JSON file
-9. Confirm the import (WARNING: replaces all data)
-10. Reload the page
+The web app has no button for this any more; the server endpoint remains.
+
+1. In the old Tauri app, export the database (AI Settings → Database Migration → Export Database) and save the JSON file.
+2. Take a backup of the web app first: the import **deletes all existing data** before loading the file.
+3. Upload the file to the import endpoint:
+
+    ```bash
+    curl -F "file=@storynexus-export.json" http://localhost:3000/api/admin/import
+    ```
+
+    The file must be JSON with `version` and `tables` properties.
+
+4. Reload the app.
 
 ## Environment Variables
 
-- `PORT` - Server port (default: 3000 in prod, 3001 in dev)
+- `PORT` - Server port (default: 3000; `npm run dev` sets 3001)
 - `NODE_ENV` - Environment (development/production)
 - `DATABASE_PATH` - SQLite database file path (default: ./data/storynexus.db)
 
@@ -123,7 +132,7 @@ AI generation runs on the **server**, so the local model URL configured in Setti
     ```yaml
     # docker-compose.yml
     services:
-        app:
+        storynexus:
             extra_hosts:
                 - "host.docker.internal:host-gateway"
     ```
@@ -153,7 +162,7 @@ SQLite can lock if multiple processes access it. Ensure only one instance is run
 
 ### Migration Failed
 
-- Check browser console for errors
-- Verify JSON file format
-- Ensure backend is running
-- Check server logs: `docker-compose logs -f`
+- Read the endpoint's JSON error response
+- Verify the file has `version` and `tables` properties
+- Ensure the server is running
+- Check server logs (`[Import]` lines): `docker-compose logs -f`
