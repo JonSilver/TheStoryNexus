@@ -170,9 +170,7 @@ const unstore = (key: string) => {
 
 const migrateLegacy = (chatId: string) => {
     const stored = storage.getJSON(PENDING_PREFIX + chatId) as
-        | { ops?: unknown; local?: unknown }
-        | unknown[]
-        | undefined;
+        { ops?: unknown; local?: unknown } | unknown[] | undefined;
     // Absent or unreadable: an unreadable legacy record can't be recovered, and is left in place, harmlessly
     if (!stored || typeof stored !== "object") return;
     // A list of changes (kept as they are, ids and all), or an earlier build's message lists;

@@ -7,8 +7,7 @@
 type ChatUpdateBody = Record<string, unknown> & { expectedRevision?: unknown };
 
 type ChatUpdateResolution =
-    | { outcome: "conflict" }
-    | { outcome: "apply"; updates: Record<string, unknown>; guarded: boolean };
+    { outcome: "conflict" } | { outcome: "apply"; updates: Record<string, unknown>; guarded: boolean };
 
 const SERVER_MANAGED = new Set(["id", "storyId", "createdAt", "revision", "expectedRevision"]);
 
